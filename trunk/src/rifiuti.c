@@ -29,6 +29,7 @@
  */
 
 #define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,7 +92,7 @@ int main (int argc, char **argv) {
   int readsize;
   uint32_t dummy;
 
-  uint32_t index, drive;
+  uint32_t index, drivenum;
   uint64_t win_filetime;
   time_t file_epoch;
   struct tm *delete_time;
@@ -99,11 +100,18 @@ int main (int argc, char **argv) {
   char *utf8_filename, *legacy_filename, *output_filename;
 
   gboolean has_unicode_filename = FALSE;
+  unsigned char driveletters[28] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G',
+    'H', 'I', 'J', 'K', 'L', 'M', 'N',
+    'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+    'V', 'W', 'X', 'Y', 'Z', '\\', '?'
+  };
 
   GError *error = NULL;
   GOptionContext *context;
 
 
+  /* FIXME: remove hardcoded values */
   setlocale (LC_ALL, "");
   bindtextdomain ("rifiuti", "/usr/share/locale");
   bind_textdomain_codeset ("rifiuti", "UTF-8");
@@ -120,7 +128,7 @@ int main (int argc, char **argv) {
     exit (RIFIUTI_ERR_ARG);
   }
 
-  if ( !fileargs || !g_strv_length (fileargs) ) {
+  if ( !fileargs ) {
     fprintf (stderr, _("ERROR: must provide exactly one file argument.\n"));
     exit (RIFIUTI_ERR_ARG);
   }
@@ -189,11 +197,13 @@ int main (int argc, char **argv) {
   while (1) {
 
     readsize = read (info2_fd, buf, recordsize);
+    /* fprintf (stderr, "readsize = %d\n", readsize); */
     if ( readsize < recordsize ) {
       if ( readsize < 0 ) {
-        fprintf (stderr, _("ERROR: Failed to read next record: %s"), strerror (errno));
+        fprintf (stderr, _("ERROR: Failed to read next record: %s\n"), strerror (errno));
+      } else if ( readsize != 4 ) {
+        fprintf (stderr, _("WARNING: Probably truncated record at end of file\n"));
       }
-      /* FIXME: need to check if last fragment is just footer or incomplete fragment? */
       break;
     }
 
@@ -204,19 +214,26 @@ int main (int argc, char **argv) {
     memcpy (&index, buf + RECORD_INDEX_OFFSET, 4);
     index = GUINT32_FROM_LE (index);
 
-    memcpy (&drive, buf + DRIVE_LETTER_OFFSET, 4);
-    drive = GUINT32_FROM_LE (drive);
-    if (drive > 25) {
-      fprintf (stderr, _("WARNING: Drive letter exceeded 'Z:' for index %u.\n"), index);
-    }
+    memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET, 4);
+    drivenum = GUINT32_FROM_LE (drivenum);
 
-    /* drive letter will be removed from filename if file is completely emptied */
+    /* first byte will be removed from filename if file is not in recycle bin */
     emptied = FALSE;
     if (!legacy_filename || !*legacy_filename) {
       emptied = TRUE;
       g_free (legacy_filename);
-      legacy_filename = g_strdup_printf ("%c%s", (unsigned char) drive + 'A',
-                                         (char *) (buf + LEGACY_FILENAME_OFFSET + 1));
+
+      /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
+      if (drivenum > sizeof (driveletters) - 2) {
+        drivenum = sizeof (driveletters) - 1;
+        fprintf (stderr, _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for index %u.\n"), drivenum, index);
+      }
+
+      legacy_filename = (char *) g_malloc (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+      g_assert (legacy_filename);
+      g_snprintf (legacy_filename, RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET,
+                  "%c%s", driveletters[drivenum],
+                  (char *) (buf + LEGACY_FILENAME_OFFSET + 1));
     }
 
     memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
@@ -251,7 +268,7 @@ int main (int argc, char **argv) {
     g_printf ("%d%s%s%s%s%s%d%s%s\n",
               index     , delim,
               ascdeltime, delim,
-              emptied ? _("Y") : _("N") , delim,
+              emptied ? _("Yes") : _("No") , delim,
               filesize  , delim,
               output_filename);
 
