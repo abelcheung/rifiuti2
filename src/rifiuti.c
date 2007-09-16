@@ -28,20 +28,12 @@
  * SUCH DAMAGE.
  */
 
-#define _XOPEN_SOURCE 500
 #define _GNU_SOURCE
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdint.h>
 #include <errno.h>
 #include <locale.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <time.h>
-#include <math.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -52,6 +44,7 @@
 
 static char *delim = "\t";
 static char **fileargs = NULL;
+static char *outfilename = NULL;
 static gboolean no_heading = FALSE;
 static gboolean show_legacy_filename = FALSE;
 
@@ -62,6 +55,8 @@ static GOptionEntry entries[] = {
     N_("Don't show header"), NULL },
   { "legacy-filename", 0, 0, G_OPTION_ARG_NONE, &show_legacy_filename,
     N_("Show legacy filename instead of unicode"), NULL },
+  { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
+    N_("Write output to FILE"), N_("FILE") },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
@@ -82,22 +77,20 @@ time_t win_filetime_to_epoch (uint64_t win_filetime) {
 
 int main (int argc, char **argv) {
 
-  int info2_fd;
   char ascdeltime[21];
-  uint32_t recordsize;
+  uint32_t recordsize, info2_version, dummy;
   void *buf;
   gboolean emptied = FALSE;
   gboolean retval;
-  unsigned int info2_version;
-  int readsize;
-  uint32_t dummy;
+  int readstatus;
+  FILE *infile, *outfile;
+  char *infilename = NULL;
 
-  uint32_t index, drivenum;
+  uint32_t index, drivenum, filesize;
   uint64_t win_filetime;
   time_t file_epoch;
   struct tm *delete_time;
-  uint32_t filesize;
-  char *utf8_filename, *legacy_filename, *output_filename;
+  char *utf8_filename, *legacy_filename, *shown_filename;
 
   gboolean has_unicode_filename = FALSE;
   unsigned char driveletters[28] = {
@@ -128,32 +121,48 @@ int main (int argc, char **argv) {
     exit (RIFIUTI_ERR_ARG);
   }
 
-  if ( !fileargs ) {
-    fprintf (stderr, _("ERROR: must provide exactly one file argument.\n"));
+  if ( fileargs && g_strv_length (fileargs) > 1 ) {
+    fputs (_("ERROR: must provide no more than one file argument.\n"), stderr);
     exit (RIFIUTI_ERR_ARG);
   }
 
-  /* Perhaps consider accepting multiple file in the future? */
-  if ( g_strv_length (fileargs) != 1 ) {
-    fprintf (stderr, _("ERROR: must provide exactly one file argument.\n"));
-    exit (RIFIUTI_ERR_ARG);
+  if (fileargs) {
+    infilename = strdup (fileargs[0]);
+    infile = fopen (infilename, "rb");
+
+    if (!infile) {
+      g_fprintf (stderr, "ERROR opening file '%s' for reading: %s\n", infilename, strerror (errno));
+      g_free (infilename);
+      exit (RIFIUTI_ERR_OPEN_FILE);
+    }
+
+    g_free (fileargs[0]);
+    g_free (fileargs);
+
+  } else {
+    infile = stdin;
+    infilename = strndup ("-", 2);
   }
 
-  info2_fd = open (fileargs[0], O_RDONLY, 0);
-  if (info2_fd < 0) {
-    fprintf (stderr, "ERROR opening file '%s': %s\n", fileargs[0], strerror (errno));
-    exit (RIFIUTI_ERR_OPEN_FILE); 
+  if (outfilename) {
+    outfile = fopen (outfilename, "wb");
+    if (!outfile) {
+      g_fprintf (stderr, "ERROR opening file '%s' for writing: %s\n", outfilename, strerror (errno));
+      exit (RIFIUTI_ERR_OPEN_FILE);
+    }
+  } else {
+    outfile = stdout;
   }
 
   /* check for valid info2 file header */
-  if ( read (info2_fd, &info2_version, 4) < 0 ) {
-    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file, or contains corrupt header.\n"), fileargs[0]);
+  if ( !fread (&info2_version, 4, 1, infile) ) {
+    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   info2_version = GUINT32_FROM_LE (info2_version);
 
   if ( (info2_version != 4) && (info2_version != 5) ) {
-    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file, or contains corrupt header.\n"), fileargs[0]);
+    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
@@ -161,11 +170,11 @@ int main (int argc, char **argv) {
    * Skip for now, though they probably mean number of files left in Recycle bin
    * and last index, or some related number.
    */
-  read (info2_fd, &dummy, 4);
-  read (info2_fd, &dummy, 4);
+  fread (&dummy, 4, 1, infile);
+  fread (&dummy, 4, 1, infile);
 
-  if ( read (info2_fd, &recordsize, 4) < 0 ) {
-    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file, or contains corrupt header.\n"), fileargs[0]);
+  if ( !fread (&recordsize, 4, 1, infile) ) {
+    fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   recordsize = GUINT32_FROM_LE (recordsize);
@@ -176,19 +185,20 @@ int main (int argc, char **argv) {
    * too much memory
    */
   if ( recordsize > 65536 ) {
-    fprintf (stderr, _("Size of record of each deleted item is overly large."));
+    fputs (_("Size of record of each deleted item is overly large."), stderr);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
   /* only version 5 contains UCS2 filename */
-  if ( (info2_version == 5) && (recordsize == 0x320) ) {
+  if ( (5 == info2_version) && (0x320 == recordsize) ) {
     has_unicode_filename = TRUE;
   }
 
   if (!no_heading) {
-    printf (_("INFO2 File: '%s'\n"), fileargs[0]);
-    printf (_("Version: %d\n\n"), info2_version);
-    printf (_("INDEX%sDELETED TIME      %sGONE?%sSIZE%sPATH\n"), delim, delim, delim, delim);
+    fprintf (outfile, _("INFO2 File: '%s'\n"), infilename);
+    fprintf (outfile, _("Version: %u\n"), info2_version);
+    fprintf (outfile, _("Bytes per record: %u\n\n"), recordsize);
+    fprintf (outfile, _("INDEX%sDELETED TIME%sGONE?%sSIZE%sPATH\n"), delim, delim, delim, delim);
   }
 
   buf = g_malloc (recordsize);
@@ -196,14 +206,12 @@ int main (int argc, char **argv) {
 
   while (1) {
 
-    readsize = read (info2_fd, buf, recordsize);
-    /* fprintf (stderr, "readsize = %d\n", readsize); */
-    if ( readsize < recordsize ) {
-      if ( readsize < 0 ) {
+    readstatus = fread (buf, recordsize, 1, infile);
+    if (readstatus != 1) {
+      if ( !feof (infile) ) {
         fprintf (stderr, _("ERROR: Failed to read next record: %s\n"), strerror (errno));
-      } else if ( readsize != 4 ) {
-        fprintf (stderr, _("WARNING: Probably truncated record at end of file\n"));
       }
+      /* FIXME: Also warn if last read is not exactly 4 bytes? */
       break;
     }
 
@@ -226,7 +234,7 @@ int main (int argc, char **argv) {
       /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
       if (drivenum > sizeof (driveletters) - 2) {
         drivenum = sizeof (driveletters) - 1;
-        fprintf (stderr, _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for index %u.\n"), drivenum, index);
+        g_fprintf (stderr, _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for index %u.\n"), drivenum, index);
       }
 
       legacy_filename = (char *) g_malloc (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
@@ -256,32 +264,34 @@ int main (int argc, char **argv) {
 
       if (!utf8_filename) {
         fprintf (stderr, _("Error converting UCS2 filename to UTF-8, will show legacy filename for record %d"), index);
-        output_filename = legacy_filename;
+        shown_filename = legacy_filename;
       } else {
-        output_filename = utf8_filename;
+        shown_filename = utf8_filename;
       }
 
     } else {
-      output_filename = legacy_filename;
+      shown_filename = legacy_filename;
     }
 
-    g_printf ("%d%s%s%s%s%s%d%s%s\n",
-              index     , delim,
-              ascdeltime, delim,
-              emptied ? _("Yes") : _("No") , delim,
-              filesize  , delim,
-              output_filename);
+    g_fprintf (outfile, "%d%s%s%s%s%s%d%s%s\n",
+               index     , delim,
+               ascdeltime, delim,
+               emptied ? _("Yes") : _("No") , delim,
+               filesize  , delim,
+               shown_filename);
 
     if (has_unicode_filename) {
       g_free (utf8_filename);
-      utf8_filename = NULL;
     }
     g_free (legacy_filename);
 
   }
 
+  fclose (infile);
+  fclose (outfile);
+
   g_free (buf);
-  close (info2_fd);
+  g_free (infilename);
 
   exit (0);
 }
