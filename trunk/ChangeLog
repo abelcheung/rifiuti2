@@ -1,3 +1,22 @@
+2007-09-16  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/rifiuti.c:
+	- Add -o option to specify output file name.
+	- Use file stream throughout the whole file, drop usage of file
+	descriptor.
+	- Change fprintf into fputs or g_fprintf when the most appropriate
+	one fits.
+
+2007-09-14  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/rifiuti.c:
+	- Cope with the case when deleted file is from a network
+	share (thus first char is backslash).
+	- Defines _GNU_SOURCE to avoid warning when compiling under Linux.
+	- Replace g_strdup_printf with g_snprintf to avoid copying exceedingly
+	large string.
+	- Warn if end of file is not a proper footer (exactly 4 bytes).
+
 2007-09-09  Abel Cheung  <abelcheung@gmail.com>
 
 	* Makefile: Reorder gcc arguments to fix compilation in cygwin.
