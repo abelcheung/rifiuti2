@@ -47,20 +47,117 @@ static char **fileargs = NULL;
 static char *outfilename = NULL;
 static gboolean no_heading = FALSE;
 static gboolean show_legacy_filename = FALSE;
+static gboolean xml_output = FALSE;
 
 static GOptionEntry entries[] = {
   { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
     N_("String to use as delimiter (default is a TAB)"), N_("STRING") },
-  { "no-heading", 0, 0, G_OPTION_ARG_NONE, &no_heading,
+  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
     N_("Don't show header"), NULL },
-  { "legacy-filename", 0, 0, G_OPTION_ARG_NONE, &show_legacy_filename,
+  { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
     N_("Show legacy filename instead of unicode"), NULL },
   { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
     N_("Write output to FILE"), N_("FILE") },
+  { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
+    N_("Output in XML format (-t, -n, -l options will have no effect)"), NULL },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
 };
+
+
+void print_header (FILE     *outfile,
+                   char     *infilename,
+                   uint32_t  version,
+                   int       output_format)
+{
+  switch (output_format) {
+    case OUTPUT_CSV:
+      if (!no_heading) {
+        fprintf (outfile, _("Recycle bin file: '%s'\n"), infilename);
+        fprintf (outfile, _("Version: %u\n\n"), version);
+        fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath\n"), delim, delim, delim, delim);
+      }
+      break;
+
+    case OUTPUT_XML:
+      fprintf (outfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<recyclebin>\n");
+      fprintf (outfile, "  <filename>%s</filename>\n", infilename);
+      fprintf (outfile, "  <version>%u</version>\n", version);
+      break;
+
+    default:
+      /* something is wrong */
+      break;
+  }
+}
+
+
+void print_record (FILE        *outfile,
+                   info_struct *record,
+                   int          output_format)
+{
+  char *shown_filename;
+  char ascdeltime[21];
+
+  if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0) {
+    fprintf (stderr, _("Error formatting deleted file date/time for index %u."), record->index);
+  }
+
+  switch (output_format) {
+
+    case OUTPUT_CSV:
+
+      if (show_legacy_filename) {
+        shown_filename = record->legacy_filename;
+      } else {
+      }
+
+      fprintf (outfile, "%d%s%s%s%s%s%d%s%s\n",
+               record->index                        , delim,
+               ascdeltime                           , delim,
+               record->emptied ? _("Yes") : _("No") , delim,
+               record->filesize                     , delim,
+               shown_filename);
+
+      break;
+
+    case OUTPUT_XML:
+
+      fprintf (outfile, "  <record>\n");
+      fprintf (outfile, "    <index>%u</index>\n", record->index);
+      fprintf (outfile, "    <time>%s</time>\n", ascdeltime);
+      fprintf (outfile, "    <emptied>%c</emptied>\n", record->emptied ? 'Y' : 'N');
+      fprintf (outfile, "    <size>%u</size>\n", record->filesize);
+      fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
+      fprintf (outfile, "  </record>\n");
+
+      break;
+
+    default:
+      /* something is wrong */
+      break;
+  }
+}
+
+
+void print_footer (FILE *outfile,
+                   int   output_format)
+{
+  switch (output_format) {
+    case OUTPUT_CSV:
+      /* do nothing */
+      break;
+
+    case OUTPUT_XML:
+      fprintf (outfile, "</recyclebin>\n");
+      break;
+
+    default:
+      /* something is wrong */
+      break;
+  }
+}
 
 
 time_t win_filetime_to_epoch (uint64_t win_filetime) {
@@ -77,20 +174,17 @@ time_t win_filetime_to_epoch (uint64_t win_filetime) {
 
 int main (int argc, char **argv) {
 
-  char ascdeltime[21];
   uint32_t recordsize, info2_version, dummy;
   void *buf;
-  gboolean emptied = FALSE;
   gboolean retval;
   int readstatus;
   FILE *infile, *outfile;
   char *infilename = NULL;
+  int output_format = OUTPUT_CSV;
 
-  uint32_t index, drivenum, filesize;
+  info_struct *record;
   uint64_t win_filetime;
   time_t file_epoch;
-  struct tm *delete_time;
-  char *utf8_filename, *legacy_filename, *shown_filename;
 
   gboolean has_unicode_filename = FALSE;
   unsigned char driveletters[28] = {
@@ -154,6 +248,10 @@ int main (int argc, char **argv) {
     outfile = stdout;
   }
 
+  if (xml_output) {
+    output_format = OUTPUT_XML;
+  }
+
   /* check for valid info2 file header */
   if ( !fread (&info2_version, 4, 1, infile) ) {
     fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
@@ -194,15 +292,13 @@ int main (int argc, char **argv) {
     has_unicode_filename = TRUE;
   }
 
-  if (!no_heading) {
-    fprintf (outfile, _("INFO2 File: '%s'\n"), infilename);
-    fprintf (outfile, _("Version: %u\n"), info2_version);
-    fprintf (outfile, _("Bytes per record: %u\n\n"), recordsize);
-    fprintf (outfile, _("INDEX%sDELETED TIME%sGONE?%sSIZE%sPATH\n"), delim, delim, delim, delim);
-  }
+  print_header (outfile, infilename, info2_version, output_format);
 
   buf = g_malloc (recordsize);
   g_assert (buf);
+
+  record = g_malloc (sizeof (info_struct));
+  g_assert (record);
 
   while (1) {
 
@@ -216,80 +312,69 @@ int main (int argc, char **argv) {
     }
 
     /* Any legacy character set can contain embedded null byte? */
-    legacy_filename = strndup ((char *) (buf + LEGACY_FILENAME_OFFSET),
-                               RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    record->legacy_filename = strndup ((char *) (buf + LEGACY_FILENAME_OFFSET),
+                                       RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
 
-    memcpy (&index, buf + RECORD_INDEX_OFFSET, 4);
-    index = GUINT32_FROM_LE (index);
+    memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
+    record->index = GUINT32_FROM_LE (record->index);
 
-    memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET, 4);
-    drivenum = GUINT32_FROM_LE (drivenum);
+    memcpy (&record->drive, buf + DRIVE_LETTER_OFFSET, 4);
+    record->drive = GUINT32_FROM_LE (record->drive);
 
     /* first byte will be removed from filename if file is not in recycle bin */
-    emptied = FALSE;
-    if (!legacy_filename || !*legacy_filename) {
-      emptied = TRUE;
-      g_free (legacy_filename);
+    record->emptied = FALSE;
+    if (!record->legacy_filename || !*record->legacy_filename) {
+      record->emptied = TRUE;
+      g_free (record->legacy_filename);
 
       /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
-      if (drivenum > sizeof (driveletters) - 2) {
-        drivenum = sizeof (driveletters) - 1;
-        g_fprintf (stderr, _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for index %u.\n"), drivenum, index);
+      if (record->drive > sizeof (driveletters) - 2) {
+        record->drive = sizeof (driveletters) - 1;
+        g_fprintf (stderr,
+                   _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for index %u.\n"),
+                   record->drive, record->index);
       }
 
-      legacy_filename = (char *) g_malloc (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-      g_assert (legacy_filename);
-      g_snprintf (legacy_filename, RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET,
-                  "%c%s", driveletters[drivenum],
+      record->legacy_filename = (char *) g_malloc (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+      g_assert (record->legacy_filename);
+      g_snprintf (record->legacy_filename, RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET,
+                  "%c%s", driveletters[record->drive],
                   (char *) (buf + LEGACY_FILENAME_OFFSET + 1));
     }
 
     memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
 
     file_epoch = win_filetime_to_epoch (win_filetime);
-    delete_time = localtime (&file_epoch);
+    record->filetime = localtime (&file_epoch);
 
-    if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", delete_time) == 0) {
-      fprintf (stderr, _("Error formatting deleted file date/time for index %u."), index);
+    memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
+    record->filesize = GUINT32_FROM_LE (record->filesize);
+
+    record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
+                                             (recordsize - UNICODE_FILENAME_OFFSET) / 2,
+                                             NULL, NULL, NULL);
+
+    if (has_unicode_filename && !record->utf8_filename) {
+      fprintf (stderr,
+               _("Error converting UCS2 filename to UTF-8, will show legacy filename for record %d"),
+               record->index);
     }
 
-    memcpy (&filesize, buf + FILESIZE_OFFSET, 4);
-    filesize = GUINT32_FROM_LE (filesize);
-
-    if (has_unicode_filename && !show_legacy_filename) {
-
-      utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-                                       (recordsize - UNICODE_FILENAME_OFFSET) / 2,
-                                       NULL, NULL, NULL);
-
-      if (!utf8_filename) {
-        fprintf (stderr, _("Error converting UCS2 filename to UTF-8, will show legacy filename for record %d"), index);
-        shown_filename = legacy_filename;
-      } else {
-        shown_filename = utf8_filename;
-      }
-
-    } else {
-      shown_filename = legacy_filename;
-    }
-
-    g_fprintf (outfile, "%d%s%s%s%s%s%d%s%s\n",
-               index     , delim,
-               ascdeltime, delim,
-               emptied ? _("Yes") : _("No") , delim,
-               filesize  , delim,
-               shown_filename);
+    print_record (outfile, record, output_format);
 
     if (has_unicode_filename) {
-      g_free (utf8_filename);
+      g_free (record->utf8_filename);
     }
-    g_free (legacy_filename);
+    g_free (record->legacy_filename);
 
   }
+
+  print_footer (outfile, output_format);
 
   fclose (infile);
   fclose (outfile);
 
+  g_free (record);
   g_free (buf);
   g_free (infilename);
 
