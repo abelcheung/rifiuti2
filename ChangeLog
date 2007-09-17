@@ -1,3 +1,11 @@
+2007-09-17  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/rifiuti.dtd: New file.
+	* src/rifiuti.h: Add output format enum.
+	* src/rifiuti.c:
+	- (print_header, print_footer, print_record) New functions.
+	- Add support for XML output format.
+
 2007-09-16  Abel Cheung  <abelcheung@gmail.com>
 
 	* src/rifiuti.c:
