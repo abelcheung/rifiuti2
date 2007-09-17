@@ -1,5 +1,16 @@
 2007-09-17  Abel Cheung  <abelcheung@gmail.com>
 
+	* src/rifiuti.c:
+	- Show warning message if print_* functions are called with unknown
+	output format (highly unlikely).
+	- Some calls to guard against failure in charset conversion.
+	- Add --from-encoding option to specify encoding to convert from,
+	which is useful ONLY when INFO2 is created by Win98 (thus no unicode
+	file name), and output is in XML format (which is unicode only). Does
+	nothing for now.
+
+2007-09-17  Abel Cheung  <abelcheung@gmail.com>
+
 	* src/rifiuti.dtd: New file.
 	* src/rifiuti.h: Add output format enum.
 	* src/rifiuti.c:
@@ -10,6 +21,7 @@
 
 	* src/rifiuti.c:
 	- Add -o option to specify output file name.
+	- Supports reading data from stdin.
 	- Use file stream throughout the whole file, drop usage of file
 	descriptor.
 	- Change fprintf into fputs or g_fprintf when the most appropriate
