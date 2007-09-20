@@ -49,6 +49,7 @@ static char *from_encoding = NULL;
 static gboolean no_heading = FALSE;
 static gboolean show_legacy_filename = FALSE;
 static gboolean xml_output = FALSE;
+static gboolean has_unicode_filename = FALSE;
 
 static GOptionEntry entries[] = {
   { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
@@ -62,7 +63,7 @@ static GOptionEntry entries[] = {
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
     N_("Output in XML format (-t, -n, -l options will have no effect)"), NULL },
   { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
-    N_("The assumed file name encoding when no unicode file name is present in INFO2 record (only useful if INFO2 file is created by Win98, default is system locale)"), N_("ENC") },
+    N_("The assumed file name character set when no unicode file name is present in INFO2 record (mandatory if INFO2 file is created by Win98, useless otherwise)"), N_("ENC") },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
@@ -95,7 +96,7 @@ void print_header (FILE     *outfile,
       shown_filename = g_filename_to_utf8 (infilename, -1, NULL, NULL, &error);
 
       if (error) {
-        fprintf (stderr, _("ERROR converting INFO2 file name to UTF-8: %s\n"),
+        fprintf (stderr, _("Error converting INFO2 file name to UTF-8: %s\n"),
                  error->message);
         g_free (shown_filename);
         shown_filename = g_strdup (_("(Invalid UTF-8 file name)"));
@@ -131,11 +132,11 @@ void print_record (FILE        *outfile,
 
     case OUTPUT_CSV:
 
-      if (record->utf8_filename && !show_legacy_filename) {
+      if (has_unicode_filename && !show_legacy_filename) {
         shown_filename = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, &error);
         if (error) {
           g_fprintf (stderr,
-                     _("ERROR converting file name from UTF-8 to locale charset for record %u: %s\n"),
+                     _("Error converting file name from UTF-8 to locale charset for record %u: %s\n"),
                      record->index, error->message);
           g_error_free (error);
           g_free (shown_filename);
@@ -163,8 +164,31 @@ void print_record (FILE        *outfile,
       fprintf (outfile, "    <time>%s</time>\n", ascdeltime);
       fprintf (outfile, "    <emptied>%c</emptied>\n", record->emptied ? 'Y' : 'N');
       fprintf (outfile, "    <size>%u</size>\n", record->filesize);
-      /* FIXME: Win98 INFO2 file has no unicode filename, probably need new option */
-      fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
+
+      if (has_unicode_filename) {
+
+        fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
+
+      } else {
+
+        /*
+         * guessing charset is not useful, since the system generating INFO2 and the system
+         * analyzing INFO2 would be different, and quite likely using different charset as well
+         */
+        shown_filename = g_convert (record->legacy_filename, -1, "UTF-8", from_encoding,
+                                    NULL, NULL, &error);
+        if (error) {
+          g_fprintf (stderr,
+                     _("Failed to convert file name from %s encoding to UTF-8 for record %u: %s\n"),
+                     from_encoding, record->index, error->message);
+          g_error_free (error);
+          g_free (shown_filename);
+          shown_filename = g_strdup (_("(Invalid file name)"));
+        }
+        fprintf (outfile, "    <path>%s</path>\n", shown_filename);
+        g_free (shown_filename);
+      }
+
       fputs ("  </record>\n", outfile);
 
       break;
@@ -223,7 +247,6 @@ int main (int argc, char **argv) {
   uint64_t win_filetime;
   time_t file_epoch;
 
-  gboolean has_unicode_filename = FALSE;
   unsigned char driveletters[28] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G',
     'H', 'I', 'J', 'K', 'L', 'M', 'N',
@@ -247,7 +270,7 @@ int main (int argc, char **argv) {
   g_option_context_free (context);
 
   if (error != NULL) {
-    fprintf (stderr, _("ERROR parsing argument: %s\n"), error->message);
+    fprintf (stderr, _("Error parsing argument: %s\n"), error->message);
     g_error_free (error);
     exit (RIFIUTI_ERR_ARG);
   }
@@ -262,7 +285,7 @@ int main (int argc, char **argv) {
     infile = fopen (infilename, "rb");
 
     if (!infile) {
-      g_fprintf (stderr, "ERROR opening file '%s' for reading: %s\n", infilename, strerror (errno));
+      g_fprintf (stderr, "Error opening file '%s' for reading: %s\n", infilename, strerror (errno));
       g_free (infilename);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
@@ -278,7 +301,7 @@ int main (int argc, char **argv) {
   if (outfilename) {
     outfile = fopen (outfilename, "wb");
     if (!outfile) {
-      g_fprintf (stderr, "ERROR opening file '%s' for writing: %s\n", outfilename, strerror (errno));
+      g_fprintf (stderr, "Error opening file '%s' for writing: %s\n", outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   } else {
@@ -301,6 +324,11 @@ int main (int argc, char **argv) {
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
+  if ( (4 == info2_version) && (OUTPUT_XML == output_format) && (!from_encoding) ) {
+    fputs (_("ERROR: for Win98 INFO2 file, original file name encoding must be specified with --from-encoding option if output is in XML format.\n"), stderr);
+    exit (RIFIUTI_ERR_ARG);
+  }
+
   /*
    * Skip for now, though they probably mean number of files left in Recycle bin
    * and last index, or some related number.
@@ -320,7 +348,7 @@ int main (int argc, char **argv) {
    * too much memory
    */
   if ( recordsize > 65536 ) {
-    fputs (_("Size of record of each deleted item is overly large."), stderr);
+    fputs (_("Size of record of each deleted item is too large."), stderr);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
