@@ -28,8 +28,6 @@
  * SUCH DAMAGE.
  */
 
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -295,7 +293,7 @@ int main (int argc, char **argv) {
 
   } else {
     infile = stdin;
-    infilename = strndup ("-", 2);
+    infilename = g_strndup ("-", 2);
   }
 
   if (outfilename) {
@@ -377,8 +375,8 @@ int main (int argc, char **argv) {
     }
 
     /* Any legacy character set can contain embedded null byte? */
-    record->legacy_filename = strndup ((char *) (buf + LEGACY_FILENAME_OFFSET),
-                                       RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    record->legacy_filename = g_strndup ((char *) (buf + LEGACY_FILENAME_OFFSET),
+                                         RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
 
     memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
     record->index = GUINT32_FROM_LE (record->index);
