@@ -40,26 +40,30 @@
 #include "rifiuti.h"
 
 
-static char *delim = "\t";
-static char **fileargs = NULL;
-static char *outfilename = NULL;
-static char *from_encoding = NULL;
-static gboolean no_heading = FALSE;
-static gboolean show_legacy_filename = FALSE;
-static gboolean xml_output = FALSE;
-static gboolean has_unicode_filename = FALSE;
+static char      *delim                = "\t";
+static char     **fileargs             = NULL;
+static char      *outfilename          = NULL;
+static char      *from_encoding        = NULL;
+static gboolean   no_heading           = FALSE;
+static gboolean   show_legacy_filename = FALSE;
+static gboolean   xml_output           = FALSE;
+static gboolean   always_utf8          = FALSE;
+static gboolean   has_unicode_filename = FALSE;
 
-static GOptionEntry entries[] = {
+static GOptionEntry entries[] =
+{
+  { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
+    N_("Write output to FILE"), N_("FILE") },
   { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
     N_("String to use as delimiter (TAB by default)"), N_("STRING") },
   { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
     N_("Don't show header"), NULL },
   { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
     N_("Show legacy filename instead of unicode"), NULL },
-  { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
-    N_("Write output to FILE"), N_("FILE") },
+  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
+    N_("Always show file names in UTF-8 encoding"), NULL },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-    N_("Output in XML format (-t, -n, -l options will have no effect)"), NULL },
+    N_("Output in XML format (-t, -n, -l, -8 options will have no effect)"), NULL },
   { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
     N_("The assumed file name character set when no unicode file name is present in INFO2 record (mandatory if INFO2 file is created by Win98, useless otherwise)"), N_("ENC") },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
@@ -76,11 +80,12 @@ void print_header (FILE     *outfile,
   char *shown_filename;
   GError *error = NULL;
 
-  switch (output_format) {
-
+  switch (output_format)
+  {
     case OUTPUT_CSV:
 
-      if (!no_heading) {
+      if (!no_heading)
+      {
         fprintf (outfile, _("Recycle bin file: '%s'\n"), infilename);
         fprintf (outfile, _("Version: %u\n\n"), version);
         fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath\n"), delim, delim, delim, delim);
@@ -93,7 +98,8 @@ void print_header (FILE     *outfile,
       fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<recyclebin>\n", outfile);
       shown_filename = g_filename_to_utf8 (infilename, -1, NULL, NULL, &error);
 
-      if (error) {
+      if (error)
+      {
         fprintf (stderr, _("Error converting INFO2 file name to UTF-8: %s\n"),
                  error->message);
         g_free (shown_filename);
@@ -122,17 +128,18 @@ void print_record (FILE        *outfile,
   char ascdeltime[21];
   GError *error = NULL;
 
-  if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0) {
+  if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
     fprintf (stderr, _("Error formatting deleted file date/time for index %u."), record->index);
-  }
 
-  switch (output_format) {
-
+  switch (output_format)
+  {
     case OUTPUT_CSV:
 
-      if (has_unicode_filename && !show_legacy_filename) {
+      if (has_unicode_filename && !show_legacy_filename)
+      {
         shown_filename = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, &error);
-        if (error) {
+        if (error)
+        {
           g_fprintf (stderr,
                      _("Error converting file name from UTF-8 to locale charset for record %u: %s\n"),
                      record->index, error->message);
@@ -140,9 +147,9 @@ void print_record (FILE        *outfile,
           g_free (shown_filename);
           shown_filename = g_strdup (record->legacy_filename);
         }
-      } else {
-        shown_filename = g_strdup (record->legacy_filename);
       }
+      else
+        shown_filename = g_strdup (record->legacy_filename);
 
       fprintf (outfile, "%d%s%s%s%s%s%d%s%s\n",
                record->index                        , delim,
@@ -163,19 +170,18 @@ void print_record (FILE        *outfile,
       fprintf (outfile, "    <emptied>%c</emptied>\n", record->emptied ? 'Y' : 'N');
       fprintf (outfile, "    <size>%u</size>\n", record->filesize);
 
-      if (has_unicode_filename) {
-
+      if (has_unicode_filename)
         fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
-
-      } else {
-
+      else
+      {
         /*
          * guessing charset is not useful, since the system generating INFO2 and the system
          * analyzing INFO2 would be different, and quite likely using different charset as well
          */
         shown_filename = g_convert (record->legacy_filename, -1, "UTF-8", from_encoding,
                                     NULL, NULL, &error);
-        if (error) {
+        if (error)
+        {
           g_fprintf (stderr,
                      _("Failed to convert file name from %s encoding to UTF-8 for record %u: %s\n"),
                      from_encoding, record->index, error->message);
@@ -202,7 +208,8 @@ void print_record (FILE        *outfile,
 void print_footer (FILE *outfile,
                    int   output_format)
 {
-  switch (output_format) {
+  switch (output_format)
+  {
     case OUTPUT_CSV:
       /* do nothing */
       break;
@@ -219,8 +226,8 @@ void print_footer (FILE *outfile,
 }
 
 
-time_t win_filetime_to_epoch (uint64_t win_filetime) {
-
+time_t win_filetime_to_epoch (uint64_t win_filetime)
+{
   uint64_t epoch;
 
   /* I suppose millisecond resolution is not needed? -- Abel */
@@ -231,8 +238,8 @@ time_t win_filetime_to_epoch (uint64_t win_filetime) {
 }
 
 
-int main (int argc, char **argv) {
-
+int main (int argc, char **argv)
+{
   uint32_t recordsize, info2_version, dummy;
   void *buf;
   gboolean retval;
@@ -245,7 +252,8 @@ int main (int argc, char **argv) {
   uint64_t win_filetime;
   time_t file_epoch;
 
-  unsigned char driveletters[28] = {
+  unsigned char driveletters[28] =
+  {
     'A', 'B', 'C', 'D', 'E', 'F', 'G',
     'H', 'I', 'J', 'K', 'L', 'M', 'N',
     'O', 'P', 'Q', 'R', 'S', 'T', 'U',
@@ -267,22 +275,26 @@ int main (int argc, char **argv) {
   retval = g_option_context_parse (context, &argc, &argv, &error);
   g_option_context_free (context);
 
-  if (error != NULL) {
+  if (error != NULL)
+  {
     fprintf (stderr, _("Error parsing argument: %s\n"), error->message);
     g_error_free (error);
     exit (RIFIUTI_ERR_ARG);
   }
 
-  if ( fileargs && g_strv_length (fileargs) > 1 ) {
+  if ( fileargs && g_strv_length (fileargs) > 1 )
+  {
     fputs (_("ERROR: must provide no more than one file argument.\n"), stderr);
     exit (RIFIUTI_ERR_ARG);
   }
 
-  if (fileargs) {
+  if (fileargs)
+  {
     infilename = strdup (fileargs[0]);
     infile = fopen (infilename, "rb");
 
-    if (!infile) {
+    if (!infile)
+    {
       g_fprintf (stderr, "Error opening file '%s' for reading: %s\n", infilename, strerror (errno));
       g_free (infilename);
       exit (RIFIUTI_ERR_OPEN_FILE);
@@ -291,38 +303,44 @@ int main (int argc, char **argv) {
     g_free (fileargs[0]);
     g_free (fileargs);
 
-  } else {
+  }
+  else
+  {
     infile = stdin;
     infilename = g_strndup ("-", 2);
   }
 
-  if (outfilename) {
+  if (outfilename)
+  {
     outfile = fopen (outfilename, "wb");
-    if (!outfile) {
+    if (!outfile)
+    {
       g_fprintf (stderr, "Error opening file '%s' for writing: %s\n", outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
-  } else {
+  }
+  else
     outfile = stdout;
-  }
 
-  if (xml_output) {
+  if (xml_output)
     output_format = OUTPUT_XML;
-  }
 
   /* check for valid info2 file header */
-  if ( !fread (&info2_version, 4, 1, infile) ) {
+  if ( !fread (&info2_version, 4, 1, infile) )
+  {
     fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   info2_version = GUINT32_FROM_LE (info2_version);
 
-  if ( (info2_version != 4) && (info2_version != 5) ) {
+  if ( (info2_version != 4) && (info2_version != 5) )
+  {
     fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
-  if ( (4 == info2_version) && (OUTPUT_XML == output_format) && (!from_encoding) ) {
+  if ( (4 == info2_version) && (OUTPUT_XML == output_format) && (!from_encoding) )
+  {
     fputs (_("ERROR: for Win98 INFO2 file, original file name encoding must be specified with --from-encoding option if output is in XML format.\n"), stderr);
     exit (RIFIUTI_ERR_ARG);
   }
@@ -334,7 +352,8 @@ int main (int argc, char **argv) {
   fread (&dummy, 4, 1, infile);
   fread (&dummy, 4, 1, infile);
 
-  if ( !fread (&recordsize, 4, 1, infile) ) {
+  if ( !fread (&recordsize, 4, 1, infile) )
+  {
     fprintf (stderr, _("ERROR: '%s' is not a valid INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
@@ -345,13 +364,15 @@ int main (int argc, char **argv) {
    * or specially crafted INFO2 file (EEEEEEK!) from causing rifiuti allocating
    * too much memory
    */
-  if ( recordsize > 65536 ) {
+  if ( recordsize > 65536 )
+  {
     fputs (_("Size of record of each deleted item is too large."), stderr);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
   /* only version 5 contains UCS2 filename */
-  if ( (5 == info2_version) && (0x320 == recordsize) ) {
+  if ( (5 == info2_version) && (0x320 == recordsize) )
+  {
     has_unicode_filename = TRUE;
   }
 
@@ -366,10 +387,11 @@ int main (int argc, char **argv) {
   while (1) {
 
     readstatus = fread (buf, recordsize, 1, infile);
-    if (readstatus != 1) {
-      if ( !feof (infile) ) {
+    if (readstatus != 1)
+    {
+      if ( !feof (infile) )
         fprintf (stderr, _("ERROR: Failed to read next record: %s\n"), strerror (errno));
-      }
+
       /* FIXME: Also warn if last read is not exactly 4 bytes? */
       break;
     }
@@ -386,12 +408,14 @@ int main (int argc, char **argv) {
 
     /* first byte will be removed from filename if file is not in recycle bin */
     record->emptied = FALSE;
-    if (!record->legacy_filename || !*record->legacy_filename) {
+    if (!record->legacy_filename || !*record->legacy_filename)
+    {
       record->emptied = TRUE;
       g_free (record->legacy_filename);
 
       /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
-      if (record->drive > sizeof (driveletters) - 2) {
+      if (record->drive > sizeof (driveletters) - 2)
+      {
         record->drive = sizeof (driveletters) - 1;
         g_fprintf (stderr,
                    _("WARNING: Drive letter (0x%X) exceeded maximum (0x1A) for record %u.\n"),
@@ -413,27 +437,29 @@ int main (int argc, char **argv) {
     memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
     record->filesize = GUINT32_FROM_LE (record->filesize);
 
-    if (has_unicode_filename) {
+    if (has_unicode_filename)
+    {
       record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
                                                (recordsize - UNICODE_FILENAME_OFFSET) / 2,
                                                NULL, NULL, &error);
       /* not checking error, since Windows <= 2000 may insert junk after UCS2 file name */
-      if (!record->utf8_filename) {
+      if (!record->utf8_filename)
+      {
         g_fprintf (stderr,
                  _("Error converting UCS2 filename to UTF-8 for record %d: %s"),
                  record->index, error->message);
         g_error_free (error);
         record->utf8_filename = g_strdup (_("(Broken UCS2 file name)"));
       }
-    } else {
-      record->utf8_filename = NULL;
     }
+    else
+      record->utf8_filename = NULL;
 
     print_record (outfile, record, output_format);
 
-    if (has_unicode_filename) {
+    if (has_unicode_filename)
       g_free (record->utf8_filename);
-    }
+
     g_free (record->legacy_filename);
 
   }
