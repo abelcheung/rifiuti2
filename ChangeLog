@@ -1,5 +1,10 @@
 2007-09-20  Abel Cheung  <abelcheung@gmail.com>
 
+	* src/rifiuti.c:
+	- Build fix for MinGW (avoid GNU-only calls).
+
+2007-09-20  Abel Cheung  <abelcheung@gmail.com>
+
 	* src/rifiuti.c (print_record):
 	- For Win98 INFO2 file, try to convert from legacy file name to UTF-8
 	in XML display mode.
