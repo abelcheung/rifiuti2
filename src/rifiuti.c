@@ -40,7 +40,7 @@
 #include "rifiuti.h"
 
 
-static char      *delim                = "\t";
+static char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
 static char      *from_encoding        = NULL;
@@ -50,18 +50,10 @@ static gboolean   xml_output           = FALSE;
 static gboolean   always_utf8          = FALSE;
 static gboolean   has_unicode_filename = FALSE;
 
-static GOptionEntry entries[] =
+static GOptionEntry mainoptions[] =
 {
   { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
     N_("Write output to FILE"), N_("FILE") },
-  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
-    N_("String to use as delimiter (TAB by default)"), N_("STRING") },
-  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-    N_("Don't show header"), NULL },
-  { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
-    N_("Show legacy filename instead of unicode"), NULL },
-  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-    N_("Always show file names in UTF-8 encoding"), NULL },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
     N_("Output in XML format (-t, -n, -l, -8 options will have no effect)"), NULL },
   { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
@@ -71,6 +63,18 @@ static GOptionEntry entries[] =
   { NULL }
 };
 
+static GOptionEntry textoptions[] =
+{
+  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
+    N_("String to use as delimiter (TAB by default)"), N_("STRING") },
+  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
+    N_("Don't show header"), NULL },
+  { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
+    N_("Show legacy filename instead of unicode"), NULL },
+  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
+    N_("Always show file names in UTF-8 encoding"), NULL },
+  { NULL }
+};
 
 void print_header (FILE     *outfile,
                    char     *infilename,
@@ -242,11 +246,11 @@ int main (int argc, char **argv)
 {
   uint32_t recordsize, info2_version, dummy;
   void *buf;
-  gboolean retval;
   int readstatus;
   FILE *infile, *outfile;
   char *infilename = NULL;
   int output_format = OUTPUT_CSV;
+  GOptionGroup *textoptgroup;
 
   info_struct *record;
   uint64_t win_filetime;
@@ -271,16 +275,22 @@ int main (int argc, char **argv)
   textdomain ("rifiuti");
 
   context = g_option_context_new (_("FILE"));
-  g_option_context_add_main_entries (context, entries, "rifiuti");
-  retval = g_option_context_parse (context, &argc, &argv, &error);
-  g_option_context_free (context);
+  g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
-  if (error != NULL)
+  textoptgroup = g_option_group_new ("text", _("Plain text output options:"),
+                                     _("Show plain text output options"), NULL, NULL);
+  g_option_group_add_entries (textoptgroup, textoptions);
+  g_option_context_add_group (context, textoptgroup);
+
+  if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     fprintf (stderr, _("Error parsing argument: %s\n"), error->message);
     g_error_free (error);
+    g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
   }
+
+  g_option_context_free (context);
 
   if ( fileargs && g_strv_length (fileargs) > 1 )
   {
@@ -295,14 +305,10 @@ int main (int argc, char **argv)
 
     if (!infile)
     {
-      g_fprintf (stderr, "Error opening file '%s' for reading: %s\n", infilename, strerror (errno));
+      g_fprintf (stderr, _("Error opening file '%s' for reading: %s\n"), infilename, strerror (errno));
       g_free (infilename);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
-
-    g_free (fileargs[0]);
-    g_free (fileargs);
-
   }
   else
   {
@@ -315,7 +321,7 @@ int main (int argc, char **argv)
     outfile = fopen (outfilename, "wb");
     if (!outfile)
     {
-      g_fprintf (stderr, "Error opening file '%s' for writing: %s\n", outfilename, strerror (errno));
+      g_fprintf (stderr, _("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
@@ -323,7 +329,18 @@ int main (int argc, char **argv)
     outfile = stdout;
 
   if (xml_output)
+  {
+    if ( no_heading || show_legacy_filename || always_utf8 || (NULL != delim) )
+    {
+      fputs (_("Plain text format options can not be used in XML mode."), stderr);
+      exit (RIFIUTI_ERR_ARG);
+    }
     output_format = OUTPUT_XML;
+  }
+
+
+  if (NULL == delim)
+    delim = g_strndup ("\t", 2);
 
   /* check for valid info2 file header */
   if ( !fread (&info2_version, 4, 1, infile) )
