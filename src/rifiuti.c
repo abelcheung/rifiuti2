@@ -332,7 +332,7 @@ int main (int argc, char **argv)
   {
     if ( no_heading || show_legacy_filename || always_utf8 || (NULL != delim) )
     {
-      fputs (_("Plain text format options can not be used in XML mode."), stderr);
+      fputs (_("Plain text format options can not be used in XML mode.\n"), stderr);
       exit (RIFIUTI_ERR_ARG);
     }
     output_format = OUTPUT_XML;
