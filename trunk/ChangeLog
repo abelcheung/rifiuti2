@@ -1,5 +1,10 @@
 2007-09-24  Abel Cheung  <abelcheung@gmail.com>
 
+	* src/rifiuti-vista.dtd: New file.
+	* src/rifiuti-vista.c: Implement XML output mode.
+
+2007-09-24  Abel Cheung  <abelcheung@gmail.com>
+
 	* src/rifiuti-vista.c, src/rifiuti-vista.h:
 	- New version for Vista recycle bin analysis.
 

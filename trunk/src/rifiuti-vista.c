@@ -43,6 +43,7 @@
 static char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
+static int        output_format        = OUTPUT_CSV;
 static gboolean   no_heading           = FALSE;
 static gboolean   xml_output           = FALSE;
 
@@ -60,17 +61,22 @@ static GOptionEntry entries[] =
 };
 
 
-void print_header (FILE *outfile,
-                   int   output_format)
+void print_header (FILE *outfile)
 {
   switch (output_format)
   {
     case OUTPUT_CSV:
-      fputs ("INDEX_FILE\tDELETION_TIME\tSIZE\tFILE_PATH\n", outfile);
+      if (!no_heading)
+        fputs ("INDEX_FILE\tDELETION_TIME\tSIZE\tFILE_PATH\n", outfile);
       break;
 
     case OUTPUT_XML:
+      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<recyclebin>\n", outfile);
+      break;
+
     default:
+      /* something is wrong */
+      fputs (_("Unrecognized output format\n"), stderr);
       break;
   }
 }
@@ -151,7 +157,27 @@ void print_record (char *index_file,
   if (strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
     fprintf (stderr, _("Error formatting deletion date/time for file '%s'."), index_file);
 
-  fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime, record->filesize, record->utf8_filename);
+  switch (output_format)
+  {
+    case OUTPUT_CSV:
+      fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
+               record->filesize, record->utf8_filename);
+      break;
+
+    case OUTPUT_XML:
+      fputs ("  <record>\n", outfile);
+      fprintf (outfile, "    <indexfile>%s</indexfile>\n", index_file);
+      fprintf (outfile, "    <time>%s</time>\n", asctime);
+      fprintf (outfile, "    <size>%llu</size>\n", record->filesize);
+      fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
+      fputs ("  </record>\n", outfile);
+      break;
+
+    default:
+      /* something is wrong */
+      fputs (_("Unrecognized output format\n"), stderr);
+      break;
+  }
 
   fclose (inf);
 
@@ -160,12 +186,31 @@ void print_record (char *index_file,
 }
 
 
+void print_footer (FILE *outfile)
+{
+  switch (output_format)
+  {
+    case OUTPUT_CSV:
+      /* do nothing */
+      break;
+
+    case OUTPUT_XML:
+      fputs ("</recyclebin>\n", outfile);
+      break;
+
+    default:
+      /* something is wrong */
+      fputs (_("Unrecognized output format\n"), stderr);
+      break;
+  }
+}
+
+
 int main (int argc, char **argv)
 {
   FILE *outfile;
   GPtrArray *filelist;
   char *fname;
-  int output_format = OUTPUT_CSV;
   GPatternSpec *pattern1, *pattern2;
   int i;
 
@@ -205,6 +250,9 @@ int main (int argc, char **argv)
     }
   }
 
+
+  if (xml_output)
+    output_format = OUTPUT_XML;
 
   pattern1 = g_pattern_spec_new ("$I??????.*");
   pattern2 = g_pattern_spec_new ("$I??????");
@@ -253,10 +301,11 @@ int main (int argc, char **argv)
   g_pattern_spec_free (pattern1);
   g_pattern_spec_free (pattern2);
 
-  if (!no_heading)
-    print_header (outfile, output_format);
+  print_header (outfile);
 
   g_ptr_array_foreach (filelist, (GFunc) print_record, outfile);
+
+  print_footer (outfile);
 
   g_ptr_array_foreach (filelist, (GFunc) g_free, NULL);
 
