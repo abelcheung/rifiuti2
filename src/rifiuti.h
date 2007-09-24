@@ -5,17 +5,6 @@
 #include <time.h>
 
 enum {
-  RIFIUTI_ERR_ARG = 1,
-  RIFIUTI_ERR_OPEN_FILE,
-  RIFIUTI_ERR_BROKEN_FILE
-};
-
-enum {
-  OUTPUT_CSV,
-  OUTPUT_XML
-};
-
-enum {
   LEGACY_FILENAME_OFFSET  = 0x4,
   RECORD_INDEX_OFFSET     = 0x108,
   DRIVE_LETTER_OFFSET     = 0x10C,
@@ -24,7 +13,7 @@ enum {
   UNICODE_FILENAME_OFFSET = 0x11C
 };
 
-struct _info_struct {
+struct _rbin_struct {
   char      *legacy_filename;
   uint32_t   index;
   uint32_t   drive;
@@ -34,7 +23,7 @@ struct _info_struct {
   char      *utf8_filename;
 };
 
-typedef struct _info_struct info_struct;
+typedef struct _rbin_struct rbin_struct;
 
 #endif
 

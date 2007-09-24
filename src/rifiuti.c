@@ -37,6 +37,7 @@
 #include <glib/gi18n.h>
 #include <glib/gprintf.h>
 
+#include "utils.h"
 #include "rifiuti.h"
 
 
@@ -76,10 +77,10 @@ static GOptionEntry textoptions[] =
   { NULL }
 };
 
-void print_header (FILE     *outfile,
-                   char     *infilename,
-                   uint32_t  version,
-                   int       output_format)
+static void print_header (FILE     *outfile,
+                          char     *infilename,
+                          uint32_t  version,
+                          int       output_format)
 {
   char *shown_filename;
   GError *error = NULL;
@@ -124,9 +125,9 @@ void print_header (FILE     *outfile,
 }
 
 
-void print_record (FILE        *outfile,
-                   info_struct *record,
-                   int          output_format)
+static void print_record (FILE        *outfile,
+                          rbin_struct *record,
+                          int          output_format)
 {
   char *shown_filename;
   char ascdeltime[21];
@@ -139,7 +140,26 @@ void print_record (FILE        *outfile,
   {
     case OUTPUT_CSV:
 
-      if (has_unicode_filename && !show_legacy_filename)
+      if (always_utf8)
+      {
+        if (has_unicode_filename)
+          shown_filename = g_strdup (record->utf8_filename);
+        else
+        {
+          shown_filename = g_convert (record->legacy_filename, -1, "UTF-8", from_encoding,
+                                      NULL, NULL, &error);
+          if (error)
+          {
+            g_fprintf (stderr,
+                       _("Failed to convert file name from %s encoding to UTF-8 for record %u: %s\n"),
+                       from_encoding, record->index, error->message);
+            g_error_free (error);
+            g_free (shown_filename);
+            shown_filename = g_strdup (_("(Invalid file name)"));
+          }
+        }
+      }
+      else if (has_unicode_filename && !show_legacy_filename)
       {
         shown_filename = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, &error);
         if (error)
@@ -209,8 +229,8 @@ void print_record (FILE        *outfile,
 }
 
 
-void print_footer (FILE *outfile,
-                   int   output_format)
+static void print_footer (FILE *outfile,
+                          int   output_format)
 {
   switch (output_format)
   {
@@ -230,18 +250,6 @@ void print_footer (FILE *outfile,
 }
 
 
-time_t win_filetime_to_epoch (uint64_t win_filetime)
-{
-  uint64_t epoch;
-
-  /* I suppose millisecond resolution is not needed? -- Abel */
-  epoch = (win_filetime - 116444736000000000LL) / 10000000;
-
-  /* Will it go wrong? Hope not. */
-  return (time_t) (epoch & 0xFFFFFFFF);
-}
-
-
 int main (int argc, char **argv)
 {
   uint32_t recordsize, info2_version, dummy;
@@ -252,7 +260,7 @@ int main (int argc, char **argv)
   int output_format = OUTPUT_CSV;
   GOptionGroup *textoptgroup;
 
-  info_struct *record;
+  rbin_struct *record;
   uint64_t win_filetime;
   time_t file_epoch;
 
@@ -300,7 +308,8 @@ int main (int argc, char **argv)
 
   if (fileargs)
   {
-    infilename = strdup (fileargs[0]);
+    /* FIXME: insecure */
+    infilename = g_strdup (fileargs[0]);
     infile = fopen (infilename, "rb");
 
     if (!infile)
@@ -398,7 +407,7 @@ int main (int argc, char **argv)
   buf = g_malloc (recordsize);
   g_assert (buf);
 
-  record = g_malloc (sizeof (info_struct));
+  record = g_malloc (sizeof (rbin_struct));
   g_assert (record);
 
   while (1) {
