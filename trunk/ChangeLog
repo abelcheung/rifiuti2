@@ -1,3 +1,12 @@
+2007-09-22  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/utils.c, src/utils.h: New file.
+	* src/rifiuti.c:
+	- Move win_filetime_to_epoch() and shared enum's to utils.[ch].
+	- Forced UTF-8 output is implemented.
+	- print_header(), print_footer(), print_record() become private functions.
+	* src/Makefile: Cope for necessary changes.
+
 2007-09-21  Abel Cheung  <abelcheung@gmail.com>
 
 	* src/rifiuti.c:
