@@ -1,3 +1,7 @@
+2007-09-28  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/rifiuti.c: Some string changes.
+
 2007-09-24  Abel Cheung  <abelcheung@gmail.com>
 
 	* src/rifiuti-vista.dtd: New file.
