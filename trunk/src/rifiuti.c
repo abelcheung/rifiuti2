@@ -108,7 +108,7 @@ static void print_header (FILE     *outfile,
         fprintf (stderr, _("Error converting INFO2 file name to UTF-8: %s\n"),
                  error->message);
         g_free (shown_filename);
-        shown_filename = g_strdup (_("(Invalid UTF-8 file name)"));
+        shown_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
       }
 
       fprintf (outfile, "  <filename>%s</filename>\n", shown_filename);
@@ -151,11 +151,11 @@ static void print_record (FILE        *outfile,
           if (error)
           {
             g_fprintf (stderr,
-                       _("Failed to convert file name from %s encoding to UTF-8 for record %u: %s\n"),
+                       _("Error converting file name from %s encoding to UTF-8 for record %u: %s\n"),
                        from_encoding, record->index, error->message);
             g_error_free (error);
             g_free (shown_filename);
-            shown_filename = g_strdup (_("(Invalid file name)"));
+            shown_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
           }
         }
       }
@@ -165,11 +165,11 @@ static void print_record (FILE        *outfile,
         if (error)
         {
           g_fprintf (stderr,
-                     _("Error converting file name from UTF-8 to locale charset for record %u: %s\n"),
+                     _("Error converting file name from UTF-8 encoding to current one for record %u: %s\n"),
                      record->index, error->message);
           g_error_free (error);
           g_free (shown_filename);
-          shown_filename = g_strdup (record->legacy_filename);
+          shown_filename = g_strdup (_("(File name can not be represented in current character set)"));
         }
       }
       else
@@ -207,11 +207,11 @@ static void print_record (FILE        *outfile,
         if (error)
         {
           g_fprintf (stderr,
-                     _("Failed to convert file name from %s encoding to UTF-8 for record %u: %s\n"),
+                     _("Error converting file name from %s encoding to UTF-8 for record %u: %s\n"),
                      from_encoding, record->index, error->message);
           g_error_free (error);
           g_free (shown_filename);
-          shown_filename = g_strdup (_("(Invalid file name)"));
+          shown_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
         }
         fprintf (outfile, "    <path>%s</path>\n", shown_filename);
         g_free (shown_filename);
@@ -472,10 +472,10 @@ int main (int argc, char **argv)
       if (!record->utf8_filename)
       {
         g_fprintf (stderr,
-                 _("Error converting UCS2 filename to UTF-8 for record %d: %s"),
+                 _("Error converting file name from UCS2 encoding to UTF-8 for record %u: %s"),
                  record->index, error->message);
         g_error_free (error);
-        record->utf8_filename = g_strdup (_("(Broken UCS2 file name)"));
+        record->utf8_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
       }
     }
     else
