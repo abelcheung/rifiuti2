@@ -40,12 +40,13 @@
 #include "utils.h"
 #include "rifiuti-vista.h"
 
-static char      *delim                = NULL;
-static char     **fileargs             = NULL;
-static char      *outfilename          = NULL;
-static int        output_format        = OUTPUT_CSV;
-static gboolean   no_heading           = FALSE;
-static gboolean   xml_output           = FALSE;
+static char      *delim          = NULL;
+static char     **fileargs       = NULL;
+static char      *outfilename    = NULL;
+static int        output_format  = OUTPUT_CSV;
+static gboolean   no_heading     = FALSE;
+static gboolean   xml_output     = FALSE;
+static gboolean   always_utf8    = FALSE;
 
 static GOptionEntry entries[] =
 {
@@ -53,6 +54,8 @@ static GOptionEntry entries[] =
     N_("Write output to FILE"), N_("FILE") },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
     N_("Output in XML format"), NULL },
+  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
+    N_("Always output file name in UTF-8 encoding"), NULL },
   { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
     N_("Don't show header"), NULL },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
@@ -154,14 +157,26 @@ void print_record (char *index_file,
     return;
   }
 
-  if (strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
+  if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) )
     fprintf (stderr, _("Error formatting deletion date/time for file '%s'."), index_file);
 
   switch (output_format)
   {
     case OUTPUT_CSV:
-      fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
-               record->filesize, record->utf8_filename);
+      if (always_utf8)
+        fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
+                 record->filesize, record->utf8_filename);
+      else
+      {
+        char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
+        if (localname)
+          fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
+                   record->filesize, localname);
+        else
+          fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime, record->filesize,
+                   _("(File name not representable in current locale charset)"));
+        g_free (localname);
+      }
       break;
 
     case OUTPUT_XML:
@@ -253,6 +268,12 @@ int main (int argc, char **argv)
 
   if (xml_output)
     output_format = OUTPUT_XML;
+
+  if ( (OUTPUT_XML == output_format) && always_utf8 )
+  {
+    fprintf (stderr, _("--always-utf8 option can not be used in XML output mode.\n"));
+    exit (RIFIUTI_ERR_ARG);
+  }
 
   pattern1 = g_pattern_spec_new ("$I??????.*");
   pattern2 = g_pattern_spec_new ("$I??????");
