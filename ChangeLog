@@ -1,3 +1,9 @@
+2007-10-04  Abel Cheung  <abelcheung@gmail.com>
+
+	* AUTHORS, COPYING, INSTALL, NEWS, README, configure.ac, po,
+	  Makefile.am, src/Makefile.am:
+	- Add autotools structure.
+
 2007-09-28  Abel Cheung  <abelcheung@gmail.com>
 
 	* src/rifiuti-vista.c: Implement --always-utf8 option.
