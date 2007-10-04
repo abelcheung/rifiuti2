@@ -53,8 +53,8 @@ AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_STRUCT_TM
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
+dnl AC_TYPE_UINT32_T
+dnl AC_TYPE_UINT64_T
 
 dnl Checks for library functions.
 AC_FUNC_STRFTIME
