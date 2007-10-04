@@ -1,0 +1,50 @@
+==== What is rifiuti2? ====
+
+rifiuti2 is a rewrite of rifiuti, a great tool from Foundstone folks
+for analyzing Windows Recycle Bin INFO2 file. But since rifiuti
+(last updated 2004) is restricted to English version of Windows
+(fail to analyze any non-latin character), thus this rewrite.
+
+
+==== Features ====
+
+* Support Windows in any other languages
+* Support Vista and 2008 (no more uses INFO2 file)
+* Enables localization (translatable) using glib
+* More rigorous error checking
+* Supports output in XML format
+
+Newest features can be found in NEWS file.
+
+
+==== Compiling ====
+
+====== Requirement for Linux ======
+
+* Basic development toolchain (autoconf, automake, make, binutils, gcc...)
+* glib >= 2.6 (can be obtained from most Linux distributions).
+
+====== Requirement for Windows ======
+
+* Basic MinGW installation plus MSYS (please refer to www.mingw.org on
+  how to set up)
+* GTK+ runtime AND development packages from glade-win32 project
+  (http://gladewin32.sourceforge.net/).
+  _NEVER EVER_ use the one available from MinGW download repository,
+  that one is broken regarding display of non-english character.
+  The one from gimp-w32 can't be used as well since it only
+  contains runtime.
+
+Similar to all programs using autotools, it can be compiled quickly with
+this command:
+
+    ./configure && make
+
+Please refer to 'INSTALL' document on how to specify options for
+configure script.
+
+
+==== Supported platform ====
+
+So far it has been tested on Linux (Ubuntu feisty), Windows 2000 and XP.
+More compatibility fix for other architectures welcome.

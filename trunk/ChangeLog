@@ -1,5 +1,10 @@
 2007-10-04  Abel Cheung  <abelcheung@gmail.com>
 
+	* THANKS: New file.
+	* AUTHORS, NEWS, README: Updated.
+
+2007-10-04  Abel Cheung  <abelcheung@gmail.com>
+
 	* configure.ac:
 	- Disable AC_TYPE_UINT{32,64}_T check, not available in older
 	autoconf.
