@@ -18,9 +18,6 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
 
 AM_GLIB_GNU_GETTEXT
 
-localedir='${prefix}/${DATADIRNAME}/locale'
-AC_SUBST(localedir)
-
 
 dnl Checks for programs.
 AC_PROG_CC
