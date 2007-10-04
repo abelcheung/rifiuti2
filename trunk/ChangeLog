@@ -1,5 +1,10 @@
 2007-10-04  Abel Cheung  <abelcheung@gmail.com>
 
+	* configure.ac: Check for install prog as well.
+	* autogen.sh: Add file (thanks to sample from dia).
+
+2007-10-04  Abel Cheung  <abelcheung@gmail.com>
+
 	* AUTHORS, COPYING, INSTALL, NEWS, README, configure.ac, po,
 	  Makefile.am, src/Makefile.am:
 	- Add autotools structure.

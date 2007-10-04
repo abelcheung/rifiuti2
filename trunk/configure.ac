@@ -22,10 +22,14 @@ localedir='${prefix}/${DATADIRNAME}/locale'
 AC_SUBST(localedir)
 
 
-# Checks for programs.
+dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_INSTALL
 
-# Always use -Wall for gcc
+dnl Initialize maintainer mode
+AM_MAINTAINER_MODE
+
+dnl Always use -Wall for gcc
 changequote(,)dnl
 if test "x$GCC" = "xyes"; then
   case " $CFLAGS " in
@@ -36,7 +40,7 @@ fi
 changequote([,])dnl
 
 
-# Checks for libraries.
+dnl Checks for libraries.
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6.0, :,
   AC_MSG_ERROR([
         *** GLib not found. You can find it on ftp://ftp.gtk.org
@@ -46,16 +50,16 @@ AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
 
-# Checks for header files.
+dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 
-# Checks for typedefs, structures, and compiler characteristics.
+dnl Checks for typedefs, structures, and compiler characteristics.
 AC_STRUCT_TM
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
-# Checks for library functions.
+dnl Checks for library functions.
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([setlocale strerror])
 
