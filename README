@@ -32,7 +32,7 @@ Newest features can be found in NEWS file.
   (http://gladewin32.sourceforge.net/).
   _NEVER EVER_ use the one available from MinGW download repository,
   that one is broken regarding display of non-english character.
-  The one from gimp-w32 can't be used as well since it only
+  The one from gimp-w32 can't be used for compiling as well, since it only
   contains runtime.
 
 Similar to all programs using autotools, it can be compiled quickly with
