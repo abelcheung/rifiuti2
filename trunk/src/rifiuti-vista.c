@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -233,11 +235,10 @@ int main (int argc, char **argv)
   GOptionContext *context;
 
 
-  /* FIXME: remove hardcoded values */
   setlocale (LC_ALL, "");
-  bindtextdomain ("rifiuti", "/usr/share/locale");
-  bind_textdomain_codeset ("rifiuti", "UTF-8");
-  textdomain ("rifiuti");
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+  textdomain (GETTEXT_PACKAGE);
 
   context = g_option_context_new (_("[FILE_OR_DIR ...]"));
   g_option_context_add_main_entries (context, entries, "rifiuti");
