@@ -10,4 +10,7 @@ Currently source code and Windows binary packages are available. People are welc
 Two flavours are available, one with glib and another without.
 
   * The one with glib is for Windows without any GTK+ library installed. It only contains the bare minimum libraries necessary to make rifiuti2 work, without any localization files.
-  * The one without glib is for Windows having GTK+ library already installed. GTK+ for Windows has 2 variants: one from [http://gimp-win.sourceforge.net/ GIMP for Windows official site], and another from [http://gladewin32.sourceforge.net/ Glade for Windows project].
+  * The one without glib is for Windows having GTK+ library already installed. GTK+ for Windows has 2 variants:
+    # from [http://gimp-win.sourceforge.net/ GIMP for Windows official site]
+    # from [http://gladewin32.sourceforge.net/ Glade for Windows project]
+(actually there is a third one from [http://www.gimp.org/~tml/gimp/win32/downloads.html Tor Lillqvist], but that's very cumbersome to install, and not recommended for faint of heart)
