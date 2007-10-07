@@ -1,3 +1,8 @@
+2007-10-07  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/*.h: Include inttypes.h instead of stdint.h.
+	* src/rifiuti.c: Minor string changes.
+
 2007-10-05  Abel Cheung  <abelcheung@gmail.com>
 
 	* src/rifiuti.c, src/rifiuti-vista.c:
