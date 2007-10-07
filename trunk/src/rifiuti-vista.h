@@ -1,7 +1,7 @@
 #ifndef _RIFIUTI_VISTA_H
 #define _RIFIUTI_VISTA_H
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <time.h>
 
 enum {

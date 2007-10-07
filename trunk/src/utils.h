@@ -1,7 +1,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <time.h>
 
 enum {

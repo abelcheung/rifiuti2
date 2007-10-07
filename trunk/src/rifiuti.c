@@ -303,7 +303,7 @@ int main (int argc, char **argv)
 
   if ( fileargs && g_strv_length (fileargs) > 1 )
   {
-    fputs (_("ERROR: must provide no more than one file argument.\n"), stderr);
+    fputs (_("ERROR: Must specify exactly one INFO2 file as argument.\n"), stderr);
     exit (RIFIUTI_ERR_ARG);
   }
 
@@ -342,7 +342,7 @@ int main (int argc, char **argv)
   {
     if ( no_heading || show_legacy_filename || always_utf8 || (NULL != delim) )
     {
-      fputs (_("Plain text format options can not be used in XML mode.\n"), stderr);
+      fputs (_("ERROR: Plain text format options can not be used in XML mode.\n"), stderr);
       exit (RIFIUTI_ERR_ARG);
     }
     output_format = OUTPUT_XML;
@@ -368,7 +368,7 @@ int main (int argc, char **argv)
 
   if ( (4 == info2_version) && (OUTPUT_XML == output_format) && (!from_encoding) )
   {
-    fputs (_("ERROR: for Win98 INFO2 file, original file name encoding must be specified with --from-encoding option if output is in XML format.\n"), stderr);
+    fputs (_("ERROR: For Win98 INFO2 file, original file name encoding must be specified with --from-encoding option if output is in XML format.\n"), stderr);
     exit (RIFIUTI_ERR_ARG);
   }
 
@@ -393,7 +393,7 @@ int main (int argc, char **argv)
    */
   if ( recordsize > 65536 )
   {
-    fputs (_("Size of record of each deleted item is too large."), stderr);
+    fputs (_("ERROR: Size of record of each deleted item is too large."), stderr);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
