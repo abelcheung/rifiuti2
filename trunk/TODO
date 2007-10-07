@@ -1,3 +1,4 @@
 * Create test cases
 * Write manpage
 * Handle invalid UTF-16 code better
+* Check whether it works in Unices and big endian machines
