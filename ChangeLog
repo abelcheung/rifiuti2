@@ -1,5 +1,9 @@
 2007-10-07  Abel Cheung  <abelcheung@gmail.com>
 
+	* TODO: New file.
+
+2007-10-07  Abel Cheung  <abelcheung@gmail.com>
+
 	* src/*.h: Include inttypes.h instead of stdint.h.
 	* src/rifiuti.c: Minor string changes.
 
