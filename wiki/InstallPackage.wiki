@@ -1,0 +1,13 @@
+#summary Mention installation instruction of different kind of packages
+#labels Phase-Deploy,Featured
+
+= Installation =
+
+Currently source code and Windows binary packages are available. People are welcome to package it under various kinds of Unix and Linux distribution and submit them here. Please refer to `README` file on how to compile and install it under Linux/Unix.
+
+== Windows packages ==
+
+Two flavours are available, one with glib and another without.
+
+  * The one with glib is for Windows without any GTK+ library installed. It only contains the bare minimum libraries necessary to make rifiuti2 work, without any localization files.
+  * The one without glib is for Windows having GTK+ library already installed. GTK+ for Windows has 2 variants: one from [http://gimp-win.sourceforge.net/ GIMP for Windows official site], and another from [http://gladewin32.sourceforge.net/ Glade for Windows project].
