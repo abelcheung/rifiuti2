@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.52)
-AC_INIT(rifiuti2, 0.5.0, http://me.abelcheung.org/)
+AC_INIT(rifiuti2, 0.5.1, http://me.abelcheung.org/)
 AC_CONFIG_SRCDIR([src/rifiuti-vista.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME,AC_PACKAGE_VERSION)
