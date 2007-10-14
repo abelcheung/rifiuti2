@@ -1,0 +1,10 @@
+<!ELEMENT recyclebin (filename?, version, record*)>
+<!ELEMENT filename (#PCDATA)>
+<!ELEMENT version (#PCDATA)>
+
+<!ELEMENT record (index, time, emptied, size, path)>
+<!ELEMENT index (#PCDATA)>
+<!ELEMENT time (#PCDATA)>
+<!ELEMENT emptied (#PCDATA)>
+<!ELEMENT size (#PCDATA)>
+<!ELEMENT path (#PCDATA)>
