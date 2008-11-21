@@ -1,7 +1,7 @@
-.TH RIFIUTI2 1 "2008-11-21" "0.5.0" "MS Windows recycle bin forensic analysis tool"
+.TH RIFIUTI2 1 "2008-11-21" "0.5.0" "A MS Windows recycle bin analysis tool"
 
 .SH NAME
-rifiuti2 \- MS Windows recycle bin forensic analysis tool
+rifiuti2 \- A MS Windows recycle bin analysis tool
 
 .SH SYNOPSIS
 .B rifiuti
@@ -18,8 +18,17 @@ is a rewrite of
 .IR rifiuti ,
 a great tool from Foundstone folks for
 analyzing Windows Recycle Bin INFO2 file.  Analysis of Windows Recycle
-Bin is usually carried out during Windows computer forensics. Quoting
-from original Foundstone page:
+Bin is usually carried out during Windows computer forensics.
+.I Rifiuti2
+can extract file deletion time, original path and size of deleted
+files and whether the deleted files have been moved out from the
+recycle bin since they are trashed.
+.I Rifiuti2
+supports the INFO2 file format found in Windows up to Window XP and
+the new file format found in Vista, and the program is fully
+internationalized.
+
+Quoting from original Foundstone page:
 
 .RS
 Many computer crime investigations require the reconstruction of a
@@ -32,7 +41,7 @@ platforms and will execute on Windows (through Cygwin), Mac OS X,
 Linux, and *BSD platforms." 
 .RE
 
-But since 
+Since the original
 .I rifiuti
 (last updated 2004) is restricted to English version
 of Windows (fail to analyze any non-latin character), thus this
@@ -44,15 +53,7 @@ rewrite. But it does more:
   * More rigorous error checking
   * Supports output in XML format 
 
-rifiuti is a tool to extract valuable informations (from a forensics
-investigator point of view) from MS recycle bins info2 files.
-.PP
-It will extract the deleted time, original drive number, original path ans size
-of the deleted files found in the recycle bin.
-.PP
-
 .SH OPTIONS
-
 These are plain text output options:
 .TP
 .B \-t --delimiter=STRING
