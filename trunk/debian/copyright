@@ -1,0 +1,37 @@
+This package was debianized by Anthony Wong <ypwong@gmail.com> on
+Sun, 23 Nov 2008 00:01:49 +0800.
+
+It was downloaded from http://code.google.com/p/rifiuti2/
+
+Upstream Author:
+
+    Abel Cheung
+
+Copyright:
+
+    Copyright (C) 2003, by Keith J. Jones.
+    Copyright (C) 2007, Abel Cheung.
+
+License:
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted under the terms of the BSD License.
+
+    THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
+
+On Debian systems, the complete text of the BSD License can be
+found in `/usr/share/common-licenses/BSD'.
+
+
+The Debian packaging is (C) 2008, Anthony Wong <ypwong@gmail.com> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
