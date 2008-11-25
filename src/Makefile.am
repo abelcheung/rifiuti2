@@ -3,6 +3,7 @@ INCLUDES = -I$(srcdir) \
 	   -DLOCALEDIR=\"$(localedir)\"
 
 bin_PROGRAMS = rifiuti rifiuti-vista
+man_MANS = rifiuti.1
 
 rifiuti_SOURCES = \
 		  rifiuti.c \
@@ -20,4 +21,5 @@ rifiuti_vista_SOURCES = \
 
 rifiuti_vista_LDADD = $(GLIB_LIBS)
 
-
+install-data-hook:
+	cd $(DESTDIR)$(mandir)/man1 && $(LN_S) rifiuti.1 rifiuti-vista.1
