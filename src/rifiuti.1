@@ -12,6 +12,14 @@ rifiuti2 \- A MS Windows recycle bin analysis tool
 ]
 .I filename
 
+.B rifiuti-vista
+.RB [ " \-x " ]
+.RB [ " \-n8 " ]
+[
+.BI "\-o " outfile
+]
+.I file_or_directory
+
 .SH DESCRIPTION
 .I Rifiuti2
 is a rewrite of 
@@ -24,9 +32,14 @@ can extract file deletion time, original path and size of deleted
 files and whether the deleted files have been moved out from the
 recycle bin since they are trashed.
 .I Rifiuti2
-supports the INFO2 file format found in Windows up to Window XP and
+supports the INFO2 file format found in Windows up to Windows XP and
 the new file format found in Vista, and the program is fully
-internationalized.
+internationalized. If you need to analyse recycle bins of Windows
+Vista and Windows Server 2008, you should use the
+.I rifiuti-vista
+command, for other Windows platforms, you should use the
+.I rifiuti
+command.
 
 Quoting from original Foundstone page:
 
