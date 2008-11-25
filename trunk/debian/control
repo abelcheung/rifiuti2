@@ -1,6 +1,6 @@
 Source: rifiuti2
 Section: utils
-Priority: extra
+Priority: optional
 Maintainer: Anthony Wong <ypwong@gmail.com>
 Build-Depends: debhelper (>= 7), autotools-dev
 Standards-Version: 3.7.3
