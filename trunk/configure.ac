@@ -22,6 +22,7 @@ AM_GLIB_GNU_GETTEXT
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
+AC_PROG_LN_S
 
 dnl Initialize maintainer mode
 AM_MAINTAINER_MODE
