@@ -48,7 +48,7 @@ glib-gettextize --copy --force
 
 aclocal $ACLOCAL_FLAGS
 autoheader
-automake --add-missing $am_opt
+automake --add-missing --copy $am_opt
 autoconf
 
 cd $ORIGDIR
