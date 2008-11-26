@@ -2,7 +2,7 @@ Source: rifiuti2
 Section: utils
 Priority: optional
 Maintainer: Anthony Wong <ypwong@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev
+Build-Depends: debhelper (>= 7), autotools-dev, libglib2.0-dev (>= 2.6)
 Standards-Version: 3.7.3
 Homepage: http://code.google.com/p/rifiuti2/
 
