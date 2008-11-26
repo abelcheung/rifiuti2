@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recyclebin>
+  <filename>test_case/INFO2</filename>
+  <version>5</version>
+  <record>
+    <index>44</index>
+    <time>2008-10-28 23:53:42</time>
+    <emptied>N</emptied>
+    <size>4096</size>
+    <path>C:\Documents and Settings\All Users\Desktop\有道桌面词典.lnk</path>
+  </record>
+  <record>
+    <index>45</index>
+    <time>2008-11-03 23:01:59</time>
+    <emptied>N</emptied>
+    <size>4096</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\wongsir_url.txt</path>
+  </record>
+  <record>
+    <index>46</index>
+    <time>2008-11-06 17:20:58</time>
+    <emptied>N</emptied>
+    <size>2912256</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\dd-wrt.v24_mini_wrt54g.bin</path>
+  </record>
+  <record>
+    <index>47</index>
+    <time>2008-11-13 20:08:39</time>
+    <emptied>N</emptied>
+    <size>765952</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\theme\.svn</path>
+  </record>
+  <record>
+    <index>48</index>
+    <time>2008-11-13 20:11:33</time>
+    <emptied>N</emptied>
+    <size>5812224</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\Config Client</path>
+  </record>
+  <record>
+    <index>49</index>
+    <time>2008-11-13 20:11:36</time>
+    <emptied>N</emptied>
+    <size>1847296</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\Config Client.7z</path>
+  </record>
+  <record>
+    <index>50</index>
+    <time>2008-11-19 12:42:04</time>
+    <emptied>N</emptied>
+    <size>4096</size>
+    <path>C:\Documents and Settings\All Users\Desktop\Wireshark.lnk</path>
+  </record>
+  <record>
+    <index>57</index>
+    <time>2008-11-19 13:07:15</time>
+    <emptied>N</emptied>
+    <size>2727936</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline.rar</path>
+  </record>
+  <record>
+    <index>64</index>
+    <time>2008-11-19 13:07:35</time>
+    <emptied>Y</emptied>
+    <size>2727936</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline</path>
+  </record>
+  <record>
+    <index>65</index>
+    <time>2008-11-19 13:17:12</time>
+    <emptied>N</emptied>
+    <size>4096</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\360保险箱.lnk</path>
+  </record>
+  <record>
+    <index>66</index>
+    <time>2008-11-19 13:21:37</time>
+    <emptied>N</emptied>
+    <size>2732032</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\gdb</path>
+  </record>
+  <record>
+    <index>67</index>
+    <time>2008-11-19 13:21:37</time>
+    <emptied>N</emptied>
+    <size>2723840</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\gdb.zip</path>
+  </record>
+  <record>
+    <index>68</index>
+    <time>2008-11-19 19:34:23</time>
+    <emptied>N</emptied>
+    <size>0</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\recovered files</path>
+  </record>
+  <record>
+    <index>69</index>
+    <time>2008-11-20 02:51:45</time>
+    <emptied>N</emptied>
+    <size>2727936</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline</path>
+  </record>
+  <record>
+    <index>70</index>
+    <time>2008-11-20 02:51:45</time>
+    <emptied>N</emptied>
+    <size>5169152</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup(2).exe</path>
+  </record>
+  <record>
+    <index>71</index>
+    <time>2008-11-20 02:51:45</time>
+    <emptied>N</emptied>
+    <size>5169152</size>
+    <path>C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup.exe</path>
+  </record>
+</recyclebin>
