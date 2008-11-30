@@ -5,6 +5,8 @@ INCLUDES = -I$(srcdir) \
 bin_PROGRAMS = rifiuti rifiuti-vista
 man_MANS = rifiuti.1
 
+EXTRA_DIST = rifiuti.1
+
 rifiuti_SOURCES = \
 		  rifiuti.c \
 		  rifiuti.h \
