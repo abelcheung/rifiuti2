@@ -317,6 +317,10 @@ int main (int argc, char **argv)
         fname = g_strdup (fileargs[i]);
         g_ptr_array_add (filelist, fname);
       }
+      else
+      {
+	fprintf (stderr, _("'%s' is not regular file or directory, ignored.\n"), fileargs[i]);
+      }
     }
   }
 

@@ -1,3 +1,9 @@
+2008-11-30  Abel Cheung  <abelcheung@gmail.com>
+
+	* src/rifiuti-vista.c:
+	Warn if recycle bin contains any special file that shouldn't appear in
+	recycle bin at all.
+
 2008-11-25  Anthony Wong  <ypwong@gmail.com>
 
 	* test/: Add 3 test cases and results.
