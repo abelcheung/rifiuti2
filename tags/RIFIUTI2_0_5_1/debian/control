@@ -1,0 +1,21 @@
+Source: rifiuti2
+Section: utils
+Priority: optional
+Maintainer: Anthony Wong <ypwong@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev, libglib2.0-dev (>= 2.6)
+Standards-Version: 3.7.3
+Homepage: http://code.google.com/p/rifiuti2/
+
+Package: rifiuti2
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: A MS Windows recycle bin analysis tool
+ Rifiuti2 is a rewrite of rifiuti, a great tool from Foundstone folks
+ for analyzing Windows Recycle Bin INFO2 file. Analysis of Windows
+ Recycle Bin is usually carried out during Windows computer
+ forensics. Rifiuti2 can extract file deletion time, original path
+ and size of deleted files and whether the deleted files have been
+ moved out from the recycle bin since they are trashed. Rifiuti2
+ supports the INFO2 file format found in Windows up to Window XP
+ and the new file format found in Vista, and the program is fully
+ internationalized.
