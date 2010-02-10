@@ -3,7 +3,7 @@
 
 = Installation =
 
-Currently source code and Windows binary packages are available. People are welcome to package it under various kinds of Unix and Linux distribution and submit them here. Please refer to `README` file on how to compile and install it under Linux/Unix.
+Currently source code and Windows binary packages are available from this site. This package is also submitted upstream in Debian ([http://packages.debian.org/search?keywords=rifiuti2 Debian package]) and Ubuntu ([http://packages.ubuntu.com/search?keywords=rifiuti2 Ubuntu package]). For other kinds of Unix and Linux distributions, please refer to `README` file on how to compile and install.
 
 == Windows packages ==
 
