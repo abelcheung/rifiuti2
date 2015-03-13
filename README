@@ -8,13 +8,13 @@ for analyzing Windows Recycle Bin INFO2 file. But since rifiuti
 
 ==== Features ====
 
-* Support Windows in any other languages
-* Support Vista and 2008 (no more uses INFO2 file)
-* Enables localization (translatable) using glib
-* More rigorous error checking
-* Supports output in XML format
+* Supports legacy Windows file names in any character set supported by iconv(), as well as Unicode ones
+* Handles recycle bin up to Windows 8.1 (no more uses INFO2 file since Vista)
+* Preliminary guard against specially crafted recycle bin files
+* Supports output in XML format as well as original tab-delimited text
+* Enables localization (that is, translatable)
 
-Newest features can be found in NEWS file.
+Latest features can be found in NEWS file.
 
 
 ==== Compiling ====
@@ -46,5 +46,5 @@ configure script.
 
 ==== Supported platform ====
 
-So far it has been tested on Linux (Ubuntu feisty), Windows 2000 and XP.
+It has been tested on Linux (Ubuntu feisty), Windows 2000 and XP.
 More compatibility fix for other architectures welcome.
