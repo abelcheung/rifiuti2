@@ -166,16 +166,16 @@ void print_record (char *index_file,
   {
     case OUTPUT_CSV:
       if (always_utf8)
-        fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
+        fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime,
                  record->filesize, record->utf8_filename);
       else
       {
         char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
         if (localname)
-          fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime,
+          fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime,
                    record->filesize, localname);
         else
-          fprintf (outfile, "%s\t%s\t%llu\t%s\n", index_file, asctime, record->filesize,
+          fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime, record->filesize,
                    _("(File name not representable in current locale charset)"));
         g_free (localname);
       }
@@ -185,7 +185,7 @@ void print_record (char *index_file,
       fputs ("  <record>\n", outfile);
       fprintf (outfile, "    <indexfile>%s</indexfile>\n", index_file);
       fprintf (outfile, "    <time>%s</time>\n", asctime);
-      fprintf (outfile, "    <size>%llu</size>\n", record->filesize);
+      fprintf (outfile, "    <size>%10" PRIu64 "</size>\n", record->filesize);
       fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
       fputs ("  </record>\n", outfile);
       break;

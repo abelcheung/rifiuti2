@@ -7,10 +7,7 @@ AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME,AC_PACKAGE_VERSION)
 
 
-dnl
 dnl I18N
-dnl
-
 GETTEXT_PACKAGE=rifiuti
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
@@ -18,14 +15,24 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
 
 AM_GLIB_GNU_GETTEXT
 
-
-dnl Checks for programs.
+dnl Compiler checks.
 AC_PROG_CC
-AC_PROG_INSTALL
-AC_PROG_LN_S
+AC_PROG_CC_STDC
 
 dnl Initialize maintainer mode
 AM_MAINTAINER_MODE
+
+# https://www.varnish-cache.org/lists/pipermail/varnish-commit/2011-March/006315.html
+if test "x$ac_cv_prog_cc_c99" = "xno" || test "x$ac_cv_prog_cc_c99" = "x"; then
+  if test "x$ac_cv_c_compiler_gnu" = "yes"; then
+    CC="$CC -std=gnu99"
+    AC_RUN_IFELSE(
+		    [AC_LANG_PROGRAM([],[[ return 0; ]])], [],
+		    [AC_MSG_ERROR([Could not find a C99 compatible compiler])])
+  else
+    AC_MSG_ERROR([Could not find a C99 compatible compiler])
+  fi
+fi
 
 dnl Always use -Wall for gcc
 changequote(,)dnl
@@ -36,6 +43,11 @@ if test "x$GCC" = "xyes"; then
   esac
 fi
 changequote([,])dnl
+
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+AC_PROG_LN_S
 
 
 dnl Checks for libraries.
@@ -55,7 +67,7 @@ AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_STRUCT_TM
 dnl AC_TYPE_UINT32_T
-dnl AC_TYPE_UINT64_T
+AC_TYPE_UINT64_T
 
 dnl Checks for library functions.
 AC_FUNC_STRFTIME
