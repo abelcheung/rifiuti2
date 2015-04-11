@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, Abel Cheung.
+ * Copyright (C) 2007, 2015 Abel Cheung.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -352,5 +352,4 @@ int main (int argc, char **argv)
   exit (0);
 }
 
-/* vi: shiftwidth=2 expandtab tabstop=2
- */
+/* vim: set sw=2 expandtab ts=2 : */
