@@ -25,3 +25,5 @@ rifiuti_vista_LDADD = $(GLIB_LIBS)
 
 install-data-hook:
 	cd $(DESTDIR)$(mandir)/man1 && $(LN_S) rifiuti.1 rifiuti-vista.1
+
+-include $(top_srcdir)/git.mk
