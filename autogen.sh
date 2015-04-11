@@ -66,7 +66,7 @@ printerr() {
     echo "$@" >&2
 }
 
-conf_flags="--enable-maintainer-mode"
+conf_flags=
 if test x$NOCONFIGURE = x; then
     if [ "$#" = 0 ]; then
       printerr "**Warning**: I am going to run \`configure' with no arguments."
