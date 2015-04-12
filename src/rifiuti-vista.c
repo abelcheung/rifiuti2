@@ -103,12 +103,11 @@ rbin_struct *get_record_data (FILE     *inf,
   /*
    * In rare cases, the size of index file is 543 bytes versus (normal) 544 bytes.
    * In such occasion file size only occupies 56 bit, not 64 bit as it ought to be.
-   * Actually this 56-bit file size is very likely misleading.
+   * Actually this 56-bit file size is very likely wrong after all. Probably some
+   * bug inside Windows. This is observed during deletion of dd.exe from Forensic
+   * Acquisition Utilities by George M. Garner Jr.
    */
-  if (erraneous)
-    fread (&record->filesize, 7, 1, inf);
-  else
-    fread (&record->filesize, 8, 1, inf);
+  fread (&record->filesize, (erraneous?7:8), 1, inf);
 
   fread (&win_filetime, 8, 1, inf);
   file_epoch = win_filetime_to_epoch (win_filetime);
@@ -149,7 +148,7 @@ void print_record (char *index_file,
 
   if ( filestat.st_size == 0x220 )
     record = get_record_data (inf, FALSE);
-  else if ( filestat.st_size == 0x21F ) /* rare, and looks like a bug */
+  else if ( filestat.st_size == 0x21F ) /* see get_record_data() comment */
     record = get_record_data (inf, TRUE);
   else
   {
