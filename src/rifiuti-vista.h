@@ -33,12 +33,18 @@
 #include <inttypes.h>
 #include <time.h>
 
+enum {
+  FORMAT_VISTA = 1ULL,
+  FORMAT_WIN10
+};
+
 /* Path length is hardcoded as PATH_MAX (260 char) before Windows 10,
  * and become variable afterwards
  */
 #define WIN_PATH_MAX 0x104
 
 struct _rbin_struct {
+  uint64_t   version;
   uint64_t   filesize;
   struct tm *filetime;
   char      *utf8_filename;

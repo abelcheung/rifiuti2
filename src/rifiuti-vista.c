@@ -87,18 +87,48 @@ void print_header (FILE *outfile)
 }
 
 
+/* Check if index file has sufficient amount of data for reading */
+gboolean validate_index_file (FILE   *inf,
+                              off_t   size)
+{
+  uint64_t version;
+  uint32_t namelength;
+
+  g_return_val_if_fail ((size > 0x18), FALSE);
+
+  rewind (inf);
+  fread (&version, 8, 1, inf);
+
+  switch (version)
+  {
+    case FORMAT_VISTA:
+      return ((size == 0x21F) || (size == 0x220));
+
+    case FORMAT_WIN10:
+      g_return_val_if_fail ((size > 0x1C), FALSE);
+      fseek (inf, 0x18, SEEK_SET);
+      fread (&namelength, 4, 1, inf);
+      return (size == (0x1C + namelength * 2));
+
+    default:
+      return FALSE;
+  }
+}
+
+
 rbin_struct *get_record_data (FILE     *inf,
+                              uint64_t  version,
                               gboolean  erraneous)
 {
-  uint64_t version, win_filetime;
+  uint64_t     win_filetime;
   rbin_struct *record;
-  time_t file_epoch;
-  gunichar2 ucs2_filename[WIN_PATH_MAX+1];
-  GError *error = NULL;
+  time_t       file_epoch;
+  gunichar2   *ucs2_filename;
+  GError      *error = NULL;
+  uint32_t     namelength;
 
   record = g_malloc0 (sizeof (rbin_struct));
-
-  fread (&version, 8, 1, inf); /* useless for now */
+  record->version = version;
 
   /*
    * In rare cases, the size of index file is 543 bytes versus (normal) 544 bytes.
@@ -109,19 +139,34 @@ rbin_struct *get_record_data (FILE     *inf,
    */
   fread (&record->filesize, (erraneous?7:8), 1, inf);
 
+  /* File deletion time */
   fread (&win_filetime, 8, 1, inf);
   file_epoch = win_filetime_to_epoch (win_filetime);
   record->filetime = localtime (&file_epoch);
 
-  fread (&ucs2_filename, 2, WIN_PATH_MAX, inf);
+  switch (version)
+  {
+    case FORMAT_VISTA:
+      namelength = (uint32_t)WIN_PATH_MAX;
+      break;
 
-  record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *)ucs2_filename, -1, NULL, NULL, &error);
+    case FORMAT_WIN10:
+      fread (&namelength, 4, 1, inf);
+      break;
+  }
+
+  /* One extra char for safety, though path should have already been null terminated */
+  ucs2_filename = g_malloc0 (2 * (namelength + 1));
+  fread (ucs2_filename, (size_t)namelength, 2, inf);
+
+  record->utf8_filename = g_utf16_to_utf8 (ucs2_filename, -1, NULL, NULL, &error);
 
   if (error) {
-    fprintf (stderr, _("Error converting file name to UTF-8 encoding: %s\n"), error->message);
+    g_warning (_("Error converting file name to UTF-8 encoding: %s\n"), error->message);
     g_error_free (error);
   }
 
+  g_free (ucs2_filename);
   return record;
 }
 
@@ -129,51 +174,76 @@ rbin_struct *get_record_data (FILE     *inf,
 void print_record (char *index_file,
                    FILE *outfile)
 {
-  FILE *inf;
+  FILE        *inf;
   rbin_struct *record;
-  char asctime[21];
-  struct stat filestat;
+  char         asctime[21];
+  uint64_t     version;
+
+  /* Glib doc is lying. GStatBuf not available until 2.25. */
+  /* Maybe consider using GIO in future. */
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  struct _stat32 st;
+#else
+  struct stat  st;
+#endif
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {
-    g_fprintf (stderr, _("Error opening '%s' for reading: %s\n"), index_file, strerror (errno));
+    g_warning (_("Error opening '%s' for reading: %s\n"), index_file, strerror (errno));
     return;
   }
 
-  if ( 0 != g_stat (index_file, &filestat) )
+  if ( 0 != g_stat (index_file, &st) )
   {
-    g_fprintf (stderr, _("Error in stat() of file '%s': %s\n"), index_file, strerror (errno));
+    g_warning (_("Error getting metadata of file '%s': %s\n"), index_file, strerror (errno));
     return;
   }
 
-  if ( filestat.st_size == 0x220 )
-    record = get_record_data (inf, FALSE);
-  else if ( filestat.st_size == 0x21F ) /* see get_record_data() comment */
-    record = get_record_data (inf, TRUE);
-  else
+  if ( !validate_index_file (inf, st.st_size) )
   {
-    fprintf (stderr, _("'%s' is probably not a recycle bin index file.\n"), index_file);
+    g_warning (_("Index file '%s' has incorrect size"), index_file);
     fclose (inf);
     return;
   }
 
-  if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) )
-    fprintf (stderr, _("Error formatting deletion date/time for file '%s'."), index_file);
+  rewind (inf);
+  fread (&version, 8, 1, inf);
+
+  switch (version)
+  {
+    case FORMAT_VISTA:
+      /* see get_record_data() comment on 2nd parameter */
+      record = get_record_data (inf, version, (st.st_size == 0x21F));
+      break;
+
+    case FORMAT_WIN10:
+      record = get_record_data (inf, version, FALSE);
+      break;
+
+    default:
+      g_warning ( "'%s' is not recognized as recycle bin index file.\n", index_file );
+      return;
+  }
+
+  if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
+    g_warning (_("Error formatting deletion date/time for file '%s'."), index_file);
+    g_strlcpy ((gchar*)record->filetime, "???", 4);
+  }
 
   switch (output_format)
   {
     case OUTPUT_CSV:
       if (always_utf8)
-        fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime,
+        fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime,
                  record->filesize, record->utf8_filename);
       else
       {
         char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
         if (localname)
-          fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime,
+          fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime,
                    record->filesize, localname);
         else
-          fprintf (outfile, "%s\t%s\t%10" PRIu64 "\t%s\n", index_file, asctime, record->filesize,
+          fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime, record->filesize,
                    _("(File name not representable in current locale charset)"));
         g_free (localname);
       }
@@ -183,7 +253,7 @@ void print_record (char *index_file,
       fputs ("  <record>\n", outfile);
       fprintf (outfile, "    <indexfile>%s</indexfile>\n", index_file);
       fprintf (outfile, "    <time>%s</time>\n", asctime);
-      fprintf (outfile, "    <size>%10" PRIu64 "</size>\n", record->filesize);
+      fprintf (outfile, "    <size>%" PRIu64 "</size>\n", record->filesize);
       fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
       fputs ("  </record>\n", outfile);
       break;
