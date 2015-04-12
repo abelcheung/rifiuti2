@@ -33,11 +33,10 @@
 #include <inttypes.h>
 #include <time.h>
 
-enum {
-  FILESIZE_OFFSET = 0x8,
-  FILETIME_OFFSET = 0x10,
-  FILENAME_OFFSET = 0x18
-};
+/* Path length is hardcoded as PATH_MAX (260 char) before Windows 10,
+ * and become variable afterwards
+ */
+#define WIN_PATH_MAX 0x104
 
 struct _rbin_struct {
   uint64_t   filesize;
