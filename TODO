@@ -1,4 +1,4 @@
-* Create test cases
-* Write manpage
+* Create proper test cases
+* Better documentation
 * Handle invalid UTF-16 code better
-* Check whether it works in Unices and big endian machines
+* More cross platform support (OSX, *BSD, etc)

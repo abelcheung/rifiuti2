@@ -5,22 +5,23 @@
 But since rifiuti (last updated 2004) is restricted to English version of Windows (fail to analyze any non-latin character), thus this rewrite. However it does more:
 
 * Supports legacy Windows file names in any character set supported by `iconv()`, as well as Unicode ones
-* Handles recycle bin up to Windows 8.1 (no more uses INFO2 file since Vista)
+* Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
 * Preliminary guard against specially crafted recycle bin files
 * Supports output in XML format as well as original tab-delimited text
-* Enables localization (that is, translatable)
 
 Latest features can be found in NEWS file.
 
 ###Usage
 
 Two command line programs are available, depending on relevant Windows recycle bin format:
-* (Win98, NT 4.x, XP, 2003) `rifiuti2` reads INFO2 file in `\RECYCLED` or `\RECYCLER` folder
-* (Vista to 8.1) `rifituti-vista` scans `\$Recycle.bin` folder
+* `rifiuti2`: Reads INFO2 file in `\RECYCLED` or `\RECYCLER` folder (Windows 98 to 2003)
+* `rifituti-vista`: Scans `\$Recycle.bin` folder (since Vista)
+
+Run `rifiuti --help-all` or `rifiuti-vista --help-all` for their corresponding command line options.
 
 ###Compiling
 
-Please refer to README file within the repository. **Warning**: the instruction was last updated 2008; it's getting old, and for MinGW32 only. There's no instruction and binary for MinGW64 yet, though it shouldn't be much different after basic environment setup is done (with 64bit version of GTK+ installed).
+Please refer to README file within the repository. **Warning**: Since 0.6.x, old [MinGW32](http://www.mingw.org/) would not be guaranteed to compile (project has become stagnant since 2012). Any future releases will be compiled on MinGW64 in case of Windows platform. For reference author is using [MSYS2](https://msys2.github.io/) as development platform.
 
 ###Availability
 
