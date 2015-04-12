@@ -19,9 +19,6 @@ dnl Compiler checks.
 AC_PROG_CC
 AC_PROG_CC_STDC
 
-dnl Initialize maintainer mode
-AM_MAINTAINER_MODE
-
 # https://www.varnish-cache.org/lists/pipermail/varnish-commit/2011-March/006315.html
 if test "x$ac_cv_prog_cc_c99" = "xno" || test "x$ac_cv_prog_cc_c99" = "x"; then
   if test "x$ac_cv_c_compiler_gnu" = "yes"; then
