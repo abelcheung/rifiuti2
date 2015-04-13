@@ -1,0 +1,13 @@
+language: c
+compiler: gcc
+branches:
+  only:
+    - master
+os:
+  - linux
+install:
+  - sudo apt-get update -qq && sudo apt-get install -qq libglib2.0-dev
+script:
+  - ./configure && make && sudo make install
+  - ./src/rifiuti test/INFO2_test1/test_case/INFO2 > /dev/null
+  - ./src/rifiuti-vista test/vista_test1/test_case/ > /dev/null

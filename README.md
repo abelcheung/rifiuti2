@@ -27,3 +27,6 @@ Please refer to README file within the repository. **Warning**: the instruction 
 Windows binaries, if applicable, would be officially provided here.
 
 For Linux, DEB format packages are available officially on Debian and Ubuntu. There are some third party RPM packages, such as from [CERT Linux Forensics Tools Repository](https://forensics.cert.org/)
+
+###Build status
+[![Build Status](https://travis-ci.org/abelcheung/rifiuti2.svg)](https://travis-ci.org/abelcheung/rifiuti2)
