@@ -3,9 +3,10 @@ Foundstone. Without their analysis on Windows Recycle Bin it is much
 more difficult to fully dissect it. Their elaborate white paper and
 original version of rifiuti are available from ODESSA project:
 
-http://odessa.sourceforge.net/
+	http://odessa.sourceforge.net/
 
 
 But there are more people to say thanks:
 
 Hilda Chan (Providing Chinese Vista Recycle Bin sample data)
+Anthony Wong <ypwong@gmail.com> (Providing manpage & original Debian packaging)
