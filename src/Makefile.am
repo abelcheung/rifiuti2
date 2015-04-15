@@ -1,6 +1,6 @@
-INCLUDES = -I$(srcdir) \
-	   $(GLIB_CFLAGS) \
-	   -DLOCALEDIR=\"$(localedir)\"
+AM_CPPFLAGS = -I$(srcdir) \
+	      $(GLIB_CFLAGS) \
+	      -DLOCALEDIR=\"$(localedir)\"
 
 bin_PROGRAMS = rifiuti rifiuti-vista
 man_MANS = rifiuti.1
