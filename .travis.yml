@@ -8,6 +8,6 @@ os:
 install:
   - sudo apt-get install -qq libglib2.0-dev
 script:
-  - autoreconf -f -i && ./configure && make && sudo make install
+  - ./autogen.sh && ./configure && make && sudo make install
 after_script:
   - make check
