@@ -8,7 +8,12 @@ AT_CHECK([
 		rm -rf foobar
 		$abs_top_builddir/src/rifiuti-vista foobar
 ], [2], [], [ignore])
+AT_CLEANUP
 
+AT_SETUP([Err on non-regular file])
+AT_KEYWORDS([file])
+AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [2], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [2], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([UTF-8 console/file output are equal])
