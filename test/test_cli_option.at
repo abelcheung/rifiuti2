@@ -31,3 +31,15 @@ _r2_check_option([rifiuti -x -t : $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti -x -n -8 $srcdir/samples/INFO2-empty],[1])
 AT_CLEANUP
 
+AT_SETUP([Err on no file args])
+AT_KEYWORDS([file option])
+dnl AT_CHECK([$abs_top_builddir/src/rifiuti -8], [1], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista -8], [1], [], [ignore])
+AT_CLEANUP
+
+AT_SETUP([Err on multiple file args])
+AT_KEYWORDS([file option])
+AT_CHECK([$abs_top_builddir/src/rifiuti 1 2 3], [1], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista 1 2 3], [1], [], [ignore])
+AT_CLEANUP
+

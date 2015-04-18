@@ -296,8 +296,6 @@ int main (int argc, char **argv)
   FILE *outfile;
   GPtrArray *filelist;
   char *fname;
-  GPatternSpec *pattern1, *pattern2;
-  int i;
 
   GError *error = NULL;
   GOptionContext *context;
@@ -308,12 +306,12 @@ int main (int argc, char **argv)
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   textdomain (GETTEXT_PACKAGE);
 
-  context = g_option_context_new (_("[FILE_OR_DIR ...]"));
+  context = g_option_context_new (_("DIR_OR_FILE"));
   g_option_context_add_main_entries (context, entries, "rifiuti");
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    fprintf (stderr, _("Error parsing argument: %s\n"), error->message);
+    g_warning (_("Error parsing argument: %s\n"), error->message);
     g_error_free (error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -321,79 +319,94 @@ int main (int argc, char **argv)
 
   g_option_context_free (context);
 
-
-  if (!outfilename)
-    outfile = stdout;
-  else
+  if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
-    outfile = g_fopen (outfilename, "wb");
-    if (!outfile)
-    {
-      g_fprintf (stderr, _("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
-      exit (RIFIUTI_ERR_OPEN_FILE);
-    }
-  }
-
-
-  if (xml_output)
-    output_format = OUTPUT_XML;
-
-  if ( (OUTPUT_XML == output_format) && always_utf8 )
-  {
-    fprintf (stderr, _("--always-utf8 option can not be used in XML output mode.\n"));
+    g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, or one such index file, as argument."));
     exit (RIFIUTI_ERR_ARG);
   }
 
-  pattern1 = g_pattern_spec_new ("$I??????.*");
-  pattern2 = g_pattern_spec_new ("$I??????");
+  if ( outfilename && !( outfile = g_fopen (outfilename, "wb") ) )
+  {
+    g_critical (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+  else
+    outfile = stdout;
+
+  if (xml_output)
+  {
+    output_format = OUTPUT_XML;
+
+    if ( no_heading || always_utf8 )
+    {
+      g_warning (_("Plain text format options can not be used in XML mode.\n"));
+      exit (RIFIUTI_ERR_ARG);
+    }
+  }
+
   filelist = g_ptr_array_new ();
   
-  if (!fileargs)
+  if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
   {
-    fname = g_strndup ("-", 2);
+    /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
+    GDir         *dir;
+    char         *direntry;
+    gboolean      appenddir = TRUE;
+    GPatternSpec *pattern1, *pattern2;
+
+    if (NULL == (dir = g_dir_open (fileargs[0], 0, &error)))
+    {
+      g_critical (_("Error opening directory '%s': %s\n"), fileargs[0], error->message);
+      g_error_free (error);
+      exit (RIFIUTI_ERR_OPEN_FILE);
+    }
+
+    {
+      char *dir = g_path_get_dirname (fileargs[0]);
+      if ( !strcmp (dir, ".") )
+        appenddir = FALSE;
+      g_free (dir);
+    }
+
+    pattern1 = g_pattern_spec_new ("$I??????.*");
+    pattern2 = g_pattern_spec_new ("$I??????");
+
+    while ( (direntry = (char *) g_dir_read_name (dir)) != NULL )
+    {
+      if ( !g_pattern_match_string (pattern1, direntry) &&
+           !g_pattern_match_string (pattern2, direntry) )
+        continue;
+      /* special case: don't append "./" if it is reading current directory */
+      if (appenddir)
+        fname = g_build_filename (fileargs[0], direntry, NULL);
+      else
+        fname = g_strdup (direntry);
+
+      g_ptr_array_add (filelist, fname);
+    }
+
+    g_dir_close (dir);
+
+    g_pattern_spec_free (pattern1);
+    g_pattern_spec_free (pattern2);
+
+    if (filelist->len == 0)
+    {
+      g_critical (_("No file with name pattern \"$Ixxxxxx.xxx\" exists in directory. Is it really a $Recycle.bin directory?"));
+      g_ptr_array_free (filelist, FALSE);
+      exit (RIFIUTI_ERR_OPEN_FILE);
+    }
+  }
+  else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+  {
+    fname = g_strdup (fileargs[0]);
     g_ptr_array_add (filelist, fname);
   }
   else
   {
-    for (i = 0; i < g_strv_length (fileargs); i++)
-    {
-      if (g_file_test (fileargs[i], G_FILE_TEST_IS_DIR))
-      {
-        GDir *dir;
-        char *direntry;
-
-        if (NULL == (dir = g_dir_open (fileargs[i], 0, &error)))
-        {
-          g_fprintf (stderr, _("Error opening directory '%s': %s\n"), fileargs[i], error->message);
-          g_error_free (error);
-          continue;
-        }
-
-        while ( (direntry = (char *) g_dir_read_name (dir)) != NULL )
-        {
-          if ( !g_pattern_match_string (pattern1, direntry) &&
-               !g_pattern_match_string (pattern2, direntry) )
-            continue;
-          fname = g_build_filename (fileargs[i], direntry, NULL);
-          g_ptr_array_add (filelist, fname);
-        }
-
-        g_dir_close (dir);
-      }
-      else if (g_file_test (fileargs[i], G_FILE_TEST_IS_REGULAR))
-      {
-        fname = g_strdup (fileargs[i]);
-        g_ptr_array_add (filelist, fname);
-      }
-      else
-      {
-	fprintf (stderr, _("'%s' is not regular file or directory, ignored.\n"), fileargs[i]);
-      }
-    }
+    g_critical (_("'%s' is not a regular file or directory.\n"), fileargs[0]);
+    exit (RIFIUTI_ERR_OPEN_FILE);
   }
-
-  g_pattern_spec_free (pattern1);
-  g_pattern_spec_free (pattern2);
 
   print_header (outfile);
 
@@ -402,14 +415,12 @@ int main (int argc, char **argv)
   print_footer (outfile);
 
   g_ptr_array_foreach (filelist, (GFunc) g_free, NULL);
-
   g_ptr_array_free (filelist, TRUE);
 
   if (outfile != stdout)
     fclose (outfile);
 
-  if (fileargs)
-    g_strfreev (fileargs);
+  g_strfreev (fileargs);
 
   if (outfilename)
     g_free (outfilename);
