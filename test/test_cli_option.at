@@ -1,0 +1,33 @@
+m4_defun([_r2_check_option],
+         [AT_CHECK([$abs_top_builddir/src/$1], [$2],
+                   [ignore], [ignore])])
+
+AT_SETUP([Short Options])
+AT_KEYWORDS([option])
+_r2_check_option([rifiuti -h])
+_r2_check_option([rifiuti -t : -l -n -8 $srcdir/samples/INFO2-empty])
+_r2_check_option([rifiuti-vista -h])
+_r2_check_option([rifiuti-vista -n -8 $srcdir/samples/dir-sample1/])
+AT_CLEANUP
+
+AT_SETUP([Long Options])
+AT_KEYWORDS([option])
+_r2_check_option([rifiuti --help-all])
+_r2_check_option([rifiuti --delimiter=: --no-heading --always-utf8 $srcdir/samples/INFO2-empty])
+_r2_check_option([rifiuti-vista --help-all])
+_r2_check_option([rifiuti-vista --always-utf8 --no-heading $srcdir/samples/dir-sample1/])
+AT_CLEANUP
+
+AT_SETUP([Invalid options])
+AT_KEYWORDS([option])
+_r2_check_option([rifiuti --invalid-option],[1])
+_r2_check_option([rifiuti-vista --invalid-option],[1])
+AT_CLEANUP
+
+AT_SETUP([Wrong combinations])
+AT_KEYWORDS([option])
+_r2_check_option([rifiuti -x -l $srcdir/samples/INFO2-empty],[1])
+_r2_check_option([rifiuti -x -t : $srcdir/samples/INFO2-empty],[1])
+_r2_check_option([rifiuti -x -n -8 $srcdir/samples/INFO2-empty],[1])
+AT_CLEANUP
+

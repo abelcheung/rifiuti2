@@ -1,16 +1,18 @@
 AT_INIT
 
+AT_COPYRIGHT([Copyright (c) 2015, Abel Cheung])
+
 AT_BANNER([Command Line Options])
+m4_include([test_cli_option.at])
 
-AT_SETUP([Command Line Options])
-AT_KEYWORDS([option])
-AT_CHECK([$abs_top_builddir/src/rifiuti --help],,[ignore],[ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti -8 $srcdir/INFO2_test2/test_case/INFO2],,
-		[ignore],[ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti --invalid-option],1,[ignore],[ignore])
+AT_BANNER([Basic Read/Write Check])
+m4_include([test_read_write.at])
 
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista --help],,[ignore],[ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista -8 $srcdir/vista_test1/test_case/],,
-		[ignore],[ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista --invalid-option],1,[ignore],[ignore])
-AT_CLEANUP
+AT_BANNER([Parsing INFO2])
+m4_include([test_parse_info2.at])
+
+AT_BANNER([Parsing $Recycle.bin folder])
+m4_include([test_parse_dir.at])
+
+AT_BANNER([XML Validation])
+m4_include([test_xml.at])

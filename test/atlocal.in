@@ -1,0 +1,5 @@
+# -*- shell-script -*-
+# @configure_input@
+# Configurable variable values for Autoconf test suite.
+
+no_xmllint="test x@XMLLINT@ = x"

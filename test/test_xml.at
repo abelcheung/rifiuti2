@@ -1,0 +1,24 @@
+AT_SETUP([INFO2: XML validation])
+AT_KEYWORDS([info2 xml])
+AT_SKIP_IF([${no_xmllint}])
+AT_CHECK([$abs_top_builddir/src/rifiuti -x $srcdir/samples/INFO2-sample1 | xmllint --noout -],,[],[])
+AT_CLEANUP
+
+AT_SETUP([INFO2: DTD validation])
+AT_KEYWORDS([info2 xml])
+AT_SKIP_IF([${no_xmllint}])
+AT_CHECK([$abs_top_builddir/src/rifiuti -x $srcdir/samples/INFO2-sample1 | xmllint --noout --dtdvalid $srcdir/info2.dtd -],,[ignore],[ignore])
+AT_CLEANUP
+
+AT_SETUP([$Recycle.bin: XML validation])
+AT_KEYWORDS([recycledir xml])
+AT_SKIP_IF([${no_xmllint}])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista -x $srcdir/samples/dir-sample1 | xmllint --noout -],,[],[])
+AT_CLEANUP
+
+AT_SETUP([$Recycle.bin: DTD validation])
+AT_KEYWORDS([recycledir xml])
+AT_SKIP_IF([${no_xmllint}])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista -x $srcdir/samples/dir-sample1 | xmllint --noout --dtdvalid $srcdir/recycledir.dtd -],,[ignore],[ignore])
+AT_CLEANUP
+

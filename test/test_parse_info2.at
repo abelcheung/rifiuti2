@@ -1,0 +1,13 @@
+AT_SETUP([Empty INFO2])
+AT_KEYWORDS([info2])
+AT_CHECK([$abs_top_builddir/src/rifiuti -n -8 $srcdir/samples/INFO2-empty],, [], [])
+AT_CLEANUP
+
+AT_SETUP([INFO2 Sample 1])
+AT_KEYWORDS([info2])
+AT_CHECK([
+		cp $srcdir/samples/INFO2-sample1.txt expout
+		$abs_top_builddir/src/rifiuti -n -8 $srcdir/samples/INFO2-sample1
+],, [expout], [])
+AT_CLEANUP
+

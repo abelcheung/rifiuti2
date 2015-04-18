@@ -1,0 +1,29 @@
+AT_SETUP([Bail out on non-existent input])
+AT_KEYWORDS([file])
+AT_CHECK([
+		rm -rf foobar
+		$abs_top_builddir/src/rifiuti -n foobar
+], [2], [], [ignore])
+
+dnl Program need to be modified, old design decisions need to change
+dnl AT_CHECK([
+dnl		rm -rf foobar
+dnl		$abs_top_builddir/src/rifiuti-vista foobar
+dnl ], [2], [], [ignore])
+
+AT_CLEANUP
+
+AT_SETUP([UTF-8 console/file output are equal])
+AT_KEYWORDS([file])
+AT_CHECK([
+		$abs_top_builddir/src/rifiuti -8 -o expout $srcdir/samples/INFO2-sample1
+		$abs_top_builddir/src/rifiuti -8 $srcdir/samples/INFO2-sample1
+],, [expout], [])
+
+dnl Program need to be modified, old design decisions need to change
+dnl AT_CHECK([
+dnl		$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
+dnl		$abs_top_builddir/src/rifiuti-vista -8 $srcdir/samples/dir-sample1
+dnl ],, [expout], [])
+
+AT_CLEANUP
