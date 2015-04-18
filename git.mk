@@ -281,6 +281,7 @@ $(srcdir)/.gitignore: Makefile.am $(top_srcdir)/git.mk
 			"*.bak" \
 			"*~" \
 			".*.sw[nop]" \
+			".*.un~" \
 			".dirstamp" \
 		; do echo "/$$x"; done; \
 	} | \

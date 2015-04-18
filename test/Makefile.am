@@ -79,4 +79,6 @@ DISTCLEANFILES = atconfig atlocal
 CLEANFILES = testsuite.log
 MAINTAINERCLEANFILES = testsuite $(srcdir)/package.m4
 
+GITIGNOREFILES = testsuite.dir
+
 -include $(top_srcdir)/git.mk
