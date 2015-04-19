@@ -29,6 +29,8 @@ AT_KEYWORDS([option])
 _r2_check_option([rifiuti -x -l $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti -x -t : $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti -x -n -8 $srcdir/samples/INFO2-empty],[1])
+_r2_check_option([rifiuti-vista -x -8 $srcdir/samples/dir-sample1],[1])
+_r2_check_option([rifiuti-vista -x -n $srcdir/samples/dir-sample1],[1])
 AT_CLEANUP
 
 AT_SETUP([Err on no file args])
