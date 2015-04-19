@@ -41,8 +41,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 TESTSUITE = $(srcdir)/testsuite
 
 EXTRA_DIST = \
-	     info2.dtd            \
-	     recycledir.dtd       \
+	     rifiuti.dtd          \
 	     samples              \
 	     $(srcdir)/package.m4 \
 	     testsuite.at         \

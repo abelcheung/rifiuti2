@@ -1,0 +1,15 @@
+<!ELEMENT recyclebin (filename, record*)>
+<!ATTLIST recyclebin
+	format	(file | dir) #REQUIRED
+	version	NMTOKEN	#REQUIRED
+>
+<!ELEMENT filename (#PCDATA)>
+
+<!ELEMENT record (path)>
+<!ATTLIST record
+	index	CDATA	#REQUIRED
+	time	CDATA	#REQUIRED
+	emptied	(Y | N)	#IMPLIED
+	size	NMTOKEN	#REQUIRED
+>
+<!ELEMENT path (#PCDATA)>

@@ -1,8 +1,0 @@
-<!ELEMENT recyclebin (version?, record*)>
-<!ELEMENT version (#PCDATA)>
-
-<!ELEMENT record (indexfile, time, size, path)>
-<!ELEMENT indexfile (#PCDATA)>
-<!ELEMENT time (#PCDATA)>
-<!ELEMENT size (#PCDATA)>
-<!ELEMENT path (#PCDATA)>
