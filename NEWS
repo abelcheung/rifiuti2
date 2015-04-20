@@ -1,8 +1,11 @@
 ==== rifiuti2 0.6.0 ====
 * Windows 10 recycle bin support
+* Bug fix for Win98 INFO2 file support
 * Vista version behavior change:
   - No more accepts multiple file arguments
   - Invalid file or dir now treated as fatal error
+* INFO2 version behavior change:
+  - No more accepts standard input as input data
 
 ==== rifiuti2 0.5.1 ====
 * New manpage
