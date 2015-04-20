@@ -295,7 +295,7 @@ int main (int argc, char **argv)
 
   g_option_context_free (context);
 
-  if ( fileargs && g_strv_length (fileargs) > 1 )
+  if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
     g_warning (_("Must specify exactly one INFO2 file as argument."));
     exit (RIFIUTI_ERR_ARG);
