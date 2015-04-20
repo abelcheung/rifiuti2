@@ -355,10 +355,13 @@ int main (int argc, char **argv)
     exit (RIFIUTI_ERR_ARG);
   }
 
-  if ( outfilename && !( outfile = g_fopen (outfilename, "wb") ) )
+  if (outfilename)
   {
-    g_critical (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
-    exit (RIFIUTI_ERR_OPEN_FILE);
+    outfile = g_fopen (outfilename, "wb");
+    if (NULL == outfile) {
+      g_critical (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
+      exit (RIFIUTI_ERR_OPEN_FILE);
+    }
   }
   else
     outfile = stdout;
