@@ -50,7 +50,7 @@ dnl For test suite
 AC_CHECK_PROG([XMLLINT],[xmllint],[xmllint])
 
 dnl Checks for libraries.
-PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6.0, :,
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.16.0, :,
   AC_MSG_ERROR([
         *** GLib not found. You can find it on ftp://ftp.gtk.org
         *** Errors follow:

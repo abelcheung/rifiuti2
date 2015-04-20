@@ -19,7 +19,6 @@ AT_CLEANUP
 
 AT_SETUP([$Recycle.bin: DTD validation])
 AT_KEYWORDS([recycledir xml])
-AT_XFAIL_IF([true])
 AT_SKIP_IF([${no_xmllint}])
 AT_CHECK([$abs_top_builddir/src/rifiuti-vista -x $srcdir/samples/dir-sample1 | xmllint --noout --dtdvalid $srcdir/rifiuti.dtd -],,[ignore],[ignore])
 AT_CLEANUP

@@ -60,30 +60,59 @@ static GOptionEntry entries[] =
     N_("Always output file name in UTF-8 encoding"), NULL },
   { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
     N_("Don't show header"), NULL },
+  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
+    N_("String to use as delimiter (TAB by default)"), N_("STRING") },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("File names"), NULL },
   { NULL }
 };
 
 
-void print_header (FILE *outfile)
+void print_header (FILE *outfile,
+                   char *infilename)
 {
+  char *shown_filename, *utf8_filename;
+  GError *error = NULL;
+
+  if (g_path_is_absolute (infilename))
+    utf8_filename = g_filename_display_basename (infilename);
+  else
+    utf8_filename = g_filename_display_name (infilename);
+
   switch (output_format)
   {
     case OUTPUT_CSV:
       if (!no_heading)
-        fputs ("INDEX_FILE\tDELETION_TIME\tSIZE\tFILE_PATH\n", outfile);
+      {
+        shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
+        if (error)
+        {
+          g_warning (_("Error converting path name to display: %s\n"), error->message);
+          g_free (shown_filename);
+          shown_filename = g_strdup (_("(File name not representable in current language)"));
+        }
+
+        fprintf (outfile, _("Recycle bin file/dir: '%s'\n"), shown_filename);
+        fprintf (outfile, _("Version: %u\n\n"), 0);  /* to be implemented in future */
+        fprintf (outfile, _("Index%sDeleted Time%sSize%sPath\n"), delim, delim, delim);
+
+        g_free (shown_filename);
+      }
       break;
 
     case OUTPUT_XML:
-      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<recyclebin>\n", outfile);
+      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
+      fprintf (outfile, "<recyclebin format=\"dir\" version=\"%u\">\n", 0); /* to be implemented */
+      fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
       break;
 
     default:
-      /* something is wrong */
-      fputs (_("Unrecognized output format\n"), stderr);
+      g_free (utf8_filename);
+      g_return_if_reached();
       break;
   }
+
+  g_free (utf8_filename);
 }
 
 
@@ -177,6 +206,7 @@ void print_record (char *index_file,
   FILE        *inf;
   rbin_struct *record;
   char         asctime[21];
+  char        *basename;
   uint64_t     version;
 
   /* Glib doc is lying. GStatBuf not available until 2.25. */
@@ -230,42 +260,43 @@ void print_record (char *index_file,
     g_strlcpy ((gchar*)record->filetime, "???", 4);
   }
 
+  basename = g_path_get_basename (index_file);
+
   switch (output_format)
   {
     case OUTPUT_CSV:
       if (always_utf8)
-        fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime,
-                 record->filesize, record->utf8_filename);
+        fprintf (outfile, "%s%s%s%s%" PRIu64 "%s%s\n",
+            basename, delim, asctime, delim,
+            record->filesize, delim, record->utf8_filename);
       else
       {
         char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
-        if (localname)
-          fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime,
-                   record->filesize, localname);
-        else
-          fprintf (outfile, "%s\t%s\t%" PRIu64 "\t%s\n", index_file, asctime, record->filesize,
-                   _("(File name not representable in current locale charset)"));
+        if (!localname)
+          localname = g_strdup(_("(File name not representable in current language)"));
+
+        fprintf (outfile, "%s%s%s%s%" PRIu64 "%s%s\n",
+            basename, delim, asctime, delim,
+            record->filesize, delim, localname);
         g_free (localname);
       }
       break;
 
     case OUTPUT_XML:
-      fputs ("  <record>\n", outfile);
-      fprintf (outfile, "    <indexfile>%s</indexfile>\n", index_file);
-      fprintf (outfile, "    <time>%s</time>\n", asctime);
-      fprintf (outfile, "    <size>%" PRIu64 "</size>\n", record->filesize);
+      fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n",
+               basename, asctime, record->filesize);
       fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
       fputs ("  </record>\n", outfile);
       break;
 
     default:
-      /* something is wrong */
-      fputs (_("Unrecognized output format\n"), stderr);
+      g_warn_if_reached();
       break;
   }
 
   fclose (inf);
 
+  g_free (basename);
   g_free (record->utf8_filename);
   g_free (record);
 }
@@ -284,8 +315,7 @@ void print_footer (FILE *outfile)
       break;
 
     default:
-      /* something is wrong */
-      fputs (_("Unrecognized output format\n"), stderr);
+      g_return_if_reached();
       break;
   }
 }
@@ -337,12 +367,15 @@ int main (int argc, char **argv)
   {
     output_format = OUTPUT_XML;
 
-    if ( no_heading || always_utf8 )
+    if ( no_heading || always_utf8 || (NULL != delim) )
     {
       g_warning (_("Plain text format options can not be used in XML mode.\n"));
       exit (RIFIUTI_ERR_ARG);
     }
   }
+
+  if (NULL == delim)
+    delim = g_strndup ("\t", 2);
 
   filelist = g_ptr_array_new ();
   
@@ -351,7 +384,6 @@ int main (int argc, char **argv)
     /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
     GDir         *dir;
     char         *direntry;
-    gboolean      appenddir = TRUE;
     GPatternSpec *pattern1, *pattern2;
 
     if (NULL == (dir = g_dir_open (fileargs[0], 0, &error)))
@@ -359,13 +391,6 @@ int main (int argc, char **argv)
       g_critical (_("Error opening directory '%s': %s\n"), fileargs[0], error->message);
       g_error_free (error);
       exit (RIFIUTI_ERR_OPEN_FILE);
-    }
-
-    {
-      char *dir = g_path_get_dirname (fileargs[0]);
-      if ( !strcmp (dir, ".") )
-        appenddir = FALSE;
-      g_free (dir);
     }
 
     pattern1 = g_pattern_spec_new ("$I??????.*");
@@ -376,12 +401,7 @@ int main (int argc, char **argv)
       if ( !g_pattern_match_string (pattern1, direntry) &&
            !g_pattern_match_string (pattern2, direntry) )
         continue;
-      /* special case: don't append "./" if it is reading current directory */
-      if (appenddir)
-        fname = g_build_filename (fileargs[0], direntry, NULL);
-      else
-        fname = g_strdup (direntry);
-
+      fname = g_build_filename (fileargs[0], direntry, NULL);
       g_ptr_array_add (filelist, fname);
     }
 
@@ -408,7 +428,7 @@ int main (int argc, char **argv)
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
-  print_header (outfile);
+  print_header (outfile, fileargs[0]);
 
   g_ptr_array_foreach (filelist, (GFunc) print_record, outfile);
 
