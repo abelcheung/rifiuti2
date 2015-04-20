@@ -345,21 +345,15 @@ int main (int argc, char **argv)
   }
   info2_version = GUINT32_FROM_LE (info2_version);
 
-  if ( (info2_version != 4) && (info2_version != 5) )
+  if ( (info2_version != FORMAT_WIN98) && (info2_version != FORMAT_WIN2K) )
   {
-    g_critical (_("'%s' is not a valid INFO2 file.\n"), infilename);
+    g_critical (_("'%s' is not a supported INFO2 file.\n"), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
-  }
-
-  if ( (4 == info2_version) && (OUTPUT_XML == output_format) && (!from_encoding) )
-  {
-    g_critical (_("Can't guess file name encoding for Win98 INFO2 file, please specify with --from-encoding option if output is in XML format. Use an encoding supported by `iconv -l`."));
-    exit (RIFIUTI_ERR_ARG);
   }
 
   /*
    * Skip for now, though they probably mean number of files left in Recycle bin
-   * and last index, or some related number.
+   * and last index, or some related number. (for v5)
    */
   fread (&dummy, 4, 1, infile);
   fread (&dummy, 4, 1, infile);
@@ -371,36 +365,52 @@ int main (int argc, char **argv)
   }
   recordsize = GUINT32_FROM_LE (recordsize);
 
-  /*
-   * limit record item size to a ballpark figure; prevent corrupted file
-   * or specially crafted INFO2 file (EEEEEEK!) from causing rifiuti allocating
-   * too much memory
-   * FIXME recordsize should be restricted to either 0x118 (v4) or 0x320 (v5)
-   */
-  if ( recordsize > 65536 )
+  /* Recordsize should be restricted to either 0x118 (v4) or 0x320 (v5) */
+  switch (info2_version) 
   {
-    g_critical (_("Size of record of each deleted item is too large."));
-    exit (RIFIUTI_ERR_BROKEN_FILE);
+    case FORMAT_WIN98:
+      if (recordsize != UNICODE_FILENAME_OFFSET - LEGACY_FILENAME_OFFSET) /* 0x118 */
+      {
+        g_critical (_("Invalid record size for this version of INFO2"));
+        exit (RIFIUTI_ERR_BROKEN_FILE);
+      }
+      if ( (OUTPUT_XML == output_format) && (!from_encoding) )
+      {
+        g_critical (_("Can't guess file name encoding for Win98 INFO2 file, please specify with --from-encoding option if output is in XML format. Use an encoding supported by `iconv -l`."));
+        exit (RIFIUTI_ERR_ARG);
+      }
+      break;
+
+    case FORMAT_WIN2K:
+      if (recordsize != (2 * WIN_PATH_MAX + UNICODE_FILENAME_OFFSET -
+            LEGACY_FILENAME_OFFSET) ) /* 0x320 */
+      {
+        g_critical (_("Invalid record size for this version of INFO2"));
+        exit (RIFIUTI_ERR_BROKEN_FILE);
+      }
+      /* only version 5 contains UCS2 filename */
+      has_unicode_filename = TRUE;
+      break;
+
+    default:
+      g_return_val_if_reached (RIFIUTI_ERR_BROKEN_FILE);
   }
 
-  /* only version 5 contains UCS2 filename */
-  if ( (5 == info2_version) && (0x320 == recordsize) )
-    has_unicode_filename = TRUE;
+  /* purpose for these 4 bytes is unknown */
+  fread (&dummy, 4, 1, infile);
 
   print_header (outfile, infilename, info2_version, output_format);
 
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));
 
-  while (1)
+  while (TRUE)
   {
     readstatus = fread (buf, recordsize, 1, infile);
     if (readstatus != 1)
     {
       if ( !feof (infile) )
         g_warning (_("Failed to read next record: %s"), strerror (errno));
-
-      /* FIXME: Also warn if last read is not exactly 4 bytes? */
       break;
     }
 
