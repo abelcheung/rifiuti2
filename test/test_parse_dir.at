@@ -1,10 +1,21 @@
 AT_SETUP([$Recycle.bin Sample 1])
 AT_KEYWORDS([recycledir])
-AT_XFAIL_IF([true])dnl files are parsed in undefined order, need sorting
+dnl AT_XFAIL_IF([true])
+dnl dnl files are parsed in undefined order, need sorting
 AT_CHECK([
-		cp $srcdir/samples/dir-sample1.txt expout
-		cd $srcdir/samples/dir-sample1
-		$abs_top_builddir/src/rifiuti-vista -n -8 .
+		export LC_ALL=C
+		sort $srcdir/samples/dir-sample1.txt > expout
+		$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-sample1 | sort
 ],, [expout], [])
 AT_CLEANUP
 
+AT_SETUP([$Recycle.bin Sample 2])
+AT_KEYWORDS([recycledir])
+dnl AT_XFAIL_IF([true])
+dnl dnl files are parsed in undefined order, need sorting
+AT_CHECK([
+		export LC_ALL=C
+		sort $srcdir/samples/dir-win10-01.txt > expout
+		$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-win10-01 | sort
+],, [expout], [])
+AT_CLEANUP

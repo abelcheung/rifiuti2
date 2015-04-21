@@ -10,10 +10,21 @@ AT_CHECK([
 ], [2], [], [ignore])
 AT_CLEANUP
 
-AT_SETUP([Err on non-regular file])
+AT_SETUP([Err on non-regular file (Unix)])
 AT_KEYWORDS([file])
-AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [2], [], [ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [2], [], [ignore])
+AT_SKIP_IF([uname -s | grep -q 'MINGW'])
+AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [3], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [3], [], [ignore])
+AT_CLEANUP
+
+dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as regular files.
+dnl while INFO2 version can still detect nul input early, same case isn't true for 
+dnl Vista version -- it needs to read multiple files. FIXME
+AT_SETUP([Err on non-regular file (Windows)])
+AT_KEYWORDS([file])
+AT_SKIP_IF([uname -s | grep -vq 'MINGW'])
+AT_CHECK([$abs_top_builddir/src/rifiuti nul], [3], [], [ignore])
+dnl AT_CHECK([$abs_top_builddir/src/rifiuti-vista nul], [3], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([UTF-8 console/file output are equal])
@@ -23,7 +34,7 @@ AT_CHECK([
 		$abs_top_builddir/src/rifiuti -8 $srcdir/samples/INFO2-sample1
 ],, [expout], [])
 
-dnl Program need to be modified, old design decisions need to change
+dnl Files are parsed in undefined order, need sorting
 dnl AT_CHECK([
 dnl		$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
 dnl		$abs_top_builddir/src/rifiuti-vista -8 $srcdir/samples/dir-sample1

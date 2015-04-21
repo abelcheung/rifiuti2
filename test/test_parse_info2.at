@@ -19,3 +19,11 @@ AT_CHECK([
 ],, [expout], [])
 AT_CLEANUP
 
+AT_SETUP([Legacy path names])
+AT_KEYWORDS([info2])
+AT_CHECK([
+		cp $srcdir/samples/INFO2-sample1-alt.txt expout
+		$abs_top_builddir/src/rifiuti -l -n $srcdir/samples/INFO2-sample1
+],, [expout], [])
+AT_CLEANUP
+
