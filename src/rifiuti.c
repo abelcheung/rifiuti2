@@ -59,9 +59,10 @@ static GOptionEntry mainoptions[] =
   { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
     N_("Write output to FILE"), N_("FILE") },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-    N_("Output in XML format (-t, -n, -l, -8 options will have no effect)"), NULL },
+    N_("Output in XML format instead (plain text options disallowed in this case)"), NULL },
   { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
-    N_("The assumed file name character set when no unicode file name is present in INFO2 record (mandatory if INFO2 file is created by Win98, useless otherwise)"), N_("ENC") },
+    N_("The assumed file name character set when no unicode file name is present in INFO2 "
+       "record (mandatory if INFO2 file is created by Win98, ignored otherwise)"), N_("ENC") },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
@@ -101,7 +102,7 @@ static void print_header (FILE     *outfile,
         char *shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
         if (error)
         {
-          g_warning (_("Error converting path name to display: %s\n"), error->message);
+          g_warning (_("Error converting path name to display: %s"), error->message);
           g_free (shown_filename);
           shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
@@ -154,11 +155,11 @@ static void print_record (FILE        *outfile,
                                       NULL, NULL, &error);
           if (error)
           {
-            g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s\n"),
+            g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
                        from_encoding, record->index, error->message);
             g_error_free (error);
             g_free (shown_filename);
-            shown_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
+            shown_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
           }
         }
       }
@@ -167,11 +168,11 @@ static void print_record (FILE        *outfile,
         shown_filename = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, &error);
         if (error)
         {
-          g_warning (_("Error converting file name from UTF-8 encoding to current one for record %u: %s\n"),
+          g_warning (_("Error converting path name to display for record %u: %s"),
                      record->index, error->message);
           g_error_free (error);
           g_free (shown_filename);
-          shown_filename = g_strdup (_("(File name can not be represented in current character set)"));
+          shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
       }
       else
@@ -205,11 +206,11 @@ static void print_record (FILE        *outfile,
                                     NULL, NULL, &error);
         if (error)
         {
-          g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s\n"),
+          g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
                      from_encoding, record->index, error->message);
           g_error_free (error);
           g_free (shown_filename);
-          shown_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
+          shown_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
         }
         fprintf (outfile, "    <path>%s</path>\n", shown_filename);
         g_free (shown_filename);
@@ -273,21 +274,28 @@ int main (int argc, char **argv)
 
 
   setlocale (LC_ALL, "");
-  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  /* searching current dir might be more useful on e.g. Windows */
+  if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
+    bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  else
+    bindtextdomain (GETTEXT_PACKAGE, ".");
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   textdomain (GETTEXT_PACKAGE);
 
-  context = g_option_context_new (_("FILE"));
+  context = g_option_context_new (_("INFO2"));
+  g_option_context_set_summary (context,
+      _("Parse INFO2 file and dump recycle bin data."));
   g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
   textoptgroup = g_option_group_new ("text", _("Plain text output options:"),
                                      _("Show plain text output options"), NULL, NULL);
+  g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
   g_option_group_add_entries (textoptgroup, textoptions);
   g_option_context_add_group (context, textoptgroup);
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing argument: %s\n"), error->message);
+    g_warning (_("Error parsing argument: %s"), error->message);
     g_error_free (error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -298,13 +306,14 @@ int main (int argc, char **argv)
   if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
     g_warning (_("Must specify exactly one INFO2 file as argument."));
+    g_warning (_("Run program with '-?' option for more info."));
     exit (RIFIUTI_ERR_ARG);
   }
 
   infilename = g_strdup (fileargs[0]);
   if ( !( infile = g_fopen (infilename, "rb") ) )
   {
-    g_critical (_("Error opening file '%s' for reading: %s\n"), infilename, strerror (errno));
+    g_critical (_("Error opening file '%s' for reading: %s"), infilename, strerror (errno));
     g_free (infilename);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
@@ -314,7 +323,7 @@ int main (int argc, char **argv)
     outfile = g_fopen (outfilename, "wb");
     if (NULL == outfile)
     {
-      g_critical (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
+      g_critical (_("Error opening file '%s' for writing: %s"), outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
@@ -340,14 +349,14 @@ int main (int argc, char **argv)
   /* check for valid info2 file header */
   if ( !fread (&info2_version, 4, 1, infile) )
   {
-    g_critical (_("'%s' is not a valid INFO2 file.\n"), infilename);
+    g_critical (_("'%s' is not a valid INFO2 file."), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   info2_version = GUINT32_FROM_LE (info2_version);
 
   if ( (info2_version != FORMAT_WIN98) && (info2_version != FORMAT_WIN2K) )
   {
-    g_critical (_("'%s' is not a supported INFO2 file.\n"), infilename);
+    g_critical (_("'%s' is not a supported INFO2 file."), infilename);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
@@ -374,9 +383,13 @@ int main (int argc, char **argv)
         g_critical (_("Invalid record size for this version of INFO2"));
         exit (RIFIUTI_ERR_BROKEN_FILE);
       }
-      if ( (OUTPUT_XML == output_format) && (!from_encoding) )
+      if ( !from_encoding && ( (output_format == OUTPUT_XML) ||
+            ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
       {
-        g_critical (_("Can't guess file name encoding for Win98 INFO2 file, please specify with --from-encoding option if output is in XML format. Use an encoding supported by `iconv -l`."));
+        g_critical (_("This INFO2 file was produced on a Windows 98. Because unicode output "
+              "is requested, please specify its codepage with --from-encoding option, "
+              "such as\n\n\t%s\n\nif it contains accented latin characters. "
+              "Use an encoding supported by `iconv -l`."), "--from-encoding=CP1252");
         exit (RIFIUTI_ERR_ARG);
       }
       break;
@@ -435,7 +448,7 @@ int main (int argc, char **argv)
       if (record->drive > sizeof (driveletters) - 2)
       {
         record->drive = sizeof (driveletters) - 1;
-        g_warning (_("Invalid drive letter (0x%X) for record %u.\n"),
+        g_warning (_("Invalid drive letter (0x%X) for record %u."),
                    record->drive, record->index);
       }
 
@@ -464,7 +477,7 @@ int main (int argc, char **argv)
         g_warning (_("Error converting file name from UCS2 encoding to UTF-8 for record %u: %s"),
                    record->index, error->message);
         g_error_free (error);
-        record->utf8_filename = g_strdup (_("(File name can not be represented in UTF-8 encoding)"));
+        record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
       }
     }
     else

@@ -50,23 +50,27 @@ static gboolean   no_heading     = FALSE;
 static gboolean   xml_output     = FALSE;
 static gboolean   always_utf8    = FALSE;
 
-static GOptionEntry entries[] =
+static GOptionEntry mainoptions[] =
 {
   { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
     N_("Write output to FILE"), N_("FILE") },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-    N_("Output in XML format"), NULL },
-  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-    N_("Always output file name in UTF-8 encoding"), NULL },
-  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-    N_("Don't show header"), NULL },
-  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
-    N_("String to use as delimiter (TAB by default)"), N_("STRING") },
+    N_("Output in XML format instead (plain text options disallowed in this case)"), NULL },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("File names"), NULL },
   { NULL }
 };
 
+static GOptionEntry textoptions[] =
+{
+  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
+    N_("String to use as delimiter (TAB by default)"), N_("STRING") },
+  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
+    N_("Don't show header"), NULL },
+  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
+    N_("Always show file names in UTF-8 encoding"), NULL },
+  { NULL }
+};
 
 void print_header (FILE *outfile,
                    char *infilename)
@@ -87,7 +91,7 @@ void print_header (FILE *outfile,
         shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
         if (error)
         {
-          g_warning (_("Error converting path name to display: %s\n"), error->message);
+          g_warning (_("Error converting path name to display: %s"), error->message);
           g_free (shown_filename);
           shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
@@ -191,7 +195,7 @@ rbin_struct *get_record_data (FILE     *inf,
   record->utf8_filename = g_utf16_to_utf8 (ucs2_filename, -1, NULL, NULL, &error);
 
   if (error) {
-    g_warning (_("Error converting file name to UTF-8 encoding: %s\n"), error->message);
+    g_warning (_("Error converting file name to UTF-8 encoding: %s"), error->message);
     g_error_free (error);
   }
 
@@ -219,13 +223,13 @@ void print_record (char *index_file,
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {
-    g_warning (_("Error opening '%s' for reading: %s\n"), index_file, strerror (errno));
+    g_warning (_("Error opening '%s' for reading: %s"), index_file, strerror (errno));
     return;
   }
 
   if ( 0 != g_stat (index_file, &st) )
   {
-    g_warning (_("Error getting metadata of file '%s': %s\n"), index_file, strerror (errno));
+    g_warning (_("Error getting metadata of file '%s': %s"), index_file, strerror (errno));
     return;
   }
 
@@ -251,7 +255,7 @@ void print_record (char *index_file,
       break;
 
     default:
-      g_warning ( "'%s' is not recognized as recycle bin index file.\n", index_file );
+      g_warning ( "'%s' is not recognized as recycle bin index file.", index_file );
       return;
   }
 
@@ -329,19 +333,33 @@ int main (int argc, char **argv)
 
   GError *error = NULL;
   GOptionContext *context;
+  GOptionGroup *textoptgroup;
 
 
   setlocale (LC_ALL, "");
-  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  /* searching current dir might be more useful on e.g. Windows */
+  if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
+    bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  else
+    bindtextdomain (GETTEXT_PACKAGE, ".");
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   textdomain (GETTEXT_PACKAGE);
 
   context = g_option_context_new (_("DIR_OR_FILE"));
-  g_option_context_add_main_entries (context, entries, "rifiuti");
+  g_option_context_set_summary (context,
+      _("Parse index files in \\$Recycle.bin style folder and dump recycle bin data.\n"
+        "Can also dump a single index file."));
+  g_option_context_add_main_entries (context, mainoptions, "rifiuti");
+
+  textoptgroup = g_option_group_new ("text", _("Plain text output options:"),
+                                     _("Show plain text output options"), NULL, NULL);
+  g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
+  g_option_group_add_entries (textoptgroup, textoptions);
+  g_option_context_add_group (context, textoptgroup);
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing argument: %s\n"), error->message);
+    g_warning (_("Error parsing argument: %s"), error->message);
     g_error_free (error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -351,7 +369,9 @@ int main (int argc, char **argv)
 
   if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
-    g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, or one such index file, as argument."));
+    g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, "
+          "or one such index file, as argument."));
+    g_warning (_("Run program with '-?' option for more info."));
     exit (RIFIUTI_ERR_ARG);
   }
 
@@ -359,7 +379,7 @@ int main (int argc, char **argv)
   {
     outfile = g_fopen (outfilename, "wb");
     if (NULL == outfile) {
-      g_critical (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
+      g_critical (_("Error opening file '%s' for writing: %s"), outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
@@ -372,7 +392,7 @@ int main (int argc, char **argv)
 
     if ( no_heading || always_utf8 || (NULL != delim) )
     {
-      g_warning (_("Plain text format options can not be used in XML mode.\n"));
+      g_warning (_("Plain text format options can not be used in XML mode."));
       exit (RIFIUTI_ERR_ARG);
     }
   }
@@ -391,7 +411,7 @@ int main (int argc, char **argv)
 
     if (NULL == (dir = g_dir_open (fileargs[0], 0, &error)))
     {
-      g_critical (_("Error opening directory '%s': %s\n"), fileargs[0], error->message);
+      g_critical (_("Error opening directory '%s': %s"), fileargs[0], error->message);
       g_error_free (error);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
@@ -415,7 +435,8 @@ int main (int argc, char **argv)
 
     if (filelist->len == 0)
     {
-      g_critical (_("No file with name pattern \"$Ixxxxxx.xxx\" exists in directory. Is it really a $Recycle.bin directory?"));
+      g_critical (_("No files with name pattern \"$Ixxxxxx.xxx\" exists in directory. "
+            "Is it really a $Recycle.bin directory?"));
       g_ptr_array_free (filelist, FALSE);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
@@ -427,7 +448,7 @@ int main (int argc, char **argv)
   }
   else
   {
-    g_critical (_("'%s' is not a regular file or directory.\n"), fileargs[0]);
+    g_critical (_("'%s' is not a regular file or directory."), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
