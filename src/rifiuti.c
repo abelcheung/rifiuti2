@@ -253,7 +253,6 @@ int main (int argc, char **argv)
   void *buf;
   int readstatus;
   FILE *infile, *outfile;
-  char *infilename = NULL;
   int output_format = OUTPUT_CSV;
   GOptionGroup *textoptgroup;
 
@@ -310,14 +309,6 @@ int main (int argc, char **argv)
     exit (RIFIUTI_ERR_ARG);
   }
 
-  infilename = g_strdup (fileargs[0]);
-  if ( !( infile = g_fopen (infilename, "rb") ) )
-  {
-    g_critical (_("Error opening file '%s' for reading: %s"), infilename, strerror (errno));
-    g_free (infilename);
-    exit (RIFIUTI_ERR_OPEN_FILE);
-  }
-
   if (outfilename)
   {
     outfile = g_fopen (outfilename, "wb");
@@ -346,17 +337,33 @@ int main (int argc, char **argv)
 
   /* FIXME Verify INFO2 via separate routine */
 
+  if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
+  {
+    g_critical (_("'%s' des not exist."), fileargs[0]);
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+  else if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+  {
+    g_critical (_("'%s' is not a regular file."), fileargs[0]);
+    exit (RIFIUTI_ERR_BROKEN_FILE);
+  }
+  else if ( !( infile = g_fopen (fileargs[0], "rb") ) )
+  {
+    g_critical (_("Error opening file '%s' for reading: %s"), fileargs[0], strerror (errno));
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+
   /* check for valid info2 file header */
   if ( !fread (&info2_version, 4, 1, infile) )
   {
-    g_critical (_("'%s' is not a valid INFO2 file."), infilename);
+    g_critical (_("'%s' is not a valid INFO2 file."), fileargs[0]);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   info2_version = GUINT32_FROM_LE (info2_version);
 
   if ( (info2_version != FORMAT_WIN98) && (info2_version != FORMAT_WIN2K) )
   {
-    g_critical (_("'%s' is not a supported INFO2 file."), infilename);
+    g_critical (_("'%s' is not a supported INFO2 file."), fileargs[0]);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
@@ -369,7 +376,7 @@ int main (int argc, char **argv)
 
   if ( !fread (&recordsize, 4, 1, infile) )
   {
-    g_critical (_("'%s' is not a valid INFO2 file."), infilename);
+    g_critical (_("'%s' is not a valid INFO2 file."), fileargs[0]);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   recordsize = GUINT32_FROM_LE (recordsize);
@@ -412,7 +419,7 @@ int main (int argc, char **argv)
   /* purpose for these 4 bytes is unknown */
   fread (&dummy, 4, 1, infile);
 
-  print_header (outfile, infilename, info2_version, output_format);
+  print_header (outfile, fileargs[0], info2_version, output_format);
 
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));
@@ -499,7 +506,6 @@ int main (int argc, char **argv)
 
   g_free (record);
   g_free (buf);
-  g_free (infilename);
 
   exit (0);
 }

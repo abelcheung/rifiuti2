@@ -402,7 +402,12 @@ int main (int argc, char **argv)
 
   filelist = g_ptr_array_new ();
   
-  if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
+  if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
+  {
+    g_critical (_("'%s' des not exist."), fileargs[0]);
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+  else if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
   {
     /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
     GDir         *dir;
@@ -449,7 +454,7 @@ int main (int argc, char **argv)
   else
   {
     g_critical (_("'%s' is not a regular file or directory."), fileargs[0]);
-    exit (RIFIUTI_ERR_OPEN_FILE);
+    exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
   print_header (outfile, fileargs[0]);
