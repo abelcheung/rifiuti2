@@ -381,11 +381,11 @@ int main (int argc, char **argv)
   }
   recordsize = GUINT32_FROM_LE (recordsize);
 
-  /* Recordsize should be restricted to either 0x118 (v4) or 0x320 (v5) */
+  /* Recordsize should be restricted to either 280 (v4) or 800 bytes (v5) */
   switch (info2_version) 
   {
     case FORMAT_WIN98:
-      if (recordsize != UNICODE_FILENAME_OFFSET - LEGACY_FILENAME_OFFSET) /* 0x118 */
+      if (recordsize != VERSION4_RECORD_SIZE)
       {
         g_critical (_("Invalid record size for this version of INFO2"));
         exit (RIFIUTI_ERR_BROKEN_FILE);
@@ -402,13 +402,12 @@ int main (int argc, char **argv)
       break;
 
     case FORMAT_WIN2K:
-      if (recordsize != (2 * WIN_PATH_MAX + UNICODE_FILENAME_OFFSET -
-            LEGACY_FILENAME_OFFSET) ) /* 0x320 */
+      if (recordsize != VERSION5_RECORD_SIZE)
       {
         g_critical (_("Invalid record size for this version of INFO2"));
         exit (RIFIUTI_ERR_BROKEN_FILE);
       }
-      /* only version 5 contains UCS2 filename */
+      /* only version 5 contains UTF-16 filename */
       has_unicode_filename = TRUE;
       break;
 
@@ -476,12 +475,11 @@ int main (int argc, char **argv)
     if (has_unicode_filename)
     {
       record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-                                               (recordsize - UNICODE_FILENAME_OFFSET) / 2,
-                                               NULL, NULL, &error);
-      /* not checking error, since Windows <= 2000 may insert junk after UCS2 file name */
+                                               WIN_PATH_MAX, NULL, NULL, &error);
+      /* not checking error, since Windows <= 2000 may insert junk after UTF-16 file name */
       if (!record->utf8_filename)
       {
-        g_warning (_("Error converting file name from UCS2 encoding to UTF-8 for record %u: %s"),
+        g_warning (_("Error converting file name from UTF-16 encoding to UTF-8 for record %u: %s"),
                    record->index, error->message);
         g_error_free (error);
         record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));

@@ -44,6 +44,11 @@ enum {
   OUTPUT_XML
 };
 
+/* Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
+ * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
+ */
+#define WIN_PATH_MAX 0x104
+
 time_t win_filetime_to_epoch (uint64_t win_filetime);
 
 #endif

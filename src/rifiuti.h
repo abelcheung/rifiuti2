@@ -31,24 +31,23 @@
 #ifndef _RIFIUTI_H
 #define _RIFIUTI_H
 
-#include <inttypes.h>
-#include <time.h>
+#include "utils.h"
 
 enum {
   FORMAT_WIN98 = 4,
   FORMAT_WIN2K
 };
 
-#define WIN_PATH_MAX 0x104
+/* Following offsets are relative to start of each record */
+#define LEGACY_FILENAME_OFFSET  0x0
+#define RECORD_INDEX_OFFSET     WIN_PATH_MAX
+#define DRIVE_LETTER_OFFSET     ((WIN_PATH_MAX) + 4)
+#define FILETIME_OFFSET         ((WIN_PATH_MAX) + 8)
+#define FILESIZE_OFFSET         ((WIN_PATH_MAX) + 16)
+#define UNICODE_FILENAME_OFFSET ((WIN_PATH_MAX) + 20)
 
-enum {
-  LEGACY_FILENAME_OFFSET  = 0x0,
-  RECORD_INDEX_OFFSET     = 0x104,
-  DRIVE_LETTER_OFFSET     = 0x108,
-  FILETIME_OFFSET         = 0x10C,
-  FILESIZE_OFFSET         = 0x114,
-  UNICODE_FILENAME_OFFSET = 0x118
-};
+#define VERSION4_RECORD_SIZE    ((WIN_PATH_MAX) + 20)        /* 280 bytes */
+#define VERSION5_RECORD_SIZE    ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
 
 struct _rbin_struct {
   char      *legacy_filename;
