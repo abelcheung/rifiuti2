@@ -261,7 +261,7 @@ void print_record (char *index_file,
 
   if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
     g_warning (_("Error formatting deletion date/time for file '%s'."), index_file);
-    g_strlcpy ((gchar*)record->filetime, "???", 4);
+    strncpy ((char*)asctime, "???", 4);
   }
 
   basename = g_path_get_basename (index_file);
