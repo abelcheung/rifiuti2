@@ -48,6 +48,7 @@ static int        output_format  = OUTPUT_CSV;
 static gboolean   no_heading     = FALSE;
 static gboolean   xml_output     = FALSE;
 static gboolean   always_utf8    = FALSE;
+static gboolean   use_localtime  = FALSE;
 
 static GOptionEntry mainoptions[] =
 {
@@ -55,6 +56,8 @@ static GOptionEntry mainoptions[] =
     N_("Write output to FILE"), N_("FILE") },
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
     N_("Output in XML format instead (plain text options disallowed in this case)"), NULL },
+  { "localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
+    N_("Present deletion time in time zone of local system (default is UTC)"), NULL },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("File names"), NULL },
   { NULL }
@@ -174,7 +177,10 @@ rbin_struct *get_record_data (FILE     *inf,
   /* File deletion time */
   fread (&win_filetime, 8, 1, inf);
   file_epoch = win_filetime_to_epoch (win_filetime);
-  record->filetime = localtime (&file_epoch);
+  if (use_localtime)
+    record->filetime = localtime (&file_epoch);
+  else
+    record->filetime = gmtime (&file_epoch);
 
   switch (version)
   {

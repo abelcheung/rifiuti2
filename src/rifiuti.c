@@ -53,6 +53,7 @@ static gboolean   show_legacy_filename = FALSE;
 static gboolean   xml_output           = FALSE;
 static gboolean   always_utf8          = FALSE;
 static gboolean   has_unicode_filename = FALSE;
+static gboolean   use_localtime        = FALSE;
 
 static GOptionEntry mainoptions[] =
 {
@@ -63,6 +64,8 @@ static GOptionEntry mainoptions[] =
   { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
     N_("The assumed file name character set when no unicode file name is present in INFO2 "
        "record (mandatory if INFO2 file is created by Win98, ignored otherwise)"), N_("ENC") },
+  { "localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
+    N_("Present deletion time in time zone of local system (default is UTC)"), NULL },
   { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
@@ -470,8 +473,12 @@ int main (int argc, char **argv)
 
     memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
 
+  /* File deletion time */
     file_epoch = win_filetime_to_epoch (win_filetime);
-    record->filetime = localtime (&file_epoch);
+    if (use_localtime)
+      record->filetime = localtime (&file_epoch);
+    else
+      record->filetime = gmtime (&file_epoch);
 
     memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
     record->filesize = GUINT32_FROM_LE (record->filesize);

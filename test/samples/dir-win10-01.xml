@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <recyclebin format="dir" version="0">
   <filename>test/samples/dir-win10-01</filename>
-  <record index="$I7R52EG.txt" time="2015-04-05 01:24:09" size="14">
+  <record index="$I7R52EG.txt" time="2015-04-04 23:24:09" size="14">
     <path>C:\Temp\foobat.txt.txt</path>
   </record>
-  <record index="$IBBFODN" time="2015-04-08 07:19:35" size="7">
+  <record index="$IBBFODN" time="2015-04-07 23:19:35" size="7">
     <path>C:\Temp\𨳊𨶙閪邨鰂</path>
   </record>
-  <record index="$IDNLPD4.exe" time="2015-04-19 18:50:51" size="872448">
+  <record index="$IDNLPD4.exe" time="2015-04-19 10:50:51" size="872448">
     <path>C:\Temp\FAU\FAU.x86\dd.exe</path>
   </record>
-  <record index="$IHO61YT" time="2015-04-08 07:32:07" size="12884901888">
+  <record index="$IHO61YT" time="2015-04-07 23:32:07" size="12884901888">
     <path>C:\Temp\largesparsefile</path>
   </record>
-  <record index="$IKEGS1G" time="2015-04-05 01:19:52" size="0">
+  <record index="$IKEGS1G" time="2015-04-04 17:19:52" size="0">
     <path>C:\Users\tester\12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</path>
   </record>
-  <record index="$IQ7LAXT.png" time="2015-04-05 01:20:01" size="6455">
+  <record index="$IQ7LAXT.png" time="2015-04-04 17:20:01" size="6455">
     <path>C:\Users\tester\Pictures\web-canvas.png</path>
   </record>
-  <record index="$IROMPZ0.exe" time="2015-04-19 18:49:59" size="1761792">
+  <record index="$IROMPZ0.exe" time="2015-04-19 10:49:59" size="1761792">
     <path>C:\Temp\FAU\FAU.x64\dd.exe</path>
   </record>
 </recyclebin>
