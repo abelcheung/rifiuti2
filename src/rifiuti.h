@@ -38,6 +38,10 @@ enum {
   FORMAT_WIN2K
 };
 
+/* These offsets are relative to file start */
+#define RECORD_SIZE_OFFSET      12
+#define RECORD_START_OFFSET     20
+
 /* Following offsets are relative to start of each record */
 #define LEGACY_FILENAME_OFFSET  0x0
 #define RECORD_INDEX_OFFSET     WIN_PATH_MAX

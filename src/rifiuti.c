@@ -252,7 +252,7 @@ static int validate_index_file (FILE     *inf,
 {
   uint32_t dummy;
 
-  if (size < 20) /* empty INFO2 file has 20 bytes */
+  if (size < RECORD_START_OFFSET) /* empty INFO2 file has 20 bytes */
   {
     g_critical (_("This INFO2 file is truncated, or simply not an INFO2 file."));
     return RIFIUTI_ERR_BROKEN_FILE;
@@ -261,7 +261,7 @@ static int validate_index_file (FILE     *inf,
   fread (&dummy, 4, 1, inf);
   *info2_version = GUINT32_FROM_LE (dummy);
 
-  fseek (inf, 12, SEEK_SET);
+  fseek (inf, RECORD_SIZE_OFFSET, SEEK_SET);
   fread (&dummy, 4, 1, inf);
   *recordsize = GUINT32_FROM_LE (dummy);
 
@@ -426,7 +426,7 @@ int main (int argc, char **argv)
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));
 
-  fseek (infile, 20, SEEK_SET);
+  fseek (infile, RECORD_START_OFFSET, SEEK_SET);
   while (TRUE)
   {
     status = fread (buf, recordsize, 1, infile);
