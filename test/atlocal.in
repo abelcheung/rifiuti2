@@ -3,3 +3,4 @@
 # Configurable variable values for Autoconf test suite.
 
 has_xmllint="test x@XMLLINT@ != x"
+xmllint="@XMLLINT@"
