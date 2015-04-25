@@ -10,6 +10,7 @@ AM_INIT_AUTOMAKE
 
 dnl I18N
 GETTEXT_PACKAGE=rifiuti
+ALL_LINGUAS="`cat $srcdir/po/LINGUAS`"
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
   [Define the gettext package to be used])
