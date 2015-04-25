@@ -47,6 +47,7 @@ static char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
 static char      *from_encoding        = NULL;
+static int        output_format        = OUTPUT_CSV;
 static gboolean   no_heading           = FALSE;
 static gboolean   show_legacy_filename = FALSE;
 static gboolean   xml_output           = FALSE;
@@ -82,10 +83,9 @@ static GOptionEntry textoptions[] =
 
 static void print_header (FILE     *outfile,
                           char     *infilename,
-                          uint32_t  version,
-                          int       output_format)
+                          uint32_t  info2_version)
 {
-  char *utf8_filename;
+  char     *utf8_filename;
 
   if (g_path_is_absolute (infilename))
     utf8_filename = g_filename_display_basename (infilename);
@@ -107,7 +107,7 @@ static void print_header (FILE     *outfile,
         }
 
         fprintf (outfile, _("Recycle bin file: '%s'\n"), shown_filename);
-        fprintf (outfile, _("Version: %u\n\n"), version);
+        fprintf (outfile, _("Version: %u\n\n"), info2_version);
         fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath\n"), delim, delim, delim, delim);
         g_free (shown_filename);
       }
@@ -115,7 +115,7 @@ static void print_header (FILE     *outfile,
 
     case OUTPUT_XML:
       fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-      fprintf (outfile, "<recyclebin format=\"file\" version=\"%u\">\n", version);
+      fprintf (outfile, "<recyclebin format=\"file\" version=\"%u\">\n", info2_version);
       fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
 
       break;
@@ -130,8 +130,7 @@ static void print_header (FILE     *outfile,
 
 
 static void print_record (FILE        *outfile,
-                          rbin_struct *record,
-                          int          output_format)
+                          rbin_struct *record)
 {
   char *shown_filename;
   char ascdeltime[21];
@@ -226,8 +225,7 @@ static void print_record (FILE        *outfile,
 }
 
 
-static void print_footer (FILE *outfile,
-                          int   output_format)
+static void print_footer (FILE *outfile)
 {
   switch (output_format)
   {
@@ -245,19 +243,80 @@ static void print_footer (FILE *outfile,
   }
 }
 
+/* Check if index file has sufficient amount of data for reading */
+/* 0 = success, all other return status = error */
+static int validate_index_file (FILE     *inf,
+                                off_t     size,
+                                uint32_t *info2_version,
+                                uint32_t *recordsize)
+{
+  uint32_t dummy;
+
+  if (size < 20) /* empty INFO2 file has 20 bytes */
+  {
+    g_critical (_("This INFO2 file is truncated, or simply not an INFO2 file."));
+    return RIFIUTI_ERR_BROKEN_FILE;
+  }
+
+  fread (&dummy, 4, 1, inf);
+  *info2_version = GUINT32_FROM_LE (dummy);
+
+  fseek (inf, 12, SEEK_SET);
+  fread (&dummy, 4, 1, inf);
+  *recordsize = GUINT32_FROM_LE (dummy);
+
+  /* Recordsize should be restricted to either 280 (v4) or 800 bytes (v5) */
+  switch (*info2_version) 
+  {
+    case FORMAT_WIN98:
+      if (*recordsize != VERSION4_RECORD_SIZE)
+      {
+        g_critical (_("Invalid record size for this version of INFO2"));
+        return RIFIUTI_ERR_BROKEN_FILE;
+      }
+      if ( !from_encoding && ( (output_format == OUTPUT_XML) ||
+            ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
+      {
+        g_critical (_("This INFO2 file was produced on a Windows 98. Because unicode output "
+              "is requested, please specify its codepage with --from-encoding option, "
+              "such as\n\n\t%s\n\nif it contains accented latin characters. "
+              "Use an encoding supported by `iconv -l`."), "--from-encoding=CP1252");
+        return RIFIUTI_ERR_ARG;
+      }
+      break;
+
+    case FORMAT_WIN2K:
+      if (*recordsize != VERSION5_RECORD_SIZE)
+      {
+        g_critical (_("Invalid record size for this version of INFO2"));
+        return RIFIUTI_ERR_BROKEN_FILE;
+      }
+      /* only version 5 contains UTF-16 filename */
+      has_unicode_filename = TRUE;
+      break;
+
+    default:
+      g_critical (_("'%s' is not a supported INFO2 file."), fileargs[0]);
+      return RIFIUTI_ERR_BROKEN_FILE;
+  }
+  return 0;
+}
+
 
 int main (int argc, char **argv)
 {
-  uint32_t recordsize, info2_version, dummy;
-  void *buf;
-  int readstatus;
-  FILE *infile, *outfile;
-  int output_format = OUTPUT_CSV;
-  GOptionGroup *textoptgroup;
+  void           *buf;
+  FILE           *infile, *outfile;
+  int             status;
+  GOptionGroup   *textoptgroup;
+  GOptionContext *context;
+  GError         *error = NULL;
 
-  rbin_struct *record;
-  uint64_t win_filetime;
-  time_t file_epoch;
+  GStatBuf        st;
+  rbin_struct    *record;
+  uint32_t        recordsize, info2_version;
+  uint64_t        win_filetime;
+  time_t          file_epoch;
 
   unsigned char driveletters[28] =
   {
@@ -266,10 +325,6 @@ int main (int argc, char **argv)
     'O', 'P', 'Q', 'R', 'S', 'T', 'U',
     'V', 'W', 'X', 'Y', 'Z', '\\', '?'
   };
-
-  GError *error = NULL;
-  GOptionContext *context;
-
 
   setlocale (LC_ALL, "");
   /* searching current dir might be more useful on e.g. Windows */
@@ -334,98 +389,48 @@ int main (int argc, char **argv)
   if (NULL == delim)
     delim = g_strndup ("\t", 2);
 
-  /* FIXME Verify INFO2 via separate routine */
-
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
     g_critical (_("'%s' des not exist."), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
-  else if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+
+  if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
   {
     g_critical (_("'%s' is not a regular file."), fileargs[0]);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
-  else if ( !( infile = g_fopen (fileargs[0], "rb") ) )
+
+  if ( 0 != g_stat (fileargs[0], &st) )
+  {
+    g_warning (_("Error getting metadata of file '%s': %s"), fileargs[0], strerror (errno));
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+
+  if ( !( infile = g_fopen (fileargs[0], "rb") ) )
   {
     g_critical (_("Error opening file '%s' for reading: %s"), fileargs[0], strerror (errno));
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
-  /* check for valid info2 file header */
-  if ( !fread (&info2_version, 4, 1, infile) )
+  status = validate_index_file (infile, st.st_size, &info2_version, &recordsize);
+  if (0 != status)
   {
-    g_critical (_("'%s' is not a valid INFO2 file."), fileargs[0]);
-    exit (RIFIUTI_ERR_BROKEN_FILE);
-  }
-  info2_version = GUINT32_FROM_LE (info2_version);
-
-  if ( (info2_version != FORMAT_WIN98) && (info2_version != FORMAT_WIN2K) )
-  {
-    g_critical (_("'%s' is not a supported INFO2 file."), fileargs[0]);
-    exit (RIFIUTI_ERR_BROKEN_FILE);
+    fclose (infile);
+    exit (status);
   }
 
-  /*
-   * Skip for now, though they probably mean number of files left in Recycle bin
-   * and last index, or some related number. (for v5)
-   */
-  fread (&dummy, 4, 1, infile);
-  fread (&dummy, 4, 1, infile);
-
-  if ( !fread (&recordsize, 4, 1, infile) )
-  {
-    g_critical (_("'%s' is not a valid INFO2 file."), fileargs[0]);
-    exit (RIFIUTI_ERR_BROKEN_FILE);
-  }
-  recordsize = GUINT32_FROM_LE (recordsize);
-
-  /* Recordsize should be restricted to either 280 (v4) or 800 bytes (v5) */
-  switch (info2_version) 
-  {
-    case FORMAT_WIN98:
-      if (recordsize != VERSION4_RECORD_SIZE)
-      {
-        g_critical (_("Invalid record size for this version of INFO2"));
-        exit (RIFIUTI_ERR_BROKEN_FILE);
-      }
-      if ( !from_encoding && ( (output_format == OUTPUT_XML) ||
-            ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
-      {
-        g_critical (_("This INFO2 file was produced on a Windows 98. Because unicode output "
-              "is requested, please specify its codepage with --from-encoding option, "
-              "such as\n\n\t%s\n\nif it contains accented latin characters. "
-              "Use an encoding supported by `iconv -l`."), "--from-encoding=CP1252");
-        exit (RIFIUTI_ERR_ARG);
-      }
-      break;
-
-    case FORMAT_WIN2K:
-      if (recordsize != VERSION5_RECORD_SIZE)
-      {
-        g_critical (_("Invalid record size for this version of INFO2"));
-        exit (RIFIUTI_ERR_BROKEN_FILE);
-      }
-      /* only version 5 contains UTF-16 filename */
-      has_unicode_filename = TRUE;
-      break;
-
-    default:
-      g_return_val_if_reached (RIFIUTI_ERR_BROKEN_FILE);
-  }
-
-  /* purpose for these 4 bytes is unknown */
-  fread (&dummy, 4, 1, infile);
-
-  print_header (outfile, fileargs[0], info2_version, output_format);
+  rewind (infile);
+  print_header (outfile, fileargs[0], info2_version);
 
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));
 
+  fseek (infile, 20, SEEK_SET);
   while (TRUE)
   {
-    readstatus = fread (buf, recordsize, 1, infile);
-    if (readstatus != 1)
+    status = fread (buf, recordsize, 1, infile);
+    if (status != 1)
     {
       if ( !feof (infile) )
         g_warning (_("Failed to read next record: %s"), strerror (errno));
@@ -487,7 +492,7 @@ int main (int argc, char **argv)
     else
       record->utf8_filename = NULL;
 
-    print_record (outfile, record, output_format);
+    print_record (outfile, record);
 
     if (has_unicode_filename)
       g_free (record->utf8_filename);
@@ -496,7 +501,7 @@ int main (int argc, char **argv)
 
   }
 
-  print_footer (outfile, output_format);
+  print_footer (outfile);
 
   fclose (infile);
   fclose (outfile);
