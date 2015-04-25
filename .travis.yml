@@ -9,4 +9,4 @@ install:
   - sudo apt-get install -qq libglib2.0-dev
 script:
   - ./autogen.sh && ./configure && make && sudo make install
-  - make check TESTSUITEFLAGS='-v -x'
+  - make check TESTSUITEFLAGS='-v'
