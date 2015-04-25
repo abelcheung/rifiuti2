@@ -2,4 +2,4 @@
 # @configure_input@
 # Configurable variable values for Autoconf test suite.
 
-no_xmllint="test x@XMLLINT@ = x"
+has_xmllint="test x@XMLLINT@ != x"
