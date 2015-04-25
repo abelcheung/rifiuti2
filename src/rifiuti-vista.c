@@ -77,8 +77,8 @@ static GOptionEntry textoptions[] =
 void print_header (FILE *outfile,
                    char *infilename)
 {
-  char *shown_filename, *utf8_filename;
-  GError *error = NULL;
+  char     *utf8_filename, *shown_filename;
+  GError   *error = NULL;
 
   if (g_path_is_absolute (infilename))
     utf8_filename = g_filename_display_basename (infilename);
@@ -90,22 +90,26 @@ void print_header (FILE *outfile,
     case OUTPUT_CSV:
       if (!no_heading)
       {
-        shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
-        if (error)
+        if (!always_utf8)
         {
-          g_warning (_("Error converting path name to display: %s"), error->message);
+          shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
+          if (error)
+          {
+            g_warning (_("Error converting path name to display: %s"), error->message);
+            g_free (shown_filename);
+            shown_filename = g_strdup (_("(File name not representable in current language)"));
+          }
+          fprintf (outfile, _("Recycle bin file/dir: '%s'"), shown_filename);
           g_free (shown_filename);
-          shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
+        else
+          fprintf (outfile, _("Recycle bin file/dir: '%s'"), utf8_filename);
 
-        fprintf (outfile, _("Recycle bin file/dir: '%s'"), shown_filename);
         fputs ("\n", outfile);
-        fprintf (outfile, _("Version: %u"), 0);  /* to be implemented in future */
+        fprintf (outfile, _("Version: %u"), 0);  /* FIXME to be implemented in future */
         fputs ("\n\n", outfile);
         fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"), delim, delim, delim);
         fputs ("\n", outfile);
-
-        g_free (shown_filename);
       }
       break;
 
