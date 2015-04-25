@@ -34,12 +34,11 @@
 #include <errno.h>
 #include <locale.h>
 
-#include <glib.h>
+#include "utils.h"
+
 #include <glib/gi18n.h>
-#include <glib/gprintf.h>
 #include <glib/gstdio.h>
 
-#include "utils.h"
 #include "rifiuti-vista.h"
 
 static char      *delim          = NULL;
@@ -212,14 +211,7 @@ void print_record (char *index_file,
   char         asctime[21];
   char        *basename;
   uint64_t     version;
-
-  /* Glib doc is lying. GStatBuf not available until 2.25. */
-  /* Maybe consider using GIO in future. */
-#if defined(__MINGW32__) && !defined(__MINGW64__)
-  struct _stat32 st;
-#else
-  struct stat  st;
-#endif
+  GStatBuf     st;
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {

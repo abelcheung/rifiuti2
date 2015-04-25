@@ -32,6 +32,7 @@
 
 #include <inttypes.h>
 #include <time.h>
+#include <glib.h>
 
 enum {
   RIFIUTI_ERR_ARG = 1,
@@ -43,6 +44,16 @@ enum {
   OUTPUT_CSV,
   OUTPUT_XML
 };
+
+/* Glib doc is lying; GStatBuf not available until 2.25.
+ * Use the definition as of 2.44 */
+#if !GLIB_CHECK_VERSION(2,25,0)
+#if (defined (__MINGW64_VERSION_MAJOR) || defined (_MSC_VER)) && !defined(_WIN64)
+typedef struct _stat32 GStatBuf;
+#else
+typedef struct stat GStatBuf;
+#endif
+#endif
 
 /* Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
  * in either ANSI or Unicode variations, except Windows 10 which uses variable size.

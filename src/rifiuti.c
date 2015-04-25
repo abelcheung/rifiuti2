@@ -35,12 +35,11 @@
 #include <errno.h>
 #include <locale.h>
 
-#include <glib.h>
+#include "utils.h"
+
 #include <glib/gi18n.h>
-#include <glib/gprintf.h>
 #include <glib/gstdio.h>
 
-#include "utils.h"
 #include "rifiuti.h"
 
 
