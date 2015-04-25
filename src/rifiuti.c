@@ -76,9 +76,9 @@ static GOptionEntry textoptions[] =
   { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
     N_("String to use as delimiter (TAB by default)"), N_("STRING") },
   { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-    N_("Don't show header"), NULL },
+    N_("Don't show header info"), NULL },
   { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
-    N_("Show legacy filename instead of unicode"), NULL },
+    N_("Show legacy (8.3) filename if available"), NULL },
   { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
     N_("Always show file names in UTF-8 encoding"), NULL },
   { NULL }
@@ -109,9 +109,13 @@ static void print_header (FILE     *outfile,
           shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
 
-        fprintf (outfile, _("Recycle bin file: '%s'\n"), shown_filename);
-        fprintf (outfile, _("Version: %u\n\n"), info2_version);
-        fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath\n"), delim, delim, delim, delim);
+        fprintf (outfile, _("Recycle bin file: '%s'"), shown_filename);
+        fputs ("\n", outfile);
+        fprintf (outfile, _("Version: %u"), info2_version);
+        fputs ("\n\n", outfile);
+        fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
+            delim, delim, delim, delim);
+        fputs ("\n", outfile);
         g_free (shown_filename);
       }
       break;
@@ -140,7 +144,7 @@ static void print_record (FILE        *outfile,
   GError *error = NULL;
 
   if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
-    g_warning (_("Error formatting deleted file date/time for index %u."), record->index);
+    g_warning (_("Error formatting file deletion time for record %u."), record->index);
 
   switch (output_format)
   {
@@ -257,7 +261,7 @@ static int validate_index_file (FILE     *inf,
 
   if (size < RECORD_START_OFFSET) /* empty INFO2 file has 20 bytes */
   {
-    g_critical (_("This INFO2 file is truncated, or simply not an INFO2 file."));
+    g_critical (_("This INFO2 file is truncated, or probably not an INFO2 file."));
     return RIFIUTI_ERR_BROKEN_FILE;
   }
 
@@ -280,10 +284,15 @@ static int validate_index_file (FILE     *inf,
       if ( !from_encoding && ( (output_format == OUTPUT_XML) ||
             ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
       {
+        /* TRANSLATOR COMMENT:
+         * TRANSLATOR COMMENT: use suitable example from YOUR language & code page
+         * TRANSLATOR COMMENT: */
         g_critical (_("This INFO2 file was produced on a Windows 98. Because unicode output "
-              "is requested, please specify its codepage with --from-encoding option, "
-              "such as\n\n\t%s\n\nif it contains accented latin characters. "
-              "Use an encoding supported by `iconv -l`."), "--from-encoding=CP1252");
+              "is requested, please specify its codepage with '--from-encoding' option.\n\n"
+              "For example, if file name was expected to contain accented latin characters, "
+              "use '--from-encoding=CP1252' option; or in case of Japanese characters, "
+              "'--from-encoding=CP932'.\n\n"
+              "Encodings and code pages supported by 'iconv' can be used."));
         return RIFIUTI_ERR_ARG;
       }
       break;
@@ -299,7 +308,7 @@ static int validate_index_file (FILE     *inf,
       break;
 
     default:
-      g_critical (_("'%s' is not a supported INFO2 file."), fileargs[0]);
+      g_critical (_("It is not a supported INFO2 file, or probably not an INFO2 file."));
       return RIFIUTI_ERR_BROKEN_FILE;
   }
   return 0;
@@ -351,7 +360,7 @@ int main (int argc, char **argv)
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing argument: %s"), error->message);
+    g_warning (_("Error parsing options: %s"), error->message);
     g_error_free (error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -490,8 +499,8 @@ int main (int argc, char **argv)
       /* not checking error, since Windows <= 2000 may insert junk after UTF-16 file name */
       if (!record->utf8_filename)
       {
-        g_warning (_("Error converting file name from UTF-16 encoding to UTF-8 for record %u: %s"),
-                   record->index, error->message);
+        g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
+                   "UTF-16", record->index, error->message);
         g_error_free (error);
         record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
       }

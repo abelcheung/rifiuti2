@@ -68,7 +68,7 @@ static GOptionEntry textoptions[] =
   { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
     N_("String to use as delimiter (TAB by default)"), N_("STRING") },
   { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-    N_("Don't show header"), NULL },
+    N_("Don't show header info"), NULL },
   { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
     N_("Always show file names in UTF-8 encoding"), NULL },
   { NULL }
@@ -98,9 +98,12 @@ void print_header (FILE *outfile,
           shown_filename = g_strdup (_("(File name not representable in current language)"));
         }
 
-        fprintf (outfile, _("Recycle bin file/dir: '%s'\n"), shown_filename);
-        fprintf (outfile, _("Version: %u\n\n"), 0);  /* to be implemented in future */
-        fprintf (outfile, _("Index%sDeleted Time%sSize%sPath\n"), delim, delim, delim);
+        fprintf (outfile, _("Recycle bin file/dir: '%s'"), shown_filename);
+        fputs ("\n", outfile);
+        fprintf (outfile, _("Version: %u"), 0);  /* to be implemented in future */
+        fputs ("\n\n", outfile);
+        fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"), delim, delim, delim);
+        fputs ("\n", outfile);
 
         g_free (shown_filename);
       }
@@ -221,7 +224,7 @@ void print_record (char *index_file,
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {
-    g_warning (_("Error opening '%s' for reading: %s"), index_file, strerror (errno));
+    g_warning (_("Error opening file '%s' for reading: %s"), index_file, strerror (errno));
     return;
   }
 
@@ -258,7 +261,7 @@ void print_record (char *index_file,
   }
 
   if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
-    g_warning (_("Error formatting deletion date/time for file '%s'."), index_file);
+    g_warning (_("Error formatting file deletion time for file '%s'."), index_file);
     strncpy ((char*)asctime, "???", 4);
   }
 
@@ -345,7 +348,7 @@ int main (int argc, char **argv)
 
   context = g_option_context_new (_("DIR_OR_FILE"));
   g_option_context_set_summary (context,
-      _("Parse index files in \\$Recycle.bin style folder and dump recycle bin data.\n"
+      _("Parse index files in \\$Recycle.bin style folder and dump recycle bin data. "
         "Can also dump a single index file."));
   g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
@@ -357,7 +360,7 @@ int main (int argc, char **argv)
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing argument: %s"), error->message);
+    g_warning (_("Error parsing options: %s"), error->message);
     g_error_free (error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
