@@ -352,7 +352,7 @@ int main (int argc, char **argv)
 
   context = g_option_context_new (_("DIR_OR_FILE"));
   g_option_context_set_summary (context,
-      _("Parse index files in \\$Recycle.bin style folder and dump recycle bin data. "
+      _("Parse index files in C:\\$Recycle.bin style folder and dump recycle bin data. "
         "Can also dump a single index file."));
   g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
