@@ -1,3 +1,8 @@
+Other than autotools generated files (which are covered by GNU licesne),
+all other files are available through the following 3-clause BSD license.
+
+=================================================================
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
