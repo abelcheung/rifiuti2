@@ -335,6 +335,7 @@ int main (int argc, char **argv)
   uint32_t        recordsize, info2_version;
   uint64_t        win_filetime;
   time_t          file_epoch;
+  char           *bug_report_str;
 
   unsigned char driveletters[28] =
   {
@@ -353,13 +354,15 @@ int main (int argc, char **argv)
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   textdomain (GETTEXT_PACKAGE);
 
-  context = g_option_context_new (_("INFO2"));
+  context = g_option_context_new ("INFO2");
   g_option_context_set_summary (context,
       _("Parse INFO2 file and dump recycle bin data."));
+  bug_report_str = g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
+  g_option_context_set_description (context, bug_report_str);
   g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
   textoptgroup = g_option_group_new ("text", _("Plain text output options:"),
-                                     _("Show plain text output options"), NULL, NULL);
+                                     N_("Show plain text output options"), NULL, NULL);
   g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
   g_option_group_add_entries (textoptgroup, textoptions);
   g_option_context_add_group (context, textoptgroup);
@@ -530,6 +533,7 @@ int main (int argc, char **argv)
 
   g_free (record);
   g_free (buf);
+  g_free (bug_report_str);
 
   exit (0);
 }

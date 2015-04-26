@@ -332,13 +332,14 @@ void print_footer (FILE *outfile)
 
 int main (int argc, char **argv)
 {
-  FILE *outfile;
-  GPtrArray *filelist;
-  char *fname;
+  FILE           *outfile;
+  GPtrArray      *filelist;
+  char           *fname;
 
-  GError *error = NULL;
+  GError         *error = NULL;
   GOptionContext *context;
-  GOptionGroup *textoptgroup;
+  GOptionGroup   *textoptgroup;
+  char           *bug_report_str;
 
 
   setlocale (LC_ALL, "");
@@ -354,10 +355,12 @@ int main (int argc, char **argv)
   g_option_context_set_summary (context,
       _("Parse index files in C:\\$Recycle.bin style folder and dump recycle bin data. "
         "Can also dump a single index file."));
+  bug_report_str = g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
+  g_option_context_set_description (context, bug_report_str);
   g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
   textoptgroup = g_option_group_new ("text", _("Plain text output options:"),
-                                     _("Show plain text output options"), NULL, NULL);
+                                     N_("Show plain text output options"), NULL, NULL);
   g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
   g_option_group_add_entries (textoptgroup, textoptions);
   g_option_context_add_group (context, textoptgroup);
@@ -471,16 +474,13 @@ int main (int argc, char **argv)
   g_ptr_array_foreach (filelist, (GFunc) g_free, NULL);
   g_ptr_array_free (filelist, TRUE);
 
-  if (outfile != stdout)
-    fclose (outfile);
+  fclose (outfile);
 
   g_strfreev (fileargs);
+  g_free (bug_report_str);
 
-  if (outfilename)
-    g_free (outfilename);
-
-  if (delim)
-    g_free (delim);
+  if (outfilename) g_free (outfilename);
+  if (delim)       g_free (delim);
 
   exit (0);
 }
