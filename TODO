@@ -1,4 +1,0 @@
-* Create proper test cases
-* Better documentation
-* Handle invalid UTF-16 code better
-* More cross platform support (OSX, *BSD, etc)
