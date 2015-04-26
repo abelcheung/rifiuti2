@@ -2,4 +2,4 @@
 
 glib-gettextize --copy --force
 
-AUTOMAKE="automake --foreign" autoreconf -f -i -v
+autoreconf -f -i -v
