@@ -35,8 +35,8 @@ AT_CLEANUP
 
 AT_SETUP([Err on no file args])
 AT_KEYWORDS([file option])
-AT_CHECK([$abs_top_builddir/src/rifiuti], [1], [], [ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista], [1], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti -8], [1], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista -8], [1], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([Err on multiple file args])

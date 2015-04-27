@@ -388,7 +388,7 @@ int main (int argc, char **argv)
 
   g_option_context_free (context);
 
-  if ( g_strv_length (fileargs) > 1 )
+  if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
     g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, "
           "or one such index file, as argument."));
