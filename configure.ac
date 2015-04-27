@@ -7,6 +7,7 @@ AC_CONFIG_HEADER([config.h])
 AC_CONFIG_TESTDIR([test])
 AM_INIT_AUTOMAKE
 
+AC_CANONICAL_HOST
 
 dnl I18N
 GETTEXT_PACKAGE=rifiuti
@@ -64,6 +65,12 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 
+dnl Platform specific check.
+case "$host" in
+	*-*-mingw*) os_windows=true ;;
+esac
+AM_CONDITIONAL([OS_WINDOWS], [test "x$os_windows" != x])
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_STRUCT_TM
 dnl AC_TYPE_UINT32_T
@@ -82,3 +89,5 @@ test/atlocal
 ])
 
 AC_OUTPUT
+
+dnl vim: set sw=2 expandtab ts=2 :

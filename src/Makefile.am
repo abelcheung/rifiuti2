@@ -23,6 +23,11 @@ rifiuti_vista_SOURCES = \
 
 rifiuti_vista_LDADD = $(GLIB_LIBS)
 
+if OS_WINDOWS
+rifiuti_LDADD += -luser32
+rifiuti_vista_LDADD += -luser32
+endif
+
 install-data-hook:
 	cd $(DESTDIR)$(mandir)/man1 && $(LN_S) rifiuti.1 rifiuti-vista.1
 

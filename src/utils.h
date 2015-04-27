@@ -60,7 +60,11 @@ typedef struct stat GStatBuf;
  */
 #define WIN_PATH_MAX 0x104
 
-time_t win_filetime_to_epoch (uint64_t win_filetime);
+time_t win_filetime_to_epoch (uint64_t    win_filetime);
+
+#ifdef G_OS_WIN32
+void   gui_message           (const char *message);
+#endif
 
 #endif
 

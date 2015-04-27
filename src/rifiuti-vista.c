@@ -369,6 +369,9 @@ int main (int argc, char **argv)
   if (argc <= 1)
   {
     char *msg = g_option_context_get_help (context, FALSE, NULL);
+#ifdef G_OS_WIN32
+    g_set_print_handler ((GPrintFunc) gui_message);
+#endif
     g_print (msg);
     g_free (msg);
     g_option_context_free (context);
