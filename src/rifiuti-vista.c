@@ -365,6 +365,16 @@ int main (int argc, char **argv)
   g_option_group_add_entries (textoptgroup, textoptions);
   g_option_context_add_group (context, textoptgroup);
 
+  /* Must be done before parsing arguments since argc will be modified later */
+  if (argc <= 1)
+  {
+    char *msg = g_option_context_get_help (context, FALSE, NULL);
+    g_print (msg);
+    g_free (msg);
+    g_option_context_free (context);
+    exit (0);
+  }
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_warning (_("Error parsing options: %s"), error->message);
@@ -375,7 +385,7 @@ int main (int argc, char **argv)
 
   g_option_context_free (context);
 
-  if ( !fileargs || g_strv_length (fileargs) > 1 )
+  if ( g_strv_length (fileargs) > 1 )
   {
     g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, "
           "or one such index file, as argument."));
