@@ -31,9 +31,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <locale.h>
 
 #include "utils.h"
 
@@ -46,10 +43,9 @@
 static char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
-static char      *from_encoding        = NULL;
+static char      *legacy_encoding      = NULL;
 static int        output_format        = OUTPUT_CSV;
 static gboolean   no_heading           = FALSE;
-static gboolean   show_legacy_filename = FALSE;
 static gboolean   xml_output           = FALSE;
 static gboolean   always_utf8          = FALSE;
 static gboolean   has_unicode_filename = FALSE;
@@ -57,39 +53,59 @@ static gboolean   use_localtime        = FALSE;
 
 static GOptionEntry mainoptions[] =
 {
-  { "output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
+  { "output"         , 'o', 0, G_OPTION_ARG_FILENAME      , &outfilename,
     N_("Write output to FILE"), N_("FILE") },
-  { "xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
+  { "xml"            , 'x', 0, G_OPTION_ARG_NONE          , &xml_output,
     N_("Output in XML format instead (plain text options disallowed in this case)"), NULL },
-  { "from-encoding", 0, 0, G_OPTION_ARG_STRING, &from_encoding,
-    N_("The assumed file name character set when no unicode file name is present in INFO2 "
-       "record (mandatory if INFO2 file is created by Win98, ignored otherwise)"), N_("ENC") },
-  { "localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
+  { "legacy-filename", 'l', 0, G_OPTION_ARG_STRING        , &legacy_encoding,
+    N_("Show legacy (8.3) filename if available, and specify its CODEPAGE to use "
+       "(option is mandatory if INFO2 file is created by Win98)"), N_("CODEPAGE") },
+  { "localtime"      , 'z', 0, G_OPTION_ARG_NONE          , &use_localtime,
     N_("Present deletion time in time zone of local system (default is UTC)"), NULL },
-  { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
+  { G_OPTION_REMAINING, 0 , 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
     N_("INFO2 File names"), NULL },
   { NULL }
 };
 
 static GOptionEntry textoptions[] =
 {
-  { "delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
+  { "delimiter"  , 't', 0, G_OPTION_ARG_STRING, &delim,
     N_("String to use as delimiter (TAB by default)"), N_("STRING") },
-  { "no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
+  { "no-heading" , 'n', 0, G_OPTION_ARG_NONE  , &no_heading,
     N_("Don't show header info"), NULL },
-  { "legacy-filename", 'l', 0, G_OPTION_ARG_NONE, &show_legacy_filename,
-    N_("Show legacy (8.3) filename if available"), NULL },
-  { "always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
+  { "always-utf8", '8', 0, G_OPTION_ARG_NONE  , &always_utf8,
     N_("Always show file names in UTF-8 encoding"), NULL },
   { NULL }
 };
 
+static void maybe_convert_fprintf (FILE *file, const char *format, ...)
+{
+  va_list  args;
+  char    *utf_str;
+
+  va_start (args, format);
+  utf_str = g_strdup_vprintf (format, args);
+  va_end (args);
+
+  g_return_if_fail (g_utf8_validate (utf_str, -1, NULL));
+
+  if (always_utf8)
+    fputs (utf_str, file);
+  else
+  {
+    /* FIXME: shall catch error */
+    char *locale_str = g_locale_from_utf8 (utf_str, -1, NULL, NULL, NULL);
+    fputs (locale_str, file);
+    g_free (locale_str);
+  }
+  g_free (utf_str);
+}
+
 static void print_header (FILE     *outfile,
                           char     *infilename,
-                          uint32_t  info2_version)
+                          uint32_t  version)
 {
-  char     *utf8_filename, *shown_filename;
-  GError   *error = NULL;
+  char *utf8_filename;
 
   if (g_path_is_absolute (infilename))
     utf8_filename = g_filename_display_basename (infilename);
@@ -99,43 +115,24 @@ static void print_header (FILE     *outfile,
   switch (output_format)
   {
     case OUTPUT_CSV:
-      if (!no_heading)
-      {
-        if (!always_utf8)
-        {
-          shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
-          if (error)
-          {
-            g_warning (_("Error converting path name to display: %s"), error->message);
-            g_free (shown_filename);
-            shown_filename = g_strdup (_("(File name not representable in current language)"));
-          }
-          fprintf (outfile, _("Recycle bin file: '%s'"), shown_filename);
-          g_free (shown_filename);
-        }
-        else
-          fprintf (outfile, _("Recycle bin file: '%s'"), utf8_filename);
+      if (no_heading) break;
 
-        fputs ("\n", outfile);
-        fprintf (outfile, _("Version: %u"), info2_version);
-        fputs ("\n\n", outfile);
-        fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
-            delim, delim, delim, delim);
-        fputs ("\n", outfile);
-      }
+      maybe_convert_fprintf (outfile, _("Recycle bin file: '%s'"), utf8_filename);
+      fputs ("\n", outfile);
+      maybe_convert_fprintf (outfile, _("Version: %u"), version);
+      fputs ("\n\n", outfile);
+      maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"), delim, delim, delim, delim);
+      fputs ("\n", outfile);
       break;
 
     case OUTPUT_XML:
       fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-      fprintf (outfile, "<recyclebin format=\"file\" version=\"%u\">\n", info2_version);
+      fprintf (outfile, "<recyclebin format=\"file\" version=\"%u\">\n", version);
       fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
-
       break;
 
     default:
-      g_free (utf8_filename);
-      g_return_if_reached();
-      break;
+      g_warn_if_reached();
   }
 
   g_free (utf8_filename);
@@ -145,96 +142,75 @@ static void print_header (FILE     *outfile,
 static void print_record (FILE        *outfile,
                           rbin_struct *record)
 {
-  char *shown_filename;
-  char ascdeltime[21];
+  char   *utf8_filename;
   GError *error = NULL;
+  char    ascii_deltime[21];
 
-  if (strftime (ascdeltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
+  if (strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
+  {
     g_warning (_("Error formatting file deletion time for record %u."), record->index);
+    strncpy ((char*) ascii_deltime, "???", 4);
+  }
+
+  if (has_unicode_filename && !legacy_encoding)
+    utf8_filename = g_strdup (record->utf8_filename);
+  else
+  {
+    /* 
+     * On Windows, conversion from the file path's legacy charset to display codepage
+     * charset is most likely not supported unless the 2 legacy charsets happen to be
+     * equal. Try <legacy> -> UTF-8 -> <codepage> and see which step fails.
+     */
+    utf8_filename = g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
+                                NULL, NULL, &error);
+    if (error)
+    {
+      g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
+                 legacy_encoding, record->index, error->message);
+      g_error_free (error);
+      utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
+    }
+  }
 
   switch (output_format)
   {
     case OUTPUT_CSV:
 
+      fprintf (outfile, "%d%s%s%s", record->index, delim, ascii_deltime, delim);
+      maybe_convert_fprintf (outfile, "%s", record->emptied ? _("Yes") : _("No"));
+      fprintf (outfile, "%s%d%s", delim, record->filesize, delim);
       if (always_utf8)
+        fprintf (outfile, "%s\n", utf8_filename);
+      else
       {
-        if (has_unicode_filename)
-          shown_filename = g_strdup (record->utf8_filename);
-        else
-        {
-          shown_filename = g_convert (record->legacy_filename, -1, "UTF-8", from_encoding,
-                                      NULL, NULL, &error);
-          if (error)
-          {
-            g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
-                       from_encoding, record->index, error->message);
-            g_error_free (error);
-            g_free (shown_filename);
-            shown_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
-          }
-        }
-      }
-      else if (has_unicode_filename && !show_legacy_filename)
-      {
-        shown_filename = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, &error);
+        char *shown = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
         if (error)
         {
           g_warning (_("Error converting path name to display for record %u: %s"),
                      record->index, error->message);
           g_error_free (error);
-          g_free (shown_filename);
-          shown_filename = g_strdup (_("(File name not representable in current language)"));
+          shown = g_locale_from_utf8 (_("(File name not representable in current language)"),
+              -1, NULL, NULL, NULL);
         }
+        fprintf (outfile, "%s\n", shown);
+        g_free (shown);
       }
-      else
-        shown_filename = g_strdup (record->legacy_filename);
-
-      fprintf (outfile, "%d%s%s%s%s%s%d%s%s\n",
-               record->index                        , delim,
-               ascdeltime                           , delim,
-               record->emptied ? _("Yes") : _("No") , delim,
-               record->filesize                     , delim,
-               shown_filename);
-
-      g_free (shown_filename);
-
       break;
 
     case OUTPUT_XML:
 
-      fprintf (outfile, "  <record index=\"%u\" time=\"%s\" emptied=\"%c\" size=\"%u\">\n",
-               record->index, ascdeltime, record->emptied ? 'Y' : 'N', record->filesize);
-
-      if (has_unicode_filename)
-        fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
-      else
-      {
-        /*
-         * guessing charset is not useful, since the system generating INFO2 and the system
-         * analyzing INFO2 would be different, and quite likely using different charset as well
-         */
-        shown_filename = g_convert (record->legacy_filename, -1, "UTF-8", from_encoding,
-                                    NULL, NULL, &error);
-        if (error)
-        {
-          g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
-                     from_encoding, record->index, error->message);
-          g_error_free (error);
-          g_free (shown_filename);
-          shown_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
-        }
-        fprintf (outfile, "    <path>%s</path>\n", shown_filename);
-        g_free (shown_filename);
-      }
-
-      fputs ("  </record>\n", outfile);
-
+      fprintf (outfile, "  <record index=\"%u\" time=\"%s\" emptied=\"%c\" size=\"%u\">\n"
+                        "    <path>%s</path>\n"
+                        "  </record>\n",
+                        record->index, ascii_deltime,
+                        record->emptied ? 'Y' : 'N',
+                        record->filesize, utf8_filename);
       break;
 
     default:
       g_return_if_reached();
-      break;
   }
+  g_free (utf8_filename);
 }
 
 
@@ -287,17 +263,17 @@ static int validate_index_file (FILE     *inf,
         g_critical (_("Invalid record size for this version of INFO2"));
         return RIFIUTI_ERR_BROKEN_FILE;
       }
-      if ( !from_encoding && ( (output_format == OUTPUT_XML) ||
+      if ( !legacy_encoding && ( (output_format == OUTPUT_XML) ||
             ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
       {
-        /* TRANSLATOR COMMENT:
+        g_printerr (_("This INFO2 file was produced on a Windows 98. Because unicode output "
+              "is requested, please specify its codepage with '--legacy-filename' option.\n\n"));
+        /*
          * TRANSLATOR COMMENT: use suitable example from YOUR language & code page
          * TRANSLATOR COMMENT: */
-        g_critical (_("This INFO2 file was produced on a Windows 98. Because unicode output "
-              "is requested, please specify its codepage with '--from-encoding' option.\n\n"
-              "For example, if file name was expected to contain accented latin characters, "
-              "use '--from-encoding=CP1252' option; or in case of Japanese characters, "
-              "'--from-encoding=CP932'.\n\n"
+        g_printerr (_("For example, if file name was expected to contain accented latin characters, "
+              "use '--legacy-filename=CP1252' option; or in case of Japanese characters, "
+              "'--legacy-filename=CP932'.\n\n"
               "Encodings and code pages supported by 'iconv' can be used."));
         return RIFIUTI_ERR_ARG;
       }
@@ -413,7 +389,7 @@ int main (int argc, char **argv)
   {
     output_format = OUTPUT_XML;
 
-    if ( no_heading || show_legacy_filename || always_utf8 || (NULL != delim) )
+    if ( no_heading || always_utf8 || (NULL != delim) )
     {
       g_critical (_("Plain text format options can not be used in XML mode."));
       exit (RIFIUTI_ERR_ARG);
@@ -532,9 +508,7 @@ int main (int argc, char **argv)
 
     print_record (outfile, record);
 
-    if (has_unicode_filename)
-      g_free (record->utf8_filename);
-
+    g_free (record->utf8_filename);
     g_free (record->legacy_filename);
 
   }
