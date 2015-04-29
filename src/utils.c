@@ -28,6 +28,111 @@
  */
 
 #include "utils.h"
+#include <glib/gi18n.h>
+
+time_t win_filetime_to_epoch (uint64_t win_filetime)
+{
+  uint64_t epoch;
+
+  /* Let's assume we don't need millisecond resolution time for now */
+  epoch = (win_filetime - 116444736000000000LL) / 10000000;
+
+  /* Let's assume this program won't survive till 22th century */
+  return (time_t) (epoch & 0xFFFFFFFF);
+}
+
+void maybe_convert_fprintf (FILE       *file,
+                            const char *format, ...)
+{
+  va_list          args;
+  char            *utf_str;
+  extern gboolean  always_utf8;
+
+  va_start (args, format);
+  utf_str = g_strdup_vprintf (format, args);
+  va_end (args);
+
+  g_return_if_fail (g_utf8_validate (utf_str, -1, NULL));
+
+  if (always_utf8)
+    fputs (utf_str, file);
+  else
+  {
+    /* FIXME: shall catch error */
+    char *locale_str = g_locale_from_utf8 (utf_str, -1, NULL, NULL, NULL);
+    fputs (locale_str, file);
+    g_free (locale_str);
+  }
+  g_free (utf_str);
+}
+
+void print_header (FILE     *outfile,
+                   char     *infilename,
+                   uint32_t  version,
+                   gboolean  is_info2)
+{
+  char           *utf8_filename;
+  extern int      output_format;
+  extern char    *delim;
+
+  if (g_path_is_absolute (infilename))
+    utf8_filename = g_filename_display_basename (infilename);
+  else
+    utf8_filename = g_filename_display_name (infilename);
+
+  switch (output_format)
+  {
+    case OUTPUT_CSV:
+      maybe_convert_fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
+      fputs ("\n", outfile);
+      maybe_convert_fprintf (outfile, _("Version: %u"), version);
+      fputs ("\n\n", outfile);
+      if (is_info2)
+        maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
+            delim, delim, delim, delim);
+      else
+        maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"),
+            delim, delim, delim);
+      fputs ("\n", outfile);
+      break;
+
+    case OUTPUT_XML:
+      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
+      fprintf (outfile, "<recyclebin format=\"%s\" version=\"%u\">\n",
+          (is_info2 ? "file" : "dir"), version);
+      fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
+      break;
+
+    default:
+      g_warn_if_reached();
+  }
+  g_free (utf8_filename);
+}
+
+void print_footer (FILE *outfile)
+{
+  extern int output_format;
+
+  switch (output_format)
+  {
+    case OUTPUT_CSV:
+      /* do nothing */
+      break;
+
+    case OUTPUT_XML:
+      fputs ("</recyclebin>\n", outfile);
+      break;
+
+    default:
+      g_return_if_reached();
+      break;
+  }
+}
+
+/* GUI message box */
+#ifdef G_OS_WIN32
+
+#include <windows.h>
 
 static char *convert_with_fallback (const char *string, const char *fallback)
 {
@@ -42,23 +147,6 @@ static char *convert_with_fallback (const char *string, const char *fallback)
 
   return output;
 }
-
-time_t win_filetime_to_epoch (uint64_t win_filetime)
-{
-  uint64_t epoch;
-
-  /* I suppose millisecond resolution is not needed? -- Abel */
-  epoch = (win_filetime - 116444736000000000LL) / 10000000;
-
-  /* Will it go wrong? Hope not. */
-  return (time_t) (epoch & 0xFFFFFFFF);
-}
-
-/* GUI message box */
-#ifdef G_OS_WIN32
-
-#include <windows.h>
-#include <glib/gi18n.h>
 
 void gui_message (const char *message)
 {

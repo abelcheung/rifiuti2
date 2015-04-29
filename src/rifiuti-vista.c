@@ -30,9 +30,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <locale.h>
 
 #include "utils.h"
 
@@ -41,13 +38,13 @@
 
 #include "rifiuti-vista.h"
 
-static char      *delim          = NULL;
+       char      *delim          = NULL;
 static char     **fileargs       = NULL;
 static char      *outfilename    = NULL;
-static int        output_format  = OUTPUT_CSV;
+       int        output_format  = OUTPUT_CSV;
 static gboolean   no_heading     = FALSE;
 static gboolean   xml_output     = FALSE;
-static gboolean   always_utf8    = FALSE;
+       gboolean   always_utf8    = FALSE;
 static gboolean   use_localtime  = FALSE;
 
 static GOptionEntry mainoptions[] =
@@ -73,60 +70,6 @@ static GOptionEntry textoptions[] =
     N_("Always show file names in UTF-8 encoding"), NULL },
   { NULL }
 };
-
-void print_header (FILE *outfile,
-                   char *infilename)
-{
-  char     *utf8_filename, *shown_filename;
-  GError   *error = NULL;
-
-  if (g_path_is_absolute (infilename))
-    utf8_filename = g_filename_display_basename (infilename);
-  else
-    utf8_filename = g_filename_display_name (infilename);
-
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-      if (!no_heading)
-      {
-        if (!always_utf8)
-        {
-          shown_filename = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
-          if (error)
-          {
-            g_warning (_("Error converting path name to display: %s"), error->message);
-            g_free (shown_filename);
-            shown_filename = g_strdup (_("(File name not representable in current language)"));
-          }
-          fprintf (outfile, _("Recycle bin file/dir: '%s'"), shown_filename);
-          g_free (shown_filename);
-        }
-        else
-          fprintf (outfile, _("Recycle bin file/dir: '%s'"), utf8_filename);
-
-        fputs ("\n", outfile);
-        fprintf (outfile, _("Version: %u"), 0);  /* FIXME to be implemented in future */
-        fputs ("\n\n", outfile);
-        fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"), delim, delim, delim);
-        fputs ("\n", outfile);
-      }
-      break;
-
-    case OUTPUT_XML:
-      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-      fprintf (outfile, "<recyclebin format=\"dir\" version=\"%u\">\n", 0); /* to be implemented */
-      fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
-      break;
-
-    default:
-      g_free (utf8_filename);
-      g_return_if_reached();
-      break;
-  }
-
-  g_free (utf8_filename);
-}
 
 
 /* Check if index file has sufficient amount of data for reading */
@@ -310,26 +253,6 @@ void print_record (char *index_file,
   g_free (record);
 }
 
-
-void print_footer (FILE *outfile)
-{
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-      /* do nothing */
-      break;
-
-    case OUTPUT_XML:
-      fputs ("</recyclebin>\n", outfile);
-      break;
-
-    default:
-      g_return_if_reached();
-      break;
-  }
-}
-
-
 int main (int argc, char **argv)
 {
   FILE           *outfile;
@@ -478,7 +401,8 @@ int main (int argc, char **argv)
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
 
-  print_header (outfile, fileargs[0]);
+  if ( !no_heading || (output_format != OUTPUT_CSV) )
+    print_header (outfile, fileargs[0], 0, FALSE); /* FIXME: version to be implemented */
 
   g_ptr_array_foreach (filelist, (GFunc) print_record, outfile);
 

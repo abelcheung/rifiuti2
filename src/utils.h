@@ -32,6 +32,7 @@
 
 #include <inttypes.h>
 #include <time.h>
+#include <stdio.h>
 #include <glib.h>
 
 enum {
@@ -60,10 +61,20 @@ typedef struct stat GStatBuf;
  */
 #define WIN_PATH_MAX 0x104
 
+/* shared functions */
 time_t win_filetime_to_epoch (uint64_t    win_filetime);
 
+void   print_header          (FILE       *outfile     ,
+                              char       *infilename  ,
+                              uint32_t    version     ,
+                              gboolean    is_info2    );
+
+void   print_footer          (FILE       *outfile     );
+
+void   maybe_convert_fprintf (FILE       *file        ,
+                              const char *format      , ...);
 #ifdef G_OS_WIN32
-void   gui_message           (const char *message);
+void   gui_message           (const char *message     );
 #endif
 
 #endif

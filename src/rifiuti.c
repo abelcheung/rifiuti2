@@ -40,14 +40,14 @@
 #include "rifiuti.h"
 
 
-static char      *delim                = NULL;
+       char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
 static char      *legacy_encoding      = NULL;
-static int        output_format        = OUTPUT_CSV;
+       int        output_format        = OUTPUT_CSV;
 static gboolean   no_heading           = FALSE;
 static gboolean   xml_output           = FALSE;
-static gboolean   always_utf8          = FALSE;
+       gboolean   always_utf8          = FALSE;
 static gboolean   has_unicode_filename = FALSE;
 static gboolean   use_localtime        = FALSE;
 
@@ -77,67 +77,6 @@ static GOptionEntry textoptions[] =
     N_("Always show file names in UTF-8 encoding"), NULL },
   { NULL }
 };
-
-static void maybe_convert_fprintf (FILE *file, const char *format, ...)
-{
-  va_list  args;
-  char    *utf_str;
-
-  va_start (args, format);
-  utf_str = g_strdup_vprintf (format, args);
-  va_end (args);
-
-  g_return_if_fail (g_utf8_validate (utf_str, -1, NULL));
-
-  if (always_utf8)
-    fputs (utf_str, file);
-  else
-  {
-    /* FIXME: shall catch error */
-    char *locale_str = g_locale_from_utf8 (utf_str, -1, NULL, NULL, NULL);
-    fputs (locale_str, file);
-    g_free (locale_str);
-  }
-  g_free (utf_str);
-}
-
-static void print_header (FILE     *outfile,
-                          char     *infilename,
-                          uint32_t  version)
-{
-  char *utf8_filename;
-
-  if (g_path_is_absolute (infilename))
-    utf8_filename = g_filename_display_basename (infilename);
-  else
-    utf8_filename = g_filename_display_name (infilename);
-
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-      if (no_heading) break;
-
-      maybe_convert_fprintf (outfile, _("Recycle bin file: '%s'"), utf8_filename);
-      fputs ("\n", outfile);
-      maybe_convert_fprintf (outfile, _("Version: %u"), version);
-      fputs ("\n\n", outfile);
-      maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"), delim, delim, delim, delim);
-      fputs ("\n", outfile);
-      break;
-
-    case OUTPUT_XML:
-      fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-      fprintf (outfile, "<recyclebin format=\"file\" version=\"%u\">\n", version);
-      fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
-      break;
-
-    default:
-      g_warn_if_reached();
-  }
-
-  g_free (utf8_filename);
-}
-
 
 static void print_record (FILE        *outfile,
                           rbin_struct *record)
@@ -211,25 +150,6 @@ static void print_record (FILE        *outfile,
       g_return_if_reached();
   }
   g_free (utf8_filename);
-}
-
-
-static void print_footer (FILE *outfile)
-{
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-      /* do nothing */
-      break;
-
-    case OUTPUT_XML:
-      fputs ("</recyclebin>\n", outfile);
-      break;
-
-    default:
-      g_return_if_reached();
-      break;
-  }
 }
 
 /* Check if index file has sufficient amount of data for reading */
@@ -431,7 +351,8 @@ int main (int argc, char **argv)
   }
 
   rewind (infile);
-  print_header (outfile, fileargs[0], info2_version);
+  if ( !no_heading || (output_format != OUTPUT_CSV) )
+    print_header (outfile, fileargs[0], info2_version, TRUE);
 
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));
