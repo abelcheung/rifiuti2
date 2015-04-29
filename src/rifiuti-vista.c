@@ -217,33 +217,33 @@ void print_record (char *index_file,
   switch (output_format)
   {
     case OUTPUT_CSV:
+      fprintf (outfile, "%s%s%s%s%" PRIu64 "%s",
+          basename, delim, asctime, delim,
+          record->filesize, delim);
+
       if (always_utf8)
-        fprintf (outfile, "%s%s%s%s%" PRIu64 "%s%s\n",
-            basename, delim, asctime, delim,
-            record->filesize, delim, record->utf8_filename);
+        fprintf (outfile, "%s\n", record->utf8_filename);
       else
       {
         char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
         if (!localname)
-          localname = g_strdup(_("(File name not representable in current language)"));
+          localname = g_locale_from_utf8(_("(File name not representable in current language)"),
+              -1, NULL, NULL, NULL);
 
-        fprintf (outfile, "%s%s%s%s%" PRIu64 "%s%s\n",
-            basename, delim, asctime, delim,
-            record->filesize, delim, localname);
+        fprintf (outfile, "%s\n", localname);
         g_free (localname);
       }
       break;
 
     case OUTPUT_XML:
-      fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n",
-               basename, asctime, record->filesize);
-      fprintf (outfile, "    <path>%s</path>\n", record->utf8_filename);
-      fputs ("  </record>\n", outfile);
+      fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n"
+                        "    <path>%s</path>\n"
+                        "  </record>\n",
+                        basename, asctime, record->filesize, record->utf8_filename);
       break;
 
     default:
       g_warn_if_reached();
-      break;
   }
 
   fclose (inf);
