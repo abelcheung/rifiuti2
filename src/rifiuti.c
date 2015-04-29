@@ -315,6 +315,28 @@ int main (int argc, char **argv)
     }
   }
 
+  /* Is charset valid? */
+  if (legacy_encoding)
+  {
+    GIConv try;
+    try = g_iconv_open (legacy_encoding, "UTF-8");
+    if (try == (GIConv) -1)
+    {
+      g_printerr (_("'%s' is not a valid code page or encoding. Only those supported by"
+            " 'iconv' can be used.\n"), legacy_encoding);
+#ifdef G_OS_WIN32
+      g_printerr (_("Please visit following web page for a list closely resembling encodings supported by rifiuti:\n\n\t%s\n\n"),
+          "https://www.gnu.org/software/libiconv/");
+#endif
+#ifdef G_OS_UNIX
+      g_printerr (_("Please execute 'iconv -l' for list of supported encodings.\n"));
+#endif
+      exit (RIFIUTI_ERR_ENCODING);
+    }
+    else
+      g_iconv_close (try);
+  }
+
   if (NULL == delim)
     delim = g_strndup ("\t", 2);
 

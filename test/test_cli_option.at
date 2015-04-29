@@ -22,6 +22,7 @@ AT_SETUP([Invalid options])
 AT_KEYWORDS([option])
 _r2_check_option([rifiuti --invalid-option],[1])
 _r2_check_option([rifiuti-vista --invalid-option],[1])
+_r2_check_option([rifiuti -l foobar $srcdir/samples/INFO2-sample2],[4])
 AT_CLEANUP
 
 AT_SETUP([Wrong combinations])
