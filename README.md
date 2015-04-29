@@ -4,37 +4,48 @@
 
 But since rifiuti (last updated 2004) is restricted to English version of Windows (fail to analyze any non-latin character), thus this rewrite. However it does more:
 
-* Supports legacy Windows file names in any character set supported by `iconv()`, as well as Unicode ones
-* Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
-* Preliminary guard against specially crafted recycle bin files
-* Supports output in XML format as well as original tab-delimited text
-* User interface and messages can be translated
+- [x] Supports all localized versions of Windows &mdash; both newer Unicode-based ones and legacy ones
+- [x] Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
+- [x] Preliminary guard against specially crafted recycle bin files
+- [x] Supports output in XML format as well as original tab-delimited text
+- [x] User interface and messages can be translated
 
-Latest features and changes can be found in NEWS file.
+Latest features and changes can be found in [NEWS](News.md) file.
 
 [1]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
 
-###Usage
+### Usage
 
 `rifiuti` is designed to be portable command line programs. Depending on relevant Windows recycle bin format, there are 2 binaries to choose (most users would probably want first one):
 
-* `rifituti-vista`: Scans `\$Recycle.bin` style folder (Vista or above)
-* `rifiuti`: Reads INFO2 file in `\RECYCLED` or `\RECYCLER` folder (Windows 98 to 2003)
+Program | Recycle bin from OS | Purpose
+--------|---------------------|--------
+`rifiuti-vista`|Vista or above|Scans `\$Recycle.bin` style folder
+`rifiuti`  |Windows 98 to 2003|Reads `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
 
-Run `rifiuti --help-all` or `rifiuti-vista --help-all` for their corresponding command line options.
+Run programs without any option or with `--help-all` option for more detail. Here are some of the more useful options:
 
-###Compiling
+ Option | Purpose
+-------:|:--------
+-8      | Always output in UTF-8
+-o      | Output to file
+-x      | Output XML instead of tab-separated list
+-l      | Display legacy (8.3) filenames and specify its codepage
 
-The only mandatory requirement is [Glib][2] ≥ 2.16. It should be bundled with any Linux / Unix systems since 2008. Windows libraries and headers are also available for download from [GTK+ project][3].
+#### Examples
 
-**Warning**: Since 0.6.x, `rifiuti` would not be guaranteed to compile on old [MinGW32][4] (project has become stagnant since 2012). Any future releases will be compiled on MinGW64 in case of Windows platform. For reference author is using [MSYS2][5] as development platform on Windows.
+* <dt>`rifiuti-vista -x -o recyclebin.xml S-1-2-3\`</dt>
+<dd>Parse recycle bin folder `S-1-2-3` and write XML result to `recyclebin.xml`</dd>
 
-[2]: https://git.gnome.org/browse/glib
-[3]: http://www.gtk.org/download/index.php
-[4]: http://www.mingw.org/
-[5]: https://msys2.github.io/
+* <dt>`rifiuti -l CP932 -8 INFO2`</dt>
+<dd>Assume INFO2 file is generated from Japanese Windows, and display result on console in UTF-8 encoding</dd>
 
-###Availability
+### Supported platform
+
+It has been tested on Linux (as early as Ubuntu 8.04), Windows XP and Windows 7.
+More compatibility fix for other architectures welcome.
+
+### Availability
 
 Windows binaries, if applicable, would be officially provided here.
 
@@ -44,5 +55,5 @@ For Linux, DEB format packages are available officially on [Debian][6] and [Ubun
 [7]: http://packages.ubuntu.com/search?keywords=rifiuti2
 [8]: https://forensics.cert.org/
 
-###Build status
+### Build status
 [![Build Status](https://travis-ci.org/abelcheung/rifiuti2.svg)](https://travis-ci.org/abelcheung/rifiuti2)
