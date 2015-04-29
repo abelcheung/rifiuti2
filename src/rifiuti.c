@@ -183,18 +183,17 @@ static int validate_index_file (FILE     *inf,
         g_critical (_("Invalid record size for this version of INFO2"));
         return RIFIUTI_ERR_BROKEN_FILE;
       }
-      if ( !legacy_encoding && ( (output_format == OUTPUT_XML) ||
-            ( ( output_format == OUTPUT_CSV ) && always_utf8 ) ) )
+      if ( !legacy_encoding )
       {
-        g_printerr (_("This INFO2 file was produced on a Windows 98. Because unicode output "
-              "is requested, please specify its codepage with '--legacy-filename' option.\n\n"));
+        g_printerr (_("This INFO2 file was produced on a Windows 98. Please specify codepage "
+                      "of concerned system with '-l' or '--legacy-filename' option.\n\n"));
         /*
          * TRANSLATOR COMMENT: use suitable example from YOUR language & code page
          * TRANSLATOR COMMENT: */
         g_printerr (_("For example, if file name was expected to contain accented latin characters, "
-              "use '--legacy-filename=CP1252' option; or in case of Japanese characters, "
-              "'--legacy-filename=CP932'.\n\n"
-              "Encodings and code pages supported by 'iconv' can be used."));
+              "use '-l CP1252' option; or in case of Japanese characters, "
+              "'-l CP932'.\n\n"
+              "Code pages (or any other encodings) supported by 'iconv' can be used.\n"));
         return RIFIUTI_ERR_ARG;
       }
       break;
