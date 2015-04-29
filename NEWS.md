@@ -1,4 +1,4 @@
-==== rifiuti2 0.6.0 ====
+### 0.6.0
 * Windows 10 recycle bin support
 * Bug fix for Win98 INFO2 file support
 * Behavior change:
@@ -9,12 +9,12 @@
   - INFO2 version:
     * No more accepts standard input as input data
 
-==== rifiuti2 0.5.1 ====
+### 0.5.1
 * New manpage
 * Test cases added to repository
 * Debian packaging stuff added to repository
 
-==== rifiuti2 0.5.0 ====
+### 0.5.0
 * Complete rewrite, using glib for I18N support and unicode handling
 * This means INFO2 records from any localized version of Windows can
   be parsed correctly

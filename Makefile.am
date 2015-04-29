@@ -5,6 +5,7 @@ SUBDIRS = src po test
 EXTRA_DIST = \
 	     docs      \
 	     README.md \
+	     NEWS.md   \
 	     $(NULL)
 
 dist-hook:
