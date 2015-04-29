@@ -15,7 +15,7 @@ AT_SETUP([INFO2 Sample 2])
 AT_KEYWORDS([info2])
 AT_CHECK([
 		cp $srcdir/samples/INFO2-sample2.txt expout
-		$abs_top_builddir/src/rifiuti -n -8 --from-encoding=latin1 $srcdir/samples/INFO2-sample2
+		$abs_top_builddir/src/rifiuti -n -8 -l latin1 $srcdir/samples/INFO2-sample2
 ],, [expout], [])
 AT_CLEANUP
 
@@ -23,7 +23,7 @@ AT_SETUP([Legacy path names])
 AT_KEYWORDS([info2])
 AT_CHECK([
 		cp $srcdir/samples/INFO2-sample1-alt.txt expout
-		$abs_top_builddir/src/rifiuti -l -n $srcdir/samples/INFO2-sample1
+		$abs_top_builddir/src/rifiuti -n -8 -l CP936 $srcdir/samples/INFO2-sample1
 ],, [expout], [])
 AT_CLEANUP
 

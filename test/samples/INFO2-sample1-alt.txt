@@ -1,4 +1,4 @@
-44	2008-10-28 15:53:42	No	4096	C:\DOCUME~1\ALLUSE~1\Desktop\”–µ¿◊¿~1.LNK
+44	2008-10-28 15:53:42	No	4096	C:\DOCUME~1\ALLUSE~1\Desktop\ÊúâÈÅìÊ°å~1.LNK
 45	2008-11-03 15:01:59	No	4096	C:\Documents and Settings\Administrator\Desktop\wongsir_url.txt
 46	2008-11-06 09:20:58	No	2912256	C:\Documents and Settings\Administrator\Desktop\dd-wrt.v24_mini_wrt54g.bin
 47	2008-11-13 12:08:39	No	765952	C:\Documents and Settings\Administrator\Desktop\theme\.svn
@@ -7,7 +7,7 @@
 50	2008-11-19 04:42:04	No	4096	C:\Documents and Settings\All Users\Desktop\Wireshark.lnk
 57	2008-11-19 05:07:15	No	2727936	C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline.rar
 64	2008-11-19 05:07:35	Yes	2727936	C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline
-65	2008-11-19 05:17:12	No	4096	C:\DOCUME~1\ADMINI~1\Desktop\360±£~1.LNK
+65	2008-11-19 05:17:12	No	4096	C:\DOCUME~1\ADMINI~1\Desktop\360‰øù~1.LNK
 66	2008-11-19 05:21:37	No	2732032	C:\Documents and Settings\Administrator\Desktop\gdb
 67	2008-11-19 05:21:37	No	2723840	C:\Documents and Settings\Administrator\Desktop\gdb.zip
 68	2008-11-19 11:34:23	No	0	C:\Documents and Settings\Administrator\Desktop\recovered files

@@ -5,7 +5,7 @@ m4_defun([_r2_check_option],
 AT_SETUP([Short Options])
 AT_KEYWORDS([option])
 _r2_check_option([rifiuti -?])
-_r2_check_option([rifiuti -t : -l -n -8 $srcdir/samples/INFO2-empty])
+_r2_check_option([rifiuti -t : -n -8 $srcdir/samples/INFO2-empty])
 _r2_check_option([rifiuti-vista -?])
 _r2_check_option([rifiuti-vista -n -8 $srcdir/samples/dir-sample1/])
 AT_CLEANUP
@@ -26,7 +26,6 @@ AT_CLEANUP
 
 AT_SETUP([Wrong combinations])
 AT_KEYWORDS([option])
-_r2_check_option([rifiuti -x -l $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti -x -t : $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti -x -n -8 $srcdir/samples/INFO2-empty],[1])
 _r2_check_option([rifiuti-vista -x -8 $srcdir/samples/dir-sample1],[1])
