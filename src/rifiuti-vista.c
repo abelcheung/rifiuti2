@@ -74,56 +74,82 @@ static GOptionEntry textoptions[] =
 
 
 /* Check if index file has sufficient amount of data for reading */
-gboolean validate_index_file (FILE   *inf,
-                              off_t   size)
+/* 0 = success, all other return status = error */
+static int validate_index_file (FILE     *inf,
+                                off_t     size,
+                                uint64_t *version,
+                                uint32_t *namelength)
 {
-  uint64_t version;
-  uint32_t namelength;
-  off_t    expected;
+  off_t   expected;
+  size_t  status;
 
-  g_return_val_if_fail ((size > VERSION1_FILENAME_OFFSET), FALSE);
+  g_debug ("Start file validation...");
 
+  if (size <= VERSION1_FILENAME_OFFSET) /* file path can't possibly be empty */
+  {
+    g_debug ("file size = %i, expect larger than %i\n", (int)size, VERSION1_FILENAME_OFFSET);
+    g_critical (_("File is truncated, or probably not an $Recycle.bin index file."));
+    return RIFIUTI_ERR_BROKEN_FILE;
+  }
+
+  /* with file size check already done, fread fail probably mean serious problem */
   rewind (inf);
-  fread (&version, sizeof(version), 1, inf);
-  version = GUINT64_FROM_LE (version);
+  status = fread (version, sizeof(*version), 1, inf);
+  if ( status < 1 )
+  {
+    /* TRANSLATOR COMMENT: the variable is function name */
+    g_critical (_("%s(): fread() failed when reading version info"), __func__);
+    return RIFIUTI_ERR_OPEN_FILE;
+  }
+  *version = GUINT64_FROM_LE (*version);
 
-  switch (version)
+  switch (*version)
   {
     case FORMAT_VISTA:
       expected = VERSION1_FILE_SIZE;
-      if ((size == expected) || (size == expected - 1)) return TRUE;
+      /* see parse_record_data() for reason */
+      if ((size == expected) || (size == expected - 1)) return 0;
       break;
 
     case FORMAT_WIN10:
       g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
-      fseek (inf, VERSION2_FILENAME_OFFSET - sizeof(namelength), SEEK_SET);
-      fread (&namelength, sizeof(namelength), 1, inf);
-      namelength = GUINT32_FROM_LE (namelength);
-      expected = VERSION2_FILENAME_OFFSET + namelength * 2;
-      if (size == expected) return TRUE;
+      fseek (inf, VERSION2_FILENAME_OFFSET - sizeof(*namelength), SEEK_SET);
+      if ( status < 1 )
+      {
+        /* TRANSLATOR COMMENT: the variable is function name */
+        g_critical (_("%s(): fread() failed when reading file name length"), __func__);
+        return RIFIUTI_ERR_OPEN_FILE;
+      }
+      status = fread (namelength, sizeof(*namelength), 1, inf);
+      *namelength = GUINT32_FROM_LE (*namelength);
+
+      /* Fixed header length + file name length in UTF-16 encoding */
+      expected = VERSION2_FILENAME_OFFSET + (*namelength) * 2;
+      if (size == expected) return 0;
       break;
 
     default:
-      g_return_val_if_reached (FALSE);
+      g_return_val_if_reached (RIFIUTI_ERR_BROKEN_FILE);
   }
 
   g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
       (uint64_t)size, (uint64_t)expected);
-  return FALSE;
+  return RIFIUTI_ERR_BROKEN_FILE;
 }
 
 
-rbin_struct *get_record_data (FILE     *inf,
-                              uint64_t  version,
-                              gboolean  erraneous)
+static rbin_struct *parse_record_data (FILE     *inf,
+                                       uint64_t  version,
+                                       uint32_t  namelength,
+                                       gboolean  erraneous)
 {
   uint64_t     win_filetime;
   rbin_struct *record;
   time_t       file_epoch;
   gunichar2   *ucs2_filename;
   GError      *error = NULL;
-  uint32_t     namelength;
 
+  fseek (inf, FILESIZE_OFFSET, SEEK_SET);
   record = g_malloc0 (sizeof (rbin_struct));
   record->version = version;
 
@@ -132,7 +158,7 @@ rbin_struct *get_record_data (FILE     *inf,
    * In such occasion file size only occupies 56 bit, not 64 bit as it ought to be.
    * Actually this 56-bit file size is very likely wrong after all. Probably some
    * bug inside Windows. This is observed during deletion of dd.exe from Forensic
-   * Acquisition Utilities by George M. Garner Jr.
+   * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
    */
   fread (&record->filesize, (erraneous?7:8), 1, inf);
 
@@ -145,18 +171,16 @@ rbin_struct *get_record_data (FILE     *inf,
   switch (version)
   {
     case FORMAT_VISTA:
-      namelength = (uint32_t)WIN_PATH_MAX;
+      fseek (inf, VERSION1_FILENAME_OFFSET - (int)erraneous, SEEK_SET);
       break;
-
     case FORMAT_WIN10:
-      fread (&namelength, sizeof(namelength), 1, inf);
-      namelength = GUINT32_FROM_LE (namelength);
+      fseek (inf, VERSION2_FILENAME_OFFSET, SEEK_SET);
       break;
   }
 
   /* One extra char for safety, though path should have already been null terminated */
   ucs2_filename = g_malloc0 (2 * (namelength + 1));
-  fread (ucs2_filename, (size_t)namelength, 2, inf);
+  fread (ucs2_filename, namelength, 2, inf);
 
   record->utf8_filename = g_utf16_to_utf8 (ucs2_filename, -1, NULL, NULL, &error);
 
@@ -170,61 +194,63 @@ rbin_struct *get_record_data (FILE     *inf,
 }
 
 
-void print_record (char *index_file,
-                   FILE *outfile)
+static void parse_and_print_record (char *index_file,
+                                    FILE *outfile)
 {
   FILE        *inf;
   rbin_struct *record;
   char         ascii_deltime[21];
   char        *basename;
+  int          status;
   uint64_t     version;
+  uint32_t     namelength = 0;
   GStatBuf     st;
+
+  basename = g_path_get_basename (index_file);
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {
-    g_warning (_("Error opening file '%s' for reading: %s"), index_file, strerror (errno));
+    g_warning (_("Error opening file '%s' for reading: %s"), basename, strerror (errno));
     return;
   }
 
   if ( 0 != g_stat (index_file, &st) )
   {
-    g_warning (_("Error getting metadata of file '%s': %s"), index_file, strerror (errno));
+    g_warning (_("Error getting metadata of file '%s': %s"), basename, strerror (errno));
     return;
   }
 
-  if ( !validate_index_file (inf, st.st_size) )
+  status = validate_index_file (inf, st.st_size, &version, &namelength);
+  if ( status != 0 )
   {
-    g_warning (_("Index file '%s' has incorrect size"), index_file);
+    g_warning (_("Failed to read index file '%s', or it contains invalid recycle bin data."), basename);
     fclose (inf);
     return;
   }
 
   rewind (inf);
-  fread (&version, sizeof(version), 1, inf);
-  version = GUINT64_FROM_LE (version);
 
   switch (version)
   {
     case FORMAT_VISTA:
-      /* see get_record_data() comment on 2nd parameter */
-      record = get_record_data (inf, version, (st.st_size == VERSION1_FILE_SIZE - 1));
+      /* see parse_record_data() for meaning of last parameter */
+      record = parse_record_data (inf, version, (uint32_t)WIN_PATH_MAX,
+          (st.st_size == VERSION1_FILE_SIZE - 1));
       break;
 
     case FORMAT_WIN10:
-      record = get_record_data (inf, version, FALSE);
+      record = parse_record_data (inf, version, namelength, FALSE);
       break;
 
     default:
-      g_warning ( "'%s' is not recognized as recycle bin index file.", index_file );
-      return;
+      /* VERY wrong if reaching here. Version info has already been filtered once */
+      g_error (_("Version info for '%s' still wrong despite file validation."), basename);
   }
 
   if ( 0 == strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
-    g_warning (_("Error formatting file deletion time for file '%s'."), index_file);
+    g_warning (_("Error formatting file deletion time for file '%s'."), basename);
     strncpy ((char*)ascii_deltime, "???", 4);
   }
-
-  basename = g_path_get_basename (index_file);
 
   switch (output_format)
   {
@@ -423,7 +449,7 @@ int main (int argc, char **argv)
   if ( !no_heading || (output_format != OUTPUT_CSV) )
     print_header (outfile, fileargs[0], 0, FALSE); /* FIXME: version to be implemented */
 
-  g_ptr_array_foreach (filelist, (GFunc) print_record, outfile);
+  g_ptr_array_foreach (filelist, (GFunc) parse_and_print_record, outfile);
 
   print_footer (outfile);
 
