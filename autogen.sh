@@ -2,4 +2,4 @@
 
 glib-gettextize --copy --force
 
-autoreconf -f -i -v
+autoreconf -f -i -v "$@"
