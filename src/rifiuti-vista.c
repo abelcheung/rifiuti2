@@ -277,7 +277,10 @@ int main (int argc, char **argv)
   char           *bug_report_str;
 
 
+  /* displaying localized file names not working so well */
+  g_setenv ("LC_CTYPE", "UTF-8", TRUE);
   setlocale (LC_ALL, "");
+
   /* searching current dir might be more useful on e.g. Windows */
   if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
     bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
