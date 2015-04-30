@@ -79,6 +79,7 @@ gboolean validate_index_file (FILE   *inf,
 {
   uint64_t version;
   uint32_t namelength;
+  off_t    expected;
 
   g_return_val_if_fail ((size > 0x18), FALSE);
 
@@ -89,18 +90,25 @@ gboolean validate_index_file (FILE   *inf,
   switch (version)
   {
     case FORMAT_VISTA:
-      return ((size == 0x21F) || (size == 0x220));
+      expected = 0x220;
+      if ((size == expected) || (size == expected - 1)) return TRUE;
+      break;
 
     case FORMAT_WIN10:
       g_return_val_if_fail ((size > 0x1C), FALSE);
       fseek (inf, 0x18, SEEK_SET);
       fread (&namelength, 4, 1, inf);
       namelength = GUINT32_FROM_LE (namelength);
-      return (size == (0x1C + namelength * 2));
+      expected = 0x1C + namelength * 2;
+      if (size == expected) return TRUE;
+      break;
 
     default:
-      return FALSE;
+      g_return_val_if_reached (FALSE);
   }
+  g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
+      (uint64_t)size, (uint64_t)expected);
+  return FALSE;
 }
 
 
@@ -307,6 +315,8 @@ int main (int argc, char **argv)
     exit (0);
   }
 
+  g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_warning (_("Error parsing options: %s"), error->message);
@@ -352,6 +362,8 @@ int main (int argc, char **argv)
 
   filelist = g_ptr_array_new ();
   
+  g_debug ("Start basic file checking...");
+
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
     g_critical (_("'%s' des not exist."), fileargs[0]);
@@ -413,6 +425,8 @@ int main (int argc, char **argv)
   g_ptr_array_foreach (filelist, (GFunc) print_record, outfile);
 
   print_footer (outfile);
+
+  g_debug ("Cleaning up...");
 
   g_ptr_array_foreach (filelist, (GFunc) g_free, NULL);
   g_ptr_array_free (filelist, TRUE);

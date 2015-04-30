@@ -164,6 +164,7 @@ static int validate_index_file (FILE     *inf,
 
   if (size < RECORD_START_OFFSET) /* empty INFO2 file has 20 bytes */
   {
+    g_debug ("file size = %d, expect at least %d\n", (int)size, RECORD_START_OFFSET);
     g_critical (_("This INFO2 file is truncated, or probably not an INFO2 file."));
     return RIFIUTI_ERR_BROKEN_FILE;
   }
@@ -181,6 +182,7 @@ static int validate_index_file (FILE     *inf,
     case FORMAT_WIN98:
       if (*recordsize != VERSION4_RECORD_SIZE)
       {
+        g_debug ("Size per record = %u, expect %u instead.", *recordsize, VERSION4_RECORD_SIZE);
         g_critical (_("Invalid record size for this version of INFO2"));
         return RIFIUTI_ERR_BROKEN_FILE;
       }
@@ -202,6 +204,7 @@ static int validate_index_file (FILE     *inf,
     case FORMAT_WIN2K:
       if (*recordsize != VERSION5_RECORD_SIZE)
       {
+        g_debug ("Size per record = %u, expect %u instead.", *recordsize, VERSION5_RECORD_SIZE);
         g_critical (_("Invalid record size for this version of INFO2"));
         return RIFIUTI_ERR_BROKEN_FILE;
       }
@@ -276,6 +279,8 @@ int main (int argc, char **argv)
     exit (0);
   }
 
+  g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_warning (_("Error parsing options: %s"), error->message);
@@ -341,6 +346,8 @@ int main (int argc, char **argv)
   if (NULL == delim)
     delim = g_strndup ("\t", 2);
 
+  g_debug ("Start basic file checking...");
+
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
     g_critical (_("'%s' des not exist."), fileargs[0]);
@@ -364,6 +371,8 @@ int main (int argc, char **argv)
     g_critical (_("Error opening file '%s' for reading: %s"), fileargs[0], strerror (errno));
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
+
+  g_debug ("Start file validation...");
 
   status = validate_index_file (infile, st.st_size, &info2_version, &recordsize);
   if (0 != status)
@@ -458,6 +467,8 @@ int main (int argc, char **argv)
   }
 
   print_footer (outfile);
+
+  g_debug ("Cleaning up...");
 
   fclose (infile);
   fclose (outfile);

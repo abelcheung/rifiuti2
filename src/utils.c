@@ -34,11 +34,26 @@ time_t win_filetime_to_epoch (uint64_t win_filetime)
 {
   uint64_t epoch;
 
+  g_debug ("%s(): FileTime = %" G_GUINT64_FORMAT, __func__, win_filetime);
+
   /* Let's assume we don't need millisecond resolution time for now */
   epoch = (win_filetime - 116444736000000000LL) / 10000000;
 
   /* Let's assume this program won't survive till 22th century */
   return (time_t) (epoch & 0xFFFFFFFF);
+}
+
+void my_debug_handler (const char     *log_domain,
+                       GLogLevelFlags  log_level,
+                       const char     *message,
+                       gpointer        data)
+{
+  if (log_level == G_LOG_LEVEL_DEBUG)
+  {
+    const char *val = g_getenv ("RIFIUTI_DEBUG");
+    if (val != NULL)
+      g_printerr ("DEBUG: %s\n", message);
+  }
 }
 
 void maybe_convert_fprintf (FILE       *file,
@@ -75,6 +90,10 @@ void print_header (FILE     *outfile,
   extern int      output_format;
   extern char    *delim;
 
+  g_return_if_fail (infilename != NULL);
+
+  g_debug ("Entering %s()", __func__);
+
   if (g_path_is_absolute (infilename))
     utf8_filename = g_filename_display_basename (infilename);
   else
@@ -107,11 +126,15 @@ void print_header (FILE     *outfile,
       g_warn_if_reached();
   }
   g_free (utf8_filename);
+
+  g_debug ("Leaving %s()", __func__);
 }
 
 void print_footer (FILE *outfile)
 {
   extern int output_format;
+
+  g_debug ("Entering %s()", __func__);
 
   switch (output_format)
   {
@@ -127,6 +150,7 @@ void print_footer (FILE *outfile)
       g_return_if_reached();
       break;
   }
+  g_debug ("Leaving %s()", __func__);
 }
 
 /* GUI message box */
