@@ -422,6 +422,7 @@ int main (int argc, char **argv)
     }
 
     memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
+    win_filetime = GUINT64_FROM_LE (win_filetime);
 
   /* File deletion time */
     file_epoch = win_filetime_to_epoch (win_filetime);

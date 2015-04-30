@@ -84,6 +84,7 @@ gboolean validate_index_file (FILE   *inf,
 
   rewind (inf);
   fread (&version, 8, 1, inf);
+  version = GUINT64_FROM_LE (version);
 
   switch (version)
   {
@@ -94,6 +95,7 @@ gboolean validate_index_file (FILE   *inf,
       g_return_val_if_fail ((size > 0x1C), FALSE);
       fseek (inf, 0x18, SEEK_SET);
       fread (&namelength, 4, 1, inf);
+      namelength = GUINT32_FROM_LE (namelength);
       return (size == (0x1C + namelength * 2));
 
     default:
@@ -127,6 +129,7 @@ rbin_struct *get_record_data (FILE     *inf,
 
   /* File deletion time */
   fread (&win_filetime, 8, 1, inf);
+  win_filetime = GUINT64_FROM_LE (win_filetime);
   file_epoch = win_filetime_to_epoch (win_filetime);
   if (use_localtime)
     record->filetime = localtime (&file_epoch);
@@ -141,6 +144,7 @@ rbin_struct *get_record_data (FILE     *inf,
 
     case FORMAT_WIN10:
       fread (&namelength, 4, 1, inf);
+      namelength = GUINT32_FROM_LE (namelength);
       break;
   }
 
@@ -191,6 +195,7 @@ void print_record (char *index_file,
 
   rewind (inf);
   fread (&version, 8, 1, inf);
+  version = GUINT64_FROM_LE (version);
 
   switch (version)
   {
