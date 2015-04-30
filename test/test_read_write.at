@@ -13,8 +13,8 @@ AT_CLEANUP
 AT_SETUP([Err on non-regular file (Unix)])
 AT_KEYWORDS([file])
 AT_CHECK([uname -s | grep -viq 'MINGW\|MSYS' || exit 77])
-AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [3], [], [ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [3], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [2], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [2], [], [ignore])
 AT_CLEANUP
 
 dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as regular files.

@@ -81,31 +81,32 @@ gboolean validate_index_file (FILE   *inf,
   uint32_t namelength;
   off_t    expected;
 
-  g_return_val_if_fail ((size > 0x18), FALSE);
+  g_return_val_if_fail ((size > VERSION1_FILENAME_OFFSET), FALSE);
 
   rewind (inf);
-  fread (&version, 8, 1, inf);
+  fread (&version, sizeof(version), 1, inf);
   version = GUINT64_FROM_LE (version);
 
   switch (version)
   {
     case FORMAT_VISTA:
-      expected = 0x220;
+      expected = VERSION1_FILE_SIZE;
       if ((size == expected) || (size == expected - 1)) return TRUE;
       break;
 
     case FORMAT_WIN10:
-      g_return_val_if_fail ((size > 0x1C), FALSE);
-      fseek (inf, 0x18, SEEK_SET);
-      fread (&namelength, 4, 1, inf);
+      g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
+      fseek (inf, VERSION2_FILENAME_OFFSET - sizeof(namelength), SEEK_SET);
+      fread (&namelength, sizeof(namelength), 1, inf);
       namelength = GUINT32_FROM_LE (namelength);
-      expected = 0x1C + namelength * 2;
+      expected = VERSION2_FILENAME_OFFSET + namelength * 2;
       if (size == expected) return TRUE;
       break;
 
     default:
       g_return_val_if_reached (FALSE);
   }
+
   g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
       (uint64_t)size, (uint64_t)expected);
   return FALSE;
@@ -136,13 +137,10 @@ rbin_struct *get_record_data (FILE     *inf,
   fread (&record->filesize, (erraneous?7:8), 1, inf);
 
   /* File deletion time */
-  fread (&win_filetime, 8, 1, inf);
+  fread (&win_filetime, sizeof(win_filetime), 1, inf);
   win_filetime = GUINT64_FROM_LE (win_filetime);
   file_epoch = win_filetime_to_epoch (win_filetime);
-  if (use_localtime)
-    record->filetime = localtime (&file_epoch);
-  else
-    record->filetime = gmtime (&file_epoch);
+  record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
 
   switch (version)
   {
@@ -151,7 +149,7 @@ rbin_struct *get_record_data (FILE     *inf,
       break;
 
     case FORMAT_WIN10:
-      fread (&namelength, 4, 1, inf);
+      fread (&namelength, sizeof(namelength), 1, inf);
       namelength = GUINT32_FROM_LE (namelength);
       break;
   }
@@ -177,7 +175,7 @@ void print_record (char *index_file,
 {
   FILE        *inf;
   rbin_struct *record;
-  char         asctime[21];
+  char         ascii_deltime[21];
   char        *basename;
   uint64_t     version;
   GStatBuf     st;
@@ -202,14 +200,14 @@ void print_record (char *index_file,
   }
 
   rewind (inf);
-  fread (&version, 8, 1, inf);
+  fread (&version, sizeof(version), 1, inf);
   version = GUINT64_FROM_LE (version);
 
   switch (version)
   {
     case FORMAT_VISTA:
       /* see get_record_data() comment on 2nd parameter */
-      record = get_record_data (inf, version, (st.st_size == 0x21F));
+      record = get_record_data (inf, version, (st.st_size == VERSION1_FILE_SIZE - 1));
       break;
 
     case FORMAT_WIN10:
@@ -221,9 +219,9 @@ void print_record (char *index_file,
       return;
   }
 
-  if ( 0 == strftime (asctime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
+  if ( 0 == strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
     g_warning (_("Error formatting file deletion time for file '%s'."), index_file);
-    strncpy ((char*)asctime, "???", 4);
+    strncpy ((char*)ascii_deltime, "???", 4);
   }
 
   basename = g_path_get_basename (index_file);
@@ -232,7 +230,7 @@ void print_record (char *index_file,
   {
     case OUTPUT_CSV:
       fprintf (outfile, "%s%s%s%s%" PRIu64 "%s",
-          basename, delim, asctime, delim,
+          basename, delim, ascii_deltime, delim,
           record->filesize, delim);
 
       if (always_utf8)
@@ -253,7 +251,7 @@ void print_record (char *index_file,
       fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n"
                         "    <path>%s</path>\n"
                         "  </record>\n",
-                        basename, asctime, record->filesize, record->utf8_filename);
+                        basename, ascii_deltime, record->filesize, record->utf8_filename);
       break;
 
     default:
@@ -307,12 +305,12 @@ int main (int argc, char **argv)
   {
     char *msg = g_option_context_get_help (context, FALSE, NULL);
 #ifdef G_OS_WIN32
-    g_set_print_handler ((GPrintFunc) gui_message);
+    g_set_print_handler (gui_message);
 #endif
-    g_print (msg);
+    g_print ("%s", msg);
     g_free (msg);
     g_option_context_free (context);
-    exit (0);
+    exit (EXIT_SUCCESS);
   }
 
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
@@ -327,7 +325,7 @@ int main (int argc, char **argv)
 
   g_option_context_free (context);
 
-  if ( !fileargs || g_strv_length (fileargs) > 1 )
+  if (!fileargs || g_strv_length (fileargs) > 1)
   {
     g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, "
           "or one such index file, as argument."));
@@ -416,7 +414,7 @@ int main (int argc, char **argv)
   else
   {
     g_critical (_("'%s' is not a regular file or directory."), fileargs[0]);
-    exit (RIFIUTI_ERR_BROKEN_FILE);
+    exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if ( !no_heading || (output_format != OUTPUT_CSV) )
@@ -435,11 +433,10 @@ int main (int argc, char **argv)
 
   g_strfreev (fileargs);
   g_free (bug_report_str);
+  g_free (outfilename);
+  g_free (delim);
 
-  if (outfilename) g_free (outfilename);
-  if (delim)       g_free (delim);
-
-  exit (0);
+  exit (EXIT_SUCCESS);
 }
 
 /* vim: set sw=2 expandtab ts=2 : */

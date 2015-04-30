@@ -160,7 +160,9 @@ static int validate_index_file (FILE     *inf,
                                 uint32_t *info2_version,
                                 uint32_t *recordsize)
 {
-  uint32_t dummy;
+  size_t status;
+
+  g_debug ("Start file validation...");
 
   if (size < RECORD_START_OFFSET) /* empty INFO2 file has 20 bytes */
   {
@@ -169,12 +171,26 @@ static int validate_index_file (FILE     *inf,
     return RIFIUTI_ERR_BROKEN_FILE;
   }
 
-  fread (&dummy, 4, 1, inf);
-  *info2_version = GUINT32_FROM_LE (dummy);
+  /* with file size check already done, fread fail probably mean serious problem */
+  fseek (inf, 0, SEEK_SET);
+  status = fread (info2_version, sizeof(*info2_version), 1, inf);
+  if ( status < 1 )
+  {
+    /* TRANSLATOR COMMENT: the variable is function name */
+    g_critical (_("%s(): fread() failed when reading info2_version"), __func__);
+    return RIFIUTI_ERR_OPEN_FILE;
+  }
+  *info2_version = GUINT32_FROM_LE (*info2_version);
 
   fseek (inf, RECORD_SIZE_OFFSET, SEEK_SET);
-  fread (&dummy, 4, 1, inf);
-  *recordsize = GUINT32_FROM_LE (dummy);
+  status = fread (recordsize, sizeof(*recordsize), 1, inf);
+  if ( status < 1 )
+  {
+    /* TRANSLATOR COMMENT: the variable is function name */
+    g_critical (_("%s(): fread() failed when reading recordsize"), __func__);
+    return RIFIUTI_ERR_OPEN_FILE;
+  }
+  *recordsize = GUINT32_FROM_LE (*recordsize);
 
   /* Recordsize should be restricted to either 280 (v4) or 800 bytes (v5) */
   switch (*info2_version) 
@@ -190,9 +206,7 @@ static int validate_index_file (FILE     *inf,
       {
         g_printerr (_("This INFO2 file was produced on a Windows 98. Please specify codepage "
                       "of concerned system with '-l' or '--legacy-filename' option.\n\n"));
-        /*
-         * TRANSLATOR COMMENT: use suitable example from YOUR language & code page
-         * TRANSLATOR COMMENT: */
+        /* TRANSLATOR COMMENT: use suitable example from YOUR language & code page */
         g_printerr (_("For example, if file name was expected to contain accented latin characters, "
               "use '-l CP1252' option; or in case of Japanese characters, "
               "'-l CP932'.\n\n"
@@ -271,12 +285,12 @@ int main (int argc, char **argv)
   {
     char *msg = g_option_context_get_help (context, FALSE, NULL);
 #ifdef G_OS_WIN32
-    g_set_print_handler ((GPrintFunc) gui_message);
+    g_set_print_handler (gui_message);
 #endif
-    g_print (msg);
+    g_print ("%s", msg);
     g_free (msg);
     g_option_context_free (context);
-    exit (0);
+    exit (EXIT_SUCCESS);
   }
 
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
@@ -350,14 +364,14 @@ int main (int argc, char **argv)
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
-    g_critical (_("'%s' des not exist."), fileargs[0]);
+    g_critical (_("'%s' does not exist."), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
   {
     g_critical (_("'%s' is not a regular file."), fileargs[0]);
-    exit (RIFIUTI_ERR_BROKEN_FILE);
+    exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if ( 0 != g_stat (fileargs[0], &st) )
@@ -371,8 +385,6 @@ int main (int argc, char **argv)
     g_critical (_("Error opening file '%s' for reading: %s"), fileargs[0], strerror (errno));
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
-
-  g_debug ("Start file validation...");
 
   status = validate_index_file (infile, st.st_size, &info2_version, &recordsize);
   if (0 != status)
@@ -424,25 +436,24 @@ int main (int argc, char **argv)
                    record->drive, record->index);
       }
 
+      /* TODO: Safer handling of reading legacy filename */
       record->legacy_filename = (char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
       g_snprintf (record->legacy_filename, RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET,
                   "%c%s", driveletters[record->drive],
                   (char *) (buf + LEGACY_FILENAME_OFFSET + 1));
     }
 
+    /* File deletion time */
     memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
     win_filetime = GUINT64_FROM_LE (win_filetime);
-
-  /* File deletion time */
     file_epoch = win_filetime_to_epoch (win_filetime);
-    if (use_localtime)
-      record->filetime = localtime (&file_epoch);
-    else
-      record->filetime = gmtime (&file_epoch);
+    record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
 
+    /* File size or occupied cluster size */
     memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
     record->filesize = GUINT32_FROM_LE (record->filesize);
 
+    /* TODO: safer handling of reading junk after string */
     if (has_unicode_filename)
     {
       record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
@@ -463,7 +474,6 @@ int main (int argc, char **argv)
 
     g_free (record->utf8_filename);
     g_free (record->legacy_filename);
-
   }
 
   print_footer (outfile);
@@ -477,7 +487,7 @@ int main (int argc, char **argv)
   g_free (buf);
   g_free (bug_report_str);
 
-  exit (0);
+  exit (EXIT_SUCCESS);
 }
 
 /* vim: set sw=2 expandtab ts=2 : */

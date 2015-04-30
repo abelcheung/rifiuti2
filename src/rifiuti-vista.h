@@ -37,6 +37,11 @@ enum {
   FORMAT_WIN10
 };
 
+#define VERSION1_FILE_SIZE           0x220
+
+#define VERSION1_FILENAME_OFFSET     0x18
+#define VERSION2_FILENAME_OFFSET     0x1C
+
 struct _rbin_struct {
   uint64_t   version;
   uint64_t   filesize;
