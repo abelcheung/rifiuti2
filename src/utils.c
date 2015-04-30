@@ -165,7 +165,7 @@ static char *convert_with_fallback (const char *string, const char *fallback)
   if (err != NULL)
   {
     g_critical ("Failed to convert message to display: %s\n", err->message);
-    g_error_free (err);
+    g_clear_error (&err);
     return g_strdup (fallback);
   }
 

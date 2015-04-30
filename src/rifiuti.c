@@ -107,7 +107,7 @@ static void print_record (FILE        *outfile,
     {
       g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
                  legacy_encoding, record->index, error->message);
-      g_error_free (error);
+      g_clear_error (&error);
       utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
     }
   }
@@ -128,7 +128,7 @@ static void print_record (FILE        *outfile,
         {
           g_warning (_("Error converting path name to display for record %u: %s"),
                      record->index, error->message);
-          g_error_free (error);
+          g_clear_error (&error);
           shown = g_locale_from_utf8 (_("(File name not representable in current language)"),
               -1, NULL, NULL, NULL);
         }
@@ -298,7 +298,7 @@ int main (int argc, char **argv)
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_warning (_("Error parsing options: %s"), error->message);
-    g_error_free (error);
+    g_clear_error (&error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
   }
@@ -463,7 +463,7 @@ int main (int argc, char **argv)
       {
         g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
                    "UTF-16", record->index, error->message);
-        g_error_free (error);
+        g_clear_error (&error);
         record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
       }
     }

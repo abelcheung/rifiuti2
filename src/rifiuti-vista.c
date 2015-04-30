@@ -162,7 +162,7 @@ rbin_struct *get_record_data (FILE     *inf,
 
   if (error) {
     g_warning (_("Error converting file name to UTF-8 encoding: %s"), error->message);
-    g_error_free (error);
+    g_clear_error (&error);
   }
 
   g_free (ucs2_filename);
@@ -318,7 +318,7 @@ int main (int argc, char **argv)
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_warning (_("Error parsing options: %s"), error->message);
-    g_error_free (error);
+    g_clear_error (&error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
   }
@@ -377,7 +377,7 @@ int main (int argc, char **argv)
     if (NULL == (dir = g_dir_open (fileargs[0], 0, &error)))
     {
       g_critical (_("Error opening directory '%s': %s"), fileargs[0], error->message);
-      g_error_free (error);
+      g_clear_error (&error);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
 
