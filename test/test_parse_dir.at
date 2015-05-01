@@ -1,3 +1,8 @@
+AT_SETUP([Empty $Recycle.bin])
+AT_KEYWORDS([recycledir])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista -n $srcdir/samples/dir-empty],, [], [])
+AT_CLEANUP
+
 AT_SETUP([$Recycle.bin Sample 1])
 AT_KEYWORDS([recycledir])
 dnl AT_XFAIL_IF([true])
