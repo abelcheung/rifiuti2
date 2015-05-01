@@ -167,7 +167,7 @@ static int validate_index_file (FILE     *inf,
   if (size < RECORD_START_OFFSET) /* empty INFO2 file has 20 bytes */
   {
     g_debug ("file size = %d, expect at least %d\n", (int)size, RECORD_START_OFFSET);
-    g_critical (_("This INFO2 file is truncated, or probably not an INFO2 file."));
+    g_printerr (_("This INFO2 file is truncated, or probably not an INFO2 file.\n"));
     return RIFIUTI_ERR_BROKEN_FILE;
   }
 
@@ -227,7 +227,7 @@ static int validate_index_file (FILE     *inf,
       break;
 
     default:
-      g_critical (_("It is not a supported INFO2 file, or probably not an INFO2 file."));
+      g_printerr (_("It is not a supported INFO2 file, or probably not an INFO2 file.\n"));
       return RIFIUTI_ERR_BROKEN_FILE;
   }
   return 0;
@@ -300,7 +300,7 @@ int main (int argc, char **argv)
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing options: %s"), error->message);
+    g_printerr (_("Error parsing options: %s\n"), error->message);
     g_clear_error (&error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -310,8 +310,8 @@ int main (int argc, char **argv)
 
   if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
-    g_warning (_("Must specify exactly one INFO2 file as argument."));
-    g_warning (_("Run program with '-?' option for more info."));
+    g_printerr (_("Must specify exactly one INFO2 file as argument.\n\n"));
+    g_printerr (_("Run program with '-?' option for more info.\n"));
     exit (RIFIUTI_ERR_ARG);
   }
 
@@ -320,7 +320,7 @@ int main (int argc, char **argv)
     outfile = g_fopen (outfilename, "wb");
     if (NULL == outfile)
     {
-      g_critical (_("Error opening file '%s' for writing: %s"), outfilename, strerror (errno));
+      g_printerr (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
@@ -333,7 +333,7 @@ int main (int argc, char **argv)
 
     if ( no_heading || always_utf8 || (NULL != delim) )
     {
-      g_critical (_("Plain text format options can not be used in XML mode."));
+      g_printerr (_("Plain text format options can not be used in XML mode.\n"));
       exit (RIFIUTI_ERR_ARG);
     }
   }
@@ -367,30 +367,30 @@ int main (int argc, char **argv)
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
-    g_critical (_("'%s' does not exist."), fileargs[0]);
+    g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
   {
-    g_critical (_("'%s' is not a regular file."), fileargs[0]);
+    g_printerr (_("'%s' is not a normal file.\n"), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if ( 0 != g_stat (fileargs[0], &st) )
   {
-    g_warning (_("Error getting metadata of file '%s': %s"), fileargs[0], strerror (errno));
+    g_printerr (_("Error getting metadata of file '%s': %s\n"), fileargs[0], strerror (errno));
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   if ( !( infile = g_fopen (fileargs[0], "rb") ) )
   {
-    g_critical (_("Error opening file '%s' for reading: %s"), fileargs[0], strerror (errno));
+    g_printerr (_("Error opening file '%s' for reading: %s\n"), fileargs[0], strerror (errno));
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
   status = validate_index_file (infile, st.st_size, &info2_version, &recordsize);
-  if (0 != status)
+  if ( status != 0 )
   {
     fclose (infile);
     exit (status);

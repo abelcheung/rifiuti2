@@ -210,20 +210,21 @@ static void parse_and_print_record (char *index_file,
 
   if ( NULL == (inf = g_fopen (index_file, "rb")) )
   {
-    g_warning (_("Error opening file '%s' for reading: %s"), basename, strerror (errno));
+    g_printerr (_("Error opening file '%s' for reading: %s\n"), basename, strerror (errno));
     return;
   }
 
   if ( 0 != g_stat (index_file, &st) )
   {
-    g_warning (_("Error getting metadata of file '%s': %s"), basename, strerror (errno));
+    g_printerr (_("Error getting metadata of file '%s': %s\n"), basename, strerror (errno));
     return;
   }
 
   status = validate_index_file (inf, st.st_size, &version, &namelength);
   if ( status != 0 )
   {
-    g_warning (_("Failed to read index file '%s', or it contains invalid recycle bin data."), basename);
+    g_printerr (_("Failed to read index file '%s', or it contains invalid recycle bin data.\n"),
+        basename);
     fclose (inf);
     return;
   }
@@ -303,7 +304,7 @@ static void populate_index_file_list (GSList **list,
 
   if (NULL == (dir = g_dir_open (path, 0, &error)))
   {
-    g_critical (_("Error opening directory '%s': %s"), path, error->message);
+    g_printerr (_("Error opening directory '%s': %s\n"), path, error->message);
     g_clear_error (&error);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
@@ -403,7 +404,7 @@ int main (int argc, char **argv)
 
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_warning (_("Error parsing options: %s"), error->message);
+    g_printerr (_("Error parsing options: %s\n"), error->message);
     g_clear_error (&error);
     g_option_context_free (context);
     exit (RIFIUTI_ERR_ARG);
@@ -413,9 +414,9 @@ int main (int argc, char **argv)
 
   if (!fileargs || g_strv_length (fileargs) > 1)
   {
-    g_warning (_("Must specify exactly one directory containing $Recycle.bin index files, "
-          "or one such index file, as argument."));
-    g_warning (_("Run program with '-?' option for more info."));
+    g_printerr (_("Must specify exactly one directory containing $Recycle.bin index files, "
+          "or one such index file, as argument.\n\n"));
+    g_printerr (_("Run program with '-?' option for more info.\n"));
     exit (RIFIUTI_ERR_ARG);
   }
 
@@ -423,7 +424,7 @@ int main (int argc, char **argv)
   {
     outfile = g_fopen (outfilename, "wb");
     if (NULL == outfile) {
-      g_critical (_("Error opening file '%s' for writing: %s"), outfilename, strerror (errno));
+      g_printerr (_("Error opening file '%s' for writing: %s\n"), outfilename, strerror (errno));
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
@@ -436,7 +437,7 @@ int main (int argc, char **argv)
 
     if ( no_heading || always_utf8 || (NULL != delim) )
     {
-      g_warning (_("Plain text format options can not be used in XML mode."));
+      g_printerr (_("Plain text format options can not be used in XML mode.\n"));
       exit (RIFIUTI_ERR_ARG);
     }
   }
@@ -448,7 +449,7 @@ int main (int argc, char **argv)
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
   {
-    g_critical (_("'%s' des not exist."), fileargs[0]);
+    g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
   else if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
@@ -461,7 +462,7 @@ int main (int argc, char **argv)
        */
       if ( !found_desktop_ini (fileargs[0]) )
       {
-        g_warning (_("No files with name pattern '%s' are found in directory. "
+        g_printerr (_("No files with name pattern '%s' are found in directory.\n"
               "Probably not a $Recycle.bin directory.\n"), "$Ixxxxxx.xxx");
         exit (RIFIUTI_ERR_OPEN_FILE);
       }
@@ -474,7 +475,7 @@ int main (int argc, char **argv)
   }
   else
   {
-    g_critical (_("'%s' is not a regular file or directory."), fileargs[0]);
+    g_printerr (_("'%s' is not a normal file or directory.\n"), fileargs[0]);
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
