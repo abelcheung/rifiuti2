@@ -33,11 +33,6 @@
 
 #include "utils.h"
 
-enum {
-  FORMAT_WIN98 = 4,
-  FORMAT_WIN2K
-};
-
 /* These offsets are relative to file start */
 #define RECORD_SIZE_OFFSET      12
 #define RECORD_START_OFFSET     20
@@ -62,8 +57,6 @@ struct _rbin_struct {
   uint32_t   filesize;
   char      *utf8_filename;
 };
-
-typedef struct _rbin_struct rbin_struct;
 
 #endif
 

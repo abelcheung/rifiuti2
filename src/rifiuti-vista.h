@@ -32,11 +32,6 @@
 
 #include "utils.h"
 
-enum {
-  FORMAT_VISTA = 1ULL,
-  FORMAT_WIN10
-};
-
 #define VERSION1_FILE_SIZE           0x220
 
 #define FILESIZE_OFFSET              0x8
@@ -52,8 +47,6 @@ struct _rbin_struct {
   time_t     deltime; /* for easier comparison (unlike struct tm) */
   char      *utf8_filename;
 };
-
-typedef struct _rbin_struct rbin_struct;
 
 #endif
 

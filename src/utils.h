@@ -42,10 +42,21 @@ enum {
   RIFIUTI_ERR_ENCODING
 };
 
+enum
+{
+  FORMAT_VISTA = 1,
+  FORMAT_WIN10,
+
+  FORMAT_WIN98 = 4,
+  FORMAT_WIN2K,
+};
+
 enum {
   OUTPUT_CSV,
   OUTPUT_XML
 };
+
+typedef struct _rbin_struct rbin_struct;
 
 /* Glib doc is lying; GStatBuf not available until 2.25.
  * Use the definition as of 2.44 */

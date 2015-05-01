@@ -106,13 +106,13 @@ static int validate_index_file (FILE     *inf,
 
   switch (*version)
   {
-    case FORMAT_VISTA:
+    case (uint64_t)FORMAT_VISTA:
       expected = VERSION1_FILE_SIZE;
       /* see populate_record_data() for reason */
       if ((size == expected) || (size == expected - 1)) return 0;
       break;
 
-    case FORMAT_WIN10:
+    case (uint64_t)FORMAT_WIN10:
       g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
       fseek (inf, VERSION2_FILENAME_OFFSET - sizeof(*namelength), SEEK_SET);
       if ( status < 1 )
@@ -171,10 +171,10 @@ static rbin_struct *populate_record_data (FILE     *inf,
 
   switch (version)
   {
-    case FORMAT_VISTA:
+    case (uint64_t)FORMAT_VISTA:
       fseek (inf, VERSION1_FILENAME_OFFSET - (int)erraneous, SEEK_SET);
       break;
-    case FORMAT_WIN10:
+    case (uint64_t)FORMAT_WIN10:
       fseek (inf, VERSION2_FILENAME_OFFSET, SEEK_SET);
       break;
   }
@@ -226,13 +226,13 @@ static void parse_record (char    *index_file,
 
   switch (version)
   {
-    case FORMAT_VISTA:
+    case (uint64_t)FORMAT_VISTA:
       /* see populate_record_data() for meaning of last parameter */
       record = populate_record_data (infile, version, (uint32_t)WIN_PATH_MAX,
           (st.st_size == VERSION1_FILE_SIZE - 1));
       break;
 
-    case FORMAT_WIN10:
+    case (uint64_t)FORMAT_WIN10:
       record = populate_record_data (infile, version, namelength, FALSE);
       break;
 
