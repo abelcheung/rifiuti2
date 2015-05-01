@@ -326,6 +326,29 @@ static void populate_index_file_list (GSList **list,
   g_pattern_spec_free (pattern2);
 }
 
+/* Search for desktop.ini in folder for hint of recycle bin */
+static gboolean found_desktop_ini (char *path)
+{
+  char *filename, *content, *found;
+
+  filename = g_build_filename (path, "desktop.ini", NULL);
+  if ( !g_file_test (filename, G_FILE_TEST_IS_REGULAR) )
+    goto desktop_ini_error;
+
+  if ( !g_file_get_contents (filename, &content, NULL, NULL) )
+    goto desktop_ini_error;
+
+  /* Don't bother parsing, we don't use the content at all */
+  found = strstr (content, RECYCLE_BIN_CLSID);
+  g_free (content);
+  g_free (filename);
+  return (found != NULL);
+
+desktop_ini_error:
+  g_free (filename);
+  return FALSE;
+}
+
 int main (int argc, char **argv)
 {
   FILE           *outfile;
@@ -433,9 +456,15 @@ int main (int argc, char **argv)
     populate_index_file_list (&filelist, fileargs[0]);
     if ( NULL == filelist )
     {
-      g_critical (_("No files with name pattern \"$Ixxxxxx.xxx\" exists in directory. "
-            "Is it really a $Recycle.bin directory?"));
-      exit (RIFIUTI_ERR_OPEN_FILE);
+      /* last ditch effort: search for desktop.ini. Just print empty content
+       * representing empty recycle bin if found.
+       */
+      if ( !found_desktop_ini (fileargs[0]) )
+      {
+        g_warning (_("No files with name pattern '%s' are found in directory. "
+              "Probably not a $Recycle.bin directory.\n"), "$Ixxxxxx.xxx");
+        exit (RIFIUTI_ERR_OPEN_FILE);
+      }
     }
   }
   else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
