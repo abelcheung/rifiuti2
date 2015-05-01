@@ -72,6 +72,9 @@ AM_CONDITIONAL([OS_WINDOWS], [test "x$os_windows" != x])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UINT64_T
+if test "x$ac_cv_c_uint64_t" = "xno" || test "x$ac_cv_c_uint64_t" = "x"; then
+  AC_MSG_ERROR([This system does not support 64 bit integers.])
+fi
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS([setlocale strerror fseek fread memcpy])
