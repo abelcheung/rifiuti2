@@ -33,11 +33,9 @@ AT_CHECK([
 		$abs_top_builddir/src/rifiuti -8 -o expout $srcdir/samples/INFO2-sample1
 		$abs_top_builddir/src/rifiuti -8 $srcdir/samples/INFO2-sample1
 ],, [expout], [])
-
-dnl Files are parsed in undefined order, need sorting
-dnl AT_CHECK([
-dnl		$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
-dnl		$abs_top_builddir/src/rifiuti-vista -8 $srcdir/samples/dir-sample1
-dnl ],, [expout], [])
+AT_CHECK([
+		$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
+		$abs_top_builddir/src/rifiuti-vista -8 $srcdir/samples/dir-sample1
+],, [expout], [])
 
 AT_CLEANUP

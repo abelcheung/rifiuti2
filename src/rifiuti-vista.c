@@ -369,8 +369,9 @@ static int sort_record_by_time (rbin_struct *a,
                                 rbin_struct *b)
 {
   /* time_t can be 32 or 64 bit, can't just return a-b :( */
-  return ( ( a->deltime <  b->deltime ) ? -1 :
-           ( a->deltime == b->deltime ) ?  0 : 1 );
+  return ( ( a->deltime < b->deltime ) ? -1 :
+           ( a->deltime > b->deltime ) ?  1 :
+           strcmp ( a->index, b->index ) );
 }
 
 
