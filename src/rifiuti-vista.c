@@ -88,7 +88,7 @@ static int validate_index_file (FILE     *inf,
   if (size <= VERSION1_FILENAME_OFFSET) /* file path can't possibly be empty */
   {
     g_debug ("file size = %i, expect larger than %i\n", (int)size, VERSION1_FILENAME_OFFSET);
-    g_critical (_("File is truncated, or probably not an $Recycle.bin index file."));
+    g_critical (_("File is truncated, or probably not a $Recycle.bin index file."));
     return RIFIUTI_ERR_BROKEN_FILE;
   }
 
@@ -102,6 +102,7 @@ static int validate_index_file (FILE     *inf,
     return RIFIUTI_ERR_OPEN_FILE;
   }
   *version = GUINT64_FROM_LE (*version);
+  g_debug ("Version = %" G_GUINT64_FORMAT, *version);
 
   switch (*version)
   {
@@ -129,11 +130,13 @@ static int validate_index_file (FILE     *inf,
       break;
 
     default:
-      g_return_val_if_reached (RIFIUTI_ERR_BROKEN_FILE);
+      g_printerr (_("File is not supported, or it is probably not a $Recycle.bin index file.\n"));
+      return RIFIUTI_ERR_BROKEN_FILE;
   }
 
   g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
       (uint64_t)size, (uint64_t)expected);
+  g_printerr (_("Index file expected size and real size do not match.\n"));
   return RIFIUTI_ERR_BROKEN_FILE;
 }
 
@@ -223,7 +226,7 @@ static void parse_and_print_record (char *index_file,
   status = validate_index_file (inf, st.st_size, &version, &namelength);
   if ( status != 0 )
   {
-    g_printerr (_("Failed to read index file '%s', or it contains invalid recycle bin data.\n"),
+    g_printerr (_("File '%s' fails validation.\n"),
         basename);
     fclose (inf);
     return;
