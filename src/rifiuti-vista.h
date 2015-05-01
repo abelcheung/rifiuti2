@@ -47,8 +47,9 @@ enum {
 
 struct _rbin_struct {
   uint64_t   version;
+  char      *index; /* index file name storing these data */ 
   uint64_t   filesize;
-  struct tm *filetime;
+  time_t     deltime; /* for easier comparison (unlike struct tm) */
   char      *utf8_filename;
 };
 

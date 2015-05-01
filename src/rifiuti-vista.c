@@ -108,7 +108,7 @@ static int validate_index_file (FILE     *inf,
   {
     case FORMAT_VISTA:
       expected = VERSION1_FILE_SIZE;
-      /* see parse_record_data() for reason */
+      /* see populate_record_data() for reason */
       if ((size == expected) || (size == expected - 1)) return 0;
       break;
 
@@ -141,14 +141,13 @@ static int validate_index_file (FILE     *inf,
 }
 
 
-static rbin_struct *parse_record_data (FILE     *inf,
-                                       uint64_t  version,
-                                       uint32_t  namelength,
-                                       gboolean  erraneous)
+static rbin_struct *populate_record_data (FILE     *inf,
+                                          uint64_t  version,
+                                          uint32_t  namelength,
+                                          gboolean  erraneous)
 {
   uint64_t     win_filetime;
   rbin_struct *record;
-  time_t       file_epoch;
   gunichar2   *ucs2_filename;
   GError      *error = NULL;
 
@@ -168,8 +167,7 @@ static rbin_struct *parse_record_data (FILE     *inf,
   /* File deletion time */
   fread (&win_filetime, sizeof(win_filetime), 1, inf);
   win_filetime = GUINT64_FROM_LE (win_filetime);
-  file_epoch = win_filetime_to_epoch (win_filetime);
-  record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
+  record->deltime = win_filetime_to_epoch (win_filetime);
 
   switch (version)
   {
@@ -196,63 +194,75 @@ static rbin_struct *parse_record_data (FILE     *inf,
   return record;
 }
 
-
-static void parse_and_print_record (char *index_file,
-                                    FILE *outfile)
+static void parse_record (char    *index_file,
+                          GSList **recordlist)
 {
-  FILE        *inf;
+  FILE        *infile;
   rbin_struct *record;
-  char         ascii_deltime[21];
   char        *basename;
-  int          status;
   uint64_t     version;
   uint32_t     namelength = 0;
   GStatBuf     st;
 
   basename = g_path_get_basename (index_file);
 
-  if ( NULL == (inf = g_fopen (index_file, "rb")) )
-  {
-    g_printerr (_("Error opening file '%s' for reading: %s\n"), basename, strerror (errno));
-    return;
-  }
-
   if ( 0 != g_stat (index_file, &st) )
   {
     g_printerr (_("Error getting metadata of file '%s': %s\n"), basename, strerror (errno));
-    return;
+    goto parse_record_open_error;
   }
 
-  status = validate_index_file (inf, st.st_size, &version, &namelength);
-  if ( status != 0 )
+  if ( NULL == (infile = g_fopen (index_file, "rb")) )
   {
-    g_printerr (_("File '%s' fails validation.\n"),
-        basename);
-    fclose (inf);
-    return;
+    g_printerr (_("Error opening file '%s' for reading: %s\n"), basename, strerror (errno));
+    goto parse_record_open_error;
   }
 
-  rewind (inf);
+  if ( 0 != validate_index_file (infile, st.st_size, &version, &namelength) )
+  {
+    g_printerr (_("File '%s' fails validation.\n"), basename);
+    goto parse_validation_error;
+  }
 
   switch (version)
   {
     case FORMAT_VISTA:
-      /* see parse_record_data() for meaning of last parameter */
-      record = parse_record_data (inf, version, (uint32_t)WIN_PATH_MAX,
+      /* see populate_record_data() for meaning of last parameter */
+      record = populate_record_data (infile, version, (uint32_t)WIN_PATH_MAX,
           (st.st_size == VERSION1_FILE_SIZE - 1));
       break;
 
     case FORMAT_WIN10:
-      record = parse_record_data (inf, version, namelength, FALSE);
+      record = populate_record_data (infile, version, namelength, FALSE);
       break;
 
     default:
       /* VERY wrong if reaching here. Version info has already been filtered once */
-      g_error (_("Version info for '%s' still wrong despite file validation."), basename);
+      g_critical (_("Version info for '%s' still wrong despite file validation."), basename);
+      goto parse_validation_error;
   }
 
-  if ( 0 == strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) ) {
-    g_warning (_("Error formatting file deletion time for file '%s'."), basename);
+  record->index = basename;
+  *recordlist = g_slist_prepend (*recordlist, record);
+  fclose (infile);
+  return;
+
+  parse_validation_error:
+  fclose (infile);
+  parse_record_open_error:
+  g_free (basename);
+}
+
+
+static void print_record (rbin_struct *record,
+                          FILE        *outfile)
+{
+  char ascii_deltime[21];
+  struct tm *tm;
+
+  tm = use_localtime ? localtime (&record->deltime) : gmtime (&record->deltime);
+  if ( 0 == strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", tm) ) {
+    g_warning (_("Error formatting file deletion time for file '%s'."), record->index);
     strncpy ((char*)ascii_deltime, "???", 4);
   }
 
@@ -260,7 +270,7 @@ static void parse_and_print_record (char *index_file,
   {
     case OUTPUT_CSV:
       fprintf (outfile, "%s%s%s%s%" PRIu64 "%s",
-          basename, delim, ascii_deltime, delim,
+          record->index, delim, ascii_deltime, delim,
           record->filesize, delim);
 
       if (always_utf8)
@@ -281,20 +291,13 @@ static void parse_and_print_record (char *index_file,
       fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n"
                         "    <path>%s</path>\n"
                         "  </record>\n",
-                        basename, ascii_deltime, record->filesize, record->utf8_filename);
+                        record->index, ascii_deltime, record->filesize, record->utf8_filename);
       break;
 
     default:
       g_warn_if_reached();
   }
-
-  fclose (inf);
-
-  g_free (basename);
-  g_free (record->utf8_filename);
-  g_free (record);
 }
-
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static void populate_index_file_list (GSList **list,
@@ -348,15 +351,34 @@ static gboolean found_desktop_ini (char *path)
   g_free (filename);
   return (found != NULL);
 
-desktop_ini_error:
+  desktop_ini_error:
   g_free (filename);
   return FALSE;
 }
 
+
+static void free_record (rbin_struct *record)
+{
+  g_free (record->index);
+  g_free (record->utf8_filename);
+  g_free (record);
+}
+
+
+static int sort_record_by_time (rbin_struct *a,
+                                rbin_struct *b)
+{
+  /* time_t can be 32 or 64 bit, can't just return a-b :( */
+  return ( ( a->deltime <  b->deltime ) ? -1 :
+           ( a->deltime == b->deltime ) ?  0 : 1 );
+}
+
+
 int main (int argc, char **argv)
 {
   FILE           *outfile;
-  GSList         *filelist = NULL;
+  GSList         *filelist   = NULL;
+  GSList         *recordlist = NULL;
   char           *fname, *bug_report_str;
 
   GError         *error = NULL;
@@ -405,6 +427,9 @@ int main (int argc, char **argv)
 
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
 
+  /* TODO: support g_win32_get_command_line() from glib 2.40, necessary for reading
+   * non-ASCII file names in Windows
+   */
   if (!g_option_context_parse (context, &argc, &argv, &error))
   {
     g_printerr (_("Error parsing options: %s\n"), error->message);
@@ -485,11 +510,18 @@ int main (int argc, char **argv)
   if ( !no_heading || (output_format != OUTPUT_CSV) )
     print_header (outfile, fileargs[0], 0, FALSE); /* FIXME: version to be implemented */
 
-  g_slist_foreach (filelist, (GFunc) parse_and_print_record, outfile);
+  g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
+
+  recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
+  g_slist_foreach (recordlist, (GFunc) print_record, outfile);
 
   print_footer (outfile);
 
   g_debug ("Cleaning up...");
+
+  /* g_slist_free_full() available only since 2.28 */
+  g_slist_foreach (recordlist, (GFunc) free_record, NULL);
+  g_slist_free (recordlist);
 
   g_slist_foreach (filelist, (GFunc) g_free, NULL);
   g_slist_free (filelist);
