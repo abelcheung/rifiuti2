@@ -62,8 +62,7 @@ AC_SUBST(GLIB_LIBS)
 
 
 dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
+AC_CHECK_HEADERS([errno.h inttypes.h stdio.h time.h])
 
 dnl Platform specific check.
 case "$host" in
@@ -72,13 +71,10 @@ esac
 AM_CONDITIONAL([OS_WINDOWS], [test "x$os_windows" != x])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_STRUCT_TM
-dnl AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 dnl Checks for library functions.
-AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([setlocale strerror])
+AC_CHECK_FUNCS([setlocale strerror fseek fread memcpy])
 
 AC_CONFIG_FILES([
 Makefile
