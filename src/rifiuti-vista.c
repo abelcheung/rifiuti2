@@ -291,16 +291,50 @@ static void parse_and_print_record (char *index_file,
   g_free (record);
 }
 
+
+/* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
+static void populate_index_file_list (GSList **list,
+                                      char   *path)
+{
+  GDir         *dir;
+  char         *direntry, *fname;
+  GPatternSpec *pattern1, *pattern2;
+  GError       *error = NULL;
+
+  if (NULL == (dir = g_dir_open (path, 0, &error)))
+  {
+    g_critical (_("Error opening directory '%s': %s"), path, error->message);
+    g_clear_error (&error);
+    exit (RIFIUTI_ERR_OPEN_FILE);
+  }
+
+  pattern1 = g_pattern_spec_new ("$I??????.*");
+  pattern2 = g_pattern_spec_new ("$I??????");
+
+  while ( (direntry = (char *) g_dir_read_name (dir)) != NULL )
+  {
+    if ( !g_pattern_match_string (pattern1, direntry) &&
+         !g_pattern_match_string (pattern2, direntry) )
+      continue;
+    fname = g_build_filename (path, direntry, NULL);
+    *list = g_slist_prepend (*list, fname);
+  }
+
+  g_dir_close (dir);
+
+  g_pattern_spec_free (pattern1);
+  g_pattern_spec_free (pattern2);
+}
+
 int main (int argc, char **argv)
 {
   FILE           *outfile;
-  GPtrArray      *filelist;
-  char           *fname;
+  GSList         *filelist = NULL;
+  char           *fname, *bug_report_str;
 
   GError         *error = NULL;
   GOptionContext *context;
   GOptionGroup   *textoptgroup;
-  char           *bug_report_str;
 
 
   /* displaying localized file names not working so well */
@@ -387,8 +421,6 @@ int main (int argc, char **argv)
   if (NULL == delim)
     delim = g_strndup ("\t", 2);
 
-  filelist = g_ptr_array_new ();
-  
   g_debug ("Start basic file checking...");
 
   if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
@@ -398,47 +430,18 @@ int main (int argc, char **argv)
   }
   else if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
   {
-    /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
-    GDir         *dir;
-    char         *direntry;
-    GPatternSpec *pattern1, *pattern2;
-
-    if (NULL == (dir = g_dir_open (fileargs[0], 0, &error)))
-    {
-      g_critical (_("Error opening directory '%s': %s"), fileargs[0], error->message);
-      g_clear_error (&error);
-      exit (RIFIUTI_ERR_OPEN_FILE);
-    }
-
-    pattern1 = g_pattern_spec_new ("$I??????.*");
-    pattern2 = g_pattern_spec_new ("$I??????");
-
-    while ( (direntry = (char *) g_dir_read_name (dir)) != NULL )
-    {
-      if ( !g_pattern_match_string (pattern1, direntry) &&
-           !g_pattern_match_string (pattern2, direntry) )
-        continue;
-      fname = g_build_filename (fileargs[0], direntry, NULL);
-      g_ptr_array_add (filelist, fname);
-    }
-
-    g_dir_close (dir);
-
-    g_pattern_spec_free (pattern1);
-    g_pattern_spec_free (pattern2);
-
-    if (filelist->len == 0)
+    populate_index_file_list (&filelist, fileargs[0]);
+    if ( NULL == filelist )
     {
       g_critical (_("No files with name pattern \"$Ixxxxxx.xxx\" exists in directory. "
             "Is it really a $Recycle.bin directory?"));
-      g_ptr_array_free (filelist, FALSE);
       exit (RIFIUTI_ERR_OPEN_FILE);
     }
   }
   else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
   {
     fname = g_strdup (fileargs[0]);
-    g_ptr_array_add (filelist, fname);
+    filelist = g_slist_prepend (filelist, fname);
   }
   else
   {
@@ -449,14 +452,14 @@ int main (int argc, char **argv)
   if ( !no_heading || (output_format != OUTPUT_CSV) )
     print_header (outfile, fileargs[0], 0, FALSE); /* FIXME: version to be implemented */
 
-  g_ptr_array_foreach (filelist, (GFunc) parse_and_print_record, outfile);
+  g_slist_foreach (filelist, (GFunc) parse_and_print_record, outfile);
 
   print_footer (outfile);
 
   g_debug ("Cleaning up...");
 
-  g_ptr_array_foreach (filelist, (GFunc) g_free, NULL);
-  g_ptr_array_free (filelist, TRUE);
+  g_slist_foreach (filelist, (GFunc) g_free, NULL);
+  g_slist_free (filelist);
 
   fclose (outfile);
 
