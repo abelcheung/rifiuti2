@@ -400,7 +400,11 @@ int main (int argc, char **argv)
   if ( !no_heading )
     print_header (outfile, fileargs[0], (int64_t)info2_version, TRUE);
 
-  buf = g_malloc0 (recordsize);
+  /* Add 2 padding bytes as null-termination of unicode file name. Not so confident
+   * that file names created with Win2K or earlier are null terminated, because 
+   * random memory fragments are copied to the padding bytes
+   */
+  buf = g_malloc0 (recordsize + 2);
   record = g_malloc0 (sizeof (rbin_struct));
 
   fseek (infile, RECORD_START_OFFSET, SEEK_SET);
@@ -456,13 +460,14 @@ int main (int argc, char **argv)
     memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
     record->filesize = GUINT32_FROM_LE (record->filesize);
 
-    /* TODO: safer handling of reading junk after string */
     if (has_unicode_filename)
     {
+      /* Added safeguard to memory buffer (2 bytes larger than necessary), so safely assume
+       * string is null terminated
+       */
       record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-                                               WIN_PATH_MAX, NULL, NULL, &error);
-      /* not checking error, since Windows <= 2000 may insert junk after UTF-16 file name */
-      if (!record->utf8_filename)
+                                               -1, NULL, NULL, &error);
+      if (error)
       {
         g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
                    "UTF-16", record->index, error->message);
