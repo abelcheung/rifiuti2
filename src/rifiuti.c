@@ -418,36 +418,28 @@ int main (int argc, char **argv)
       break;
     }
 
-    /* Any legacy character set can contain embedded null byte? */
-    record->legacy_filename = g_strndup ((char *) (buf + LEGACY_FILENAME_OFFSET),
-                                         RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    /* Guarantees null-termination by allocating extra byte */
+    record->legacy_filename =
+      (char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
+    memcpy (record->legacy_filename, buf + LEGACY_FILENAME_OFFSET,
+        RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
 
     memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
     record->index = GUINT32_FROM_LE (record->index);
 
     memcpy (&record->drive, buf + DRIVE_LETTER_OFFSET, 4);
     record->drive = GUINT32_FROM_LE (record->drive);
+    /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
+    if ( record->drive >= sizeof (driveletters) - 1 )
+      g_warning (_("Invalid drive letter (0x%X) for record %u."),
+          record->drive, record->index);
 
-    /* first byte will be removed from filename if file is not in recycle bin */
     record->emptied = FALSE;
-    if (!record->legacy_filename || !*record->legacy_filename)
+    /* first byte will be removed from filename if file is not in recycle bin */
+    if (!*record->legacy_filename)
     {
       record->emptied = TRUE;
-      g_free (record->legacy_filename);
-
-      /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
-      if (record->drive > sizeof (driveletters) - 2)
-      {
-        record->drive = sizeof (driveletters) - 1;
-        g_warning (_("Invalid drive letter (0x%X) for record %u."),
-                   record->drive, record->index);
-      }
-
-      /* TODO: Safer handling of reading legacy filename */
-      record->legacy_filename = (char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-      g_snprintf (record->legacy_filename, RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET,
-                  "%c%s", driveletters[record->drive],
-                  (char *) (buf + LEGACY_FILENAME_OFFSET + 1));
+      *record->legacy_filename = driveletters[ MIN( record->drive, sizeof(driveletters)-1 )];
     }
 
     /* File deletion time */
