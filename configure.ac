@@ -22,16 +22,8 @@ dnl Compiler checks.
 AC_PROG_CC
 AC_PROG_CC_STDC
 
-# https://www.varnish-cache.org/lists/pipermail/varnish-commit/2011-March/006315.html
-if test "x$ac_cv_prog_cc_c99" = "xno" || test "x$ac_cv_prog_cc_c99" = "x"; then
-  if test "x$ac_cv_c_compiler_gnu" = "yes"; then
-    CC="$CC -std=gnu99"
-    AC_RUN_IFELSE(
-		    [AC_LANG_PROGRAM([],[[ return 0; ]])], [],
-		    [AC_MSG_ERROR([Could not find a C99 compatible compiler])])
-  else
-    AC_MSG_ERROR([Could not find a C99 compatible compiler])
-  fi
+if test "x$ac_cv_prog_cc_c99" = "xno"; then
+  AC_MSG_ERROR([Could not find a C99 compatible compiler])
 fi
 
 dnl Always use -Wall for gcc
