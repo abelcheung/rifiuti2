@@ -83,10 +83,10 @@ void maybe_convert_fprintf (FILE       *file,
 
 void print_header (FILE     *outfile,
                    char     *infilename,
-                   uint32_t  version,
+                   int64_t   version,
                    gboolean  is_info2)
 {
-  char           *utf8_filename;
+  char           *utf8_filename, *ver_string;
   extern int      output_format;
   extern char    *delim;
 
@@ -104,8 +104,23 @@ void print_header (FILE     *outfile,
     case OUTPUT_CSV:
       maybe_convert_fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
       fputs ("\n", outfile);
-      maybe_convert_fprintf (outfile, _("Version: %u"), version);
+      switch (version)
+      {
+        case VERSION_NOT_FOUND:
+          /* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
+          ver_string = g_strdup (_("??? (empty folder)"));
+          break;
+        case VERSION_INCONSISTENT:
+          /* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
+          ver_string = g_strdup (_("??? (version inconsistent)"));
+          break;
+        default:
+          ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, version);
+      }
+      maybe_convert_fprintf (outfile, _("Version: %s"), ver_string);
+      g_free (ver_string);
       fputs ("\n\n", outfile);
+
       if (is_info2)
         maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
             delim, delim, delim, delim);
@@ -117,8 +132,9 @@ void print_header (FILE     *outfile,
 
     case OUTPUT_XML:
       fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-      fprintf (outfile, "<recyclebin format=\"%s\" version=\"%u\">\n",
-          (is_info2 ? "file" : "dir"), version);
+      /* No proper way to report wrong version info yet */
+      fprintf (outfile, "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n",
+          (is_info2 ? "file" : "dir"), MAX (version, 0));
       fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
       break;
 

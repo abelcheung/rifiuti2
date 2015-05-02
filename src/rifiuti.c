@@ -397,8 +397,8 @@ int main (int argc, char **argv)
   }
 
   rewind (infile);
-  if ( !no_heading || (output_format != OUTPUT_CSV) )
-    print_header (outfile, fileargs[0], info2_version, TRUE);
+  if ( !no_heading )
+    print_header (outfile, fileargs[0], (int64_t)info2_version, TRUE);
 
   buf = g_malloc0 (recordsize);
   record = g_malloc0 (sizeof (rbin_struct));

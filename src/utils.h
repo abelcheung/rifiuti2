@@ -44,6 +44,10 @@ enum {
 
 enum
 {
+  /* negative number means error when retrieving version info */
+  VERSION_INCONSISTENT = -2,
+  VERSION_NOT_FOUND,
+
   FORMAT_VISTA = 1,
   FORMAT_WIN10,
 
@@ -78,7 +82,7 @@ time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 
 void       print_header             (FILE                *outfile         ,
                                      char                *infilename      ,
-                                     uint32_t             version         ,
+                                     int64_t              version         ,
                                      gboolean             is_info2        );
 
 void       print_footer             (FILE                *outfile         );

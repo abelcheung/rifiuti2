@@ -508,12 +508,30 @@ int main (int argc, char **argv)
     exit (RIFIUTI_ERR_OPEN_FILE);
   }
 
-  if ( !no_heading || (output_format != OUTPUT_CSV) )
-    print_header (outfile, fileargs[0], 0, FALSE); /* FIXME: version to be implemented */
-
   g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
-
   recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
+
+  {
+    GSList *l = recordlist;
+    int64_t ver;
+
+    if ( !l ) 
+      ver = VERSION_NOT_FOUND;
+    else
+    {
+      ver = (int64_t)((rbin_struct *) recordlist->data)->version;
+      for (; l != NULL; l = l->next)
+        if ( (int64_t)((rbin_struct *) l->data)->version != ver )
+        {
+          ver = VERSION_INCONSISTENT;
+          break;
+        }
+    }
+
+    if ( !no_heading )
+      print_header (outfile, fileargs[0], ver, FALSE);
+  }
+
   g_slist_foreach (recordlist, (GFunc) print_record, outfile);
 
   print_footer (outfile);
