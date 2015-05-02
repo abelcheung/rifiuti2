@@ -85,7 +85,7 @@ static int validate_index_file (FILE     *inf,
 
   g_debug ("Start file validation...");
 
-  if (size <= VERSION1_FILENAME_OFFSET) /* file path can't possibly be empty */
+  if ( size <= VERSION1_FILENAME_OFFSET ) /* file path can't possibly be empty */
   {
     g_debug ("file size = %i, expect larger than %i\n", (int)size, VERSION1_FILENAME_OFFSET);
     g_critical (_("File is truncated, or probably not a $Recycle.bin index file."));
@@ -106,13 +106,13 @@ static int validate_index_file (FILE     *inf,
 
   switch (*version)
   {
-    case (uint64_t)FORMAT_VISTA:
+    case (uint64_t) FORMAT_VISTA:
       expected = VERSION1_FILE_SIZE;
       /* see populate_record_data() for reason */
       if ((size == expected) || (size == expected - 1)) return 0;
       break;
 
-    case (uint64_t)FORMAT_WIN10:
+    case (uint64_t) FORMAT_WIN10:
       g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
       fseek (inf, VERSION2_FILENAME_OFFSET - sizeof(*namelength), SEEK_SET);
       if ( status < 1 )
@@ -135,7 +135,7 @@ static int validate_index_file (FILE     *inf,
   }
 
   g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
-      (uint64_t)size, (uint64_t)expected);
+      (uint64_t) size, (uint64_t) expected);
   g_printerr (_("Index file expected size and real size do not match.\n"));
   return RIFIUTI_ERR_BROKEN_FILE;
 }
@@ -162,6 +162,7 @@ static rbin_struct *populate_record_data (FILE     *inf,
    * bug inside Windows. This is observed during deletion of dd.exe from Forensic
    * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
    */
+  /* TODO: Consider if the (possibly wrong) size should be printed or not */
   fread (&record->filesize, (erraneous?7:8), 1, inf);
 
   /* File deletion time */
@@ -386,7 +387,6 @@ int main (int argc, char **argv)
   GOptionContext *context;
   GOptionGroup   *textoptgroup;
 
-
   /* displaying localized file names not working so well */
   g_setenv ("LC_CTYPE", "UTF-8", TRUE);
   setlocale (LC_ALL, "");
@@ -471,7 +471,7 @@ int main (int argc, char **argv)
     }
   }
 
-  if (NULL == delim)
+  if ( NULL == delim )
     delim = g_strndup ("\t", 2);
 
   g_debug ("Start basic file checking...");
@@ -497,7 +497,7 @@ int main (int argc, char **argv)
       }
     }
   }
-  else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+  else if ( g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR) )
   {
     fname = g_strdup (fileargs[0]);
     filelist = g_slist_prepend (filelist, fname);
@@ -527,11 +527,13 @@ int main (int argc, char **argv)
           break;
         }
     }
-
     if ( !no_heading )
       print_header (outfile, fileargs[0], ver, FALSE);
   }
 
+  /* TODO: store return status of each file, then exit the program with last non-zero status */
+  /* TODO: store errors accumulated when parsing each file, then print a summary of errors
+   * after normal result, instead of dumping all errors on the spot */
   g_slist_foreach (recordlist, (GFunc) print_record, outfile);
 
   print_footer (outfile);

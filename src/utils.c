@@ -122,6 +122,7 @@ void print_header (FILE     *outfile,
       fputs ("\n\n", outfile);
 
       if (is_info2)
+        /* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
         maybe_convert_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
             delim, delim, delim, delim);
       else
