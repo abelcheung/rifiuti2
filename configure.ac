@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rifiuti2],[0.6.0],[https://github.com/abelcheung/rifiuti2/issues])
+AC_INIT([rifiuti2], [0.6.0], [https://github.com/abelcheung/rifiuti2/issues])
 AC_CONFIG_SRCDIR([src/rifiuti-vista.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_TESTDIR([test])
@@ -13,7 +13,7 @@ GETTEXT_PACKAGE=rifiuti
 ALL_LINGUAS="`cat $srcdir/po/LINGUAS`"
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
-  [Define the gettext package to be used])
+                   [Define the gettext package to be used])
 
 AM_GLIB_GNU_GETTEXT
 
@@ -28,10 +28,10 @@ fi
 dnl Always use -Wall for gcc
 changequote(,)dnl
 if test "x$GCC" = "xyes"; then
-  case " $CFLAGS " in
-  *[\ \ ]-Wall[\ \	]*) ;;
-  *) CFLAGS="$CFLAGS -Wall" ;;
-  esac
+	case " $CFLAGS " in
+		*[\ \ ]-Wall[\ \	]*) ;;
+		*) CFLAGS="$CFLAGS -Wall" ;;
+	esac
 fi
 changequote([,])dnl
 
@@ -43,11 +43,9 @@ dnl For test suite
 AC_CHECK_PROG([XMLLINT],[xmllint],[xmllint])
 
 dnl Checks for libraries.
-PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.16.0, :,
-  AC_MSG_ERROR([
-        *** GLib not found. You can find it on ftp://ftp.gtk.org
-        *** Errors follow:
-            $DEP_PKG_ERRORS]))
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0], [:],
+                  AC_MSG_ERROR([*** GLib not found. Errors follow:
+	$DEP_PKG_ERRORS]))
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
@@ -64,7 +62,7 @@ AM_CONDITIONAL([OS_WINDOWS], [test "x$os_windows" != x])
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UINT64_T
 if test "x$ac_cv_c_uint64_t" = "xno" || test "x$ac_cv_c_uint64_t" = "x"; then
-  AC_MSG_ERROR([This system does not support 64 bit integers.])
+	AC_MSG_ERROR([This system does not support 64 bit integers.])
 fi
 
 dnl Checks for library functions.
@@ -80,4 +78,3 @@ test/atlocal
 
 AC_OUTPUT
 
-dnl vim: set sw=2 expandtab ts=2 :

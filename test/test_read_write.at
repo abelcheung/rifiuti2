@@ -1,12 +1,15 @@
+dnl -*- mode: m4; -*-
+dnl Test suite for rifiuti2
+
 AT_SETUP([Err on non-existent input])
 AT_KEYWORDS([file])
 AT_CHECK([
-		rm -rf foobar
-		$abs_top_builddir/src/rifiuti foobar
+	rm -rf foobar
+	$abs_top_builddir/src/rifiuti foobar
 ], [2], [], [ignore])
 AT_CHECK([
-		rm -rf foobar
-		$abs_top_builddir/src/rifiuti-vista foobar
+	rm -rf foobar
+	$abs_top_builddir/src/rifiuti-vista foobar
 ], [2], [], [ignore])
 AT_CLEANUP
 
@@ -30,12 +33,13 @@ AT_CLEANUP
 AT_SETUP([UTF-8 console/file output are equal])
 AT_KEYWORDS([file])
 AT_CHECK([
-		$abs_top_builddir/src/rifiuti -8 -o expout $srcdir/samples/INFO2-sample1
-		$abs_top_builddir/src/rifiuti -8 $srcdir/samples/INFO2-sample1
+	$abs_top_builddir/src/rifiuti -8 -o expout $srcdir/samples/INFO2-sample1
+	$abs_top_builddir/src/rifiuti -8           $srcdir/samples/INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
-		$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
-		$abs_top_builddir/src/rifiuti-vista -8 $srcdir/samples/dir-sample1
+	$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
+	$abs_top_builddir/src/rifiuti-vista -8           $srcdir/samples/dir-sample1
 ],, [expout], [])
-
 AT_CLEANUP
+
+dnl vim: set ts=4 sw=4 noexpandtab :

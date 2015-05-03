@@ -1,20 +1,27 @@
+dnl -*- mode: m4; -*-
+dnl Test suite for rifiuti2
+
 AT_SETUP([Empty $Recycle.bin])
 AT_KEYWORDS([recycledir])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista -n $srcdir/samples/dir-empty],, [], [])
+AT_CHECK([
+	$abs_top_builddir/src/rifiuti-vista -n $srcdir/samples/dir-empty
+],, [], [])
 AT_CLEANUP
 
 AT_SETUP([$Recycle.bin Sample 1])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
-		cp $srcdir/samples/dir-sample1.txt expout
-		$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-sample1
+	cp $srcdir/samples/dir-sample1.txt expout
+	$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-sample1
 ],, [expout], [])
 AT_CLEANUP
 
 AT_SETUP([$Recycle.bin Sample 2])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
-		cp $srcdir/samples/dir-win10-01.txt expout
-		$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-win10-01
+	cp $srcdir/samples/dir-win10-01.txt expout
+	$abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-win10-01
 ],, [expout], [])
 AT_CLEANUP
+
+dnl vim: set ts=4 sw=4 noexpandtab :

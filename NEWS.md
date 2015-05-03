@@ -1,13 +1,22 @@
 ### 0.6.0
+##### Feature
 * Windows 10 recycle bin support
-* Bug fix for Win98 INFO2 file support
-* Behavior change:
-  - Display file deletion time in UTC time zone by default
-  - Vista version:
-    * No more accepts multiple file arguments
-    * Invalid file or dir in command argument treated as fatal error
-  - INFO2 version:
-    * No more accepts standard input as input data
+* 8.3 path names can also be used in XML output now
+
+##### Bug fix
+* Win98 INFO2 file deletion time not retrieved correctly
+* Substantial rework on showing translation and file names in different
+  lanuages, especially on Windows platform
+
+##### Change
+* Display file deletion time in UTC time zone by default
+* Vista version:
+  * No more accepts multiple file arguments
+  * Invalid file or dir in command argument treated as fatal error
+  * Result is sort by deletion time, instead of random order
+  * Show version info, to differentiate between Vista & Windows 10 formats
+* INFO2 version:
+  * No more accepts standard input as input data
 
 ### 0.5.1
 * New manpage

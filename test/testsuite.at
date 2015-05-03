@@ -1,3 +1,6 @@
+dnl -*- mode: m4; -*-
+dnl Test suite for rifiuti2
+
 AT_INIT
 
 AT_COPYRIGHT([Copyright (c) 2015, Abel Cheung])
@@ -16,3 +19,5 @@ m4_include([test_parse_dir.at])
 
 AT_BANNER([XML Validation])
 m4_include([test_xml.at])
+
+dnl vim: set ts=4 sw=4 noexpandtab :

@@ -41,12 +41,12 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 TESTSUITE = $(srcdir)/testsuite
 
 EXTRA_DIST = \
-	     rifiuti.dtd          \
-	     samples              \
-	     $(srcdir)/package.m4 \
-	     testsuite.at         \
-	     $(TESTSUITE)         \
-	     atlocal.in
+             rifiuti.dtd          \
+             samples              \
+             $(srcdir)/package.m4 \
+             testsuite.at         \
+             $(TESTSUITE)         \
+             atlocal.in
 
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
@@ -66,11 +66,11 @@ $(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES)
 	mv $@.tmp $@
 
 INC_AT_FILES = \
-	       test_cli_option.at   \
-	       test_read_write.at   \
-	       test_parse_info2.at  \
-	       test_parse_dir.at    \
-	       test_xml.at
+               test_cli_option.at   \
+               test_read_write.at   \
+               test_parse_info2.at  \
+               test_parse_dir.at    \
+               test_xml.at
 
 EXTRA_DIST += $(INC_AT_FILES)
 
