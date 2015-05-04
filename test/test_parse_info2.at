@@ -3,14 +3,16 @@ dnl Test suite for rifiuti2
 
 AT_SETUP([Empty INFO2])
 AT_KEYWORDS([info2])
-AT_CHECK([$abs_top_builddir/src/rifiuti -n -8 $srcdir/samples/INFO2-empty],, [], [])
+AT_CHECK([
+	$set_lang $abs_top_builddir/src/rifiuti -n $srcdir/samples/INFO2-empty
+],, [], [])
 AT_CLEANUP
 
 AT_SETUP([INFO2 Sample 1])
 AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample1.txt expout
-	$abs_top_builddir/src/rifiuti -n -8 $srcdir/samples/INFO2-sample1
+	$set_lang $abs_top_builddir/src/rifiuti -n -8 $srcdir/samples/INFO2-sample1
 ],, [expout], [])
 AT_CLEANUP
 
@@ -18,7 +20,7 @@ AT_SETUP([INFO2 Sample 2])
 AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample2.txt expout
-	$abs_top_builddir/src/rifiuti -n -8 -l latin1 $srcdir/samples/INFO2-sample2
+	$set_lang $abs_top_builddir/src/rifiuti -n -8 -l latin1 $srcdir/samples/INFO2-sample2
 ],, [expout], [])
 AT_CLEANUP
 
@@ -26,7 +28,7 @@ AT_SETUP([Legacy path names])
 AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample1-alt.txt expout
-	$abs_top_builddir/src/rifiuti -n -8 -l CP936 $srcdir/samples/INFO2-sample1
+	$set_lang $abs_top_builddir/src/rifiuti -n -8 -l CP936 $srcdir/samples/INFO2-sample1
 ],, [expout], [])
 AT_CLEANUP
 
