@@ -509,6 +509,13 @@ int main (int argc, char **argv)
   }
 
   g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
+
+  /* NULL filelist at this point means a valid empty $Recycle.bin */
+  if ( (filelist != NULL) && (recordlist == NULL) )
+  {
+    g_printerr ("%s", _("No valid recycle bin index file found.\n"));
+    exit (RIFIUTI_ERR_BROKEN_FILE);
+  }
   recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
   {

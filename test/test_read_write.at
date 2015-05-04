@@ -21,13 +21,12 @@ AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [2], [], [ignore])
 AT_CLEANUP
 
 dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as regular files.
-dnl while INFO2 version can still detect nul input early, same case isn't true for 
-dnl Vista version -- it needs to read multiple files. FIXME
+dnl Therefore file can't be determined early as unusable, they have to be actually parsed.
 AT_SETUP([Err on non-regular file (Windows)])
 AT_KEYWORDS([file])
 AT_CHECK([uname -s | grep -iq 'MINGW\|MSYS' || exit 77])
 AT_CHECK([$abs_top_builddir/src/rifiuti nul], [3], [], [ignore])
-dnl AT_CHECK([$abs_top_builddir/src/rifiuti-vista nul], [3], [], [ignore])
+AT_CHECK([$abs_top_builddir/src/rifiuti-vista nul], [3], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([UTF-8 console/file output are equal])
