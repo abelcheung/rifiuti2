@@ -1,0 +1,4 @@
+Recycle bin path: 'dir-empty'
+Version: ??? (empty folder)
+
+Index	Deleted Time	Size	Path

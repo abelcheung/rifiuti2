@@ -1,3 +1,7 @@
+Recycle bin path: 'INFO2-sample1'
+Version: 5
+
+Index	Deleted Time	Gone?	Size	Path
 44	2008-10-28 15:53:42	No	4096	C:\DOCUME~1\ALLUSE~1\Desktop\有道桌~1.LNK
 45	2008-11-03 15:01:59	No	4096	C:\Documents and Settings\Administrator\Desktop\wongsir_url.txt
 46	2008-11-06 09:20:58	No	2912256	C:\Documents and Settings\Administrator\Desktop\dd-wrt.v24_mini_wrt54g.bin

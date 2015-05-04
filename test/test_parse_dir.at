@@ -4,15 +4,18 @@ dnl Test suite for rifiuti2
 AT_SETUP([Empty $Recycle.bin])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
-	$set_lang $abs_top_builddir/src/rifiuti-vista -n $srcdir/samples/dir-empty
-],, [], [])
+	cp $srcdir/samples/dir-empty.txt expout
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti-vista dir-empty
+],, [expout], [])
 AT_CLEANUP
 
 AT_SETUP([$Recycle.bin Sample 1])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
 	cp $srcdir/samples/dir-sample1.txt expout
-	$set_lang $abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-sample1
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti-vista -8 dir-sample1
 ],, [expout], [])
 AT_CLEANUP
 
@@ -20,8 +23,17 @@ AT_SETUP([$Recycle.bin Sample 2])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
 	cp $srcdir/samples/dir-win10-01.txt expout
-	$set_lang $abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-win10-01
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti-vista -8 dir-win10-01
 ],, [expout], [])
 AT_CLEANUP
 
+AT_SETUP([$Recycle.bin single file])
+AT_KEYWORDS([recycledir])
+AT_CHECK([
+	grep 'IHO61YT' $srcdir/samples/dir-win10-01.txt > expout
+	$set_lang $abs_top_builddir/src/rifiuti-vista -n -8 $srcdir/samples/dir-win10-01/\$IHO61YT
+],, [expout], [])
+AT_CLEANUP
+	
 dnl vim: set ts=4 sw=4 noexpandtab :

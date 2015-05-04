@@ -1,3 +1,7 @@
+Recycle bin path: 'dir-sample1'
+Version: 1
+
+Index	Deleted Time	Size	Path
 $IUVFB0M.rtf	2007-09-21 06:32:46	155	C:\Users\student\Desktop\New Rich Text Document.rtf
 $I0JGHX7	2007-09-21 06:47:49	0	C:\Users\student\Desktop\New Folder 1
 $I1IS2OK.txt	2007-09-21 06:48:13	0	C:\Users\student\Desktop\New Text Document blah.txt
