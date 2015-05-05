@@ -343,6 +343,7 @@ static gboolean found_desktop_ini (char *path)
   if ( !g_file_test (filename, G_FILE_TEST_IS_REGULAR) )
     goto desktop_ini_error;
 
+  /* assume desktop.ini is ASCII and not something spurious */
   if ( !g_file_get_contents (filename, &content, NULL, NULL) )
     goto desktop_ini_error;
 
@@ -423,6 +424,7 @@ int main (int argc, char **argv)
     g_print ("%s", msg);
     g_free (msg);
     g_option_context_free (context);
+    g_free (bug_report_str);
     exit (EXIT_SUCCESS);
   }
 
@@ -431,15 +433,18 @@ int main (int argc, char **argv)
   /* TODO: support g_win32_get_command_line() from glib 2.40, necessary for reading
    * non-ASCII file names in Windows
    */
-  if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_printerr (_("Error parsing options: %s\n"), error->message);
-    g_clear_error (&error);
+    gboolean i = g_option_context_parse (context, &argc, &argv, &error);
     g_option_context_free (context);
-    exit (RIFIUTI_ERR_ARG);
-  }
+    g_free (bug_report_str);
 
-  g_option_context_free (context);
+    if ( !i )
+    {
+      g_printerr (_("Error parsing options: %s\n"), error->message);
+      g_clear_error (&error);
+      exit (RIFIUTI_ERR_ARG);
+    }
+  }
 
   if (!fileargs || g_strv_length (fileargs) > 1)
   {
@@ -514,6 +519,8 @@ int main (int argc, char **argv)
   if ( (filelist != NULL) && (recordlist == NULL) )
   {
     g_printerr ("%s", _("No valid recycle bin index file found.\n"));
+    g_slist_foreach (filelist, (GFunc) g_free, NULL);
+    g_slist_free (filelist);
     exit (RIFIUTI_ERR_BROKEN_FILE);
   }
   recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
@@ -557,7 +564,6 @@ int main (int argc, char **argv)
   fclose (outfile);
 
   g_strfreev (fileargs);
-  g_free (bug_report_str);
   g_free (outfilename);
   g_free (delim);
 

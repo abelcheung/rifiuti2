@@ -293,20 +293,24 @@ int main (int argc, char **argv)
     g_print ("%s", msg);
     g_free (msg);
     g_option_context_free (context);
+    g_free (bug_report_str);
     exit (EXIT_SUCCESS);
   }
 
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
 
-  if (!g_option_context_parse (context, &argc, &argv, &error))
   {
-    g_printerr (_("Error parsing options: %s\n"), error->message);
-    g_clear_error (&error);
+    gboolean i = g_option_context_parse (context, &argc, &argv, &error);
     g_option_context_free (context);
-    exit (RIFIUTI_ERR_ARG);
-  }
+    g_free (bug_report_str);
 
-  g_option_context_free (context);
+    if ( !i )
+    {
+      g_printerr (_("Error parsing options: %s\n"), error->message);
+      g_clear_error (&error);
+      exit (RIFIUTI_ERR_ARG);
+    }
+  }
 
   if ( !fileargs || g_strv_length (fileargs) > 1 )
   {
@@ -485,7 +489,6 @@ int main (int argc, char **argv)
 
   g_free (record);
   g_free (buf);
-  g_free (bug_report_str);
 
   exit (EXIT_SUCCESS);
 }
