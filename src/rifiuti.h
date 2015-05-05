@@ -48,16 +48,6 @@
 #define VERSION4_RECORD_SIZE    ((WIN_PATH_MAX) + 20)        /* 280 bytes */
 #define VERSION5_RECORD_SIZE    ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
 
-struct _rbin_struct {
-  char      *legacy_filename;
-  uint32_t   index;
-  uint32_t   drive;
-  int        emptied;
-  struct tm *filetime;
-  uint32_t   filesize;
-  char      *utf8_filename;
-};
-
 #endif
 
 /* vim: set sw=2 expandtab ts=2 : */

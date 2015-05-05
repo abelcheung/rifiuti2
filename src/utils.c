@@ -91,6 +91,7 @@ void print_header (FILE     *outfile,
   extern char    *delim;
 
   g_return_if_fail (infilename != NULL);
+  g_return_if_fail (outfile    != NULL);
 
   g_debug ("Entering %s()", __func__);
 
@@ -147,9 +148,109 @@ void print_header (FILE     *outfile,
   g_debug ("Leaving %s()", __func__);
 }
 
+
+void print_record (rbin_struct *record,
+                   FILE        *outfile)
+{
+  char            *utf8_filename;
+  char             ascii_deltime[21];
+  struct tm       *tm;
+  GError          *error = NULL;
+  gboolean         is_info2;
+  char            *index;
+
+  extern char     *legacy_encoding;
+  extern gboolean  has_unicode_filename;
+  extern gboolean  use_localtime;
+  extern int       output_format;
+  extern char     *delim;
+  extern gboolean  always_utf8;
+
+  g_return_if_fail (record  != NULL);
+  g_return_if_fail (outfile != NULL);
+
+  is_info2 = (record->type == RECYCLE_BIN_TYPE_FILE);
+
+  index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
+                     g_strdup (record->index_s);
+
+  tm = use_localtime ? localtime (&record->deltime) : gmtime (&record->deltime);
+  if (strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", tm) == 0)
+  {
+    g_warning (_("Error formatting file deletion time for record index %s."), index);
+    strncpy ((char*) ascii_deltime, "???", 4);
+  }
+
+  if (has_unicode_filename && !legacy_encoding)  /* this part is info2 only */
+    utf8_filename = g_strdup (record->utf8_filename);
+  else
+  {
+    /* 
+     * On Windows, conversion from the file path's legacy charset to display codepage
+     * charset is most likely not supported unless the 2 legacy charsets happen to be
+     * equal. Try <legacy> -> UTF-8 -> <codepage> and see which step fails.
+     */
+    utf8_filename = g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
+                                NULL, NULL, &error);
+    if (error)
+    {
+      g_warning (_("Error converting file name from %s encoding to UTF-8 for index %s: %s"),
+                 legacy_encoding, index, error->message);
+      g_clear_error (&error);
+      utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
+    }
+  }
+
+  switch (output_format)
+  {
+    case OUTPUT_CSV:
+
+      fprintf (outfile, "%s%s%s%s", index, delim, ascii_deltime, delim);
+      if (is_info2)
+        maybe_convert_fprintf (outfile, "%s%s", record->emptied ? _("Yes") : _("No"), delim);
+      fprintf (outfile, "%" G_GUINT64_FORMAT "%s", (uint64_t)record->filesize, delim);
+
+      if (always_utf8)
+        fprintf (outfile, "%s\n", utf8_filename);
+      else
+      {
+        char *shown = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
+        if (error)
+        {
+          g_warning (_("Error converting path name to display for record %s: %s"),
+                     index, error->message);
+          g_clear_error (&error);
+          shown = g_locale_from_utf8 (_("(File name not representable in current language)"),
+              -1, NULL, NULL, NULL);
+        }
+        fprintf (outfile, "%s\n", shown);
+        g_free (shown);
+      }
+      break;
+
+    case OUTPUT_XML:
+      fprintf (outfile, "  <record index=\"%s\" time=\"%s\" ", index, ascii_deltime);
+      if (is_info2)
+        fprintf (outfile, "emptied=\"%c\" ", record->emptied ? 'Y' : 'N');
+      fprintf (outfile, "size=\"%" G_GUINT64_FORMAT "\">\n"
+                        "    <path>%s</path>\n"
+                        "  </record>\n",
+                        record->filesize, utf8_filename);
+      break;
+
+    default:
+      g_warn_if_reached();
+  }
+  g_free (utf8_filename);
+  g_free (index);
+}
+
+
 void print_footer (FILE *outfile)
 {
   extern int output_format;
+
+  g_return_if_fail (outfile    != NULL);
 
   g_debug ("Entering %s()", __func__);
 

@@ -44,14 +44,15 @@
        char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
-static char      *legacy_encoding      = NULL;
+       char      *legacy_encoding      = NULL;
        int        output_format        = OUTPUT_CSV;
 static gboolean   no_heading           = FALSE;
 static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
-static gboolean   has_unicode_filename = FALSE;
-static gboolean   use_localtime        = FALSE;
+       gboolean   has_unicode_filename = FALSE;
+       gboolean   use_localtime        = FALSE;
 
+/* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char driveletters[28] =
 {
   'A', 'B', 'C', 'D', 'E', 'F', 'G',
@@ -87,79 +88,6 @@ static GOptionEntry textoptions[] =
   { NULL }
 };
 
-static void print_record (FILE        *outfile,
-                          rbin_struct *record)
-{
-  char   *utf8_filename;
-  GError *error = NULL;
-  char    ascii_deltime[21];
-
-  if (strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", record->filetime) == 0)
-  {
-    g_warning (_("Error formatting file deletion time for record %u."), record->index);
-    strncpy ((char*) ascii_deltime, "???", 4);
-  }
-
-  if (has_unicode_filename && !legacy_encoding)
-    utf8_filename = g_strdup (record->utf8_filename);
-  else
-  {
-    /* 
-     * On Windows, conversion from the file path's legacy charset to display codepage
-     * charset is most likely not supported unless the 2 legacy charsets happen to be
-     * equal. Try <legacy> -> UTF-8 -> <codepage> and see which step fails.
-     */
-    utf8_filename = g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
-                                NULL, NULL, &error);
-    if (error)
-    {
-      g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
-                 legacy_encoding, record->index, error->message);
-      g_clear_error (&error);
-      utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
-    }
-  }
-
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-
-      fprintf (outfile, "%d%s%s%s", record->index, delim, ascii_deltime, delim);
-      maybe_convert_fprintf (outfile, "%s", record->emptied ? _("Yes") : _("No"));
-      fprintf (outfile, "%s%d%s", delim, record->filesize, delim);
-      if (always_utf8)
-        fprintf (outfile, "%s\n", utf8_filename);
-      else
-      {
-        char *shown = g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
-        if (error)
-        {
-          g_warning (_("Error converting path name to display for record %u: %s"),
-                     record->index, error->message);
-          g_clear_error (&error);
-          shown = g_locale_from_utf8 (_("(File name not representable in current language)"),
-              -1, NULL, NULL, NULL);
-        }
-        fprintf (outfile, "%s\n", shown);
-        g_free (shown);
-      }
-      break;
-
-    case OUTPUT_XML:
-
-      fprintf (outfile, "  <record index=\"%u\" time=\"%s\" emptied=\"%c\" size=\"%u\">\n"
-                        "    <path>%s</path>\n"
-                        "  </record>\n",
-                        record->index, ascii_deltime,
-                        record->emptied ? 'Y' : 'N',
-                        record->filesize, utf8_filename);
-      break;
-
-    default:
-      g_return_if_reached();
-  }
-  g_free (utf8_filename);
-}
 
 /* Check if index file has sufficient amount of data for reading */
 /* 0 = success, all other return status = error */
@@ -246,9 +174,10 @@ static rbin_struct *populate_record_data (void *buf)
 {
   rbin_struct *record;
   uint64_t     win_filetime;
-  time_t       file_epoch;
+  uint32_t     drivenum;
 
   record = g_malloc0 (sizeof (rbin_struct));
+  record->type = RECYCLE_BIN_TYPE_FILE;
 
   /* Guarantees null-termination by allocating extra byte */
   record->legacy_filename =
@@ -256,29 +185,28 @@ static rbin_struct *populate_record_data (void *buf)
   memcpy (record->legacy_filename, buf + LEGACY_FILENAME_OFFSET,
       RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
 
-  memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
-  record->index = GUINT32_FROM_LE (record->index);
+  memcpy (&record->index_n, buf + RECORD_INDEX_OFFSET, sizeof(record->index_n));
+  record->index_n = GUINT32_FROM_LE (record->index_n);
 
-  memcpy (&record->drive, buf + DRIVE_LETTER_OFFSET, 4);
-  record->drive = GUINT32_FROM_LE (record->drive);
-  /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
-  if ( record->drive >= sizeof (driveletters) - 1 )
-    g_warning (_("Invalid drive letter (0x%X) for record %u."),
-        record->drive, record->index);
+  memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET, sizeof(drivenum));
+  drivenum = GUINT32_FROM_LE (drivenum);
+  if ( drivenum >= sizeof (driveletters) - 1 )
+    g_warning (_("Invalid drive number (0x%X) for record %u."),
+        drivenum, record->index_n);
+  record->drive = driveletters[ MIN( drivenum, sizeof(driveletters)-1 )];
 
   record->emptied = FALSE;
   /* first byte will be removed from filename if file is not in recycle bin */
   if (!*record->legacy_filename)
   {
     record->emptied = TRUE;
-    *record->legacy_filename = driveletters[ MIN( record->drive, sizeof(driveletters)-1 )];
+    *record->legacy_filename = record->drive;
   }
 
   /* File deletion time */
   memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
   win_filetime = GUINT64_FROM_LE (win_filetime);
-  file_epoch = win_filetime_to_epoch (win_filetime);
-  record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
+  record->deltime = win_filetime_to_epoch (win_filetime);
 
   /* File size or occupied cluster size */
   memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
@@ -296,7 +224,7 @@ static rbin_struct *populate_record_data (void *buf)
     if (error)
     {
       g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
-                 "UTF-16", record->index, error->message);
+                 "UTF-16", record->index_n, error->message);
       g_clear_error (&error);
       record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
     }
@@ -486,7 +414,7 @@ int main (int argc, char **argv)
     }
 
     record = populate_record_data (buf);
-    print_record (outfile, record);
+    print_record (record, outfile);
 
     g_free (record->utf8_filename);
     g_free (record->legacy_filename);

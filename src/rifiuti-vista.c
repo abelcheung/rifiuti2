@@ -42,11 +42,13 @@
        char      *delim          = NULL;
 static char     **fileargs       = NULL;
 static char      *outfilename    = NULL;
+       char      *legacy_encoding      = NULL;
        int        output_format  = OUTPUT_CSV;
 static gboolean   no_heading     = FALSE;
 static gboolean   xml_output     = FALSE;
        gboolean   always_utf8    = FALSE;
-static gboolean   use_localtime  = FALSE;
+       gboolean   has_unicode_filename = TRUE;
+       gboolean   use_localtime  = FALSE;
 
 static GOptionEntry mainoptions[] =
 {
@@ -154,6 +156,7 @@ static rbin_struct *populate_record_data (FILE     *inf,
   fseek (inf, FILESIZE_OFFSET, SEEK_SET);
   record = g_malloc0 (sizeof (rbin_struct));
   record->version = version;
+  record->type = RECYCLE_BIN_TYPE_DIR;
 
   /*
    * In rare cases, the size of index file is 543 bytes versus (normal) 544 bytes.
@@ -243,7 +246,7 @@ static void parse_record (char    *index_file,
       goto parse_validation_error;
   }
 
-  record->index = basename;
+  record->index_s = basename;
   *recordlist = g_slist_prepend (*recordlist, record);
   fclose (infile);
   return;
@@ -254,51 +257,6 @@ static void parse_record (char    *index_file,
   g_free (basename);
 }
 
-
-static void print_record (rbin_struct *record,
-                          FILE        *outfile)
-{
-  char ascii_deltime[21];
-  struct tm *tm;
-
-  tm = use_localtime ? localtime (&record->deltime) : gmtime (&record->deltime);
-  if ( 0 == strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", tm) ) {
-    g_warning (_("Error formatting file deletion time for file '%s'."), record->index);
-    strncpy ((char*)ascii_deltime, "???", 4);
-  }
-
-  switch (output_format)
-  {
-    case OUTPUT_CSV:
-      fprintf (outfile, "%s%s%s%s%" PRIu64 "%s",
-          record->index, delim, ascii_deltime, delim,
-          record->filesize, delim);
-
-      if (always_utf8)
-        fprintf (outfile, "%s\n", record->utf8_filename);
-      else
-      {
-        char *localname = g_locale_from_utf8 (record->utf8_filename, -1, NULL, NULL, NULL);
-        if (!localname)
-          localname = g_locale_from_utf8(_("(File name not representable in current language)"),
-              -1, NULL, NULL, NULL);
-
-        fprintf (outfile, "%s\n", localname);
-        g_free (localname);
-      }
-      break;
-
-    case OUTPUT_XML:
-      fprintf (outfile, "  <record index=\"%s\" time=\"%s\" size=\"%" PRIu64 "\">\n"
-                        "    <path>%s</path>\n"
-                        "  </record>\n",
-                        record->index, ascii_deltime, record->filesize, record->utf8_filename);
-      break;
-
-    default:
-      g_warn_if_reached();
-  }
-}
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static void populate_index_file_list (GSList **list,
@@ -361,7 +319,7 @@ static gboolean found_desktop_ini (char *path)
 
 static void free_record (rbin_struct *record)
 {
-  g_free (record->index);
+  g_free (record->index_s);
   g_free (record->utf8_filename);
   g_free (record);
 }
@@ -373,7 +331,7 @@ static int sort_record_by_time (rbin_struct *a,
   /* time_t can be 32 or 64 bit, can't just return a-b :( */
   return ( ( a->deltime < b->deltime ) ? -1 :
            ( a->deltime > b->deltime ) ?  1 :
-           strcmp ( a->index, b->index ) );
+           strcmp ( a->index_s, b->index_s ) );
 }
 
 

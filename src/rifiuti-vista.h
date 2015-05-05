@@ -40,14 +40,6 @@
 
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
 
-struct _rbin_struct {
-  uint64_t   version;
-  char      *index; /* index file name storing these data */ 
-  uint64_t   filesize;
-  time_t     deltime; /* for easier comparison (unlike struct tm) */
-  char      *utf8_filename;
-};
-
 #endif
 
 /* vim: set sw=2 expandtab ts=2 : */

@@ -42,6 +42,12 @@ enum {
   RIFIUTI_ERR_ENCODING
 };
 
+typedef enum
+{
+  RECYCLE_BIN_TYPE_FILE,
+  RECYCLE_BIN_TYPE_DIR,
+} rbin_type;
+
 enum
 {
   /* negative number means error when retrieving version info */
@@ -58,6 +64,21 @@ enum
 enum {
   OUTPUT_CSV,
   OUTPUT_XML
+};
+
+struct _rbin_struct {
+  rbin_type     type;
+  uint64_t      version;     /* $Recycle.bin only */
+  union {                  /* number or file name */
+    uint32_t    index_n;
+    char       *index_s;
+  };
+  gboolean      emptied;            /* INFO2 only */
+  unsigned char drive;              /* INFO2 only */
+  time_t        deltime;
+  uint64_t      filesize;
+  char         *utf8_filename;
+  char         *legacy_filename;    /* INFO2 only */
 };
 
 typedef struct _rbin_struct rbin_struct;
@@ -84,6 +105,9 @@ void       print_header             (FILE                *outfile         ,
                                      char                *infilename      ,
                                      int64_t              version         ,
                                      gboolean             is_info2        );
+
+void       print_record             (rbin_struct         *record          ,
+                                     FILE                *outfile         );
 
 void       print_footer             (FILE                *outfile         );
 
