@@ -143,17 +143,16 @@ static int validate_index_file (FILE     *inf,
 }
 
 
-static rbin_struct *populate_record_data (FILE     *inf,
+static rbin_struct *populate_record_data (void     *buf,
                                           uint64_t  version,
                                           uint32_t  namelength,
                                           gboolean  erraneous)
 {
   uint64_t     win_filetime;
   rbin_struct *record;
-  gunichar2   *ucs2_filename;
+  gunichar2   *utf16_filename;
   GError      *error = NULL;
 
-  fseek (inf, FILESIZE_OFFSET, SEEK_SET);
   record = g_malloc0 (sizeof (rbin_struct));
   record->version = version;
   record->type = RECYCLE_BIN_TYPE_DIR;
@@ -166,35 +165,34 @@ static rbin_struct *populate_record_data (FILE     *inf,
    * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
    */
   /* TODO: Consider if the (possibly wrong) size should be printed or not */
-  fread (&record->filesize, (erraneous?7:8), 1, inf);
+  memcpy (&record->filesize, buf + FILESIZE_OFFSET,
+      sizeof(record->filesize) - (int)erraneous);
 
   /* File deletion time */
-  fread (&win_filetime, sizeof(win_filetime), 1, inf);
+  memcpy (&win_filetime, buf + FILETIME_OFFSET - (int)erraneous,
+      sizeof(win_filetime));
   win_filetime = GUINT64_FROM_LE (win_filetime);
   record->deltime = win_filetime_to_epoch (win_filetime);
 
+  /* One extra char for safety, though path should have already been null terminated */
+  utf16_filename = g_malloc0 (2 * (namelength + 1));
   switch (version)
   {
     case (uint64_t)FORMAT_VISTA:
-      fseek (inf, VERSION1_FILENAME_OFFSET - (int)erraneous, SEEK_SET);
+      memcpy (utf16_filename, buf + VERSION1_FILENAME_OFFSET - (int)erraneous, namelength * 2);
       break;
     case (uint64_t)FORMAT_WIN10:
-      fseek (inf, VERSION2_FILENAME_OFFSET, SEEK_SET);
+      memcpy (utf16_filename, buf + VERSION2_FILENAME_OFFSET, namelength * 2);
       break;
   }
-
-  /* One extra char for safety, though path should have already been null terminated */
-  ucs2_filename = g_malloc0 (2 * (namelength + 1));
-  fread (ucs2_filename, namelength, 2, inf);
-
-  record->utf8_filename = g_utf16_to_utf8 (ucs2_filename, -1, NULL, NULL, &error);
+  record->utf8_filename = g_utf16_to_utf8 (utf16_filename, -1, NULL, NULL, &error);
 
   if (error) {
     g_warning (_("Error converting file name to UTF-8 encoding: %s"), error->message);
     g_clear_error (&error);
   }
 
-  g_free (ucs2_filename);
+  g_free (utf16_filename);
   return record;
 }
 
@@ -207,6 +205,7 @@ static void parse_record (char    *index_file,
   uint64_t     version;
   uint32_t     namelength = 0;
   GStatBuf     st;
+  void        *buf;
 
   basename = g_path_get_basename (index_file);
 
@@ -228,16 +227,26 @@ static void parse_record (char    *index_file,
     goto parse_validation_error;
   }
 
+  rewind (infile);
+  /* Files are expected to be at most 0.5KB. Large files should have already been rejected. */
+  buf = g_malloc0 (st.st_size + 2);
+  if ( 1 != fread (buf, st.st_size, 1, infile) )
+  {
+    g_critical (_("%s(): fread() '%s' failed when reading file content: %s\n"),
+        __func__, basename, strerror (errno));
+    goto parse_validation_error;
+  }
+
   switch (version)
   {
     case (uint64_t)FORMAT_VISTA:
       /* see populate_record_data() for meaning of last parameter */
-      record = populate_record_data (infile, version, (uint32_t)WIN_PATH_MAX,
+      record = populate_record_data (buf, version, (uint32_t)WIN_PATH_MAX,
           (st.st_size == VERSION1_FILE_SIZE - 1));
       break;
 
     case (uint64_t)FORMAT_WIN10:
-      record = populate_record_data (infile, version, namelength, FALSE);
+      record = populate_record_data (buf, version, namelength, FALSE);
       break;
 
     default:
@@ -249,6 +258,7 @@ static void parse_record (char    *index_file,
   record->index_s = basename;
   *recordlist = g_slist_prepend (*recordlist, record);
   fclose (infile);
+  g_free (buf);
   return;
 
   parse_validation_error:
