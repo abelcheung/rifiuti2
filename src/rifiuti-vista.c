@@ -398,11 +398,20 @@ int main (int argc, char **argv)
 
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
 
-  /* TODO: support g_win32_get_command_line() from glib 2.40, necessary for reading
-   * non-ASCII file names in Windows
-   */
   {
-    gboolean i = g_option_context_parse (context, &argc, &argv, &error);
+    gboolean i;
+    /* The user case where this code won't provide benefit is VERY rare,
+     * so don't bother doing fallback because it never worked for them
+     */
+#if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
+    char **args;
+
+    args = g_win32_get_command_line();
+    i = g_option_context_parse_strv (context, &args, &error);
+    g_strfreev (args);
+#else
+    i = g_option_context_parse (context, &argc, &argv, &error);
+#endif
     g_option_context_free (context);
     g_free (bug_report_str);
 
