@@ -52,6 +52,14 @@ static gboolean   xml_output           = FALSE;
 static gboolean   has_unicode_filename = FALSE;
 static gboolean   use_localtime        = FALSE;
 
+unsigned char driveletters[28] =
+{
+  'A', 'B', 'C', 'D', 'E', 'F', 'G',
+  'H', 'I', 'J', 'K', 'L', 'M', 'N',
+  'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+  'V', 'W', 'X', 'Y', 'Z', '\\', '?'
+};
+
 static GOptionEntry mainoptions[] =
 {
   { "output"         , 'o', 0, G_OPTION_ARG_FILENAME      , &outfilename,
@@ -234,6 +242,72 @@ static int validate_index_file (FILE     *inf,
 }
 
 
+static rbin_struct *populate_record_data (void *buf)
+{
+  rbin_struct *record;
+  uint64_t     win_filetime;
+  time_t       file_epoch;
+
+  record = g_malloc0 (sizeof (rbin_struct));
+
+  /* Guarantees null-termination by allocating extra byte */
+  record->legacy_filename =
+    (char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
+  memcpy (record->legacy_filename, buf + LEGACY_FILENAME_OFFSET,
+      RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+
+  memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
+  record->index = GUINT32_FROM_LE (record->index);
+
+  memcpy (&record->drive, buf + DRIVE_LETTER_OFFSET, 4);
+  record->drive = GUINT32_FROM_LE (record->drive);
+  /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
+  if ( record->drive >= sizeof (driveletters) - 1 )
+    g_warning (_("Invalid drive letter (0x%X) for record %u."),
+        record->drive, record->index);
+
+  record->emptied = FALSE;
+  /* first byte will be removed from filename if file is not in recycle bin */
+  if (!*record->legacy_filename)
+  {
+    record->emptied = TRUE;
+    *record->legacy_filename = driveletters[ MIN( record->drive, sizeof(driveletters)-1 )];
+  }
+
+  /* File deletion time */
+  memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
+  win_filetime = GUINT64_FROM_LE (win_filetime);
+  file_epoch = win_filetime_to_epoch (win_filetime);
+  record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
+
+  /* File size or occupied cluster size */
+  memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
+  record->filesize = GUINT32_FROM_LE (record->filesize);
+
+  if (has_unicode_filename)
+  {
+    GError *error = NULL;
+
+    /* Added safeguard to memory buffer (2 bytes larger than necessary), so safely assume
+     * string is null terminated
+     */
+    record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
+                                             -1, NULL, NULL, &error);
+    if (error)
+    {
+      g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
+                 "UTF-16", record->index, error->message);
+      g_clear_error (&error);
+      record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
+    }
+  }
+  else
+    record->utf8_filename = NULL;
+
+  return record;
+}
+
+
 int main (int argc, char **argv)
 {
   void           *buf;
@@ -246,17 +320,7 @@ int main (int argc, char **argv)
   GStatBuf        st;
   rbin_struct    *record;
   uint32_t        recordsize, info2_version;
-  uint64_t        win_filetime;
-  time_t          file_epoch;
   char           *bug_report_str;
-
-  unsigned char driveletters[28] =
-  {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G',
-    'H', 'I', 'J', 'K', 'L', 'M', 'N',
-    'O', 'P', 'Q', 'R', 'S', 'T', 'U',
-    'V', 'W', 'X', 'Y', 'Z', '\\', '?'
-  };
 
   /* displaying localized file names not working so well */
   g_setenv ("LC_CTYPE", "UTF-8", TRUE);
@@ -409,7 +473,6 @@ int main (int argc, char **argv)
    * random memory fragments are copied to the padding bytes
    */
   buf = g_malloc0 (recordsize + 2);
-  record = g_malloc0 (sizeof (rbin_struct));
 
   fseek (infile, RECORD_START_OFFSET, SEEK_SET);
   while (TRUE)
@@ -422,62 +485,12 @@ int main (int argc, char **argv)
       break;
     }
 
-    /* Guarantees null-termination by allocating extra byte */
-    record->legacy_filename =
-      (char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
-    memcpy (record->legacy_filename, buf + LEGACY_FILENAME_OFFSET,
-        RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-
-    memcpy (&record->index, buf + RECORD_INDEX_OFFSET, 4);
-    record->index = GUINT32_FROM_LE (record->index);
-
-    memcpy (&record->drive, buf + DRIVE_LETTER_OFFSET, 4);
-    record->drive = GUINT32_FROM_LE (record->drive);
-    /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous(?) */
-    if ( record->drive >= sizeof (driveletters) - 1 )
-      g_warning (_("Invalid drive letter (0x%X) for record %u."),
-          record->drive, record->index);
-
-    record->emptied = FALSE;
-    /* first byte will be removed from filename if file is not in recycle bin */
-    if (!*record->legacy_filename)
-    {
-      record->emptied = TRUE;
-      *record->legacy_filename = driveletters[ MIN( record->drive, sizeof(driveletters)-1 )];
-    }
-
-    /* File deletion time */
-    memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
-    win_filetime = GUINT64_FROM_LE (win_filetime);
-    file_epoch = win_filetime_to_epoch (win_filetime);
-    record->filetime = use_localtime ? localtime (&file_epoch) : gmtime (&file_epoch);
-
-    /* File size or occupied cluster size */
-    memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
-    record->filesize = GUINT32_FROM_LE (record->filesize);
-
-    if (has_unicode_filename)
-    {
-      /* Added safeguard to memory buffer (2 bytes larger than necessary), so safely assume
-       * string is null terminated
-       */
-      record->utf8_filename = g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-                                               -1, NULL, NULL, &error);
-      if (error)
-      {
-        g_warning (_("Error converting file name from %s encoding to UTF-8 for record %u: %s"),
-                   "UTF-16", record->index, error->message);
-        g_clear_error (&error);
-        record->utf8_filename = g_strdup (_("(File name not representable in UTF-8 encoding)"));
-      }
-    }
-    else
-      record->utf8_filename = NULL;
-
+    record = populate_record_data (buf);
     print_record (outfile, record);
 
     g_free (record->utf8_filename);
     g_free (record->legacy_filename);
+    g_free (record);
   }
 
   print_footer (outfile);
@@ -487,7 +500,6 @@ int main (int argc, char **argv)
   fclose (infile);
   fclose (outfile);
 
-  g_free (record);
   g_free (buf);
 
   exit (EXIT_SUCCESS);
