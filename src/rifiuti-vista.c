@@ -165,7 +165,6 @@ populate_record_data (void *buf,
 {
 	uint64_t        win_filetime;
 	rbin_struct    *record;
-	gunichar2      *utf16_filename;
 	GError         *error = NULL;
 	long            read, write;
 
@@ -192,22 +191,21 @@ populate_record_data (void *buf,
 	record->deltime = win_filetime_to_epoch (win_filetime);
 
 	/* One extra char for safety, though path should have already been null terminated */
-	utf16_filename = g_malloc0 (2 * (namelength + 1));
 	g_debug ("namelength=%d", namelength);
 	switch (version)
 	{
 	  case (uint64_t) FORMAT_VISTA:
-		memcpy (utf16_filename,
-		        buf + VERSION1_FILENAME_OFFSET - (int) erraneous,
-		        namelength * 2);
+		record->utf8_filename =
+			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET
+			                                - (int) erraneous),
+			                 -1, &read, &write, &error);
 		break;
 	  case (uint64_t) FORMAT_WIN10:
-		memcpy (utf16_filename, buf + VERSION2_FILENAME_OFFSET,
-		        namelength * 2);
+		record->utf8_filename =
+			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
+			                 -1, &read, &write, &error);
 		break;
 	}
-	record->utf8_filename =
-		g_utf16_to_utf8 (utf16_filename, -1, &read, &write, &error);
 	g_debug ("utf16->8 r=%li w=%li", read, write);
 
 	if (error)
@@ -216,8 +214,6 @@ populate_record_data (void *buf,
 		             "UTF-8 encoding: %s"), "UTF-16", error->message);
 		g_clear_error (&error);
 	}
-
-	g_free (utf16_filename);
 	return record;
 }
 

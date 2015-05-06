@@ -262,16 +262,10 @@ populate_record_data (void *buf)
 			             "UTF-8 for record %u: %s"),
 			           "UTF-16", record->index_n, error->message);
 			g_clear_error (&error);
-			record->utf8_filename =
-				g_strdup (_("(File name not representable in UTF-8 encoding)"));
 		}
 	}
-	else
-		record->utf8_filename = NULL;
-
 	return record;
 }
-
 
 int
 main (int    argc,

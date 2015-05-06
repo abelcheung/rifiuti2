@@ -194,9 +194,13 @@ print_record (rbin_struct *record,
 		strncpy ((char *) ascii_deltime, "???", 4);
 	}
 
-	if (has_unicode_filename && !legacy_encoding)	/* this part is info2 only */
-		utf8_filename = g_strdup (record->utf8_filename);
-	else
+	if (has_unicode_filename && !legacy_encoding)
+	{
+		utf8_filename = record->utf8_filename ?
+			g_strdup (record->utf8_filename) :
+			g_strdup (_("(File name not representable in UTF-8 encoding)"));
+	}
+	else	/* this part is info2 only */
 	{
 		/* 
 		 * On Windows, conversion from the file path's legacy charset to display codepage
