@@ -210,11 +210,12 @@ populate_record_data (void *buf)
 	        RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
 
 	memcpy (&record->index_n, buf + RECORD_INDEX_OFFSET,
-	        sizeof (record->index_n));
+	        DRIVE_LETTER_OFFSET - RECORD_INDEX_OFFSET);
 	record->index_n = GUINT32_FROM_LE (record->index_n);
 	g_debug ("index=%u", record->index_n);
 
-	memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET, sizeof (drivenum));
+	memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET,
+	        FILETIME_OFFSET - DRIVE_LETTER_OFFSET);
 	drivenum = GUINT32_FROM_LE (drivenum);
 	g_debug ("drive=%u", drivenum);
 	if (drivenum >= sizeof (driveletters) - 1)
@@ -231,13 +232,16 @@ populate_record_data (void *buf)
 	}
 
 	/* File deletion time */
-	memcpy (&win_filetime, buf + FILETIME_OFFSET, 8);
+	memcpy (&win_filetime, buf + FILETIME_OFFSET,
+	        FILESIZE_OFFSET - FILETIME_OFFSET);
 	win_filetime = GUINT64_FROM_LE (win_filetime);
 	record->deltime = win_filetime_to_epoch (win_filetime);
 
 	/* File size or occupied cluster size */
-	memcpy (&record->filesize, buf + FILESIZE_OFFSET, 4);
-	record->filesize = GUINT32_FROM_LE (record->filesize);
+	/* BEWARE! This is 32bit data casted to 64bit struct member */
+	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
+	        UNICODE_FILENAME_OFFSET - FILESIZE_OFFSET);
+	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
 	if (has_unicode_filename)

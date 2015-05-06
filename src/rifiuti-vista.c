@@ -182,12 +182,12 @@ populate_record_data (void *buf,
 	 */
 	/* TODO: Consider if the (possibly wrong) size should be printed or not */
 	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
-	        sizeof (record->filesize) - (int) erraneous);
+	        FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
 	/* File deletion time */
 	memcpy (&win_filetime, buf + FILETIME_OFFSET - (int) erraneous,
-	        sizeof (win_filetime));
+	        VERSION1_FILENAME_OFFSET - FILETIME_OFFSET);
 	win_filetime = GUINT64_FROM_LE (win_filetime);
 	record->deltime = win_filetime_to_epoch (win_filetime);
 
