@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include "utils.h"
 #include <glib/gi18n.h>
 
@@ -265,6 +267,20 @@ print_record (rbin_struct *record,
 	}
 	g_free (utf8_filename);
 	g_free (index);
+}
+
+
+void
+print_version ()
+{
+	maybe_convert_fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
+	/* TRANSLATOR COMMENT: %s is software name */
+	maybe_convert_fprintf (stdout,
+	                       _("%s is distributed under the "
+	                         "BSD 3-Clause License.\n"), PACKAGE);
+	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
+	maybe_convert_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
+	                       PACKAGE, PACKAGE_URL);
 }
 
 

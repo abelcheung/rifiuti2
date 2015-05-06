@@ -115,6 +115,8 @@ void       print_record             (rbin_struct         *record          ,
 
 void       print_footer             (FILE                *outfile         );
 
+void       print_version            ();
+
 void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,
                                      const char          *message         ,

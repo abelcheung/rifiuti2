@@ -51,6 +51,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
        gboolean   has_unicode_filename = FALSE;
        gboolean   use_localtime        = FALSE;
+static gboolean   do_print_version     = FALSE;
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char   driveletters[28] =
@@ -77,6 +78,8 @@ static GOptionEntry mainoptions[] =
 	{"localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
 	 N_("Present deletion time in time zone of local system (default is UTC)"),
 	 NULL},
+	{"version", 'v', 0, G_OPTION_ARG_NONE, &do_print_version,
+	 N_("Print version information and exit"), NULL},
 	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
 	 N_("INFO2 File names"), NULL},
 	{NULL}
@@ -342,6 +345,12 @@ main (int    argc,
 			g_clear_error (&error);
 			exit (RIFIUTI_ERR_ARG);
 		}
+	}
+
+	if (do_print_version)
+	{
+		print_version();
+		exit (EXIT_SUCCESS);
 	}
 
 	if (!fileargs || g_strv_length (fileargs) > 1)
