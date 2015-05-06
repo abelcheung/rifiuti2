@@ -410,6 +410,7 @@ main (int    argc,
 	bug_report_str =
 		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
 	g_option_context_set_description (context, bug_report_str);
+	g_free (bug_report_str);
 	g_option_context_add_main_entries (context, mainoptions, "rifiuti");
 
 	textoptgroup =
@@ -430,7 +431,6 @@ main (int    argc,
 		g_print ("%s", msg);
 		g_free (msg);
 		g_option_context_free (context);
-		g_free (bug_report_str);
 		exit (EXIT_SUCCESS);
 	}
 
@@ -452,7 +452,6 @@ main (int    argc,
 		i = g_option_context_parse (context, &argc, &argv, &error);
 #endif
 		g_option_context_free (context);
-		g_free (bug_report_str);
 
 		if (!i)
 		{
