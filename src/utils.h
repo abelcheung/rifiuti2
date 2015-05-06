@@ -35,50 +35,54 @@
 #include <stdio.h>
 #include <glib.h>
 
-enum {
-  RIFIUTI_ERR_ARG        = 1,
-  RIFIUTI_ERR_OPEN_FILE     ,
-  RIFIUTI_ERR_BROKEN_FILE   ,
-  RIFIUTI_ERR_ENCODING
+enum
+{
+	RIFIUTI_ERR_ARG = 1,
+	RIFIUTI_ERR_OPEN_FILE,
+	RIFIUTI_ERR_BROKEN_FILE,
+	RIFIUTI_ERR_ENCODING
 };
 
 typedef enum
 {
-  RECYCLE_BIN_TYPE_FILE,
-  RECYCLE_BIN_TYPE_DIR,
+	RECYCLE_BIN_TYPE_FILE,
+	RECYCLE_BIN_TYPE_DIR,
 } rbin_type;
 
 enum
 {
-  /* negative number means error when retrieving version info */
-  VERSION_INCONSISTENT = -2,
-  VERSION_NOT_FOUND,
+	/* negative number means error when retrieving version info */
+	VERSION_INCONSISTENT = -2,
+	VERSION_NOT_FOUND,
 
-  FORMAT_VISTA = 1,
-  FORMAT_WIN10,
+	FORMAT_VISTA = 1,
+	FORMAT_WIN10,
 
-  FORMAT_WIN98 = 4,
-  FORMAT_WIN2K,
+	FORMAT_WIN98 = 4,
+	FORMAT_WIN2K,
 };
 
-enum {
-  OUTPUT_CSV,
-  OUTPUT_XML
+enum
+{
+	OUTPUT_CSV,
+	OUTPUT_XML
 };
 
-struct _rbin_struct {
-  rbin_type     type;
-  uint64_t      version;     /* $Recycle.bin only */
-  union {                  /* number or file name */
-    uint32_t    index_n;
-    char       *index_s;
-  };
-  gboolean      emptied;            /* INFO2 only */
-  unsigned char drive;              /* INFO2 only */
-  time_t        deltime;
-  uint64_t      filesize;
-  char         *utf8_filename;
-  char         *legacy_filename;    /* INFO2 only */
+struct _rbin_struct
+{
+	rbin_type       type;
+	uint64_t        version;           /* $Recycle.bin only */
+	union
+	{	/* number or file name */
+		uint32_t        index_n;
+		char           *index_s;
+	};
+	gboolean        emptied;           /* INFO2 only */
+	unsigned char   drive;             /* INFO2 only */
+	time_t          deltime;
+	uint64_t        filesize;
+	char           *utf8_filename;
+	char           *legacy_filename;   /* INFO2 only */
 };
 
 typedef struct _rbin_struct rbin_struct;
@@ -86,11 +90,11 @@ typedef struct _rbin_struct rbin_struct;
 /* Glib doc is lying; GStatBuf not available until 2.25.
  * Use the definition as of 2.44 */
 #if !GLIB_CHECK_VERSION(2,25,0)
-#if (defined (__MINGW64_VERSION_MAJOR) || defined (_MSC_VER)) && !defined(_WIN64)
+#  if (defined (__MINGW64_VERSION_MAJOR) || defined (_MSC_VER)) && !defined(_WIN64)
 typedef struct _stat32 GStatBuf;
-#else
+#  else
 typedef struct stat GStatBuf;
-#endif
+#  endif
 #endif
 
 /* Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
@@ -124,4 +128,4 @@ void       gui_message              (const char          *message         );
 
 #endif
 
-/* vim: set sw=2 expandtab ts=2 : */
+/* vim: set sw=4 ts=4 noexpandtab : */

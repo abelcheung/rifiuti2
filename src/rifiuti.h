@@ -50,4 +50,4 @@
 
 #endif
 
-/* vim: set sw=2 expandtab ts=2 : */
+/* vim: set sw=4 ts=4 noexpandtab : */
