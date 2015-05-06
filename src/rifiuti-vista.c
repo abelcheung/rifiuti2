@@ -113,7 +113,7 @@ validate_index_file (FILE *inf,
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
 	*version = GUINT64_FROM_LE (*version);
-	g_debug ("Version = %" G_GUINT64_FORMAT, *version);
+	g_debug ("version=%" G_GUINT64_FORMAT, *version);
 
 	switch (*version)
 	{
@@ -167,6 +167,7 @@ populate_record_data (void *buf,
 	rbin_struct    *record;
 	gunichar2      *utf16_filename;
 	GError         *error = NULL;
+	long            read, write;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 	record->version = version;
@@ -182,6 +183,7 @@ populate_record_data (void *buf,
 	/* TODO: Consider if the (possibly wrong) size should be printed or not */
 	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
 	        sizeof (record->filesize) - (int) erraneous);
+	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
 	/* File deletion time */
 	memcpy (&win_filetime, buf + FILETIME_OFFSET - (int) erraneous,
@@ -191,6 +193,7 @@ populate_record_data (void *buf,
 
 	/* One extra char for safety, though path should have already been null terminated */
 	utf16_filename = g_malloc0 (2 * (namelength + 1));
+	g_debug ("namelength=%d", namelength);
 	switch (version)
 	{
 	  case (uint64_t) FORMAT_VISTA:
@@ -204,12 +207,13 @@ populate_record_data (void *buf,
 		break;
 	}
 	record->utf8_filename =
-		g_utf16_to_utf8 (utf16_filename, -1, NULL, NULL, &error);
+		g_utf16_to_utf8 (utf16_filename, -1, &read, &write, &error);
+	g_debug ("utf16->8 r=%li w=%li", read, write);
 
 	if (error)
 	{
-		g_warning (_("Error converting file name to UTF-8 encoding: %s"),
-		           error->message);
+		g_warning (_("Error converting file name from %s encoding to "
+		             "UTF-8 encoding: %s"), "UTF-16", error->message);
 		g_clear_error (&error);
 	}
 
@@ -262,6 +266,8 @@ parse_record (char    *index_file,
 		goto parse_validation_error;
 	}
 
+	g_debug ("Start populating record for '%s'...", basename);
+
 	switch (version)
 	{
 	  case (uint64_t) FORMAT_VISTA:
@@ -281,6 +287,7 @@ parse_record (char    *index_file,
 		goto parse_validation_error;
 	}
 
+	g_debug ("Parsing done for '%s'", basename);
 	record->index_s = basename;
 	*recordlist = g_slist_prepend (*recordlist, record);
 	fclose (infile);
