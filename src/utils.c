@@ -132,6 +132,7 @@ maybe_convert_fprintf (FILE       *file,
 {
 	va_list         args;
 	char           *utf_str;
+	const char     *charset;
 	extern gboolean always_utf8;
 
 	va_start (args, format);
@@ -140,13 +141,13 @@ maybe_convert_fprintf (FILE       *file,
 
 	g_return_if_fail (g_utf8_validate (utf_str, -1, NULL));
 
-	if (always_utf8)
+	if (always_utf8 || g_get_charset (&charset))
 		fputs (utf_str, file);
 	else
 	{
-		/* FIXME: shall catch error */
 		char *locale_str =
-			g_locale_from_utf8 (utf_str, -1, NULL, NULL, NULL);
+			g_convert_with_fallback (utf_str, -1, charset, "UTF-8", NULL,
+			                         NULL, NULL, NULL);
 		fputs (locale_str, file);
 		g_free (locale_str);
 	}
@@ -303,14 +304,12 @@ print_record (rbin_struct *record,
 				g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
 			if (error)
 			{
-				g_warning (_("Error converting path name to "
-				             "display for record %s: %s"),
+				g_warning (_("Error converting path name to display for record %s: %s"),
 				           index, error->message);
 				g_clear_error (&error);
-				shown =
-					g_locale_from_utf8 (_("(File name not representable "
-					                      "in current language)"),
-					                    -1, NULL, NULL, NULL);
+				shown = g_locale_from_utf8 (
+						_("(File name not representable in current language)"),
+						-1, NULL, NULL, NULL);
 			}
 			fprintf (outfile, "%s\n", shown);
 			g_free (shown);
@@ -323,7 +322,8 @@ print_record (rbin_struct *record,
 		if (is_info2)
 			fprintf (outfile, "emptied=\"%c\" ", record->emptied ? 'Y' : 'N');
 		fprintf (outfile,
-		         "size=\"%" G_GUINT64_FORMAT "\">\n    <path>%s</path>\n"
+		         "size=\"%" G_GUINT64_FORMAT "\">\n"
+		         "    <path>%s</path>\n"
 		         "  </record>\n",
 		         record->filesize, utf8_filename);
 		break;
