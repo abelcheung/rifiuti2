@@ -48,6 +48,12 @@ EXTRA_DIST = \
              $(TESTSUITE)         \
              atlocal.in
 
+AM_CPPFLAGS = $(GLIB_CFLAGS)
+
+noinst_PROGRAMS = getcharset
+
+getcharset_LDADD = $(GLIB_LIBS)
+
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
 
@@ -70,6 +76,7 @@ INC_AT_FILES = \
                test_read_write.at   \
                test_parse_info2.at  \
                test_parse_dir.at    \
+               test_encoding.at     \
                test_xml.at
 
 EXTRA_DIST += $(INC_AT_FILES)

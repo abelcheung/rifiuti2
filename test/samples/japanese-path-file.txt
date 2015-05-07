@@ -1,0 +1,4 @@
+Recycle bin path: './ごみ箱/INFO2-empty'
+Version: 5
+
+Index	Deleted Time	Gone?	Size	Path

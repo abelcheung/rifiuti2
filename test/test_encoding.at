@@ -1,0 +1,86 @@
+dnl -*- coding: utf-8; mode: m4; -*-
+dnl Test suite for rifiuti2
+
+AT_SETUP([UTF-8 - No Fallback For Path])
+AT_KEYWORDS([encoding])
+
+AT_CHECK([${has_perl} || exit 77])
+AT_CHECK([${has_iconv} || exit 77])
+AT_CHECK([test "x$charset" = "xUTF-8" || exit 77])
+
+AT_CHECK([
+	cp $srcdir/samples/japanese-path-file.txt expout
+	cd $srcdir/samples
+	$set_lang $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+],, [expout], [])
+
+AT_CHECK([
+	cp $srcdir/samples/japanese-path-dir.txt expout
+	cd $srcdir/samples
+	$set_lang $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+],, [expout], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Fallback For Path 1])
+AT_KEYWORDS([encoding])
+
+AT_CHECK([${has_perl} || exit 77])
+AT_CHECK([${has_iconv} || exit 77])
+
+dnl If conversion to destination charset is successful, there's no need
+dnl for fallback. We are checking for **complete failure** here, not just
+dnl partial failure. So encodings like CP950, CP936 etc won't make it
+dnl because the final character can be converted to these codepages,
+dnl producing wrong test result
+AT_CHECK([
+	test -z "`echo ごみ箱 | iconv -c -f utf-8 -t $charset 2>/dev/null`" || exit 77
+])
+
+dnl 1. Curse those quadrigraphs
+dnl 2. I hate writing regex with m4! Takes so much time to make it work,
+dnl    and fragile as hell
+dnl 3. Path need to have ./ as prefix, without that and the middle slash
+dnl will be transformed into root of MinGW folder. This only happens
+dnl when folder with non-ASCII name is prepended before slash. Looks like
+dnl bug in g_win32_get_command_line()
+AT_CHECK([
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-file.txt > expout
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+],, [expout], [])
+
+AT_CHECK([
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-dir.txt > expout
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+],, [expout], [])
+AT_CLEANUP
+
+
+dnl
+dnl This test is basically designed for me
+dnl
+AT_SETUP([Fallback For Path 2])
+AT_KEYWORDS([encoding])
+
+AT_CHECK([${has_perl} || exit 77])
+AT_CHECK([${has_iconv} || exit 77])
+AT_CHECK([test "x$charset" = "xCP950" || exit 77])
+
+dnl in CP950, only the character 箱 is immune to fallback
+AT_CHECK([
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+],, [expout], [])
+
+AT_CHECK([
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-dir.txt | iconv -f utf-8 -t cp950 > expout
+	cd $srcdir/samples/
+	$set_lang $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+],, [expout], [])
+AT_CLEANUP
+
+dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :

@@ -2,6 +2,13 @@
 # @configure_input@
 # Configurable variable values for Autoconf test suite.
 
-has_xmllint="test x@XMLLINT@ != x"
+# prog checks
+has_iconv="test \"x@ICONV@\" != x"
+has_xmllint="test \"x@XMLLINT@\" != x"
+has_perl="test \"x@PERL@\" != x"
 xmllint="@XMLLINT@"
+
+# detect & set env
+is_mingw="$(uname -s | grep -q -i 'MINGW\|MSYS')"
 set_lang="env LC_ALL=C LANGUAGE="
+charset=`$abs_builddir/getcharset`

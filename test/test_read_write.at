@@ -15,7 +15,7 @@ AT_CLEANUP
 
 AT_SETUP([Err on non-regular file (Unix)])
 AT_KEYWORDS([file])
-AT_CHECK([uname -s | grep -viq 'MINGW\|MSYS' || exit 77])
+AT_CHECK([${is_mingw} && exit 77 || exit 0])
 AT_CHECK([$abs_top_builddir/src/rifiuti /dev/zero], [2], [], [ignore])
 AT_CHECK([$abs_top_builddir/src/rifiuti-vista /dev/zero], [2], [], [ignore])
 AT_CLEANUP
@@ -24,7 +24,7 @@ dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as r
 dnl Therefore file can't be determined early as unusable, they have to be actually parsed.
 AT_SETUP([Err on non-regular file (Windows)])
 AT_KEYWORDS([file])
-AT_CHECK([uname -s | grep -iq 'MINGW\|MSYS' || exit 77])
+AT_CHECK([${is_mingw} || exit 77])
 AT_CHECK([$abs_top_builddir/src/rifiuti nul], [3], [], [ignore])
 AT_CHECK([$abs_top_builddir/src/rifiuti-vista nul], [3], [], [ignore])
 AT_CLEANUP
@@ -39,6 +39,16 @@ AT_CHECK([
 	$abs_top_builddir/src/rifiuti-vista -8 -o expout $srcdir/samples/dir-sample1
 	$abs_top_builddir/src/rifiuti-vista -8           $srcdir/samples/dir-sample1
 ],, [expout], [])
+AT_CLEANUP
+
+AT_SETUP([Read non-ASCII path])
+AT_KEYWORDS([file encoding])
+AT_CHECK([
+	$abs_top_builddir/src/rifiuti       $srcdir/samples/ごみ箱/INFO2-empty
+],, [ignore], [ignore])
+AT_CHECK([
+	$abs_top_builddir/src/rifiuti-vista $srcdir/samples/ごみ箱/dir-empty
+],, [ignore], [ignore])
 AT_CLEANUP
 
 dnl vim: set ts=4 sw=4 noexpandtab :

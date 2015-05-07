@@ -42,7 +42,9 @@ dnl Checks for programs.
 AC_PROG_INSTALL
 AC_PROG_LN_S
 dnl For test suite
-AC_CHECK_PROG([XMLLINT],[xmllint],[xmllint])
+AC_CHECK_PROG([XMLLINT], [xmllint], [xmllint])
+AC_CHECK_PROG([ICONV], [iconv], [iconv])
+AC_CHECK_PROG([PERL], [perl], [perl])
 
 dnl Checks for libraries.
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0], [:],
