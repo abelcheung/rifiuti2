@@ -32,6 +32,73 @@
 #include "utils.h"
 #include <glib/gi18n.h>
 
+/*
+ * Turns out strftime is not so cross-platform, Windows one is crippled.
+ * However, GDateTime is not available until 2.26, so bite the bullet.
+ *
+ * Returns ISO 8601 formatted time without middle 'T'.
+ */
+#ifdef G_OS_WIN32
+
+#include <stdlib.h>
+#include <sys/timeb.h>
+
+static char *
+get_datetime_str (time_t t)
+{
+	GString         *timestr;
+	char             timestr_tmp[30];  /* strftime fails at 20 */
+	struct tm       *tm;
+	struct _timeb    tstruct;
+	extern gboolean  use_localtime;
+	short            offset;
+
+	/*
+	 * $TZ can be random junk like "ABC123XYZ" on Windows, and then it would
+	 * be happily passed into localtime() calls without question. In this
+	 * example the offset would be -123 * 60 minutes from UTC.
+	 */
+	_putenv ("TZ=");
+	tm = use_localtime ? localtime (&t) : gmtime (&t);
+	_ftime (&tstruct);
+	offset = 0 - tstruct.timezone;   /* opposite sign of what people expect */
+
+	if (strftime (timestr_tmp, sizeof(timestr_tmp),
+	              "%Y-%m-%d %H:%M:%S", tm) == 0)
+		return NULL;
+
+	timestr = g_string_new ((char *) timestr_tmp);
+	if (use_localtime)
+		g_string_append_printf (timestr, "%+.2i%.2i", offset / 60, abs(offset) % 60);
+	else
+		timestr = g_string_append_c (timestr, 'Z');  /* 'Z' = UTC */
+	return g_string_free (timestr, FALSE);
+}
+
+#else  /* if ! G_OS_WIN32 */
+
+static char *
+get_datetime_str (time_t t)
+{
+	char             timestr[30];
+	struct tm       *tm;
+	extern gboolean  use_localtime;
+
+	/*
+	 * Junk $TZ can also mess up localtime() on Unix/Linux too. Slightly
+	 * saner but still not good to trust it. "ABC123XYZ" => 23.
+	 */
+	unsetenv ("TZ");
+	tm = use_localtime ? localtime (&t) : gmtime (&t);
+	if (strftime (timestr, sizeof(timestr),
+	              use_localtime ? "%F %T%z" : "%F %TZ", tm) == 0)
+		return NULL;
+	else
+		return g_strdup ((char *) timestr);
+}
+
+#endif  /* G_OS_WIN32 */
+
 time_t
 win_filetime_to_epoch (uint64_t win_filetime)
 {
@@ -163,16 +230,13 @@ void
 print_record (rbin_struct *record,
               FILE        *outfile)
 {
-	char           *utf8_filename;
-	char            ascii_deltime[21];
-	struct tm      *tm;
+	char           *utf8_filename, *timestr;
 	GError         *error = NULL;
 	gboolean        is_info2;
 	char           *index;
 
 	extern char    *legacy_encoding;
 	extern gboolean has_unicode_filename;
-	extern gboolean use_localtime;
 	extern int      output_format;
 	extern char    *delim;
 	extern gboolean always_utf8;
@@ -185,13 +249,11 @@ print_record (rbin_struct *record,
 	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
 	                   g_strdup (record->index_s);
 
-	tm = use_localtime ? localtime (&record->deltime) :
-	                     gmtime    (&record->deltime);
-	if (strftime (ascii_deltime, 20, "%Y-%m-%d %H:%M:%S", tm) == 0)
+	if ( NULL == ( timestr = get_datetime_str (record->deltime) ) )
 	{
 		g_warning (_("Error formatting file deletion time for record index %s."),
 		           index);
-		strncpy ((char *) ascii_deltime, "???", 4);
+		timestr = g_strdup ("???");
 	}
 
 	if (has_unicode_filename && !legacy_encoding)
@@ -225,7 +287,7 @@ print_record (rbin_struct *record,
 	{
 	  case OUTPUT_CSV:
 
-		fprintf (outfile, "%s%s%s%s", index, delim, ascii_deltime, delim);
+		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
 		if (is_info2)
 			maybe_convert_fprintf (outfile, "%s%s",
 			                       record->emptied ? _("Yes") : _("No"),
@@ -257,7 +319,7 @@ print_record (rbin_struct *record,
 
 	  case OUTPUT_XML:
 		fprintf (outfile, "  <record index=\"%s\" time=\"%s\" ", index,
-		         ascii_deltime);
+		         timestr);
 		if (is_info2)
 			fprintf (outfile, "emptied=\"%c\" ", record->emptied ? 'Y' : 'N');
 		fprintf (outfile,
@@ -270,6 +332,7 @@ print_record (rbin_struct *record,
 		g_warn_if_reached ();
 	}
 	g_free (utf8_filename);
+	g_free (timestr);
 	g_free (index);
 }
 
