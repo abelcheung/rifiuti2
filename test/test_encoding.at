@@ -1,6 +1,9 @@
 dnl -*- coding: utf-8; mode: m4; -*-
 dnl Test suite for rifiuti2
 
+dnl
+dnl ごみ箱 is 'recycle bin' in Japanese
+dnl
 AT_SETUP([UTF-8 - No Fallback For Path])
 AT_KEYWORDS([encoding])
 AT_CHECK([
@@ -17,7 +20,9 @@ AT_CHECK([
 
 AT_CLEANUP
 
-
+dnl
+dnl For the case when entire non-ASCII path can't be displayed
+dnl
 AT_SETUP([Fallback For Path 1])
 AT_KEYWORDS([encoding])
 
@@ -45,26 +50,25 @@ AT_CLEANUP
 
 
 dnl
-dnl This test is basically designed for me
+dnl For the case when part of non-ASCII path can't be displayed
+dnl in CP950, only the character 箱 can be displayed as is
 dnl
 AT_SETUP([Fallback For Path 2])
 AT_KEYWORDS([encoding])
 
 AT_CHECK([${has_perl} || exit 77])
 AT_CHECK([${has_iconv} || exit 77])
-AT_CHECK([test "x`$getcharset`" = "xCP950" || exit 77])
 
-dnl in CP950, only the character 箱 is immune to fallback
 AT_CHECK([
 	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout
 	cd $srcdir/samples/
-	$abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+	env CHARSET=CP950 $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
 	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-dir.txt | iconv -f utf-8 -t cp950 > expout
 	cd $srcdir/samples/
-	$abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+	env CHARSET=CP950 $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
 ],, [expout], [])
 AT_CLEANUP
 
