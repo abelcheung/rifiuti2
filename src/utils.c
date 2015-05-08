@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "utils.h"
 #include <glib/gi18n.h>
 
@@ -40,7 +42,6 @@
  */
 #ifdef G_OS_WIN32
 
-#include <stdlib.h>
 #include <sys/timeb.h>
 
 static char *
