@@ -64,7 +64,7 @@ static GOptionEntry mainoptions[] =
 	{"version", 'v', 0, G_OPTION_ARG_NONE, &do_print_version,
 	 N_("Print version information and exit"), NULL},
 	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
-	 N_("File names"), NULL},
+	 N_("$Recycle.bin folder or file name"), NULL},
 	{NULL}
 };
 
@@ -75,7 +75,7 @@ static GOptionEntry textoptions[] =
 	{"no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
 	 N_("Don't show header info"), NULL},
 	{"always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-	 N_("Always show file names in UTF-8 encoding"), NULL},
+	 N_("Always display result in UTF-8 encoding"), NULL},
 	{NULL}
 };
 
@@ -97,8 +97,7 @@ validate_index_file (FILE *inf,
 	{
 		g_debug ("file size = %i, expect larger than %i\n", (int) size,
 		         VERSION1_FILENAME_OFFSET);
-		g_critical (_("File is truncated, or probably "
-		              "not a $Recycle.bin index file."));
+		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file.\n"));
 		return RIFIUTI_ERR_BROKEN_FILE;
 	}
 
@@ -522,8 +521,8 @@ main (int    argc,
 			if (!found_desktop_ini (fileargs[0]))
 			{
 				g_printerr (_("No files with name pattern '%s' are found in "
-				              "directory.\nProbably not a $Recycle.bin directory.\n"),
-				            "$Ixxxxxx.xxx");
+				              "directory. Probably not a $Recycle.bin directory.\n"),
+				            "$Ixxxxxx.*");
 				exit (RIFIUTI_ERR_OPEN_FILE);
 			}
 		}

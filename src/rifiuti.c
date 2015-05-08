@@ -68,12 +68,9 @@ static GOptionEntry mainoptions[] =
 	 N_("Write output to FILE"),
 	 N_("FILE")},
 	{"xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-	 N_("Output in XML format instead of tab-delimited values "
-	    "(plain text options disallowed in this case)"), NULL},
+	 N_("Output in XML format instead of tab-delimited values"), NULL},
 	{"legacy-filename", 'l', 0, G_OPTION_ARG_STRING, &legacy_encoding,
-	 N_("Show legacy (8.3) filename if available, "
-	    "and specify its CODEPAGE to use "
-	    "(option is mandatory if INFO2 file is created by Win98)"),
+	 N_("Show legacy (8.3) filename if available and specify its CODEPAGE"),
 	 N_("CODEPAGE")},
 	{"localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
 	 N_("Present deletion time in time zone of local system (default is UTC)"),
@@ -81,7 +78,7 @@ static GOptionEntry mainoptions[] =
 	{"version", 'v', 0, G_OPTION_ARG_NONE, &do_print_version,
 	 N_("Print version information and exit"), NULL},
 	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
-	 N_("INFO2 File names"), NULL},
+	 N_("INFO2 file name"), NULL},
 	{NULL}
 };
 
@@ -92,7 +89,7 @@ static GOptionEntry textoptions[] =
 	{"no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
 	 N_("Don't show header info"), NULL},
 	{"always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-	 N_("Always show file names in UTF-8 encoding"), NULL},
+	 N_("Always display result in UTF-8 encoding"), NULL},
 	{NULL}
 };
 
@@ -115,8 +112,7 @@ validate_index_file (FILE     *inf,
 	{
 		g_debug ("file size = %d, expect at least %d\n", (int) size,
 		         RECORD_START_OFFSET);
-		g_printerr (_("This INFO2 file is truncated, "
-		            "or probably not an INFO2 file.\n"));
+		g_printerr (_("File is truncated, or probably not an INFO2 file.\n"));
 		return RIFIUTI_ERR_BROKEN_FILE;
 	}
 
@@ -126,7 +122,7 @@ validate_index_file (FILE     *inf,
 	if (status < 1)
 	{
 		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading info2_version"),
+		g_critical (_("%s(): fread() failed when reading version info"),
 		            __func__);
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
@@ -182,8 +178,8 @@ validate_index_file (FILE     *inf,
 		break;
 
 	  default:
-		g_printerr (_("It is not a supported INFO2 file, "
-		              "or probably not an INFO2 file.\n"));
+		g_printerr (_("File is not supported, or it is "
+		              "probably not an INFO2 file.\n"));
 		return RIFIUTI_ERR_BROKEN_FILE;
 	}
 	return 0;
@@ -259,7 +255,7 @@ populate_record_data (void *buf)
 		if (error)
 		{
 			g_warning (_("Error converting file name from %s encoding to "
-			             "UTF-8 for record %u: %s"),
+			             "UTF-8 encoding for record %u: %s"),
 			           "UTF-16", record->index_n, error->message);
 			g_clear_error (&error);
 		}
@@ -329,7 +325,11 @@ main (int    argc,
 		gboolean i;
 		/*
 		 * The user case where this code won't provide benefit is VERY rare,
-		 * so don't bother doing fallback because it never worked for them
+		 * so don't bother doing fallback because it was always the case before.
+		 *
+		 * However this parsing doesn't work nice with path translation in MSYS;
+		 * directory separator in the middle of path would be translated to root
+		 * of MSYS folder if earlier path component is in pure non-ASCII.
 		 */
 #if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
 		char **args;
