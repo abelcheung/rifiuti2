@@ -283,8 +283,6 @@ main (int    argc,
 	uint32_t        recordsize, info2_version;
 	char           *bug_report_str;
 
-	/* displaying localized file names not working so well */
-	g_setenv ("LC_CTYPE", "UTF-8", TRUE);
 	setlocale (LC_ALL, "");
 
 	/* searching current dir might be more useful on e.g. Windows */
