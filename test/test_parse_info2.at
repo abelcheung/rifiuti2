@@ -6,7 +6,7 @@ AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-empty.txt expout
 	cd $srcdir/samples/
-	$set_lang $abs_top_builddir/src/rifiuti INFO2-empty
+	$set_ascii $abs_top_builddir/src/rifiuti INFO2-empty
 ],, [expout], [])
 AT_CLEANUP
 
@@ -15,7 +15,7 @@ AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample1.txt expout
 	cd $srcdir/samples/
-	$set_lang $abs_top_builddir/src/rifiuti -8 INFO2-sample1
+	$set_ascii $abs_top_builddir/src/rifiuti -8 INFO2-sample1
 ],, [expout], [])
 AT_CLEANUP
 
@@ -24,7 +24,7 @@ AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample2.txt expout
 	cd $srcdir/samples/
-	$set_lang $abs_top_builddir/src/rifiuti -8 -l latin1 INFO2-sample2
+	$set_ascii $abs_top_builddir/src/rifiuti -8 -l latin1 INFO2-sample2
 ],, [expout], [])
 AT_CLEANUP
 
@@ -33,7 +33,7 @@ AT_KEYWORDS([info2])
 AT_CHECK([
 	cp $srcdir/samples/INFO2-sample1-alt.txt expout
 	cd $srcdir/samples/
-	$set_lang $abs_top_builddir/src/rifiuti -8 -l CP936 INFO2-sample1
+	$set_ascii $abs_top_builddir/src/rifiuti -8 -l CP936 INFO2-sample1
 ],, [expout], [])
 AT_CLEANUP
 

@@ -10,6 +10,6 @@ xmllint="@XMLLINT@"
 
 # detect & set env
 host_os="@host_os@"
-is_mingw="uname -s | grep -i -q 'MINGW\|MSYS'"
-set_lang="env LC_ALL=C LANGUAGE="
-charset=`$abs_builddir/getcharset`
+getcharset="$abs_buildddir/getcharset"
+set_ascii="env CHARSET=ASCII"
+set_utf8="env CHARSET=UTF-8"
