@@ -9,6 +9,7 @@ has_perl="test \"x@PERL@\" != x"
 xmllint="@XMLLINT@"
 
 # detect & set env
-is_mingw="$(uname -s | grep -q -i 'MINGW\|MSYS')"
+host_os="@host_os@"
+is_mingw="uname -s | grep -i -q 'MINGW\|MSYS'"
 set_lang="env LC_ALL=C LANGUAGE="
 charset=`$abs_builddir/getcharset`
