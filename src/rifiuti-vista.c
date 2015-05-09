@@ -502,6 +502,30 @@ main (int    argc,
 
 	if (NULL == delim)
 		delim = g_strndup ("\t", 2);
+	else
+	{
+		char *d = filter_escapes (delim);
+		if (d != NULL)
+		{
+			g_free (delim);
+			delim = d;
+		}
+	}
+
+	{
+		char *i = delim;
+		GString *str = g_string_new (g_strdup ("filtered delimiter = "));
+		do
+		{
+			if (((*i) <= 0x7E) && ((*i) >= 0x20))
+				str = g_string_append_c (str, *i);
+			else
+				g_string_append_printf (str, "\\x%02X", (char) (*i));
+		}
+		while ((char) (* (++i)) != '\0');
+		g_debug (str->str);
+		g_string_free (str, TRUE);
+	}
 
 	g_debug ("Start basic file checking...");
 

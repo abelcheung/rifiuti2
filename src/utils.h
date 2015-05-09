@@ -105,6 +105,8 @@ typedef struct stat GStatBuf;
 /* shared functions */
 time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 
+char *     filter_escapes           (const char          *str             );
+
 void       print_header             (FILE                *outfile         ,
                                      char                *infilename      ,
                                      int64_t              version         ,

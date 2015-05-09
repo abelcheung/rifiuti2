@@ -49,4 +49,17 @@ AT_CHECK([$abs_top_builddir/src/rifiuti       1 2 3], [1], [], [ignore])
 AT_CHECK([$abs_top_builddir/src/rifiuti-vista 1 2 3], [1], [], [ignore])
 AT_CLEANUP
 
+AT_SETUP([Escaped char in delimiter])
+AT_KEYWORDS([option])
+AT_CHECK([
+	sed 's/\t/\n\t/g' < $srcdir/samples/INFO2-sample1.txt > expout
+	cd $srcdir/samples
+	$set_lang $abs_top_builddir/src/rifiuti -8 -t "\n\t" INFO2-sample1
+],, [expout], [])
+AT_CHECK([
+	sed 's/\t/\n\t/g' < $srcdir/samples/dir-sample1.txt > expout
+	cd $srcdir/samples
+	$set_lang $abs_top_builddir/src/rifiuti-vista -8 -t "\n\t" dir-sample1
+],, [expout], [])
+AT_CLEANUP
 dnl vim: set ts=4 sw=4 noexpandtab :

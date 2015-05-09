@@ -87,7 +87,7 @@ get_datetime_str (time_t t)
 
 	/*
 	 * Junk $TZ can also mess up localtime() on Unix/Linux too. Slightly
-	 * saner but still not good to trust it. "ABC123XYZ" => 23.
+	 * saner but still not good to trust it. "ABC123XYZ" => 23 on Linux.
 	 */
 	unsetenv ("TZ");
 	tm = use_localtime ? localtime (&t) : gmtime (&t);
@@ -112,6 +112,46 @@ win_filetime_to_epoch (uint64_t win_filetime)
 
 	/* Let's assume this program won't survive till 22th century */
 	return (time_t) (epoch & 0xFFFFFFFF);
+}
+
+/*
+ * single/double quotes and backslashes have already been
+ * quoted / unquoted when parsing arguments. We need to
+ * interpret \r, \n \t, \v and \f separately
+ */
+char *
+filter_escapes (const char *str)
+{
+	GString *result;
+	char *i = (char *)str;
+
+	if ((str == NULL) || (*str == '\0')) return NULL;
+
+	result = g_string_new (NULL);
+	for (; *i != '\0'; i++)
+	{
+		if (*i != '\\')
+		{
+			result = g_string_append_c (result, *i);
+			continue;
+		}
+		switch ((char) (*(i+1)))
+		{
+		  case 'r':
+			result = g_string_append_c (result, '\r'); i++; break;
+		  case 'n':
+			result = g_string_append_c (result, '\n'); i++; break;
+		  case 't':
+			result = g_string_append_c (result, '\t'); i++; break;
+		  case 'v':
+			result = g_string_append_c (result, '\v'); i++; break;
+		  case 'f':
+			result = g_string_append_c (result, '\f'); i++; break;
+		  default:
+			result = g_string_append_c (result, '\\');
+		}
+	}
+	return g_string_free (result, FALSE);
 }
 
 void

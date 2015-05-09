@@ -136,7 +136,9 @@ would be \fC2014-12-25 16:00:00+0100\fP.
 PLAIN TEXT OUTPUT OPTIONS
 .TP
 \fB\-t\fP, \fB\-\-delimiter\fP=\fI\,STRING\/\fP
-String to use as delimiter (TAB by default)
+String to use as delimiter (TAB by default). Several escaped characters
+are recognised: \\r (CARRIAGE RETURN), \\n (NEW LINE), \\t (TAB),
+\\f (FORM FEED), \\v (VERTICAL TAB)
 .TP
 \fB\-n\fP, \fB\-\-no\-heading\fP
 Don't show recycle bin path name, version and header for each field
@@ -172,8 +174,8 @@ time for local time zone, and write XML output to result.xml
 \fCrifiuti-vista \-n \-8 \\case\\S\-1\-2\-3\\\fP
 Show tab-delimited result on screen in UTF-8 encoding without header
 .TP
-\fCrifiuti-vista -t '###' \\case\\S\-1\-2\-3\\$IF96NJ3.rtf\fP
-Only analyse a single index file and join resulting fields with 3 hashes
+\fCrifiuti-vista -t '\\r\\n' \\case\\S\-1\-2\-3\\$IF96NJ3.rtf\fP
+Only analyse a single index file and print each field in its own line
 .TP
 \fCrifiuti \-t ',' -o result.csv INFO2\fP
 Change tab-delimited result to comma-delimited and write to result.csv
