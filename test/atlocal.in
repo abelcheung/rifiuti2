@@ -13,3 +13,8 @@ host_os="@host_os@"
 getcharset="$abs_buildddir/getcharset"
 set_ascii="env CHARSET=ASCII"
 set_utf8="env CHARSET=UTF-8"
+
+# abbrev
+progf="$abs_top_builddir/src/rifiuti"
+progd="$abs_top_builddir/src/rifiuti-vista"
+sample="$abs_srcdir/samples"

@@ -7,15 +7,15 @@ dnl
 AT_SETUP([UTF-8 - No Fallback For Path])
 AT_KEYWORDS([encoding])
 AT_CHECK([
-	cp $srcdir/samples/japanese-path-file.txt expout
-	cd $srcdir/samples
-	$set_utf8 $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+	cp $sample/japanese-path-file.txt expout
+	cd $sample
+	$set_utf8 $progf ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
-	cp $srcdir/samples/japanese-path-dir.txt expout
-	cd $srcdir/samples
-	$set_utf8 $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+	cp $sample/japanese-path-dir.txt expout
+	cd $sample
+	$set_utf8 $progd ./ごみ箱/dir-empty
 ],, [expout], [])
 
 AT_CLEANUP
@@ -36,15 +36,15 @@ dnl will be transformed into root of MinGW folder. This only happens
 dnl when folder with non-ASCII name is prepended before slash. Looks like
 dnl bug in g_win32_get_command_line()
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-file.txt > expout
-	cd $srcdir/samples/
-	$set_ascii $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt > expout
+	cd $sample/
+	$set_ascii $progf ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-dir.txt > expout
-	cd $srcdir/samples/
-	$set_ascii $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt > expout
+	cd $sample/
+	$set_ascii $progd ./ごみ箱/dir-empty
 ],, [expout], [])
 AT_CLEANUP
 
@@ -60,15 +60,15 @@ AT_CHECK([${has_perl} || exit 77])
 AT_CHECK([${has_iconv} || exit 77])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout
-	cd $srcdir/samples/
-	env CHARSET=CP950 $abs_top_builddir/src/rifiuti ./ごみ箱/INFO2-empty
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout
+	cd $sample/
+	env CHARSET=CP950 $progf ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $srcdir/samples/japanese-path-dir.txt | iconv -f utf-8 -t cp950 > expout
-	cd $srcdir/samples/
-	env CHARSET=CP950 $abs_top_builddir/src/rifiuti-vista ./ごみ箱/dir-empty
+	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt | iconv -f utf-8 -t cp950 > expout
+	cd $sample/
+	env CHARSET=CP950 $progd ./ごみ箱/dir-empty
 ],, [expout], [])
 AT_CLEANUP
 

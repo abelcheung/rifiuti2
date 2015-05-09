@@ -1,0 +1,25 @@
+dnl -*- mode: m4; -*-
+dnl Test suite for rifiuti2
+
+m4_defun([_r2_check_empty_option], [
+	AT_CHECK([$progf $1], [$2], [ignore], [ignore])
+	AT_CHECK([$progd $1], [$2], [ignore], [ignore])
+])
+
+m4_defun([_r2_check_option], [
+	AT_CHECK([$progf $1 $sample/INFO2-empty], [$2], [ignore], [ignore])
+	AT_CHECK([$progd $1 $sample/dir-empty],   [$2], [ignore], [ignore])
+])
+
+m4_defun([_r2_check_ignore_err], [
+	AT_CHECK([$progf $1], [$2], [$3], [ignore])
+	AT_CHECK([$progd $1], [$2], [$3], [ignore])
+])
+
+m4_defun([_r2_basic_compare], [
+	AT_CHECK([
+		cp $sample/$2 expout
+		cd $sample
+		$set_ascii $1
+	],, [expout])
+])

@@ -1,65 +1,58 @@
 dnl -*- mode: m4; -*-
 dnl Test suite for rifiuti2
 
-m4_defun([_r2_check_option],
-	[AT_CHECK([$abs_top_builddir/src/$1], [$2], [ignore], [ignore])])
-
 AT_SETUP([Short Options])
 AT_KEYWORDS([option])
-_r2_check_option([rifiuti -?])
-_r2_check_option([rifiuti -v])
-_r2_check_option([rifiuti -t : -n -8 $srcdir/samples/INFO2-empty])
-_r2_check_option([rifiuti-vista -?])
-_r2_check_option([rifiuti-vista -v])
-_r2_check_option([rifiuti-vista -n -8 $srcdir/samples/dir-sample1/])
+_r2_check_empty_option([-?])
+_r2_check_empty_option([-v])
+_r2_check_option([-t :])
+_r2_check_option([-n])
+_r2_check_option([-8])
 AT_CLEANUP
 
 AT_SETUP([Long Options])
 AT_KEYWORDS([option])
-_r2_check_option([rifiuti --help-all])
-_r2_check_option([rifiuti --delimiter=: --no-heading --always-utf8 $srcdir/samples/INFO2-empty])
-_r2_check_option([rifiuti-vista --help-all])
-_r2_check_option([rifiuti-vista --always-utf8 --no-heading $srcdir/samples/dir-sample1/])
+_r2_check_empty_option([--help-all])
+_r2_check_option([--delimiter=:])
+_r2_check_option([--no-heading])
+_r2_check_option([--always-utf8])
 AT_CLEANUP
 
 AT_SETUP([Invalid options])
 AT_KEYWORDS([option])
-_r2_check_option([rifiuti --invalid-option],[1])
-_r2_check_option([rifiuti-vista --invalid-option],[1])
-_r2_check_option([rifiuti -l foobar $srcdir/samples/INFO2-sample2],[4])
+_r2_check_empty_option([--invalid-option],[1])
+AT_CHECK([$progf -l foobar $sample/INFO2-sample2], [4], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([Wrong combinations])
 AT_KEYWORDS([option])
-_r2_check_option([rifiuti -x -t : $srcdir/samples/INFO2-empty],[1])
-_r2_check_option([rifiuti -x -n -8 $srcdir/samples/INFO2-empty],[1])
-_r2_check_option([rifiuti-vista -x -8 $srcdir/samples/dir-sample1],[1])
-_r2_check_option([rifiuti-vista -x -n $srcdir/samples/dir-sample1],[1])
+_r2_check_option([-x -t :], [1])
+_r2_check_option([-x -n], [1])
+_r2_check_option([-x -8], [1])
 AT_CLEANUP
 
 AT_SETUP([Err on no file args])
 AT_KEYWORDS([file option])
-AT_CHECK([$abs_top_builddir/src/rifiuti       -8], [1], [], [ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista -8], [1], [], [ignore])
+_r2_check_ignore_err([-8], [1])
 AT_CLEANUP
 
 AT_SETUP([Err on multiple file args])
 AT_KEYWORDS([file option])
-AT_CHECK([$abs_top_builddir/src/rifiuti       1 2 3], [1], [], [ignore])
-AT_CHECK([$abs_top_builddir/src/rifiuti-vista 1 2 3], [1], [], [ignore])
+_r2_check_ignore_err([foo bar baz], [1])
 AT_CLEANUP
 
 AT_SETUP([Escaped char in delimiter])
 AT_KEYWORDS([option])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $srcdir/samples/INFO2-sample1.txt > expout
-	cd $srcdir/samples
-	$set_lang $abs_top_builddir/src/rifiuti -8 -t "\n\t" INFO2-sample1
+	sed 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
+	cd $sample
+	$set_ascii $progf -8 -t "\n\t" INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $srcdir/samples/dir-sample1.txt > expout
-	cd $srcdir/samples
-	$set_lang $abs_top_builddir/src/rifiuti-vista -8 -t "\n\t" dir-sample1
+	sed 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
+	cd $sample
+	$set_ascii $progd -8 -t "\n\t" dir-sample1
 ],, [expout], [])
 AT_CLEANUP
+
 dnl vim: set ts=4 sw=4 noexpandtab :
