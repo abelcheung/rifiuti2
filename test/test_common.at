@@ -18,6 +18,7 @@ m4_defun([_r2_check_ignore_err], [
 
 m4_defun([_r2_basic_compare], [
 	AT_CHECK([
+		rm -f expout
 		cp $sample/$2 expout
 		cd $sample
 		$set_ascii $1

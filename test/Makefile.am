@@ -73,10 +73,11 @@ $(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES)
 
 INC_AT_FILES = \
                test_cli_option.at   \
-               test_read_write.at   \
+               test_common.at       \
+               test_encoding.at     \
                test_parse_info2.at  \
                test_parse_dir.at    \
-               test_encoding.at     \
+               test_read_write.at   \
                test_xml.at
 
 EXTRA_DIST += $(INC_AT_FILES)

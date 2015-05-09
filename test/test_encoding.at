@@ -10,13 +10,14 @@ AT_CHECK([
 	cp $sample/japanese-path-file.txt expout
 	cd $sample
 	$set_utf8 $progf ./ごみ箱/INFO2-empty
-],, [expout], [])
+],, [expout])
 
 AT_CHECK([
+	rm -f expout
 	cp $sample/japanese-path-dir.txt expout
 	cd $sample
 	$set_utf8 $progd ./ごみ箱/dir-empty
-],, [expout], [])
+],, [expout])
 
 AT_CLEANUP
 
