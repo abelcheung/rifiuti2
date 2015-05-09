@@ -1,47 +1,222 @@
-.TH RIFIUTI2 1 "2008-11-21" "0.5.0" "A MS Windows recycle bin analysis tool"
+.\"-
+.\" Man page for rifiuti2
+.\"
+.\" Copyright (c) 2008 Anthony Wong <ypwong@debian.org>
+.\" Copyrgith (c) 2015 Abel Cheung <abelcheung@gmail.com>
+.\"
+.\" This documentation is available under BSD 3-clause license.
+.\"
+.TH RIFIUTI2 "1" "May 2015" "0.6.0" "MS Windows recycle bin analysis tool"
+
+.\" see groff_www(7)
+.BCL black #bbeeff red blue #302226
+.\" .NHR
 
 .SH NAME
-rifiuti2 \- A MS Windows recycle bin analysis tool
+rifiuti2 \- MS Windows recycle bin analysis tool
 
 .SH SYNOPSIS
 .B rifiuti
-.RB [ " \-x " ]
-.RB [ " \-tnl8 " ]
-[
-.BI "\-o " outfile
-]
+.RB [ \-hvz ]
+.RB [ \-x " |"
+.RB [ \-8n ]
+.RB [ \-t
+.IR delim "]]"
+.RB [ \-l
+.IR codepage ]
+.RB [ \-o
+.IR outfile ]
 .I filename
 
 .B rifiuti-vista
-.RB [ " \-x " ]
-.RB [ " \-n8 " ]
-[
-.BI "\-o " outfile
-]
+.RB [ \-hvz ]
+.RB [ \-x " |"
+.RB [ \-8n ]
+.RB [ \-t
+.IR delim "]]"
+.RB [ \-o
+.IR outfile ]
 .I file_or_directory
 
 .SH DESCRIPTION
-.I Rifiuti2
-is a rewrite of 
-.IR rifiuti ,
-a great tool from Foundstone folks for
-analyzing Windows Recycle Bin INFO2 file.  Analysis of Windows Recycle
-Bin is usually carried out during Windows computer forensics.
-.I Rifiuti2
-can extract file deletion time, original path and size of deleted
-files and whether the deleted files have been moved out from the
-recycle bin since they are trashed.
-.I Rifiuti2
-supports the INFO2 file format found in Windows up to Windows XP and
-the new file format found in Vista, and the program is fully
-internationalized. If you need to analyse recycle bins of Windows
-Vista and Windows Server 2008, you should use the
-.I rifiuti-vista
-command, for other Windows platforms, you should use the
-.I rifiuti
-command.
+\fBRifiuti2\fP analyse recycle bin files from Windows. Analysis of
+Windows recycle bin is usually carried out during Windows computer
+forensics. Rifiuti2 can extract file deletion time, original
+path and size of deleted files and whether the deleted files have
+been moved out from the recycle bin since they are trashed.
+.PP
+Rifiuti2 supports a wide range of Windows versions, from Windows 98 to
+Windows 10. The command used for analysis depends on the version
+of Windows producing the recycle bin, which uses vastly different
+format before and after Vista:
+.PP
 
-Quoting from original Foundstone page:
+.IP \[bu]
+\fCrifiuti-vista\f[]: For Vista or later, which is located in
+folder like
+.nh
+\fCC:\\$Recycle.bin\\\f[].
+.hy
+Each deleted file has its own accompanied index file remembering
+the original path, file size and deletion time.  If original file is
+permanentsly deleted, so is the index file.
+.IP \[bu]
+\fCrifiuti\f[]: For Windows 98 to XP,
+which uses a single index file named INFO2 resided under either
+.nh
+\fCC:\\RECYCLED\f[]
+.hy
+or
+.nh
+\fCC:\\RECYCLER\f[].
+.hy
+This file keeps track record for deletion status and info for \fIall\fP
+deleted items, including those permanently removed.
+
+.PP
+By default, both programs dump tab-delimited fields on
+screen, which can be viewed on screen or imported into spreadsheet
+program. \fB\-x\fP option instructs program to dump XML formatted
+content instead.
+.PP
+Index field has different meaning for pre-Vista
+and post-Vista versions.  INFO2 has an index number for each of
+deletion item indicating the chronological order of items. For Vista
+version, it means the index file name instead, which matches
+pattern '$I\fBxxxxxx\fP.\fI<ext>\fP', where \fBx\fP is random
+alphanumeric character.
+.PP
+Deleted time is represented in UTC time by default, in ISO 8601 format.
+For example, 3PM at 2014 X'mas would be represented as
+.RS
+\fC2014-12-25 15:00:00Z\fP
+.RE
+rifiuti2 opts for using space as separator between date / time.
+.PP
+File size and file path are self-explanatory, but there are some
+special notes.  File size can mean the real size of deleted file,
+or the cluster size it occupies on filesystem, depending on recycle
+bin format. File path might not always be displayable on local system
+because it might contain characters from other localized version
+of Windows.
+
+.SH OPTIONS
+.TP
+\fB\-o\fP, \fB\-\-output\fP=\fI\,FILE\/\fP
+Write output to FILE.
+.TP
+\fB\-x\fP, \fB\-\-xml\fP
+Output in XML format instead of tab\-delimited values.
+With XML mode, all plain text options are disallowed,
+and result is always in UTF-8 encoding.
+See below for plain text options.
+.TP
+\fB\-l\fP, \fB\-\-legacy\-filename\fP=\fI\,CODEPAGE\/\fP
+Show legacy filename if available (like '\fCD:\\Progra~1\\\fP'),
+and specify the CODEPAGE used in the Windows system producing this
+INFO2 file. Any encodings supported by \fBiconv\fP(1) can be used,
+though for maximum accuracy of file name results, it is better to
+stick with Microsoft codepages (such as CP850 or CP1252 for west
+European version, CP932 for Japanese, etc).
+
+.RS
+\fBNote\fP: This option is mandatory if INFO2 file is created by
+Windows 98. This option does not exist in \fCrifiuti-vista\fP.
+.RE
+.TP
+\fB\-z\fP, \fB\-\-localtime\fP
+Present deletion time in numeric time zone of local system running
+the program.  By default, UTC time (represented by letter 'Z') is
+displayed, which is the time value recorded in index files. Using the
+X'mas example above, the time for Berlin (without daylight saving time)
+would be \fC2014-12-25 16:00:00+0100\fP.
+.PP
+
+.SS
+PLAIN TEXT OUTPUT OPTIONS
+.TP
+\fB\-t\fP, \fB\-\-delimiter\fP=\fI\,STRING\/\fP
+String to use as delimiter (TAB by default)
+.TP
+\fB\-n\fP, \fB\-\-no\-heading\fP
+Don't show recycle bin path name, version and header for each field
+.TP
+\fB\-8\fP, \fB\-\-always\-utf8\fP
+Always display result in UTF\-8 encoding
+.PP
+
+.SS
+MISCELLANEOUS OPTIONS
+.TP
+\fB\-v\fP, \fB\-\-version\fP
+Print version information and exit.
+.TP
+\fB\-h\fP, \fB\-\-help\fP
+Show help options and exit.
+.TP
+\fB\-\-help\-all\fP
+Show all help options and exit.
+.TP
+\fB\-\-help\-text\fP
+Show plain text output options and exit.
+.PP
+
+.SH EXAMPLES
+.TP
+\fCrifiuti-vista \-x \-z \-o result.xml \\case\\S\-1\-2\-3\\\fP
+.RS
+Scan for index files under \\case\\S\-1\-2\-3\\, adjust all deletion
+time for local time zone, and write XML output to result.xml
+.RE
+.TP
+\fCrifiuti-vista \-n \-8 \\case\\S\-1\-2\-3\\\fP
+Show tab-delimited result on screen in UTF-8 encoding without header
+.TP
+\fCrifiuti-vista -t '###' \\case\\S\-1\-2\-3\\$IF96NJ3.rtf\fP
+Only analyse a single index file and join resulting fields with 3 hashes
+.TP
+\fCrifiuti \-t ',' -o result.csv INFO2\fP
+Change tab-delimited result to comma-delimited and write to result.csv
+.TP
+\fCrifiuti \-l CP1255 \-8 \-n INFO2\fP
+.RS
+Read INFO2 from Hebrew version of Windows, display 8.3 file names
+on screen in UTF-8 encoding without header
+.RE
+
+.SH ENVIRONMENT
+The following environment variables affect execution of program:
+
+.TP
+\fBCHARSET\fP, \fBLC_CTYPE\fP
+.RS
+If recycle bin path contains non-ASCII character, these variables
+affect how they are displayed. UTF-8 capable systems are recommended
+to set
+.nh
+\fCCHARSET=UTF-8\fP
+.hy
+or use appropriate UTF-8 values for
+\fCLC_CTYPE\fP explicitly, otherwise path might be displayed in
+Universal Character Name sequences like \\u1234.
+.RE
+.TP
+\fBRIFIUTI_DEBUG\fP
+.RS
+Setting it to any non-empty value would cause programs to print
+more debugging output to stderr.
+.RE
+
+.SH EXIT STATUS
+Both programs return 0 on success, and >0 if error occurs.
+.PP
+However \fCrifiuti-vista\fP is more permissive: it still returns
+success if \fIsome\fP (not all) of index files are invalid.
+
+.SH HISTORY
+\fIRifiuti2\fP is a rewrite of \fIrifiuti\fP, a tool of identical
+purpose written by Foundstone which was later purchased by
+McAfee. Quoting from the original FoundStone page:
 
 .RS
 Many computer crime investigations require the reconstruction of a
@@ -51,58 +226,106 @@ Recycle Bin repository files (INFO2 files). Rifiuti, the Italian word
 meaning "trash", was developed to examine the contents of the INFO2
 file in the Recycle Bin. ... Rifiuti is built to work on multiple
 platforms and will execute on Windows (through Cygwin), Mac OS X,
-Linux, and *BSD platforms." 
+Linux, and *BSD platforms.
 .RE
 
-Since the original
-.I rifiuti
-(last updated 2004) is restricted to English version
-of Windows (fail to analyze any non-latin character), thus this
-rewrite. But it does more:
+.PP
+However, since the original rifiuti (last updated 2004) can't analyze
+recycle bin from any localized version of Windows (restricted to
+English), this rewrite effort is born to overcome the limitation. Later
+rifiuti2 was improved to add support for Vista format recycle bin, XML
+output and other extra features not available from original version.
 
-  * Supports Windows in any other languages besides English
-  * Supports Vista and 2008 (they don't use INFO2 file any more)
-  * Enables localization (that is, translatable)
-  * More rigorous error checking
-  * Supports output in XML format 
+.SH BUGS
+In very special circumstance (which author can't reproduce now),
+index file of certain deleted item can be corrupt, causing incorrect
+deleted file size to be stored. There is no way to report correct size.
+This problem shouldn't happen after Vista though.
+.PP
+Handling of non-ASCII file argument is not satisfactory; it may not
+work in certain case under MinGW bash.
+.PP
+Non-ASCII deleted item path name may not be always displayed
+appropriately, especially on systems with non-UTF-8 locale (such as
+Windows \fBcmd\fP, where output is restricted to ANSI codepages).
+Storing UTF-8 result into file with \fB\-8\fP or \fB\-x\fP option
+and then opening it with Unicode capable editor could be a solution.
+.PP
 
-.SH OPTIONS
-These are plain text output options:
-.TP
-.B \-t --delimiter=STRING
-String to use as delimiter (TAB by default)
-.TP
-.B \-n --no-heading
-Don't show header
-.TP
-.B \-l --legacy-filename
-Show legacy filename instead of unicode
-.TP
-.B \-8 --always-utf8
-Always show file names in UTF-8 encoding
 
-These are general application Options:
+.SH REPORTING BUGS
+Report bugs to
+.\" The whole link and text would disappear when using
+.\" ascii driver, So have to use if/else
+.  ie \n[www-html] \{\
+.\" Using .IP doesn't work, URL is emitted before it
+.RS
+.URL https://github.com/abelcheung/rifiuti2/issues
+.RE
+.  \}
+.  el \{\
+.IP
+https://github.com/abelcheung/rifiuti2/issues
+.  \}
+.PP
+Information about rifiuti2 can be found on
+.  ie \n[www-html] \{\
+.RS
+.URL https://abelcheung.github.io/rifiuti2/
+.RE
+.  \}
+.  el \{\
+.IP
+https://abelcheung.github.io/rifiuti2/
+.  \}
+
+.SH SEE ALSO
+.  ie \n[www-html] \{\
+.PP
+.URL http://odessa.sourceforge.net/ "Open Digital Evidence Search and Seizure Architecture project"
+, which contains the original rifiuti tool
+.PP
+Forensics tools and other security related utilities
+.URL http://www.mcafee.com/us/downloads/free-tools/index.aspx "originally written by FoundStone"
+are now available under McAfee's own license
+.PP
+.URL http://me.abelcheung.org/wp-content/uploads/2007/09/vista-recycle-bin-sample.pdf "Vista recycle bin file structure"
+, by Abel Cheung
+.PP
+.URL http://www.csisite.net/downloads/INFO2.pdf "INFO2 recycle bin file example"
+, by Steve Hailey
+.  \}
+.  el \{\
 .TP
-.B \-o --output=FILE
-Write output to FILE
+Open Digital Evidence Search and Seizure Architecture project, which contains the original rifiuti tool
+http://odessa.sourceforge.net/
 .TP
-.B \-x --xml
-Output in XML format (-t, -n, -l, -8 options will have no effect)
+Forensics tools and other security related utilities originally written by FoundStone are now available under McAfee's own license.
+http://www.mcafee.com/us/downloads/free-tools/index.aspx
 .TP
-.B --from-encoding=ENC
-The assumed file name character set when no unicode file name is present in INFO2 record (mandatory if INFO2 file is created by Win98, useless otherwise)
+Vista recycle bin file structure, by Abel Cheung
+http://me.abelcheung.org/wp-content/uploads/2007/09/vista-recycle-bin-sample.pdf
+.TP
+INFO2 recycle bin file example, by Steve Hailey
+http://www.csisite.net/downloads/INFO2.pdf
+.  \}
+.PP
 
 .SH COPYRIGHT
 Part of the work of
 .I Rifiuti2
 is derived from
-.IR Rifiuti ,
-both pieces of software are licensed under the simplified BSD license.
+.IR Rifiuti .
+Both pieces of software are licensed under the simplified BSD license.
 
 .SH AUTHOR
 The main author of
 .I Rifiuti2
-is Abel Cheung, and Anthony Wong helps in some packaging and documentation work (like this manpage).
+is Abel Cheung.
+.PP
 The original author of
 .I Rifiuti
 is Keith J Jones.
+.PP
+Anthony Wong helped in Debian packaging and was author of the original manpage.
+
