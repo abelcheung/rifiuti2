@@ -117,7 +117,7 @@ win_filetime_to_epoch (uint64_t win_filetime)
 /*
  * single/double quotes and backslashes have already been
  * quoted / unquoted when parsing arguments. We need to
- * interpret \r, \n \t, \v and \f separately
+ * interpret \r, \n etc separately
  */
 char *
 filter_escapes (const char *str)
@@ -147,6 +147,8 @@ filter_escapes (const char *str)
 			result = g_string_append_c (result, '\v'); i++; break;
 		  case 'f':
 			result = g_string_append_c (result, '\f'); i++; break;
+		  case 'e':
+			result = g_string_append_c (result, '\x1B'); i++; break;
 		  default:
 			result = g_string_append_c (result, '\\');
 		}
