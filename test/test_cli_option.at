@@ -43,13 +43,15 @@ AT_CLEANUP
 
 AT_SETUP([Escaped char in delimiter])
 AT_KEYWORDS([option])
+dnl FreeBSD sed does not support escaped chars
+AT_CHECK([if $is_bsd; then exit 77; fi])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
+	sed -e 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
 	cd $sample
 	$set_ascii $progf -8 -t "\n\t" INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
+	sed -e 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
 	cd $sample
 	$set_ascii $progd -8 -t "\n\t" dir-sample1
 ],, [expout], [])

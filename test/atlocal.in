@@ -3,13 +3,14 @@
 # Configurable variable values for Autoconf test suite.
 
 # prog checks
-has_iconv="test \"x@ICONV@\" != x"
-has_xmllint="test \"x@XMLLINT@\" != x"
-has_perl="test \"x@PERL@\" != x"
+has_iconv="test 'x@ICONV@' != 'x'"
+has_xmllint="test 'x@XMLLINT@' != 'x'"
+has_perl="test 'x@PERL@' != 'x'"
 xmllint="@XMLLINT@"
 
 # detect & set env
-host_os="@host_os@"
+is_mingw="test 'x@os_mingw@' != 'x'"
+is_bsd="test 'x@os_bsd@' != 'x'"
 getcharset="$abs_buildddir/getcharset"
 set_ascii="env CHARSET=ASCII"
 set_utf8="env CHARSET=UTF-8"

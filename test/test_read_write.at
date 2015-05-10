@@ -8,7 +8,7 @@ AT_CLEANUP
 
 AT_SETUP([Err on non-regular file (Unix)])
 AT_KEYWORDS([file])
-AT_CHECK([echo "$host_os" | grep -i -q 'MINGW\|MSYS' && exit 77 || exit 0])
+AT_CHECK([if $is_mingw; then exit 77; fi])
 _r2_check_ignore_err([/dev/zero], [2])
 AT_CLEANUP
 
@@ -16,7 +16,7 @@ dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as r
 dnl Therefore file can't be determined early as unusable, they have to be actually parsed.
 AT_SETUP([Err on non-regular file (Windows)])
 AT_KEYWORDS([file])
-AT_CHECK([echo "$host_os" | grep -i -q 'MINGW\|MSYS' || exit 77])
+AT_CHECK([if $is_mingw; then :; else exit 77; fi])
 _r2_check_ignore_err([nul], [3])
 AT_CLEANUP
 
@@ -25,11 +25,11 @@ AT_KEYWORDS([file])
 AT_CHECK([
 	$progf -8 -o expout $sample/INFO2-sample1
 	$progf -8           $sample/INFO2-sample1
-],, [expout], [])
+],, [expout])
 AT_CHECK([
 	$progd -8 -o expout $sample/dir-sample1
 	$progd -8           $sample/dir-sample1
-],, [expout], [])
+],, [expout])
 AT_CLEANUP
 
 AT_SETUP([Read non-ASCII path])
