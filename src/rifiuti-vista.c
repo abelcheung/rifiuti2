@@ -56,8 +56,7 @@ static GOptionEntry mainoptions[] =
 	{"output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
 	 N_("Write output to FILE"), N_("FILE")},
 	{"xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-	 N_("Output in XML format instead of tab-delimiated values "
-	    "(plain text options disallowed in this case)"), NULL},
+	 N_("Output in XML format instead of tab-delimited values"), NULL},
 	{"localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
 	 N_("Present deletion time in time zone of local system (default is UTC)"),
 	 NULL},
@@ -255,8 +254,12 @@ parse_record (char    *index_file,
 	buf = g_malloc0 (st.st_size + 2);
 	if (1 != fread (buf, st.st_size, 1, infile))
 	{
-		g_critical (_("%s(): fread() '%s' failed when "
-		              "reading file content: %s\n"),
+		/*
+		 * TRANSLATOR COMMENT: 1st parameter is function name,
+		 * 2nd is file name, 3rd is error message
+		 */
+		g_critical (_("%s(): fread() failed when "
+		              "reading content of file '%s': %s\n"),
 		            __func__, basename, strerror (errno));
 		goto parse_validation_error;
 	}

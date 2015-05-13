@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: rifiuti2 0.6.0\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=glib&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2015-04-28 06:31+0800\n"
-"PO-Revision-Date: 2015-04-21 04:04+0800\n"
+"POT-Creation-Date: 2015-05-13 21:00+0800\n"
+"PO-Revision-Date: 2015-05-13 20:58China Standard Time\n"
 "Last-Translator: Abel Cheung <abelcheung@gmail.com>\n"
 "Language-Team: Chinese (Hong Kong)\n"
 "Language: Chinese (Hong Kong)\n"
@@ -17,279 +17,423 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/rifiuti-vista.c:56 ../src/rifiuti.c:61
+#: ../../src/rifiuti-vista.c:57 ../../src/rifiuti.c:68
 msgid "Write output to FILE"
 msgstr "輸出至 <檔案>"
 
-#: ../src/rifiuti-vista.c:56 ../src/rifiuti.c:61
+#: ../../src/rifiuti-vista.c:57 ../../src/rifiuti.c:69
 msgid "FILE"
 msgstr "檔案"
 
-#: ../src/rifiuti-vista.c:58 ../src/rifiuti.c:63
-msgid ""
-"Output in XML format instead (plain text options disallowed in this case)"
-msgstr "輸出改為 XML 模式 (這情況下不允許使用文字模式的選項)"
+#: ../../src/rifiuti-vista.c:59 ../../src/rifiuti.c:71
+msgid "Output in XML format instead of tab-delimited values"
+msgstr "輸出改為 XML 模式，而非 Tab 字元分隔的文字模式"
 
-#: ../src/rifiuti-vista.c:60 ../src/rifiuti.c:68
+#: ../../src/rifiuti-vista.c:61 ../../src/rifiuti.c:76
 msgid "Present deletion time in time zone of local system (default is UTC)"
 msgstr "以本系統的時區顯示檔案刪除時間 (預設為 UTC)"
 
-#: ../src/rifiuti-vista.c:62
-msgid "File names"
-msgstr "檔名"
+#: ../../src/rifiuti-vista.c:64 ../../src/rifiuti.c:79
+msgid "Print version information and exit"
+msgstr "顯示版本資料並離開"
 
-#: ../src/rifiuti-vista.c:69 ../src/rifiuti.c:77
+#: ../../src/rifiuti-vista.c:66
+msgid "$Recycle.bin folder or file name"
+msgstr "$Recycle.bin 目錄或檔案名稱"
+
+#: ../../src/rifiuti-vista.c:73 ../../src/rifiuti.c:88
 msgid "String to use as delimiter (TAB by default)"
 msgstr "作為區隔欄位用的字串 (預設為 TAB)"
 
-#: ../src/rifiuti-vista.c:69 ../src/rifiuti.c:77
+#: ../../src/rifiuti-vista.c:73 ../../src/rifiuti.c:88
 msgid "STRING"
 msgstr "字串"
 
-#: ../src/rifiuti-vista.c:71 ../src/rifiuti.c:79
+#: ../../src/rifiuti-vista.c:75 ../../src/rifiuti.c:90
 msgid "Don't show header info"
 msgstr "不顯示檔頭資料"
 
-#: ../src/rifiuti-vista.c:73 ../src/rifiuti.c:83
-msgid "Always show file names in UTF-8 encoding"
-msgstr "永遠用 UTF-8 編碼顯示檔名"
+#: ../../src/rifiuti-vista.c:77 ../../src/rifiuti.c:92
+msgid "Always display result in UTF-8 encoding"
+msgstr "輸出結果永遠用 UTF-8 編碼顯示"
 
-#: ../src/rifiuti-vista.c:98 ../src/rifiuti.c:109
+#: ../../src/rifiuti-vista.c:99
 #, c-format
-msgid "Error converting path name to display: %s"
-msgstr "無法將檔案名稱轉換為可顯示的內容：%s"
+msgid "File is truncated, or probably not a $Recycle.bin index file.\n"
+msgstr "檔案被截短了，又或者根本不是 $Recycle.bin 索引檔案。\n"
 
-#: ../src/rifiuti-vista.c:100 ../src/rifiuti-vista.c:285 ../src/rifiuti.c:111
-#: ../src/rifiuti.c:186
-msgid "(File name not representable in current language)"
-msgstr "(檔案名稱無法用目前語言表示)"
-
-#: ../src/rifiuti-vista.c:102 ../src/rifiuti-vista.c:106
+#. TRANSLATOR COMMENT: the variable is function name
+#: ../../src/rifiuti-vista.c:109 ../../src/rifiuti.c:125
 #, c-format
-msgid "Recycle bin file/dir: '%s'"
-msgstr "資源回收筒檔案/目錄：‘%s’"
+msgid "%s(): fread() failed when reading version info"
+msgstr "%s(): 當讀取版本資料時，fread() 發生錯誤"
 
-#: ../src/rifiuti-vista.c:109 ../src/rifiuti.c:120
+#. TRANSLATOR COMMENT: the variable is function name
+#: ../../src/rifiuti-vista.c:132
 #, c-format
-msgid "Version: %u"
-msgstr "版本：%u"
+msgid "%s(): fread() failed when reading file name length"
+msgstr "%s(): 當讀取檔案名稱長度時，fread() 發生錯誤"
 
-#: ../src/rifiuti-vista.c:111
+#: ../../src/rifiuti-vista.c:146
 #, c-format
-msgid "Index%sDeleted Time%sSize%sPath"
-msgstr "索引%s回收時間%s大小%s路徑"
+msgid ""
+"File is not supported, or it is probably not a $Recycle.bin index file.\n"
+msgstr "檔案格式不支援，又或者根本不是 $Recycle.bin 索引檔案。\n"
 
-#: ../src/rifiuti-vista.c:210
+#: ../../src/rifiuti-vista.c:153
 #, c-format
-msgid "Error converting file name to UTF-8 encoding: %s"
-msgstr "無法將檔案名稱轉換為 UTF-8 編碼：%s"
+msgid "Index file expected size and real size do not match.\n"
+msgstr "索引檔實際大小和預期不符。\n"
 
-#: ../src/rifiuti-vista.c:231 ../src/rifiuti.c:446
+#: ../../src/rifiuti-vista.c:211
 #, c-format
-msgid "Error opening file '%s' for reading: %s"
-msgstr "無法開啟檔案 ‘%s’ 讀取內容：%s"
+msgid "Error converting file name from %s encoding to UTF-8 encoding: %s"
+msgstr "無法將檔案名稱從 %s 編碼轉換為 UTF-8 編碼：%s"
 
-#: ../src/rifiuti-vista.c:237 ../src/rifiuti.c:440
+#: ../../src/rifiuti-vista.c:234 ../../src/rifiuti.c:466
 #, c-format
-msgid "Error getting metadata of file '%s': %s"
-msgstr "無法獲取 ‘%s’ 檔案的相關資料：%s"
+msgid "Error getting metadata of file '%s': %s\n"
+msgstr "無法獲取 ‘%s’ 檔案的相關資料：%s\n"
 
-#: ../src/rifiuti-vista.c:243
+#: ../../src/rifiuti-vista.c:241 ../../src/rifiuti.c:473
 #, c-format
-msgid "Index file '%s' has incorrect size"
-msgstr "索引檔 ‘%s’ 的大小不符合規定"
+msgid "Error opening file '%s' for reading: %s\n"
+msgstr "無法開啟檔案 ‘%s’ 讀取內容：%s\n"
 
-#: ../src/rifiuti-vista.c:268
+#: ../../src/rifiuti-vista.c:248
 #, c-format
-msgid "Error formatting file deletion time for file '%s'."
-msgstr "無法整理索引檔 ‘%s’ 中的檔案刪除時間成為可顯示的形式。"
+msgid "File '%s' fails validation.\n"
+msgstr "檔案 ‘%s’ 不通過檢驗。\n"
 
-#: ../src/rifiuti-vista.c:354
+#.
+#. * TRANSLATOR COMMENT: 1st parameter is function name,
+#. * 2nd is file name, 3rd is error message
+#.
+#: ../../src/rifiuti-vista.c:261
+#, c-format
+msgid "%s(): fread() failed when reading content of file '%s': %s\n"
+msgstr "%s(): 讀取檔案 ‘%s’ 內容時，fread() 失敗：%s\n"
+
+#. VERY wrong if reaching here. Version info has already been filtered once
+#: ../../src/rifiuti-vista.c:283
+#, c-format
+msgid "Version info for '%s' still wrong despite file validation."
+msgstr "即使通過檢驗後，‘%s’ 的版本依然是錯誤的。"
+
+#: ../../src/rifiuti-vista.c:315
+#, c-format
+msgid "Error opening directory '%s': %s\n"
+msgstr "無法開啟 ‘%s’ 目錄：%s\n"
+
+#: ../../src/rifiuti-vista.c:415
 msgid "DIR_OR_FILE"
 msgstr "目錄或檔案"
 
-#: ../src/rifiuti-vista.c:356
+#: ../../src/rifiuti-vista.c:417
 msgid ""
 "Parse index files in C:\\$Recycle.bin style folder and dump recycle bin "
-"data. Can also dump a single index file."
+"data.  Can also dump a single index file."
 msgstr ""
-"解析 C:\\$Recycle.bin 形式的目錄中的索引檔，並印出其中的回收筒資料。也可以解"
-"析單一的索引檔。"
+"解析 C:\\$Recycle.bin 形式的目錄裏面的索引檔，並顯示其中的回收筒資料。也可以"
+"解析單一的索引檔。"
 
-#: ../src/rifiuti-vista.c:358 ../src/rifiuti.c:360
+#: ../../src/rifiuti-vista.c:421 ../../src/rifiuti.c:303
 #, c-format
 msgid "Report bugs to %s"
 msgstr "如程式有問題，請在 %s 報告"
 
-#: ../src/rifiuti-vista.c:362 ../src/rifiuti.c:364
+#: ../../src/rifiuti-vista.c:427 ../../src/rifiuti.c:309
 msgid "Plain text output options:"
 msgstr "文字模式輸出選項："
 
-#: ../src/rifiuti-vista.c:363 ../src/rifiuti.c:365
+#: ../../src/rifiuti-vista.c:428 ../../src/rifiuti.c:310
 msgid "Show plain text output options"
 msgstr "顯示和文字模式輸出有關的選項"
 
-#: ../src/rifiuti-vista.c:383 ../src/rifiuti.c:385
+#: ../../src/rifiuti-vista.c:468 ../../src/rifiuti.c:354
 #, c-format
-msgid "Error parsing options: %s"
-msgstr "無法解析選項：%s"
+msgid "Error parsing options: %s\n"
+msgstr "無法解析選項：%s\n"
 
-#: ../src/rifiuti-vista.c:393
+#: ../../src/rifiuti-vista.c:482
+#, c-format
 msgid ""
 "Must specify exactly one directory containing $Recycle.bin index files, or "
-"one such index file, as argument."
+"one such index file, as argument.\n"
+"\n"
 msgstr ""
 "選項中必須指定剛好一個載有 $Recycle.bin 索引檔案的目錄，或者剛好一個這種檔"
-"案。"
+"案，不多不少。\n"
+"\n"
 
-#: ../src/rifiuti-vista.c:395 ../src/rifiuti.c:396
-msgid "Run program with '-?' option for more info."
-msgstr "有關詳情請在執行程式時加上 ‘-?’ 選項。"
-
-#: ../src/rifiuti-vista.c:403 ../src/rifiuti.c:405
+#: ../../src/rifiuti-vista.c:485 ../../src/rifiuti.c:369
 #, c-format
-msgid "Error opening file '%s' for writing: %s"
-msgstr "無法開啟檔案 ‘%s’ 來寫入資料：%s"
+msgid "Run program with '-?' option for more info.\n"
+msgstr "有關詳情請在執行程式時加上 ‘-?’ 選項。\n"
 
-#: ../src/rifiuti-vista.c:416 ../src/rifiuti.c:418
-msgid "Plain text format options can not be used in XML mode."
-msgstr "有關文字模式的選項不可以配合 XML 模式使用。"
-
-#: ../src/rifiuti-vista.c:428 ../src/rifiuti.c:428
+#: ../../src/rifiuti-vista.c:494 ../../src/rifiuti.c:378
 #, c-format
-msgid "'%s' des not exist."
-msgstr "‘%s’ 不存在。"
+msgid "Error opening file '%s' for writing: %s\n"
+msgstr "無法開啟檔案 ‘%s’ 來寫入資料：%s\n"
 
-#: ../src/rifiuti-vista.c:440
+#: ../../src/rifiuti-vista.c:507 ../../src/rifiuti.c:391
 #, c-format
-msgid "Error opening directory '%s': %s"
-msgstr "無法開啟 ‘%s’ 目錄：%s"
+msgid "Plain text format options can not be used in XML mode.\n"
+msgstr "文字模式的選項不可以配合 XML 模式使用。\n"
 
-#: ../src/rifiuti-vista.c:464
+#: ../../src/rifiuti-vista.c:544 ../../src/rifiuti.c:454
+#, c-format
+msgid "'%s' does not exist.\n"
+msgstr "‘%s’ 不存在。\n"
+
+#: ../../src/rifiuti-vista.c:557
+#, c-format
 msgid ""
-"No files with name pattern \"$Ixxxxxx.xxx\" exists in directory. Is it "
-"really a $Recycle.bin directory?"
-msgstr "目錄中沒有名稱像 “$Ixxxxxx.xxx” 的檔案。這個真是 $Recycle.bin 目錄嗎？"
+"No files with name pattern '%s' are found in directory. Probably not a "
+"$Recycle.bin directory.\n"
+msgstr "目錄中沒有名稱像 ‘%s’ 的檔案。可能根本不是 $Recycle.bin 目錄。\n"
 
-#: ../src/rifiuti-vista.c:477
+#: ../../src/rifiuti-vista.c:571
 #, c-format
-msgid "'%s' is not a regular file or directory."
-msgstr "‘%s’ 不是普通檔案或目錄。"
+msgid "'%s' is not a normal file or directory.\n"
+msgstr "‘%s’ 不是一般檔案或目錄。\n"
 
-#: ../src/rifiuti.c:65
-msgid ""
-"The assumed file name character set when no unicode file name is present in "
-"INFO2 record (mandatory if INFO2 file is created by Win98, ignored otherwise)"
-msgstr ""
-"當 INFO2 紀錄中沒有 unicode 檔名時，假設檔名來自何種編碼 (如果 INFO2 檔案來"
-"自 Win98，此選項是必要的，反之則會被忽略)"
+#: ../../src/rifiuti-vista.c:581
+msgid "No valid recycle bin index file found.\n"
+msgstr "找不到合符格式的回收筒索引檔。\n"
 
-#: ../src/rifiuti.c:66
-msgid "ENC"
-msgstr "編碼"
+#: ../../src/rifiuti.c:73
+msgid "Show legacy (8.3) filename if available and specify its CODEPAGE"
+msgstr "如果可能的話，顯示舊式 (8.3) 檔案路徑，並指定該用哪個 <編碼頁> 處理"
 
-#: ../src/rifiuti.c:70
-msgid "INFO2 File names"
+#: ../../src/rifiuti.c:74
+msgid "CODEPAGE"
+msgstr "編碼頁"
+
+#: ../../src/rifiuti.c:81
+msgid "INFO2 file name"
 msgstr "INFO2 檔案名稱"
 
-#: ../src/rifiuti.c:81
-msgid "Show legacy (8.3) filename if available"
-msgstr "如果可能的話，顯示舊式 (8.3) 檔案路徑"
-
-#: ../src/rifiuti.c:113 ../src/rifiuti.c:117
+#: ../../src/rifiuti.c:115
 #, c-format
-msgid "Recycle bin file: '%s'"
-msgstr "資源回收筒檔案：‘%s’"
+msgid "File is truncated, or probably not an INFO2 file.\n"
+msgstr "檔案被截短了，又或者根本不是 INFO2 檔案。\n"
 
-#: ../src/rifiuti.c:122
+#. TRANSLATOR COMMENT: the variable is function name
+#: ../../src/rifiuti.c:136
 #, c-format
-msgid "Index%sDeleted Time%sGone?%sSize%sPath"
-msgstr "索引碼%s回收時間%s已刪？%s大小%s路徑"
+msgid "%s(): fread() failed when reading recordsize"
+msgstr "%s(): 當讀取 recordsize 時 fread() 失敗"
 
-#: ../src/rifiuti.c:153
-#, c-format
-msgid "Error formatting file deletion time for record %u."
-msgstr "無法整理第 %u 項紀錄的檔案刪除時間成為可顯示的形式。"
-
-#: ../src/rifiuti.c:169 ../src/rifiuti.c:220 ../src/rifiuti.c:524
-#, c-format
-msgid "Error converting file name from %s encoding to UTF-8 for record %u: %s"
-msgstr "無法將第 %2$u 項紀錄的檔案名稱從 %1$s 編碼轉換為 UTF-8 編碼：%3$s"
-
-#: ../src/rifiuti.c:173 ../src/rifiuti.c:224 ../src/rifiuti.c:527
-msgid "(File name not representable in UTF-8 encoding)"
-msgstr "(檔案名稱無法用 UTF-8 編碼顯示)"
-
-#: ../src/rifiuti.c:182
-#, c-format
-msgid "Error converting path name to display for record %u: %s"
-msgstr "無法將第 %u 項紀錄的檔案名稱轉換為可顯示的內容：%s"
-
-#: ../src/rifiuti.c:195
-msgid "Yes"
-msgstr "是"
-
-#: ../src/rifiuti.c:195
-msgid "No"
-msgstr "否"
-
-#: ../src/rifiuti.c:270
-msgid "This INFO2 file is truncated, or probably not an INFO2 file."
-msgstr "這個 INFO2 檔案被截短了，又或者根本不是 INFO2 檔案。"
-
-#: ../src/rifiuti.c:287 ../src/rifiuti.c:309
+#: ../../src/rifiuti.c:150 ../../src/rifiuti.c:173
 msgid "Invalid record size for this version of INFO2"
 msgstr "回收筒每項紀錄的長度和這個版本的 INFO2 應有的不符"
 
-#. TRANSLATOR COMMENT:
-#. * TRANSLATOR COMMENT: use suitable example from YOUR language & code page
-#. * TRANSLATOR COMMENT:
-#: ../src/rifiuti.c:296
+#: ../../src/rifiuti.c:155
+#, c-format
 msgid ""
-"This INFO2 file was produced on a Windows 98. Because unicode output is "
-"requested, please specify its codepage with '--from-encoding' option.\n"
+"This INFO2 file was produced on a Windows 98. Please specify codepage of "
+"concerned system with '-l' or '--legacy-filename' option.\n"
 "\n"
-"For example, if file name was expected to contain accented latin characters, "
-"use '--from-encoding=CP1252' option; or in case of Japanese characters, '--"
-"from-encoding=CP932'.\n"
-"\n"
-"Encodings and code pages supported by 'iconv' can be used."
 msgstr ""
-"這個 INFO2 檔來自 Windows 98。因為要求使用 unicode，請用‘--from-encoding’ 選"
-"項指定原本的 codepage。\n"
+"這個 INFO2 檔來自 Windows 98。請用 ‘-l’ 或 ‘--legacy-filename’ 選項指定原本的"
+"系統的編碼頁。\n"
 "\n"
-"舉個例子，如果預期檔名應該有正體中文，請使用 ‘--from-encoding=CP950’ 選項；如"
-"果有簡體的，則是 ‘--from-encoding=CP936’。\n"
+
+#. TRANSLATOR COMMENT: use suitable example from YOUR language & code page
+#: ../../src/rifiuti.c:159
+#, c-format
+msgid ""
+"For example, if file name was expected to contain accented latin characters, "
+"use '-l CP1252' option; or in case of Japanese characters, '-l CP932'.\n"
 "\n"
-"可以使用任何 ‘iconv’ 支援的編碼和 code page。"
+"Code pages (or any other encodings) supported by 'iconv' can be used.\n"
+msgstr ""
+"舉個例子，如果預期檔名應該有正體中文，請使用 ‘-l CP950’ 選項；如果有簡體的，"
+"則是 ‘-l CP936’。\n"
+"\n"
+"任何 ‘iconv’ 支援的編碼和編碼頁都可以使用。\n"
 
-#: ../src/rifiuti.c:317
-msgid "It is not a supported INFO2 file, or probably not an INFO2 file."
-msgstr "不是本程式支援的 INFO2 檔案，又或者根本不是 INFO2 檔案。"
+#: ../../src/rifiuti.c:181
+#, c-format
+msgid "File is not supported, or it is probably not an INFO2 file.\n"
+msgstr "檔案格式不支援，又或者根本不是 INFO2 檔案。\n"
 
-#: ../src/rifiuti.c:359
+#: ../../src/rifiuti.c:218
+#, c-format
+msgid "Invalid drive number (0x%X) for record %u."
+msgstr "第 %2$u 項紀錄中的磁碟號碼 (0x%1$X) 不合法。"
+
+#: ../../src/rifiuti.c:257
+#, c-format
+msgid ""
+"Error converting file name from %s encoding to UTF-8 encoding for record %u: "
+"%s"
+msgstr "無法將第 %2$u 項紀錄的檔案名稱從 %1$s 編碼轉換為 UTF-8 編碼：%3$s"
+
+#: ../../src/rifiuti.c:301
 msgid "Parse INFO2 file and dump recycle bin data."
 msgstr "分析 INFO2 檔案並顯示資源回收筒的內容。"
 
-#: ../src/rifiuti.c:395
-msgid "Must specify exactly one INFO2 file as argument."
-msgstr "必須指定剛好一個 INFO2 檔作為參數"
-
-#: ../src/rifiuti.c:434
+#: ../../src/rifiuti.c:368
 #, c-format
-msgid "'%s' is not a regular file."
-msgstr "‘%s’ 不是普通檔案。"
+msgid ""
+"Must specify exactly one INFO2 file as argument.\n"
+"\n"
+msgstr ""
+"必須指定剛好一個 INFO2 檔作為參數。\n"
+"\n"
 
-#: ../src/rifiuti.c:470
+#: ../../src/rifiuti.c:404
+#, c-format
+msgid ""
+"'%s' is not a valid code page or encoding. Only those supported by 'iconv' "
+"can be used.\n"
+msgstr "‘%s’ 不是正確的編碼或編碼頁。只有 ‘iconv’ 支援的才可以使用。\n"
+
+#: ../../src/rifiuti.c:408
+#, c-format
+msgid ""
+"Please visit following web page for a list closely resembling encodings "
+"supported by rifiuti:\n"
+"\n"
+"\t%s\n"
+"\n"
+msgstr ""
+"想獲取 rifiuti 支援的編碼，以下網頁載有近似的清單：\n"
+"\n"
+"\t%s\n"
+"\n"
+
+#: ../../src/rifiuti.c:414
+#, c-format
+msgid "Please execute 'iconv -l' for list of supported encodings.\n"
+msgstr "要獲取程式支援的編碼，請執行 ‘iconv -l’。\n"
+
+#: ../../src/rifiuti.c:460
+#, c-format
+msgid "'%s' is not a normal file.\n"
+msgstr "‘%s’ 不是一般檔案。\n"
+
+#: ../../src/rifiuti.c:504
 #, c-format
 msgid "Failed to read next record: %s"
 msgstr "無法讀取下一項紀錄：%s"
 
-#: ../src/rifiuti.c:495
+#: ../../src/utils.c:223
 #, c-format
-msgid "Invalid drive letter (0x%X) for record %u."
-msgstr "第 %2$u 項紀錄中的磁碟代號 (0x%1$X) 不合法。"
+msgid "Recycle bin path: '%s'"
+msgstr "資源回收筒路徑：‘%s’"
 
-#: ../src/utils.c:67
+#. TRANSLATOR COMMENT: Error when trying to determine recycle bin version
+#: ../../src/utils.c:230
+msgid "??? (empty folder)"
+msgstr "??? (空白目錄)"
+
+#. TRANSLATOR COMMENT: Error when trying to determine recycle bin version
+#: ../../src/utils.c:234
+msgid "??? (version inconsistent)"
+msgstr "??? (版本不一致)"
+
+#: ../../src/utils.c:239
+#, c-format
+msgid "Version: %s"
+msgstr "版本：%s"
+
+#: ../../src/utils.c:246
+#, c-format
+msgid "Index%sDeleted Time%sGone?%sSize%sPath"
+msgstr "索引碼%s回收時間%s已刪？%s大小%s路徑"
+
+#: ../../src/utils.c:250
+#, c-format
+msgid "Index%sDeleted Time%sSize%sPath"
+msgstr "索引%s回收時間%s大小%s路徑"
+
+#: ../../src/utils.c:298
+#, c-format
+msgid "Error formatting file deletion time for record index %s."
+msgstr "無法整理紀錄 %s 的檔案刪除時間成為可顯示的形式。"
+
+#: ../../src/utils.c:307 ../../src/utils.c:326
+msgid "(File name not representable in UTF-8 encoding)"
+msgstr "(檔案名稱無法用 UTF-8 編碼顯示)"
+
+#: ../../src/utils.c:321
+#, c-format
+msgid "Error converting file name from %s encoding to UTF-8 for index %s: %s"
+msgstr "無法將紀錄 %2$s 的檔案名稱從 %1$s 編碼轉換為 UTF-8 編碼：%3$s"
+
+#: ../../src/utils.c:337
+msgid "Yes"
+msgstr "是"
+
+#: ../../src/utils.c:337
+msgid "No"
+msgstr "否"
+
+#: ../../src/utils.c:350
+#, c-format
+msgid "Error converting path name to display for record %s: %s"
+msgstr "無法將紀錄 %s 的檔案名稱轉換為可顯示的內容：%s"
+
+#: ../../src/utils.c:354
+msgid "(File name not representable in current language)"
+msgstr "(檔案名稱無法用目前語言表示)"
+
+#: ../../src/utils.c:389
+#, c-format
+msgid "%s is distributed under the BSD 3-Clause License.\n"
+msgstr "%s 根據 3-clause BSD 授權條款發行。\n"
+
+#. TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL
+#: ../../src/utils.c:392
+#, c-format
+msgid ""
+"Information about %s can be found on\n"
+"\n"
+"\t%s\n"
+msgstr ""
+"以下網站有更多有關 %s 的資料：\n"
+"\n"
+"\t%s\n"
+
+#: ../../src/utils.c:450
 msgid "This is a command line application"
 msgstr "這個是命令提示字元模式下的應用程式"
+
+#~ msgid ""
+#~ "Output in XML format instead of tab-delimited values (plain text options "
+#~ "disallowed in this case)"
+#~ msgstr ""
+#~ "輸出改為 XML 模式，而非 Tab 字元分隔的文字模式 (這情況下不允許使用文字模式"
+#~ "的選項)"
+
+#~ msgid "File names"
+#~ msgstr "檔名"
+
+#~ msgid "Error converting path name to display: %s"
+#~ msgstr "無法將檔案名稱轉換為可顯示的內容：%s"
+
+#~ msgid "Recycle bin file/dir: '%s'"
+#~ msgstr "資源回收筒檔案/目錄：‘%s’"
+
+#~ msgid "Error converting file name to UTF-8 encoding: %s"
+#~ msgstr "無法將檔案名稱轉換為 UTF-8 編碼：%s"
+
+#~ msgid "Index file '%s' has incorrect size"
+#~ msgstr "索引檔 ‘%s’ 的大小不符合規定"
+
+#~ msgid "Error formatting file deletion time for file '%s'."
+#~ msgstr "無法整理索引檔 ‘%s’ 中的檔案刪除時間成為可顯示的形式。"
+
+#~ msgid ""
+#~ "The assumed file name character set when no unicode file name is present "
+#~ "in INFO2 record (mandatory if INFO2 file is created by Win98, ignored "
+#~ "otherwise)"
+#~ msgstr ""
+#~ "當 INFO2 紀錄中沒有 unicode 檔名時，假設檔名來自何種編碼 (如果 INFO2 檔案"
+#~ "來自 Win98，此選項是必要的，反之則會被忽略)"
+
+#~ msgid "ENC"
+#~ msgstr "編碼"
