@@ -21,10 +21,9 @@ win-pkg/README.html: $(top_srcdir)/src/rifiuti.1
 		sed -e '0,/^####CHANGELOG####/d' $$tmpfile1 ) > $@ ;\
 	rm -f $$tmpfile1 $$tmpfile2
 
-win-pkg/rifiuti-l10n: po/$(GETTEXT_PACKAGE).pot
-	cd po && \
-	make install gnulocaledir=$(abs_top_builddir)/$@ && \
-	cp $(GETTEXT_PACKAGE).pot $(abs_top_builddir)/$@
+win-pkg/rifiuti-l10n: $(top_srcdir)/po/$(GETTEXT_PACKAGE).pot
+	cd po && $(MAKE) install gnulocaledir=$(abs_top_builddir)/$@
+	cp $< $(abs_top_builddir)/$@
 
 win-pkg/x86:
 	test "`objdump -f $(top_builddir)/src/rifiuti$(EXEEXT) | \
@@ -47,6 +46,4 @@ win-pkg/x64:
 		$(top_builddir)/src/rifiuti-vista$(EXEEXT)
 
 .PHONY: win-pkg-data dist-win
-
-DISTCLEANFILES += win-pkg
 
