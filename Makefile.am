@@ -8,6 +8,8 @@ EXTRA_DIST = \
              NEWS.md   \
              $(NULL)
 
+DISTCLEANFILES =
+
 dist-hook:
 	-find $(top_distdir) -type f \( -name '*~' -o -name '.*~' \) -print0 | xargs -0 -r rm -f
 
@@ -15,5 +17,7 @@ MAINTAINERCLEANFILES = \
                        $(GITIGNORE_MAINTAINERCLEANFILES_TOPLEVEL)        \
                        $(GITIGNORE_MAINTAINERCLEANFILES_MAKEFILE_IN)     \
                        $(NULL)
+
+include $(top_srcdir)/dist-win.mk
 
 -include $(top_srcdir)/git.mk

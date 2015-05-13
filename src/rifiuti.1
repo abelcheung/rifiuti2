@@ -6,14 +6,53 @@
 .\"
 .\" This documentation is available under BSD 3-clause license.
 .\"
-.TH RIFIUTI2 "1" "May 2015" "0.6.0" "MS Windows recycle bin analysis tool"
 
+.  ie \n[www-html] \{\
 .\" see groff_www(7)
-.BCL black #bbeeff red blue #302226
-.\" .NHR
+.BCL black #bbffee blue blue #302226
+
+.TH "RIFIUTI2 0.6.0" "1"
+
+.SH INSTALLATION ON WINDOWS
+
+\fBRifiuti2\fP is designed to run as portable Windows command line
+application, and no installation is required. Copy the binaries
+corresponding to your system (\fCx64\\\fP for 64 bit systems,
+\fCx86\\\fP for 32 bit) to any folder of your choice and they are
+ready for use. Read sections below on how to use the programs.
+
+.SS Translation
+By default output messages of rifiuti2 are in English. Optionally one
+can copy \fCrifiuti\-l10n\fP folder to the same location the binaries
+reside in, and set \fCLANGUAGE\fP environment variable to appropriate
+value to enable translations. Supported language codes are the same
+as existing subdirectory names under \fCrifiuti\-l10n\fP folder.
+For example, assuming folder
+.nh
+\fCrifiuti\-l10n\\fr\\\fP
+.hy
+exists, running following in Windows \fCcmd\fP would enable French
+translation:
+.RS
+\fCset LANGUAGE=fr\fP
+.RE
+The file \fCrifiuti.pot\fP in archive contains translation template
+for rifiuti2.  Rifiuti2 makes use of \f[CB]gettext\fP for handling
+translation. There are lots of tutorial on internet on how to work
+with gettext translations; any completed translation can be submitted
+to main author for inclusion in next release.
+
+.SH LATEST CHANGE
+
+####CHANGELOG####
+
+.  \}
+.  el \{\
+.TH RIFIUTI2 "1" "May 2015" "0.6.0" "MS Windows recycle bin analysis tool"
 
 .SH NAME
 rifiuti2 \- MS Windows recycle bin analysis tool
+.  \}
 
 .SH SYNOPSIS
 .B rifiuti
@@ -39,7 +78,7 @@ rifiuti2 \- MS Windows recycle bin analysis tool
 .I file_or_directory
 
 .SH DESCRIPTION
-\fBRifiuti2\fP analyse recycle bin files from Windows. Analysis of
+Rifiuti2 analyse recycle bin files from Windows. Analysis of
 Windows recycle bin is usually carried out during Windows computer
 forensics. Rifiuti2 can extract file deletion time, original
 path and size of deleted files and whether the deleted files have
@@ -47,31 +86,30 @@ been moved out from the recycle bin since they are trashed.
 .PP
 Rifiuti2 supports a wide range of Windows versions, from Windows 98 to
 Windows 10. The command used for analysis depends on the version
-of Windows producing the recycle bin, which uses vastly different
-format before and after Vista:
+of Windows producing the recycle bin (\fBnot the version of users'
+system!\fP), which uses vastly different format before and after Vista:
 .PP
 
 .IP \[bu]
-\fCrifiuti-vista\f[]: For Vista or later, which is located in
-folder like
+\fCrifiuti-vista\fP: For Vista or later, which is located in
 .nh
-\fCC:\\$Recycle.bin\\\f[].
+\fC\\$Recycle.bin\\\fP\fI<SID>\fP\fC\\\fP.
 .hy
 Each deleted file has its own accompanied index file remembering
 the original path, file size and deletion time.  If original file is
 permanentsly deleted, so is the index file.
 .IP \[bu]
-\fCrifiuti\f[]: For Windows 98 to XP,
-which uses a single index file named INFO2 resided under either
+\fCrifiuti\fP: For Windows 98 to XP,
+which uses a single index file named INFO2 under either
 .nh
-\fCC:\\RECYCLED\f[]
+\fC\\RECYCLED\\\fP
 .hy
 or
 .nh
-\fCC:\\RECYCLER\f[].
+\fC\\RECYCLER\\\fP\fI<SID>\fP\fC\\\fP.
 .hy
 This file keeps track record for deletion status and info for \fIall\fP
-deleted items, including those permanently removed.
+deleted items, including those permanently removed or restored.
 
 .PP
 By default, both programs dump tab-delimited fields on
@@ -186,7 +224,7 @@ Read INFO2 from Hebrew version of Windows, display 8.3 file names
 on screen in UTF-8 encoding without header
 .RE
 
-.SH ENVIRONMENT
+.SH ENVIRONMENT VARIABLES
 The following environment variables affect execution of program:
 
 .TP
@@ -314,20 +352,23 @@ http://www.csisite.net/downloads/INFO2.pdf
 .PP
 
 .SH COPYRIGHT
-Part of the work of
-.I Rifiuti2
-is derived from
-.IR Rifiuti .
+Part of the work of rifiuti2 is derived from Rifiuti.
 Both pieces of software are licensed under the simplified BSD license.
 
 .SH AUTHOR
-The main author of
-.I Rifiuti2
-is Abel Cheung.
+The main author of rifiuti2 is Abel Cheung
+.nh
+\fC<abelcheung@gmail.com>\fP
+.hy
 .PP
-The original author of
-.I Rifiuti
-is Keith J Jones.
+The original author of rifiuti is Keith J. Jones
+.nh
+\fC<keith.jones@foundstone.com>\fP
+.hy
 .PP
-Anthony Wong helped in Debian packaging and was author of the original manpage.
+Anthony Wong
+.nh
+\fC<ypwong@debian.org>\fP
+.hy
+helped in Debian packaging and was author of the original manpage.
 

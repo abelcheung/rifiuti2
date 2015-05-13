@@ -394,11 +394,18 @@ main (int    argc,
 
 	setlocale (LC_ALL, "");
 
-	/* searching current dir might be more useful on e.g. Windows */
 	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
 		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 	else
-		bindtextdomain (GETTEXT_PACKAGE, ".");
+	{
+		/* searching current dir is more useful on Windows */
+		char *d = g_path_get_dirname (argv[0]);
+		char *p = g_build_filename (d, "rifiuti-l10n", NULL);
+		if (g_file_test (p, G_FILE_TEST_IS_DIR))
+			bindtextdomain (GETTEXT_PACKAGE, p);
+		g_free (p);
+		g_free (d);
+	}
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
