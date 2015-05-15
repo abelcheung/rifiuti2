@@ -1,0 +1,47 @@
+=contrast($background)
+    $light: lightness($background) > 50%
+
+    background: $background
+    color: if($light, black, white)
+
+=body_background($background, $padding)
+    $is_white: lightness($background) == 100%
+
+    background: $background
+
+    @if $is_white
+        > *
+            padding: 1em calc(#{$padding} - #{$padding / 5% * 1em})
+    @else
+        padding: 0 calc(#{$padding * 0.8} - #{$padding * 0.8 / 5% * 1em})
+        > *
+            padding: 1em calc(13% - 1.6em)
+
+=article_background($background, $anchor)
+    +contrast($background)
+    $light: lightness($background) > 50%
+
+    border-top-color: if($light, darken($background, 12%), lighten($background, 12%))
+    tr:hover
+        background-color: if($light, darken($background, 7%), lighten($background, 7%))
+    th
+        border-bottom-width: 2px
+    th, td
+        border-color: if($light, darken($background, 14%), lighten($background, 14%))
+    header p
+        color: if($light, darken($background, 60%), lighten($background, 60%))
+    div a
+        font-weight: if($anchor, inherit, 400)
+        color: if($anchor, if($light, darken($anchor, 5%), lighten($anchor, 5%)), inherit)
+        &:hover
+            color: gray
+    footer a
+        border-color: if($light, black, white)
+        border-width: 2px
+        &:hover
+            background-color: if($light, black, white)
+            color: if($light, white, black)
+
+=table_width($padding)
+    width: calc(#{100% - $padding * 2} + #{$padding / 5% * 2em})
+

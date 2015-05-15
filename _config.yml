@@ -1,0 +1,49 @@
+title: "Rifiuti2"
+author: "Abel Cheung"
+description: "Windows recycle bin analysis tool"
+subheading: "Windows recycle bin analysis tool"
+more: "continue reading"
+url: "http://me.abelcheung.org/"
+baseurl: "/rifiuti2"
+timezone: "UTC"
+license: "<img alt='CC-BY 4.0 License' style='border-width:0; vertical-align:middle' src='//i.creativecommons.org/l/by/4.0/88x31.png' />"
+
+comments:
+    disqus: "abelcheung"
+
+style:
+#    body: "whitesmoke"
+    padding: 33%
+    anchor: "#46f"
+    serif-heading: true
+    nav: "#181818"
+#    headline: "#06f"
+    description: "white"
+    article:
+        odd: "#ffffff"
+        even: "#222222"
+
+links:
+  - github: "https://github.com/abelcheung/"
+  - twitter: "https://twitter.com/me/"
+  - google-plus: "https://plus.google.com/+me"
+  - reddit: "https://www.reddit.com/user/me/"
+  - youtube: "https://www.youtube.com/user/me"
+  - steam: "http://steamcommunity.com/id/me/"
+
+excerpt_separator: "\n\n\n"
+defaults: 
+  -
+    scope:
+      path: ""
+    values: 
+      layout: "default"
+      comments: false
+  -
+    scope:
+      path: ""
+      type: "posts"
+    values:
+      comments: true
+      is_post: true
+

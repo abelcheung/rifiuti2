@@ -1,0 +1,8 @@
+<header>
+  {% if page.is_post? %}
+  <h2><a href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a></h2>
+  {% else %}
+  <h2>{{ page.title }}</h2>
+  {% endif %}
+  <p>{% if page.author %}{{ page.author }} • {% endif %}{% if page.date %}<time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y-%m-%d" }}</time>{% endif %}{% if page.categories %} • {{ page.categories | array_to_sentence_string }}{% endif %}</p>
+</header>

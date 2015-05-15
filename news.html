@@ -1,0 +1,15 @@
+---
+layout: blank
+title: "News"
+---
+    {% for page in site.posts %}
+    <article>
+      {% include articleheader.html %}
+      <div>
+{{ page.excerpt }}
+      </div>
+      <footer>
+        <p><a href="{{ page.url | prepend: site.baseurl }}">{{ site.more }} &raquo;</a></p>
+      </footer>
+    </article>
+    {% endfor %}
