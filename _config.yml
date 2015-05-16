@@ -3,10 +3,12 @@ author: "Abel Cheung"
 description: "Windows recycle bin analysis tool"
 subheading: "Windows recycle bin analysis tool"
 more: "continue reading"
-url: "http://me.abelcheung.org/"
+url: "https://abelcheung.github.io"
 baseurl: "/rifiuti2"
+repo_url: "https://github.com/abelcheung/rifiuti2"
 timezone: "UTC"
 license: "<img alt='CC-BY 4.0 License' style='border-width:0; vertical-align:middle' src='//i.creativecommons.org/l/by/4.0/88x31.png' />"
+ga_track_id: "UA-62435108-1"
 
 comments:
     disqus: "abelcheung"
@@ -31,7 +33,7 @@ links:
   - youtube: "https://www.youtube.com/user/me"
   - steam: "http://steamcommunity.com/id/me/"
 
-excerpt_separator: "\n\n\n"
+excerpt_separator: "<!--more-->"
 defaults: 
   -
     scope:
@@ -46,4 +48,7 @@ defaults:
     values:
       comments: true
       is_post: true
+
+gems:
+  - jekyll-sitemap
 

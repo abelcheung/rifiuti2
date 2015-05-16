@@ -5,11 +5,11 @@
     color: if($light, black, white)
 
 =body_background($background, $padding)
-    $is_white: lightness($background) == 100%
+    $light: lightness($background) > 50%
 
     background: $background
 
-    @if $is_white
+    @if $light
         > *
             padding: 1em calc(#{$padding} - #{$padding / 5% * 1em})
     @else
@@ -44,4 +44,16 @@
 
 =table_width($padding)
     width: calc(#{100% - $padding * 2} + #{$padding / 5% * 2em})
+
+=font_weight($background)
+    $light: lightness($background) > 50%
+
+    @if $light
+        font-weight: 400
+        > header > h2
+            font-weight: 500
+    @else
+        font-weight: 300
+        > header > h2
+            font-weight: 300
 

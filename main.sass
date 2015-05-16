@@ -55,9 +55,11 @@ nav ul
 
 article:nth-of-type(even)
     +article_background($even, $anchor)
+    +font_weight($even)
 
 article:nth-of-type(odd)
     +article_background($odd, $anchor)
+    +font_weight($odd)
 
 @import vendor
 

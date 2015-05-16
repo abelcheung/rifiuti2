@@ -6,7 +6,7 @@ title: "News"
     <article>
       {% include articleheader.html %}
       <div>
-{{ page.excerpt }}
+{{ page.excerpt | strip_html | truncatewords: 50 }}
       </div>
       <footer>
         <p><a href="{{ page.url | prepend: site.baseurl }}">{{ site.more }} &raquo;</a></p>

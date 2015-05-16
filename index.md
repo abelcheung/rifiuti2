@@ -1,5 +1,4 @@
 ---
-layout: blank
 ---
 
 <img alt="Recycle Bin full icon" style="border:0; float:right" src="{{ site.baseurl }}/images/rbin.png" />
@@ -11,15 +10,13 @@ path and size of deleted files and whether the deleted files have
 been moved out from the recycle bin since they are trashed.
 
 It is a rewrite of `rifiuti`, which is originally written by FoundStone
-folks for identical purpose.  But it overcomes several limitations found on
-original rifiuti:
+folks for identical purpose. Then it was extended to cover more
+functionalities, such as:
 
 * Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
 * Supports all localized versions of Windows &mdash;
 both newer Unicode-based ones and legacy ones
 * Supports output in XML format as well as original tab-delimited text
-* Preliminary guard against specially crafted recycle bin files
-* User interface and messages can be translated
 
 [1]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
 
