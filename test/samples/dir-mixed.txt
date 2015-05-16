@@ -1,0 +1,6 @@
+Recycle bin path: 'dir-mixed'
+Version: ??? (version inconsistent)
+
+Index	Deleted Time	Size	Path
+$IEQWWMF.exe	2007-09-21 08:38:30Z	679936	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\fmdata.exe
+$IDNLPD4.exe	2015-04-19 10:50:51Z	872448	C:\Temp\FAU\FAU.x86\dd.exe

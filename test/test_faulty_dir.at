@@ -1,0 +1,9 @@
+dnl -*- mode: m4; -*-
+dnl Test suite for rifiuti2
+
+AT_SETUP([Index files of different versions])
+AT_KEYWORDS([recycledir crafted])
+_r2_basic_compare([$progd dir-mixed], [dir-mixed.txt])
+AT_CLEANUP
+
+dnl vim: set ts=4 sw=4 noexpandtab :

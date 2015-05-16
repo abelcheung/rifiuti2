@@ -19,6 +19,9 @@ m4_include([test_parse_info2.at])
 AT_BANNER([Parsing $Recycle.bin folder])
 m4_include([test_parse_dir.at])
 
+AT_BANNER([Parse faulty or crafted folder])
+m4_include([test_faulty_dir.at])
+
 AT_BANNER([Character Encoding Tests])
 m4_include([test_encoding.at])
 
