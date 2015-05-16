@@ -1,6 +1,11 @@
+## 0.6.1
+
+----
+
 ## 0.6.0
 #### Feature
-* Windows 10 recycle bin support
+* Windows 10 recycle bin support (Issue #1)
+* Add GUI dialog to notify first time Windows users (Issue #2)
 * 8.3 path names can also be used in XML output now
 
 #### Bug fix
@@ -13,8 +18,8 @@
 * Vista version:
   * No more accepts multiple file arguments
   * Invalid file or dir in command argument treated as fatal error
-  * Result is sort by deletion time, instead of random order
-  * Show version info, to differentiate between Vista & Windows 10 formats
+  * Result is sorted by deletion time, instead of random order
+  * Show version info in order to differentiate between Vista & Windows 10 formats
 * INFO2 version:
   * No more accepts standard input as input data
 

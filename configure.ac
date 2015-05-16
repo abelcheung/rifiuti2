@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rifiuti2], [0.6.0],
+AC_INIT([rifiuti2], [0.6.1],
         [https://github.com/abelcheung/rifiuti2/issues],,
         [https://abelcheung.github.io/rifiuti2/])
 AC_CONFIG_SRCDIR([src/rifiuti-vista.c])
