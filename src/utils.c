@@ -30,75 +30,108 @@
 #include "config.h"
 
 #include <stdlib.h>
-
 #include "utils.h"
 #include <glib/gi18n.h>
 
+#ifdef G_OS_WIN32
+#include <sys/timeb.h>
+#endif
+
+
+static GString *
+get_datetime_str (time_t  t,
+                  int    *is_dst)
+{
+	GString         *output;
+	size_t           len;
+	struct tm       *tm;
+	extern gboolean  use_localtime;
+
+	/*
+	 * According to localtime() in MSDN: If the TZ environment variable is set,
+	 * the C run-time library assumes rules appropriate to the United States for
+	 * implementing the calculation of daylight-saving time (DST).
+	 *
+	 * This means DST start/stop time would be wrong for other parts of the world,
+	 * and there is no way to indicate places whether DST is not +1 hour based on
+	 * standard time. So providing facility for user adjustable TZ would be useless
+	 * for non-US users. However, unsetting here still can't prevent user setting
+	 * $TZ in command line. Throw my hands up and just document the problem.
+	 */
+	tm = use_localtime ? localtime (&t) : gmtime (&t);
+	if ( is_dst != NULL )
+		*is_dst = tm->tm_isdst;
+	output = g_string_sized_new (40);
+	len = strftime (output->str, output->allocated_len, "%Y-%m-%d %H:%M:%S", tm);
+	if ( !len )
+	{
+		g_string_free (output, TRUE);
+		return NULL;
+	}
+
+	output->len = len;   /* is this unorthodox? */
+	return output;
+}
+
 /*
- * Turns out strftime is not so cross-platform, Windows one is crippled.
+ * Turns out strftime is not so cross-platform, Windows one supports far
+ * less format strings than Unix counterpart.
  * However, GDateTime is not available until 2.26, so bite the bullet.
  *
- * Returns ISO 8601 formatted time without middle 'T'.
+ * Returns ISO 8601 formatted time.
  */
+static GString *
+get_iso8601_datetime_str (time_t t)
+{
+	GString         *output;
+	extern gboolean  use_localtime;
+	int              is_dst;
+#ifdef G_OS_WIN32
+	struct _timeb    tstruct;
+	int              offset;
+#else
+	size_t           len;
+	struct tm       *tm;
+#endif
+
+	if ( ( output = get_datetime_str (t, &is_dst) ) == NULL )
+		return NULL;
+
+	output->str[10] = 'T';
+	if ( !use_localtime )
+		return g_string_append_c (output, 'Z');
+
 #ifdef G_OS_WIN32
 
-#include <sys/timeb.h>
-
-static char *
-get_datetime_str (time_t t)
-{
-	GString         *timestr;
-	char             timestr_tmp[30];  /* strftime fails at 20 */
-	struct tm       *tm;
-	struct _timeb    tstruct;
-	extern gboolean  use_localtime;
-	short            offset;
-
-	/*
-	 * $TZ can be random junk like "ABC123XYZ" on Windows, and then it would
-	 * be happily passed into localtime() calls without question. In this
-	 * example the offset would be -123 * 60 minutes from UTC.
-	 */
-	_putenv ("TZ=");
-	tm = use_localtime ? localtime (&t) : gmtime (&t);
 	_ftime (&tstruct);
-	offset = 0 - tstruct.timezone;   /* opposite sign of what people expect */
-
-	if (strftime (timestr_tmp, sizeof(timestr_tmp),
-	              "%Y-%m-%d %H:%M:%S", tm) == 0)
-		return NULL;
-
-	timestr = g_string_new ((char *) timestr_tmp);
-	if (use_localtime)
-		g_string_append_printf (timestr, "%+.2i%.2i", offset / 60, abs(offset) % 60);
-	else
-		timestr = g_string_append_c (timestr, 'Z');  /* 'Z' = UTC */
-	return g_string_free (timestr, FALSE);
-}
-
-#else  /* if ! G_OS_WIN32 */
-
-static char *
-get_datetime_str (time_t t)
-{
-	char             timestr[30];
-	struct tm       *tm;
-	extern gboolean  use_localtime;
-
 	/*
-	 * Junk $TZ can also mess up localtime() on Unix/Linux too. Slightly
-	 * saner but still not good to trust it. "ABC123XYZ" => 23 on Linux.
+	 * 1. timezone value is in opposite sign of what people expect
+	 * 2. it doesn't account for DST.
+	 * 3. tm.tm_isdst is merely a flag and not indication on difference of
+	 *    hours between DST and standard time. But there is no way to
+	 *    override timezone in C library other than $TZ, and it always use
+	 *    US rule, so again, just give up and use the value
 	 */
-	unsetenv ("TZ");
-	tm = use_localtime ? localtime (&t) : gmtime (&t);
-	if (strftime (timestr, sizeof(timestr),
-	              use_localtime ? "%F %T%z" : "%F %TZ", tm) == 0)
-		return NULL;
-	else
-		return g_strdup ((char *) timestr);
-}
+	offset = MAX(is_dst, 0) * 60 - tstruct.timezone;
+	g_string_append_printf (output, "%+.2i%.2i", offset / 60,
+	                        abs(offset) % 60);
 
-#endif  /* G_OS_WIN32 */
+#else
+
+	tm = localtime (&t);
+	len = strftime (output->str + output->len,
+	                output->allocated_len - output->len, "%z", tm);
+	if ( !len )
+	{
+		g_string_free (output, TRUE);
+		return NULL;
+	}
+	output->len += len;
+
+#endif
+
+	return output;
+}
 
 time_t
 win_filetime_to_epoch (uint64_t win_filetime)
@@ -274,7 +307,8 @@ void
 print_record (rbin_struct *record,
               FILE        *outfile)
 {
-	char           *utf8_filename, *timestr;
+	char           *utf8_filename, *timestr = NULL;
+	GString        *temp_timestr;
 	GError         *error = NULL;
 	gboolean        is_info2;
 	char           *index;
@@ -292,13 +326,6 @@ print_record (rbin_struct *record,
 
 	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
 	                   g_strdup (record->index_s);
-
-	if ( NULL == ( timestr = get_datetime_str (record->deltime) ) )
-	{
-		g_warning (_("Error formatting file deletion time for record index %s."),
-		           index);
-		timestr = g_strdup ("???");
-	}
 
 	if (has_unicode_filename && !legacy_encoding)
 	{
@@ -331,6 +358,15 @@ print_record (rbin_struct *record,
 	{
 	  case OUTPUT_CSV:
 
+		if ( NULL == ( temp_timestr = get_datetime_str (record->deltime, NULL) ) )
+		{
+			g_warning (_("Error formatting file deletion time for record index %s."),
+					   index);
+			timestr = g_strdup ("???");
+		}
+		else
+			timestr = g_string_free (temp_timestr, FALSE);
+
 		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
 		if (is_info2)
 			maybe_convert_fprintf (outfile, "%s%s",
@@ -360,6 +396,16 @@ print_record (rbin_struct *record,
 		break;
 
 	  case OUTPUT_XML:
+
+		if ( NULL == ( temp_timestr = get_iso8601_datetime_str (record->deltime) ) )
+		{
+			g_warning (_("Error formatting file deletion time for record index %s."),
+					   index);
+			timestr = g_strdup ("???");
+		}
+		else
+			timestr = g_string_free (temp_timestr, FALSE);
+
 		fprintf (outfile, "  <record index=\"%s\" time=\"%s\" ", index,
 		         timestr);
 		if (is_info2)

@@ -11,7 +11,7 @@
 .\" see groff_www(7)
 .BCL black #bbffee blue blue #302226
 
-.TH "RIFIUTI2 0.6.0" "1"
+.TH "RIFIUTI2 0.6.1" "1"
 
 .SH INSTALLATION ON WINDOWS
 
@@ -22,12 +22,19 @@ corresponding to your system (\fCx64\\\fP for 64 bit systems,
 ready for use. Read sections below on how to use the programs.
 
 .SS Translation
-By default output messages of rifiuti2 are in English. Optionally one
-can copy \fCrifiuti\-l10n\fP folder to the same location the binaries
-reside in, and set \fCLANGUAGE\fP environment variable to appropriate
-value to enable translations. Supported language codes are the same
-as existing subdirectory names under \fCrifiuti\-l10n\fP folder.
-For example, assuming folder
+By default output messages of rifiuti2 are in English.
+Optionally one can copy
+.nh
+\fCrifiuti\-l10n\fP
+.hy
+folder to the same location the binaries reside in, and set
+\fCLANGUAGE\fP environment variable to appropriate value to enable
+translations.  Supported language codes are the same as existing
+subdirectory names under
+.nh
+\fCrifiuti\-l10n\fP
+.hy
+folder.  For example, assuming folder
 .nh
 \fCrifiuti\-l10n\\fr\\\fP
 .hy
@@ -48,7 +55,7 @@ to main author for inclusion in next release.
 
 .  \}
 .  el \{\
-.TH RIFIUTI2 "1" "May 2015" "0.6.0" "MS Windows recycle bin analysis tool"
+.TH RIFIUTI2 "1" "May 2015" "0.6.1" "MS Windows recycle bin analysis tool"
 
 .SH NAME
 rifiuti2 \- MS Windows recycle bin analysis tool
@@ -86,7 +93,7 @@ been moved out from the recycle bin since they are trashed.
 .PP
 Rifiuti2 supports a wide range of Windows versions, from Windows 98 to
 Windows 10. The command used for analysis depends on the version
-of Windows producing the recycle bin (\fBnot the version of users'
+of Windows producing the recycle bin (\fBnot the version of users\'
 system!\fP), which uses vastly different format before and after Vista:
 .PP
 
@@ -106,8 +113,9 @@ which uses a single index file named INFO2 under either
 .hy
 or
 .nh
-\fC\\RECYCLER\\\fP\fI<SID>\fP\fC\\\fP.
+\fC\\RECYCLER\\\fP\fI<SID>\fP\fC\\\fP
 .hy
+(depending on filesystem).
 This file keeps track record for deletion status and info for \fIall\fP
 deleted items, including those permanently removed or restored.
 
@@ -121,15 +129,21 @@ Index field has different meaning for pre-Vista
 and post-Vista versions.  INFO2 has an index number for each of
 deletion item indicating the chronological order of items. For Vista
 version, it means the index file name instead, which matches
-pattern '$I\fBxxxxxx\fP.\fI<ext>\fP', where \fBx\fP is random
+pattern \(lq$I\fBxxxxxx\fP.\fI<ext>\fP\(rq, where \fBx\fP is random
 alphanumeric character.
 .PP
-Deleted time is represented in UTC time by default, in ISO 8601 format.
-For example, 3PM at 2014 X'mas would be represented as
+Deleted time is represented in UTC time by default. Under tab-delimited
+mode, the original date/time format is preserved, while in XML mode
+ISO 8601 date/time format is used.
+For example, 3PM at 2014 X\'mas represented in these modes would be
+respectively:
 .RS
-\fC2014-12-25 15:00:00Z\fP
+\fC2014-12-25 15:00:00\fP
 .RE
-rifiuti2 opts for using space as separator between date / time.
+.RS
+\fC2014-12-25T15:00:00Z\fP
+.RE
+It would be easier for spreadsheet programs to interpret first format.
 .PP
 File size and file path are self-explanatory, but there are some
 special notes.  File size can mean the real size of deleted file,
@@ -150,7 +164,7 @@ and result is always in UTF-8 encoding.
 See below for plain text options.
 .TP
 \fB\-l\fP, \fB\-\-legacy\-filename\fP=\fI\,CODEPAGE\/\fP
-Show legacy filename if available (like '\fCD:\\Progra~1\\\fP'),
+Show legacy filename if available (like \(lq\fCD:\\Progra~1\\\fP\(rq),
 and specify the CODEPAGE used in the Windows system producing this
 INFO2 file. Any encodings supported by \fBiconv\fP(1) can be used,
 though for maximum accuracy of file name results, it is better to
@@ -164,11 +178,16 @@ Windows 98. This option does not exist in \fCrifiuti-vista\fP.
 .TP
 \fB\-z\fP, \fB\-\-localtime\fP
 Present deletion time in numeric time zone of local system running
-the program.  By default, UTC time (represented by letter 'Z') is
-displayed, which is the time value recorded in index files. Using the
-X'mas example above, the time for Berlin (without daylight saving time)
-would be \fC2014-12-25 16:00:00+0100\fP.
-.PP
+the program.  By default, UTC time is displayed, which is the time
+value recorded in index files. Using the X\'mas example above, the
+time for Berlin (without daylight saving time) would be
+\fC2014-12-25T16:00:00+0100\fP in ISO 8601 format.
+
+.RS
+\fBNote\fP: It is possible to use any timezone of users\' choice
+by setting $TZ environment variable, though not recommended.
+See \fBENVIRONMENT VARIABLE\fP section below.
+.RE
 
 .SS
 PLAIN TEXT OUTPUT OPTIONS
@@ -179,7 +198,7 @@ are recognised: \\r (CARRIAGE RETURN), \\n (NEW LINE), \\t (TAB),
 \\f (FORM FEED), \\v (VERTICAL TAB), \\e (ESCAPE)
 .TP
 \fB\-n\fP, \fB\-\-no\-heading\fP
-Don't show recycle bin path name, version and header for each field
+Don\'t show recycle bin path name, version and header for each field
 .TP
 \fB\-8\fP, \fB\-\-always\-utf8\fP
 Always display result in UTF\-8 encoding
@@ -246,6 +265,22 @@ Universal Character Name sequences like \\u1234.
 Setting it to any non-empty value would cause programs to print
 more debugging output to stderr.
 .RE
+.TP
+\fBTZ\fP
+.RS
+If non-empty, indicate user-specified time zone when \fB\-z\fP option
+is used. Normally the time zone information is obtained from system
+and there is no need to set this variable. However, it can be used
+as a facility to temporarily override timezone for some programs, which
+can be used for situations like constructing timeline event.
+.PP
+This value is OS dependent. For example, for timezone in Los Angeles,
+the value for Windows is \(lqPST8PDT\(rq, while corresponding value on
+Linux would be \(lqAmerica/Los_Angeles\(rq. Please consult manual for
+your operating system for more info.
+.PP
+Please see \fBBUGS\fP section below for problems when using this variable.
+.RE
 
 .SH EXIT STATUS
 Both programs return 0 on success, and >0 if error occurs.
@@ -260,7 +295,7 @@ McAfee. Quoting from the original FoundStone page:
 
 .RS
 Many computer crime investigations require the reconstruction of a
-subject's Recycle Bin. Since this analysis technique is executed
+subject\'s Recycle Bin. Since this analysis technique is executed
 regularly, we researched the structure of the data found in the
 Recycle Bin repository files (INFO2 files). Rifiuti, the Italian word
 meaning "trash", was developed to examine the contents of the INFO2
@@ -270,17 +305,17 @@ Linux, and *BSD platforms.
 .RE
 
 .PP
-However, since the original rifiuti (last updated 2004) can't analyze
+However, since the original rifiuti (last updated 2004) can\'t analyze
 recycle bin from any localized version of Windows (restricted to
 English), this rewrite effort is born to overcome the limitation. Later
 rifiuti2 was improved to add support for Vista format recycle bin, XML
 output and other extra features not available from original version.
 
 .SH BUGS
-In very special circumstance (which author can't reproduce now),
+In very special circumstance (which author can\'t reproduce now),
 index file of certain deleted item can be corrupt, causing incorrect
 deleted file size to be stored. There is no way to report correct size.
-This problem shouldn't happen after Vista though.
+This problem shouldn\'t happen after Vista though.
 .PP
 Handling of non-ASCII file argument is not satisfactory; it may not
 work in certain case under MinGW bash.
@@ -291,7 +326,18 @@ Windows \fBcmd\fP, where output is restricted to ANSI codepages).
 Storing UTF-8 result into file with \fB\-8\fP or \fB\-x\fP option
 and then opening it with Unicode capable editor could be a solution.
 .PP
-
+The calculation of local time might not be correct. For example,
+documentation of _tzset() function on Windows has this statement:
+.RS
+The C run-time library assumes the United States\' rules for implementing
+the calculation of daylight saving time (DST).
+.RE
+Therefore the time might not be correct in case the files inside
+recycle bin are produced on Windows using other countries as region
+settings. Besides, the difference between standard time and DST is
+hardcoded to be one hour, which is incorrect for a few selected regions.
+.PP
+So it is always better to use UTC time whenever possible.
 
 .SH REPORTING BUGS
 Report bugs to
@@ -327,7 +373,7 @@ https://abelcheung.github.io/rifiuti2/
 .PP
 Forensics tools and other security related utilities
 .URL http://www.mcafee.com/us/downloads/free-tools/index.aspx "originally written by FoundStone"
-are now available under McAfee's own license
+are now available under McAfee\'s own license
 .PP
 .URL http://me.abelcheung.org/wp-content/uploads/2007/09/vista-recycle-bin-sample.pdf "Vista recycle bin file structure"
 , by Abel Cheung
@@ -340,7 +386,7 @@ are now available under McAfee's own license
 Open Digital Evidence Search and Seizure Architecture project, which contains the original rifiuti tool
 http://odessa.sourceforge.net/
 .TP
-Forensics tools and other security related utilities originally written by FoundStone are now available under McAfee's own license.
+Forensics tools and other security related utilities originally written by FoundStone are now available under McAfee\'s own license.
 http://www.mcafee.com/us/downloads/free-tools/index.aspx
 .TP
 Vista recycle bin file structure, by Abel Cheung
