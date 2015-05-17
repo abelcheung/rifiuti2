@@ -1,4 +1,8 @@
 ## 0.6.1
+#### Bug fix
+* Restore old date/time format for tab-delimited output, in order to be
+  more spreadsheet friendly (Issue #8)
+* Fix timezone offset for ISO8601-format date, to account for DST
 
 ----
 
