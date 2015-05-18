@@ -112,8 +112,7 @@ validate_index_file (FILE     *inf,
 	{
 		g_debug ("file size = %d, expect at least %d\n", (int) size,
 		         RECORD_START_OFFSET);
-		g_printerr (_("File is truncated, or probably not an INFO2 file.\n"));
-		return RIFIUTI_ERR_BROKEN_FILE;
+		goto validation_broken;
 	}
 
 	/* with file size check already done, fread fail -> serious problem */
@@ -139,20 +138,22 @@ validate_index_file (FILE     *inf,
 	}
 	*recordsize = GUINT32_FROM_LE (*recordsize);
 
-	/* Recordsize should be restricted to either 280 (v4) or 800 bytes (v5) */
-	switch (*info2_version)
+	/* Turns out version is not reliable indicator. Use size instead */
+	switch (*recordsize)
 	{
-	  case FORMAT_WIN98:
-		if (*recordsize != VERSION4_RECORD_SIZE)
-		{
-			g_debug ("Size per record = %u, expect %u instead.", *recordsize,
-			         VERSION4_RECORD_SIZE);
-			g_critical (_("Invalid record size for this version of INFO2"));
-			return RIFIUTI_ERR_BROKEN_FILE;
-		}
+	  case LEGACY_RECORD_SIZE:
+
+		/* Windows ME still use 280 byte record */
+		if ( ( *info2_version != VERSION_ME_03 ) &&
+		     ( *info2_version != VERSION_WIN98 ) &&
+		     ( *info2_version != VERSION_WIN95 ) )
+			goto validation_broken;
+
+		/* No version check; this size can be used in all versions */
 		if (!legacy_encoding)
 		{
-			g_printerr (_("This INFO2 file was produced on a Windows 98. "
+			g_printerr (_("This INFO2 file was produced on a legacy system "
+			              "without Unicode file name. "
 			              "Please specify codepage of concerned system with "
 			              "'-l' or '--legacy-filename' option.\n\n"));
 			/* TRANSLATOR COMMENT: use suitable example from YOUR language & code page */
@@ -165,24 +166,21 @@ validate_index_file (FILE     *inf,
 		}
 		break;
 
-	  case FORMAT_WIN2K:
-		if (*recordsize != VERSION5_RECORD_SIZE)
-		{
-			g_debug ("Size per record = %u, expect %u instead.", *recordsize,
-			         VERSION5_RECORD_SIZE);
-			g_critical (_("Invalid record size for this version of INFO2"));
-			return RIFIUTI_ERR_BROKEN_FILE;
-		}
-		/* only version 5 contains UTF-16 filename */
+	  case UNICODE_RECORD_SIZE:
+		if ( *info2_version != VERSION_ME_03 )
+			goto validation_broken;
 		has_unicode_filename = TRUE;
 		break;
 
 	  default:
-		g_printerr (_("File is not supported, or it is "
-		              "probably not an INFO2 file.\n"));
-		return RIFIUTI_ERR_BROKEN_FILE;
+		goto validation_broken;
 	}
 	return 0;
+
+  validation_broken:
+	g_printerr (_("File is not supported, or it is probably not an "
+	              "INFO2 file.\n"));
+	return RIFIUTI_ERR_BROKEN_FILE;
 }
 
 
@@ -443,7 +441,7 @@ main (int    argc,
 				g_string_append_printf (str, "\\x%02X", (char) (*i));
 		}
 		while ((char) (* (++i)) != '\0');
-		g_debug (str->str);
+		g_debug ("%s", str->str);
 		g_string_free (str, TRUE);
 	}
 
@@ -483,7 +481,6 @@ main (int    argc,
 		exit (status);
 	}
 
-	rewind (infile);
 	if (!no_heading)
 		print_header (outfile, fileargs[0], (int64_t) info2_version, TRUE);
 

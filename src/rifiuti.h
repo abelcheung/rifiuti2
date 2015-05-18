@@ -45,8 +45,8 @@
 #define FILESIZE_OFFSET         ((WIN_PATH_MAX) + 16)
 #define UNICODE_FILENAME_OFFSET ((WIN_PATH_MAX) + 20)
 
-#define VERSION4_RECORD_SIZE    ((WIN_PATH_MAX) + 20)        /* 280 bytes */
-#define VERSION5_RECORD_SIZE    ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
+#define LEGACY_RECORD_SIZE      ((WIN_PATH_MAX) + 20)        /* 280 bytes */
+#define UNICODE_RECORD_SIZE     ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
 
 #endif
 
