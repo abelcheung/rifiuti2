@@ -115,14 +115,14 @@ validate_index_file (FILE *inf,
 
 	switch (*version)
 	{
-	  case (uint64_t) FORMAT_VISTA:
+	  case (uint64_t) VERSION_VISTA:
 		expected = VERSION1_FILE_SIZE;
 		/* see populate_record_data() for reason */
 		if ((size == expected) || (size == expected - 1))
 			return 0;
 		break;
 
-	  case (uint64_t) FORMAT_WIN10:
+	  case (uint64_t) VERSION_WIN10:
 		g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
 		fseek (inf, VERSION2_FILENAME_OFFSET - sizeof (*namelength),
 		       SEEK_SET);
@@ -168,7 +168,6 @@ populate_record_data (void *buf,
 
 	record = g_malloc0 (sizeof (rbin_struct));
 	record->version = version;
-	record->type = RECYCLE_BIN_TYPE_DIR;
 
 	/*
 	 * In rare cases, the size of index file is 543 bytes versus (normal) 544 bytes.
@@ -192,13 +191,13 @@ populate_record_data (void *buf,
 	g_debug ("namelength=%d", namelength);
 	switch (version)
 	{
-	  case (uint64_t) FORMAT_VISTA:
+	  case (uint64_t) VERSION_VISTA:
 		record->utf8_filename =
 			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET
 			                                - (int) erraneous),
 			                 -1, &read, &write, &error);
 		break;
-	  case (uint64_t) FORMAT_WIN10:
+	  case (uint64_t) VERSION_WIN10:
 		record->utf8_filename =
 			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
 			                 -1, &read, &write, &error);
@@ -268,13 +267,13 @@ parse_record (char    *index_file,
 
 	switch (version)
 	{
-	  case (uint64_t) FORMAT_VISTA:
+	  case (uint64_t) VERSION_VISTA:
 		/* see populate_record_data() for meaning of last parameter */
 		record = populate_record_data (buf, version, (uint32_t) WIN_PATH_MAX,
 		                               (st.st_size == VERSION1_FILE_SIZE - 1));
 		break;
 
-	  case (uint64_t) FORMAT_WIN10:
+	  case (uint64_t) VERSION_WIN10:
 		record = populate_record_data (buf, version, namelength, FALSE);
 		break;
 
@@ -389,6 +388,7 @@ main (int    argc,
 	FILE           *outfile;
 	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
+	metarecord      meta;
 	char           *fname, *bug_report_str;
 
 	GError         *error = NULL;
@@ -585,25 +585,27 @@ main (int    argc,
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
+	meta.type = RECYCLE_BIN_TYPE_DIR;
+	meta.filename = fileargs[0];
 	{
 		GSList  *l = recordlist;
-		int64_t  ver;
-
 		if (!l)
-			ver = VERSION_NOT_FOUND;
+			meta.version = VERSION_NOT_FOUND;
 		else
 		{
-			ver = (int64_t) ((rbin_struct *) recordlist->data)->version;
+			meta.version = (int64_t) ((rbin_struct *) recordlist->data)->version;
 			for (; l != NULL; l = l->next)
-				if ((int64_t) ((rbin_struct *) l->data)->version != ver)
-				{
-					ver = VERSION_INCONSISTENT;
-					break;
-				}
+			{
+				if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
+					meta.version = VERSION_INCONSISTENT;
+				((rbin_struct *) l->data)->meta = &meta;
+			}
 		}
-		if (!no_heading)
-			print_header (outfile, fileargs[0], ver, FALSE);
 	}
+	meta.os_guess = NULL;  /* TOOD */
+
+	if (!no_heading)
+		print_header (outfile, meta);
 
 	/* TODO: store return status of each file, then exit the program with last non-zero status */
 	/* TODO: store errors accumulated when parsing each file, then print a summary of errors

@@ -195,7 +195,6 @@ populate_record_data (void *buf)
 	g_debug ("Start populating record...");
 
 	record = g_malloc0 (sizeof (rbin_struct));
-	record->type = RECYCLE_BIN_TYPE_FILE;
 
 	/* Guarantees null-termination by allocating extra byte */
 	record->legacy_filename =
@@ -276,6 +275,7 @@ main (int    argc,
 	rbin_struct    *record;
 	uint32_t        recordsize, info2_version;
 	char           *bug_report_str;
+	metarecord      meta;
 
 	setlocale (LC_ALL, "");
 
@@ -481,8 +481,12 @@ main (int    argc,
 		exit (status);
 	}
 
+	meta.type     = RECYCLE_BIN_TYPE_FILE;
+	meta.filename = fileargs[0];
+	meta.version  = (int64_t) info2_version;
+	meta.os_guess = NULL;    /* TODO */
 	if (!no_heading)
-		print_header (outfile, fileargs[0], (int64_t) info2_version, TRUE);
+		print_header (outfile, meta);
 
 	/*
 	 * Add 2 padding bytes as null-termination of unicode file name. Not so confident
@@ -504,6 +508,7 @@ main (int    argc,
 		}
 
 		record = populate_record_data (buf);
+		record->meta = &meta;
 		print_record (record, outfile);
 
 		g_free (record->utf8_filename);

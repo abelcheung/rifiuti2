@@ -231,24 +231,22 @@ maybe_convert_fprintf (FILE       *file,
 }
 
 void
-print_header (FILE     *outfile,
-              char     *infilename,
-              int64_t   version,
-              gboolean  is_info2)
+print_header (FILE       *outfile,
+              metarecord  meta)
 {
 	char           *utf8_filename, *ver_string;
 	extern int      output_format;
 	extern char    *delim;
 
-	g_return_if_fail (infilename != NULL);
+	g_return_if_fail (meta.filename != NULL);
 	g_return_if_fail (outfile != NULL);
 
 	g_debug ("Entering %s()", __func__);
 
-	if (g_path_is_absolute (infilename))
-		utf8_filename = g_filename_display_basename (infilename);
+	if (g_path_is_absolute (meta.filename))
+		utf8_filename = g_filename_display_basename (meta.filename);
 	else
-		utf8_filename = g_filename_display_name (infilename);
+		utf8_filename = g_filename_display_name (meta.filename);
 
 	switch (output_format)
 	{
@@ -256,7 +254,7 @@ print_header (FILE     *outfile,
 		maybe_convert_fprintf (outfile, _("Recycle bin path: '%s'"),
 		                       utf8_filename);
 		fputs ("\n", outfile);
-		switch (version)
+		switch (meta.version)
 		{
 		  case VERSION_NOT_FOUND:
 			/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
@@ -267,13 +265,13 @@ print_header (FILE     *outfile,
 			ver_string = g_strdup (_("??? (version inconsistent)"));
 			break;
 		  default:
-			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, version);
+			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 		}
 		maybe_convert_fprintf (outfile, _("Version: %s"), ver_string);
 		g_free (ver_string);
 		fputs ("\n\n", outfile);
 
-		if (is_info2)
+		if (meta.type == RECYCLE_BIN_TYPE_FILE)
 			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
 			maybe_convert_fprintf (outfile,
 			                       _("Index%sDeleted Time%sGone?%sSize%sPath"),
@@ -290,7 +288,8 @@ print_header (FILE     *outfile,
 		/* No proper way to report wrong version info yet */
 		fprintf (outfile,
 		         "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n",
-		         (is_info2 ? "file" : "dir"), MAX (version, 0));
+		         ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
+		         MAX (meta.version, 0));
 		fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
 		break;
 
@@ -322,7 +321,7 @@ print_record (rbin_struct *record,
 	g_return_if_fail (record != NULL);
 	g_return_if_fail (outfile != NULL);
 
-	is_info2 = (record->type == RECYCLE_BIN_TYPE_FILE);
+	is_info2 = (record->meta->type == RECYCLE_BIN_TYPE_FILE);
 
 	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
 	                   g_strdup (record->index_s);

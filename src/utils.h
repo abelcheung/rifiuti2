@@ -55,8 +55,8 @@ enum
 	VERSION_INCONSISTENT = -2,
 	VERSION_NOT_FOUND,
 
-	FORMAT_VISTA = 1,
-	FORMAT_WIN10,
+	VERSION_VISTA = 1,
+	VERSION_WIN10,
 
 	VERSION_WIN95 = 0,
 	VERSION_WIN98 = 4,
@@ -69,21 +69,31 @@ enum
 	OUTPUT_XML
 };
 
-struct _rbin_struct
+struct _rbin_meta
 {
 	rbin_type       type;
+	const char     *filename;
+	const char     *os_guess;
+	int64_t         version;
+};
+
+typedef struct _rbin_meta metarecord;
+
+struct _rbin_struct
+{
 	uint64_t        version;           /* $Recycle.bin only */
+	const metarecord *meta;
 	union
 	{	/* number or file name */
 		uint32_t        index_n;
 		char           *index_s;
 	};
-	gboolean        emptied;           /* INFO2 only */
-	unsigned char   drive;             /* INFO2 only */
 	time_t          deltime;
 	uint64_t        filesize;
 	char           *utf8_filename;
 	char           *legacy_filename;   /* INFO2 only */
+	gboolean        emptied;           /* INFO2 only */
+	unsigned char   drive;             /* INFO2 only */
 };
 
 typedef struct _rbin_struct rbin_struct;
@@ -109,9 +119,7 @@ time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 char *     filter_escapes           (const char          *str             );
 
 void       print_header             (FILE                *outfile         ,
-                                     char                *infilename      ,
-                                     int64_t              version         ,
-                                     gboolean             is_info2        );
+                                     metarecord           meta            );
 
 void       print_record             (rbin_struct         *record          ,
                                      FILE                *outfile         );
