@@ -1,8 +1,8 @@
 language: c
 compiler: gcc
 branches:
-  only:
-    - master
+  except:
+    - gh-pages
 os:
   - linux
 install:
