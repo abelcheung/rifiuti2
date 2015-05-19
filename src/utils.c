@@ -285,7 +285,7 @@ print_header (FILE       *outfile,
 		g_free (ver_string);
 		fputs ("\n\n", outfile);
 
-		if (meta.type == RECYCLE_BIN_TYPE_FILE)
+		if (meta.keep_deleted_entry)
 			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
 			maybe_convert_fprintf (outfile,
 			                       _("Index%sDeleted Time%sGone?%sSize%sPath"),
@@ -381,7 +381,7 @@ print_record (rbin_struct *record,
 			timestr = g_string_free (temp_timestr, FALSE);
 
 		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
-		if (is_info2)
+		if (record->meta->keep_deleted_entry)
 			maybe_convert_fprintf (outfile, "%s%s",
 			                       record->emptied ? _("Yes") : _("No"),
 			                       delim);
@@ -421,7 +421,7 @@ print_record (rbin_struct *record,
 
 		fprintf (outfile, "  <record index=\"%s\" time=\"%s\" ", index,
 		         timestr);
-		if (is_info2)
+		if (record->meta->keep_deleted_entry)
 			fprintf (outfile, "emptied=\"%c\" ", record->emptied ? 'Y' : 'N');
 		fprintf (outfile,
 		         "size=\"%" G_GUINT64_FORMAT "\">\n"

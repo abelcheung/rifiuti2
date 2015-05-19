@@ -590,6 +590,7 @@ main (int    argc,
 
 	/* Fill in recycle bin metadata */
 	meta.type = RECYCLE_BIN_TYPE_DIR;
+	meta.keep_deleted_entry = FALSE;
 	meta.filename = fileargs[0];
 	{
 		GSList  *l = recordlist;

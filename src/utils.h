@@ -77,6 +77,7 @@ struct _rbin_meta
 	const char     *os_guess;
 	int64_t         version;
 	uint32_t        recordsize;        /* INFO2 only */
+	gboolean        keep_deleted_entry;
 };
 
 typedef struct _rbin_meta metarecord;

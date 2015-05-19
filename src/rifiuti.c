@@ -492,6 +492,8 @@ main (int    argc,
 	/* Fill in recycle bin metadata */
 	meta.type     = RECYCLE_BIN_TYPE_FILE;
 	meta.filename = fileargs[0];
+	/* Keeping info for deleted entry is only available since 98 */
+	meta.keep_deleted_entry = ( meta.version > VERSION_WIN95 );
 	meta.os_guess = NULL;    /* TODO */
 	if (!no_heading)
 		print_header (outfile, meta);
