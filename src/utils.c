@@ -257,10 +257,7 @@ print_header (FILE       *outfile,
 
 	g_debug ("Entering %s()", __func__);
 
-	if (g_path_is_absolute (meta.filename))
-		utf8_filename = g_filename_display_basename (meta.filename);
-	else
-		utf8_filename = g_filename_display_name (meta.filename);
+	utf8_filename = g_filename_display_name (meta.filename);
 
 	switch (output_format)
 	{
