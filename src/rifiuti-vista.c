@@ -361,15 +361,6 @@ found_desktop_ini (char *path)
 }
 
 
-static void
-free_record (rbin_struct *record)
-{
-	g_free (record->index_s);
-	g_free (record->utf8_filename);
-	g_free (record);
-}
-
-
 static int
 sort_record_by_time (rbin_struct *a,
                      rbin_struct *b)

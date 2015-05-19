@@ -510,10 +510,7 @@ main (int    argc,
 		record = populate_record_data (buf);
 		record->meta = &meta;
 		print_record (record, outfile);
-
-		g_free (record->utf8_filename);
-		g_free (record->legacy_filename);
-		g_free (record);
+		free_record (record);
 	}
 
 	print_footer (outfile);

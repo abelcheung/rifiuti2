@@ -128,6 +128,8 @@ void       print_footer             (FILE                *outfile         );
 
 void       print_version            ();
 
+void       free_record              (rbin_struct         *record          );
+
 void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,
                                      const char          *message         ,

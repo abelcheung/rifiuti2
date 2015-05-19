@@ -440,6 +440,17 @@ print_version ()
 
 
 void
+free_record (rbin_struct *record)
+{
+	if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
+		g_free (record->index_s);
+	g_free (record->utf8_filename);
+	g_free (record->legacy_filename);
+	g_free (record);
+}
+
+
+void
 print_footer (
 	FILE *outfile)
 {
