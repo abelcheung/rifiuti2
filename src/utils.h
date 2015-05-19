@@ -40,7 +40,8 @@ enum
 	RIFIUTI_ERR_ARG = 1,
 	RIFIUTI_ERR_OPEN_FILE,
 	RIFIUTI_ERR_BROKEN_FILE,
-	RIFIUTI_ERR_ENCODING
+	RIFIUTI_ERR_ENCODING,
+	RIFIUTI_ERR_INTERNAL = 64
 };
 
 typedef enum
@@ -75,6 +76,7 @@ struct _rbin_meta
 	const char     *filename;
 	const char     *os_guess;
 	int64_t         version;
+	uint32_t        recordsize;        /* INFO2 only */
 };
 
 typedef struct _rbin_meta metarecord;

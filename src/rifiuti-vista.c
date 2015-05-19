@@ -82,83 +82,124 @@ static GOptionEntry textoptions[] =
 /* Check if index file has sufficient amount of data for reading */
 /* 0 = success, all other return status = error */
 static int
-validate_index_file (FILE *inf,
-                     off_t size,
-                     uint64_t *version,
-                     uint32_t *namelength)
+validate_index_file (const char  *filename,
+                     FILE       **infile,
+                     off_t       *size,
+                     uint64_t    *ver,
+                     uint32_t    *pathlen)
 {
-	off_t    expected;
-	size_t   status;
+	off_t           expected;
+	size_t          status;
+	GStatBuf        st;
+	FILE           *fp = NULL;
 
 	g_debug ("Start file validation...");
 
-	if (size <= VERSION1_FILENAME_OFFSET)	/* file path can't possibly be empty */
+	g_return_val_if_fail ( (infile  != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (size    != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (ver     != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (pathlen != NULL), RIFIUTI_ERR_INTERNAL );
+	*infile = NULL;
+
+	if (0 != g_stat (filename, &st))
 	{
-		g_debug ("file size = %i, expect larger than %i\n", (int) size,
+		g_printerr (_("Error getting metadata of file '%s': %s\n"), filename,
+		            strerror (errno));
+		return RIFIUTI_ERR_OPEN_FILE;
+	}
+
+	if (st.st_size <= VERSION1_FILENAME_OFFSET)	/* file path can't possibly be empty */
+	{
+		g_debug ("file size = %d, expect at least %d\n", (int) st.st_size,
 		         VERSION1_FILENAME_OFFSET);
 		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file.\n"));
 		return RIFIUTI_ERR_BROKEN_FILE;
 	}
+	*size = st.st_size;
 
-	/* with file size check already done, fread fail probably mean serious problem */
-	rewind (inf);
-	status = fread (version, sizeof (*version), 1, inf);
+	if ( !(fp = g_fopen (filename, "rb")) )
+	{
+		g_printerr (_("Error opening file '%s' for reading: %s\n"), filename,
+		            strerror (errno));
+		return RIFIUTI_ERR_OPEN_FILE;
+	}
+
+	/* with file size check already done, fread fail -> serious problem */
+	status = fread (ver, sizeof (*ver), 1, fp);
 	if (status < 1)
 	{
 		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading version info"),
-		            __func__);
+		g_critical (_("%s(): fread() failed when reading version info from '%s'"),
+		            __func__, filename);
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
-	*version = GUINT64_FROM_LE (*version);
-	g_debug ("version=%" G_GUINT64_FORMAT, *version);
+	*ver = GUINT64_FROM_LE (*ver);
+	g_debug ("version=%" G_GUINT64_FORMAT, *ver);
 
-	switch (*version)
+	switch (*ver)
 	{
 	  case (uint64_t) VERSION_VISTA:
+
 		expected = VERSION1_FILE_SIZE;
 		/* see populate_record_data() for reason */
-		if ((size == expected) || (size == expected - 1))
-			return 0;
+		if ( (*size != expected) && (*size != expected - 1) )
+		{
+			g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
+					 (uint64_t) *size, (uint64_t) expected);
+			g_printerr (_("Index file expected size and real size do not match.\n"));
+			status = RIFIUTI_ERR_BROKEN_FILE;
+			goto validation_broken;
+		}
 		break;
 
 	  case (uint64_t) VERSION_WIN10:
-		g_return_val_if_fail ((size > VERSION2_FILENAME_OFFSET), FALSE);
-		fseek (inf, VERSION2_FILENAME_OFFSET - sizeof (*namelength),
+
+		fseek (fp, VERSION2_FILENAME_OFFSET - sizeof (*pathlen),
 		       SEEK_SET);
+		status = fread (pathlen, sizeof (*pathlen), 1, fp);
 		if (status < 1)
 		{
 			/* TRANSLATOR COMMENT: the variable is function name */
 			g_critical (_("%s(): fread() failed when reading file name length"),
 			            __func__);
-			return RIFIUTI_ERR_OPEN_FILE;
+			status = RIFIUTI_ERR_OPEN_FILE;
+			goto validation_broken;
 		}
-		status = fread (namelength, sizeof (*namelength), 1, inf);
-		*namelength = GUINT32_FROM_LE (*namelength);
+		*pathlen = GUINT32_FROM_LE (*pathlen);
 
 		/* Fixed header length + file name length in UTF-16 encoding */
-		expected = VERSION2_FILENAME_OFFSET + (*namelength) * 2;
-		if (size == expected)
-			return 0;
+		expected = VERSION2_FILENAME_OFFSET + (*pathlen) * 2;
+		if (*size != expected)
+		{
+			g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
+			         (uint64_t) *size, (uint64_t) expected);
+			g_printerr (_("Index file expected size and real size do not match.\n"));
+			status = RIFIUTI_ERR_BROKEN_FILE;
+			goto validation_broken;
+		}
 		break;
 
 	  default:
 		g_printerr (_("File is not supported, or it is probably "
 		              "not a $Recycle.bin index file.\n"));
-		return RIFIUTI_ERR_BROKEN_FILE;
+		status = RIFIUTI_ERR_BROKEN_FILE;
+		goto validation_broken;
 	}
 
-	g_debug ("File size = %" G_GUINT64_FORMAT ", expected %" G_GUINT64_FORMAT,
-	         (uint64_t) size, (uint64_t) expected);
-	g_printerr (_("Index file expected size and real size do not match.\n"));
-	return RIFIUTI_ERR_BROKEN_FILE;
+	rewind (fp);
+	*infile = fp;
+	return EXIT_SUCCESS;
+
+  validation_broken:
+	fclose (fp);
+	return status;
 }
 
 
 static rbin_struct *
 populate_record_data (void *buf,
                       uint64_t version,
-                      uint32_t namelength,
+                      uint32_t pathlen,
                       gboolean erraneous)
 {
 	uint64_t        win_filetime;
@@ -188,7 +229,7 @@ populate_record_data (void *buf,
 	record->deltime = win_filetime_to_epoch (win_filetime);
 
 	/* One extra char for safety, though path should have already been null terminated */
-	g_debug ("namelength=%d", namelength);
+	g_debug ("pathlen=%d", pathlen);
 	switch (version)
 	{
 	  case (uint64_t) VERSION_VISTA:
@@ -222,36 +263,22 @@ parse_record (char    *index_file,
 	rbin_struct    *record;
 	char           *basename;
 	uint64_t        version;
-	uint32_t        namelength = 0;
-	GStatBuf        st;
+	uint32_t        pathlen;
+	off_t           bufsize;
 	void           *buf;
 
 	basename = g_path_get_basename (index_file);
 
-	if (0 != g_stat (index_file, &st))
-	{
-		g_printerr (_("Error getting metadata of file '%s': %s\n"), basename,
-		            strerror (errno));
-		goto parse_record_open_error;
-	}
-
-	if (NULL == (infile = g_fopen (index_file, "rb")))
-	{
-		g_printerr (_("Error opening file '%s' for reading: %s\n"), basename,
-		            strerror (errno));
-		goto parse_record_open_error;
-	}
-
-	if (0 != validate_index_file (infile, st.st_size, &version, &namelength))
+	if (EXIT_SUCCESS != validate_index_file (index_file,
+				&infile, &bufsize, &version, &pathlen))
 	{
 		g_printerr (_("File '%s' fails validation.\n"), basename);
-		goto parse_validation_error;
+		goto parse_record_open_error;
 	}
 
-	rewind (infile);
 	/* Files are expected to be at most 0.5KB. Large files should have already been rejected. */
-	buf = g_malloc0 (st.st_size + 2);
-	if (1 != fread (buf, st.st_size, 1, infile))
+	buf = g_malloc0 (bufsize + 2);
+	if (1 != fread (buf, bufsize, 1, infile))
 	{
 		/*
 		 * TRANSLATOR COMMENT: 1st parameter is function name,
@@ -267,14 +294,14 @@ parse_record (char    *index_file,
 
 	switch (version)
 	{
-	  case (uint64_t) VERSION_VISTA:
+	  case VERSION_VISTA:
 		/* see populate_record_data() for meaning of last parameter */
 		record = populate_record_data (buf, version, (uint32_t) WIN_PATH_MAX,
-		                               (st.st_size == VERSION1_FILE_SIZE - 1));
+		                               (bufsize == VERSION1_FILE_SIZE - 1));
 		break;
 
-	  case (uint64_t) VERSION_WIN10:
-		record = populate_record_data (buf, version, namelength, FALSE);
+	  case VERSION_WIN10:
+		record = populate_record_data (buf, version, pathlen, FALSE);
 		break;
 
 	  default:
@@ -365,7 +392,7 @@ static int
 sort_record_by_time (rbin_struct *a,
                      rbin_struct *b)
 {
-	/* time_t can be 32 or 64 bit, can't just return a-b :( */
+	/* sort primary key: deletion time; secondary key: index file name */
 	return ((a->deltime < b->deltime) ? -1 :
 	        (a->deltime > b->deltime) ?  1 :
 	        strcmp (a->index_s, b->index_s));
@@ -576,6 +603,7 @@ main (int    argc,
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
+	/* Fill in recycle bin metadata */
 	meta.type = RECYCLE_BIN_TYPE_DIR;
 	meta.filename = fileargs[0];
 	{

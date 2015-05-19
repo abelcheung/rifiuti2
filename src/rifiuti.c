@@ -97,57 +97,85 @@ static GOptionEntry textoptions[] =
 /*
  * Check if index file has sufficient amount of data for reading
  * 0 = success, all other return status = error
+ * If success, infile will be set to file pointer and other args
+ * will be filled, otherwise file pointer = NULL
  */
 static int
-validate_index_file (FILE     *inf,
-                     off_t     size,
-                     uint32_t *info2_version,
-                     uint32_t *recordsize)
+validate_index_file (const char  *filename,
+                     FILE       **infile,
+                     metarecord  *meta)
 {
-	size_t status;
+	size_t          status;
+	GStatBuf        st;
+	FILE           *fp = NULL;
+	uint32_t        ver, size;
 
 	g_debug ("Start file validation...");
 
-	if (size < RECORD_START_OFFSET)  /* empty INFO2 file has 20 bytes */
+	g_return_val_if_fail ( (infile != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (meta   != NULL), RIFIUTI_ERR_INTERNAL );
+	*infile = NULL;
+
+	if (0 != g_stat (filename, &st))
 	{
-		g_debug ("file size = %d, expect at least %d\n", (int) size,
+		g_printerr (_("Error getting metadata of file '%s': %s\n"), filename,
+		            strerror (errno));
+		return RIFIUTI_ERR_OPEN_FILE;
+	}
+
+	if (st.st_size < RECORD_START_OFFSET)  /* empty INFO2 file has 20 bytes */
+	{
+		g_debug ("file size = %d, expect at least %d\n", (int) st.st_size,
 		         RECORD_START_OFFSET);
-		goto validation_broken;
+		return RIFIUTI_ERR_BROKEN_FILE;
+	}
+
+	if ( !(fp = g_fopen (filename, "rb")) )
+	{
+		g_printerr (_("Error opening file '%s' for reading: %s\n"), filename,
+		            strerror (errno));
+		return RIFIUTI_ERR_OPEN_FILE;
 	}
 
 	/* with file size check already done, fread fail -> serious problem */
-	fseek (inf, 0, SEEK_SET);
-	status = fread (info2_version, sizeof (*info2_version), 1, inf);
+	status = fread (&ver, sizeof (ver), 1, fp);
 	if (status < 1)
 	{
 		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading version info"),
-		            __func__);
-		return RIFIUTI_ERR_OPEN_FILE;
+		g_critical (_("%s(): fread() failed when reading version info from '%s'"),
+		            __func__, filename);
+		status = RIFIUTI_ERR_OPEN_FILE;
+		goto validation_broken;
 	}
-	*info2_version = GUINT32_FROM_LE (*info2_version);
+	ver = GUINT32_FROM_LE (ver);
 
-	fseek (inf, RECORD_SIZE_OFFSET, SEEK_SET);
-	status = fread (recordsize, sizeof (*recordsize), 1, inf);
+	fseek (fp, RECORD_SIZE_OFFSET, SEEK_SET);
+	status = fread (&size, sizeof (size), 1, fp);
 	if (status < 1)
 	{
 		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading recordsize"),
-		            __func__);
-		return RIFIUTI_ERR_OPEN_FILE;
+		g_critical (_("%s(): fread() failed when reading recordsize from '%s'"),
+		            __func__, filename);
+		status = RIFIUTI_ERR_OPEN_FILE;
+		goto validation_broken;
 	}
-	*recordsize = GUINT32_FROM_LE (*recordsize);
+	size = GUINT32_FROM_LE (size);
 
 	/* Turns out version is not reliable indicator. Use size instead */
-	switch (*recordsize)
+	switch (size)
 	{
 	  case LEGACY_RECORD_SIZE:
 
 		/* Windows ME still use 280 byte record */
-		if ( ( *info2_version != VERSION_ME_03 ) &&
-		     ( *info2_version != VERSION_WIN98 ) &&
-		     ( *info2_version != VERSION_WIN95 ) )
+		if ( ( ver != VERSION_ME_03 ) &&
+		     ( ver != VERSION_WIN98 ) &&
+		     ( ver != VERSION_WIN95 ) )
+		{
+			g_printerr (_("File is not supported, or it is probably not an "
+	              "INFO2 file.\n"));
+			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
+		}
 
 		/* No version check; this size can be used in all versions */
 		if (!legacy_encoding)
@@ -162,25 +190,37 @@ validate_index_file (FILE     *inf,
 			              "or in case of Japanese characters, '-l CP932'.\n\n"
 			              "Code pages (or any other encodings) supported by "
 			              "'iconv' can be used.\n"));
-			return RIFIUTI_ERR_ARG;
+			status = RIFIUTI_ERR_ARG;
+			goto validation_broken;
 		}
 		break;
 
 	  case UNICODE_RECORD_SIZE:
-		if ( *info2_version != VERSION_ME_03 )
+		if ( ver != VERSION_ME_03 )
+		{
+			g_printerr (_("File is not supported, or it is probably not an "
+	              "INFO2 file.\n"));
+			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
+		}
 		has_unicode_filename = TRUE;
 		break;
 
 	  default:
+		status = RIFIUTI_ERR_BROKEN_FILE;
 		goto validation_broken;
 	}
-	return 0;
+
+	rewind (fp);
+	*infile = fp;
+	meta->version = (int64_t) ver;
+	meta->recordsize = size;
+
+	return EXIT_SUCCESS;
 
   validation_broken:
-	g_printerr (_("File is not supported, or it is probably not an "
-	              "INFO2 file.\n"));
-	return RIFIUTI_ERR_BROKEN_FILE;
+	fclose (fp);
+	return status;
 }
 
 
@@ -271,9 +311,7 @@ main (int    argc,
 	GOptionContext *context;
 	GError         *error = NULL;
 
-	GStatBuf        st;
 	rbin_struct    *record;
-	uint32_t        recordsize, info2_version;
 	char           *bug_report_str;
 	metarecord      meta;
 
@@ -459,31 +497,16 @@ main (int    argc,
 		exit (RIFIUTI_ERR_OPEN_FILE);
 	}
 
-	if (0 != g_stat (fileargs[0], &st))
+	status = validate_index_file (fileargs[0], &infile, &meta);
+	if (status != EXIT_SUCCESS)
 	{
-		g_printerr (_("Error getting metadata of file '%s': %s\n"), fileargs[0],
-		            strerror (errno));
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
-
-	if (!(infile = g_fopen (fileargs[0], "rb")))
-	{
-		g_printerr (_("Error opening file '%s' for reading: %s\n"), fileargs[0],
-		            strerror (errno));
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
-
-	status = validate_index_file (infile, st.st_size,
-	                              &info2_version, &recordsize);
-	if (status != 0)
-	{
-		fclose (infile);
+		g_printerr (_("File '%s' fails validation.\n"), fileargs[0]);
 		exit (status);
 	}
 
+	/* Fill in recycle bin metadata */
 	meta.type     = RECYCLE_BIN_TYPE_FILE;
 	meta.filename = fileargs[0];
-	meta.version  = (int64_t) info2_version;
 	meta.os_guess = NULL;    /* TODO */
 	if (!no_heading)
 		print_header (outfile, meta);
@@ -493,12 +516,12 @@ main (int    argc,
 	 * that file names created with Win2K or earlier are null terminated, because 
 	 * random memory fragments are copied to the padding bytes
 	 */
-	buf = g_malloc0 (recordsize + 2);
+	buf = g_malloc0 (meta.recordsize + 2);
 
 	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
 	while (TRUE)
 	{
-		status = fread (buf, recordsize, 1, infile);
+		status = fread (buf, meta.recordsize, 1, infile);
 		if (status != 1)
 		{
 			if (!feof (infile))
