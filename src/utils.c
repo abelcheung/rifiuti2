@@ -155,37 +155,51 @@ win_filetime_to_epoch (uint64_t win_filetime)
 char *
 filter_escapes (const char *str)
 {
-	GString *result;
+	GString *result, *debug_str;
 	char *i = (char *)str;
 
 	if ((str == NULL) || (*str == '\0')) return NULL;
 
 	result = g_string_new (NULL);
-	for (; *i != '\0'; i++)
+	do
 	{
-		if (*i != '\\')
+		if ( (*i) != '\\' )
 		{
 			result = g_string_append_c (result, *i);
 			continue;
 		}
-		switch ((char) (*(i+1)))
+		switch ((char) (* (++i)))
 		{
 		  case 'r':
-			result = g_string_append_c (result, '\r'); i++; break;
+			result = g_string_append_c (result, '\r'); break;
 		  case 'n':
-			result = g_string_append_c (result, '\n'); i++; break;
+			result = g_string_append_c (result, '\n'); break;
 		  case 't':
-			result = g_string_append_c (result, '\t'); i++; break;
+			result = g_string_append_c (result, '\t'); break;
 		  case 'v':
-			result = g_string_append_c (result, '\v'); i++; break;
+			result = g_string_append_c (result, '\v'); break;
 		  case 'f':
-			result = g_string_append_c (result, '\f'); i++; break;
+			result = g_string_append_c (result, '\f'); break;
 		  case 'e':
-			result = g_string_append_c (result, '\x1B'); i++; break;
+			result = g_string_append_c (result, '\x1B'); break;
 		  default:
-			result = g_string_append_c (result, '\\');
+			result = g_string_append_c (result, '\\'); i--;
 		}
 	}
+	while ((char) (* (++i)) != '\0');
+
+	debug_str = g_string_new ("filtered delimiter = ");
+	i = result->str;
+	do
+	{
+		if (((*i) <= 0x7E) && ((*i) >= 0x20))
+			debug_str = g_string_append_c (debug_str, (*i));
+		else
+			g_string_append_printf (debug_str, "\\x%02X", (char) (*i));
+	}
+	while ((char) (* (++i)) != '\0');
+	g_debug ("%s", debug_str->str);
+	g_string_free (debug_str, TRUE);
 	return g_string_free (result, FALSE);
 }
 

@@ -181,7 +181,7 @@ validate_index_file (const char  *filename,
 		if (!legacy_encoding)
 		{
 			g_printerr (_("This INFO2 file was produced on a legacy system "
-			              "without Unicode file name. "
+			              "without Unicode file name (Windows ME or earlier). "
 			              "Please specify codepage of concerned system with "
 			              "'-l' or '--legacy-filename' option.\n\n"));
 			/* TRANSLATOR COMMENT: use suitable example from YOUR language & code page */
@@ -466,21 +466,6 @@ main (int    argc,
 			g_free (delim);
 			delim = d;
 		}
-	}
-
-	{
-		char *i = delim;
-		GString *str = g_string_new (g_strdup ("filtered delimiter = "));
-		do
-		{
-			if (((*i) <= 0x7E) && ((*i) >= 0x20))
-				str = g_string_append_c (str, *i);
-			else
-				g_string_append_printf (str, "\\x%02X", (char) (*i));
-		}
-		while ((char) (* (++i)) != '\0');
-		g_debug ("%s", str->str);
-		g_string_free (str, TRUE);
 	}
 
 	g_debug ("Start basic file checking...");

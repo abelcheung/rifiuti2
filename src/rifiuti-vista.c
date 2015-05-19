@@ -540,21 +540,6 @@ main (int    argc,
 		}
 	}
 
-	{
-		char *i = delim;
-		GString *str = g_string_new (g_strdup ("filtered delimiter = "));
-		do
-		{
-			if (((*i) <= 0x7E) && ((*i) >= 0x20))
-				str = g_string_append_c (str, *i);
-			else
-				g_string_append_printf (str, "\\x%02X", (char) (*i));
-		}
-		while ((char) (* (++i)) != '\0');
-		g_debug (str->str);
-		g_string_free (str, TRUE);
-	}
-
 	g_debug ("Start basic file checking...");
 
 	if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
