@@ -180,6 +180,7 @@ populate_record_data (void *buf,
 	/* TODO: Consider if the (possibly wrong) size should be printed or not */
 	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
 	        FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
+	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
 	/* File deletion time */
@@ -194,14 +195,13 @@ populate_record_data (void *buf,
 	{
 	  case (uint64_t) FORMAT_VISTA:
 		record->utf8_filename =
-			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET
-			                                - (int) erraneous),
-			                 -1, &read, &write, &error);
+			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET - (int) erraneous),
+			                 pathlen + 1, &read, &write, &error);
 		break;
 	  case (uint64_t) FORMAT_WIN10:
 		record->utf8_filename =
-			g_utf16_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
-			                 -1, &read, &write, &error);
+			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
+			                 pathlen + 1, &read, &write, &error);
 		break;
 	}
 	g_debug ("utf16->8 r=%li w=%li", read, write);
