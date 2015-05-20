@@ -148,6 +148,33 @@ win_filetime_to_epoch (uint64_t win_filetime)
 }
 
 /*
+ * Wrapper of g_utf16_to_utf8 for big endian system.
+ * Always assume string is nul-terminated.
+ */
+char *
+utf16le_to_utf8 (const gunichar2   *str,
+                 glong              len,
+                 glong             *items_read,
+                 glong             *items_written,
+                 GError           **error)
+{
+#if ((G_BYTE_ORDER) == (G_LITTLE_ENDIAN))
+	return g_utf16_to_utf8 (str, -1, items_read, items_written, error);
+#else
+
+	gunichar2 *buf;
+	char *ret;
+
+	/* should be guaranteed to succeed */
+	buf = (gunichar2 *) g_convert ((const char *) str, len * 2, "UTF-16BE",
+	                               "UTF-16LE", NULL, NULL, NULL);
+	ret = g_utf16_to_utf8 (buf, -1, items_read, items_written, error);
+	g_free (buf);
+	return ret;
+#endif
+}
+
+/*
  * single/double quotes and backslashes have already been
  * quoted / unquoted when parsing arguments. We need to
  * interpret \r, \n etc separately

@@ -119,6 +119,12 @@ typedef struct stat GStatBuf;
 /* shared functions */
 time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 
+char *     utf16le_to_utf8          (const gunichar2     *str             ,
+                                     glong                len             ,
+                                     glong               *items_read      ,
+                                     glong               *items_written   ,
+                                     GError             **error           );
+
 char *     filter_escapes           (const char          *str             );
 
 void       print_header             (FILE                *outfile         ,

@@ -285,8 +285,8 @@ populate_record_data (void *buf)
 		 * so safely assume string is null terminated
 		 */
 		record->utf8_filename =
-			g_utf16_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-			                 -1, &read, &write, &error);
+			utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
+			                 WIN_PATH_MAX + 1, &read, &write, &error);
 		g_debug ("utf16->8 r=%li w=%li", read, write);
 
 		if (error)
