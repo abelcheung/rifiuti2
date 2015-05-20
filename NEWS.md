@@ -1,8 +1,15 @@
+## 0.7.0
+#### Feature
+* Windows 95 (OSR1 and OSR2) and ME recycle bin support
+
 ## 0.6.1
 #### Bug fix
 * Restore old date/time format for tab-delimited output, in order to be
   more spreadsheet friendly (Issue #8)
 * Fix timezone offset for ISO8601-format date, to account for DST
+* Fix data retrieval on big endian systems
+* No more attempt to limit usage of TZ environment variable (which
+  doesn&apos;t work anyway)
 
 ----
 
