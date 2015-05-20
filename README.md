@@ -5,9 +5,11 @@ forensics. `Rifiuti2` can extract file deletion time, original path
 and size of deleted files and whether the trashed files have been
 permanently removed. It was extended to cover more functionalities, such as:
 
-- [x] Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
+- [x] Handles recycle bin up to Windows 10
+  - [x] Different recycle bin format since Vista
+  - [x] 64-bit file size support
 - [x] Supports all localized versions of Windows &mdash;
-      both newer Unicode-based ones and legacy ones
+      both newer Unicode-based ones and legacy ones, as old as Win98
 - [x] Supports output in XML format as well as original tab-delimited text
 
 Latest features and changes can be found in [NEWS](NEWS.md) file.
@@ -50,8 +52,9 @@ for complete options and detailed usage description.
 ## Supported platform
 
 It has been tested on Linux (as early as Ubuntu 8.04), Windows XP,
-Windows 7, and recent FreeBSD. More compatibility fix for other
-architectures welcome.
+Windows 7, and recent FreeBSD, on both 32 and 64-bit intel CPU.
+Some testing on big endian platforms are done with Qemu emulator.
+More compatibility fix for other architectures welcome.
 
 ## Download
 

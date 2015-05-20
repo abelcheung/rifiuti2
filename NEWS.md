@@ -3,6 +3,9 @@
 * Restore old date/time format for tab-delimited output, in order to be
   more spreadsheet friendly (Issue #8)
 * Fix timezone offset for ISO8601-format date, to account for DST
+* Fix data retrieval on big endian systems
+* No more attempt to limit usage of TZ environment variable (which
+  doesn&apos;t work anyway)
 
 ----
 
