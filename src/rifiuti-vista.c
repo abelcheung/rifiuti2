@@ -196,12 +196,12 @@ populate_record_data (void *buf,
 	  case (uint64_t) FORMAT_VISTA:
 		record->utf8_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET - (int) erraneous),
-			                 pathlen + 1, &read, &write, &error);
+			                 namelength + 1, &read, &write, &error);
 		break;
 	  case (uint64_t) FORMAT_WIN10:
 		record->utf8_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
-			                 pathlen + 1, &read, &write, &error);
+			                 namelength + 1, &read, &write, &error);
 		break;
 	}
 	g_debug ("utf16->8 r=%li w=%li", read, write);
