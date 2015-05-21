@@ -14,6 +14,8 @@ dist-hook:
 MAINTAINERCLEANFILES = \
                        $(GITIGNORE_MAINTAINERCLEANFILES_TOPLEVEL)        \
                        $(GITIGNORE_MAINTAINERCLEANFILES_MAKEFILE_IN)     \
+		       configure                                         \
+		       po/Makefile.in.in                                 \
                        $(NULL)
 
 -include $(top_srcdir)/dist-win.mk

@@ -2,6 +2,8 @@
 #### Feature
 * Windows 95 (OSR1 and OSR2) and ME recycle bin support
 
+----
+
 ## 0.6.1
 #### Bug fix
 * Restore old date/time format for tab-delimited output, in order to be
