@@ -3,6 +3,10 @@
 * Windows 95 (OSR1 and OSR2) and ME recycle bin support
 * Automatically use translation on Windows
 
+#### Change
+* Vista version:
+  * Not printing file size field if it is corrupt
+
 ----
 
 ## 0.6.1

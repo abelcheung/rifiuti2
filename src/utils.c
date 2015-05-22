@@ -517,8 +517,11 @@ print_record (rbin_struct *record,
 			maybe_convert_fprintf (outfile, "%s%s",
 			                       record->emptied ? _("Yes") : _("No"),
 			                       delim);
-		fprintf (outfile, "%" G_GUINT64_FORMAT "%s",
-		         (uint64_t) record->filesize, delim);
+		if ( record->filesize == G_MAXUINT64 ) /* faulty */
+			fprintf (outfile, "???%s", delim);
+		else
+			fprintf (outfile, "%" G_GUINT64_FORMAT "%s",
+			         record->filesize, delim);
 
 		if (always_utf8)
 			fprintf (outfile, "%s\n", utf8_filename);

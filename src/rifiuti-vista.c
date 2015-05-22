@@ -220,11 +220,20 @@ populate_record_data (void *buf,
 	 * bug inside Windows. This is observed during deletion of dd.exe from Forensic
 	 * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
 	 */
-	/* TODO: Consider if the (possibly wrong) size should be printed or not */
 	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
-	        FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
-	record->filesize = GUINT64_FROM_LE (record->filesize);
-	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
+			FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
+	if (erraneous)
+	{
+		g_debug ("filesize field broken, 56 bit only, val=0x%" G_GINT64_MODIFIER "X",
+		         record->filesize);
+		/* not printing the value because it was wrong and misleading */
+		record->filesize = G_MAXUINT64;
+	}
+	else
+	{
+		record->filesize = GUINT64_FROM_LE (record->filesize);
+		g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
+	}
 
 	/* File deletion time */
 	memcpy (&win_filetime, buf + FILETIME_OFFSET - (int) erraneous,
