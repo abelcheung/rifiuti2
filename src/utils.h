@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <glib.h>
 
+/* Error and exit status */
 enum
 {
 	RIFIUTI_ERR_ARG = 1,
@@ -50,15 +51,18 @@ typedef enum
 	RECYCLE_BIN_TYPE_DIR,
 } rbin_type;
 
+/* The first 4 or 8 bytes of recycle bin index files */
 enum
 {
 	/* negative number means error when retrieving version info */
 	VERSION_INCONSISTENT = -2,
 	VERSION_NOT_FOUND,
 
+	/* $Recycle.bin */
 	VERSION_VISTA = 1,
 	VERSION_WIN10,
 
+	/* INFO / INFO2 */
 	VERSION_WIN95 = 0,
 	VERSION_WIN98 = 4,
 	VERSION_ME_03,
@@ -70,6 +74,7 @@ enum
 	OUTPUT_XML
 };
 
+/* Metadata for recycle bin */
 struct _rbin_meta
 {
 	rbin_type       type;
@@ -77,7 +82,7 @@ struct _rbin_meta
 	const char     *os_guess;
 	int64_t         version;
 	uint32_t        recordsize;        /* INFO2 only */
-	gboolean        keep_deleted_entry;
+	gboolean        keep_deleted_entry;  /* true for 98-03 */
 };
 
 typedef struct _rbin_meta metarecord;
@@ -87,7 +92,7 @@ struct _rbin_struct
 	uint64_t        version;           /* $Recycle.bin only */
 	const metarecord *meta;
 	union
-	{	/* number or file name */
+	{	/* number for INFO2, file name for $Recycle.bin */
 		uint32_t        index_n;
 		char           *index_s;
 	};
@@ -111,7 +116,8 @@ typedef struct stat GStatBuf;
 #  endif
 #endif
 
-/* Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
+/*
+ * Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
  * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
  */
 #define WIN_PATH_MAX 0x104
