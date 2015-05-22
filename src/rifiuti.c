@@ -318,30 +318,7 @@ main (int    argc,
 	char           *bug_report_str;
 	metarecord      meta;
 
-	setlocale (LC_ALL, "");
-
-#ifdef G_OS_WIN32
-	{
-		char *loc = get_win32_locale();
-		setlocale (LC_MESSAGES, loc);
-		g_free (loc);
-	}
-#endif
-
-	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
-		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-	else
-	{
-		/* searching current dir is more useful on Windows */
-		char *d = g_path_get_dirname (argv[0]);
-		char *p = g_build_filename (d, "rifiuti-l10n", NULL);
-		if (g_file_test (p, G_FILE_TEST_IS_DIR))
-			bindtextdomain (GETTEXT_PACKAGE, p);
-		g_free (p);
-		g_free (d);
-	}
-	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-	textdomain (GETTEXT_PACKAGE);
+	rifiuti_init (argv[0]);
 
 	context = g_option_context_new ("INFO2");
 	g_option_context_set_summary
@@ -372,8 +349,6 @@ main (int    argc,
 		g_option_context_free (context);
 		exit (EXIT_SUCCESS);
 	}
-
-	g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
 
 	{
 		gboolean i;

@@ -117,6 +117,8 @@ typedef struct stat GStatBuf;
 #define WIN_PATH_MAX 0x104
 
 /* shared functions */
+void       rifiuti_init             (char                *progpath        );
+
 time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 
 char *     utf16le_to_utf8          (const gunichar2     *str             ,

@@ -34,7 +34,8 @@
 #include <glib/gi18n.h>
 
 #ifdef G_OS_WIN32
-#include <sys/timeb.h>
+#  include <sys/timeb.h>
+#  include "utils-win.h"
 #endif
 
 
@@ -102,7 +103,6 @@ get_iso8601_datetime_str (time_t t)
 		return g_string_append_c (output, 'Z');
 
 #ifdef G_OS_WIN32
-
 	_ftime (&tstruct);
 	/*
 	 * 1. timezone value is in opposite sign of what people expect
@@ -115,9 +115,7 @@ get_iso8601_datetime_str (time_t t)
 	offset = MAX(is_dst, 0) * 60 - tstruct.timezone;
 	g_string_append_printf (output, "%+.2i%.2i", offset / 60,
 	                        abs(offset) % 60);
-
-#else
-
+#else /* !def G_OS_WIN32 */
 	tm = localtime (&t);
 	len = strftime (output->str + output->len,
 	                output->allocated_len - output->len, "%z", tm);
@@ -127,11 +125,47 @@ get_iso8601_datetime_str (time_t t)
 		return NULL;
 	}
 	output->len += len;
-
 #endif
 
 	return output;
 }
+
+
+void
+rifiuti_init (char *progpath)
+{
+	g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
+
+	setlocale (LC_ALL, "");
+
+#ifdef G_OS_WIN32
+	{
+		char *loc = get_win32_locale();
+		g_debug ("Use LC_MESSAGES = %s", loc);
+		setlocale (LC_MESSAGES, loc);
+		g_free (loc);
+	}
+#endif
+
+	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
+		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	else
+	{
+		/* searching current dir is more useful on Windows */
+		char *d = g_path_get_dirname (progpath);
+		char *p = g_build_filename (d, "rifiuti-l10n", NULL);
+		if (g_file_test (p, G_FILE_TEST_IS_DIR))
+		{
+			g_debug ("Alternative LOCALEDIR = %s", p);
+			bindtextdomain (GETTEXT_PACKAGE, p);
+		}
+		g_free (p);
+		g_free (d);
+	}
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
+}
+
 
 time_t
 win_filetime_to_epoch (uint64_t win_filetime)
