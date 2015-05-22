@@ -27,8 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#ifndef _RIFIUTI_UTILS_H
+#define _RIFIUTI_UTILS_H
 
 #include <inttypes.h>
 #include <time.h>
@@ -146,12 +146,6 @@ void       my_debug_handler         (const char          *log_domain      ,
 
 void       maybe_convert_fprintf    (FILE                *file            ,
                                      const char          *format          , ...);
-#ifdef G_OS_WIN32
-void       gui_message              (const char          *message         );
-
-char *     get_win32_locale         (void);
-#endif
-
 #endif
 
 /* vim: set sw=4 ts=4 noexpandtab : */

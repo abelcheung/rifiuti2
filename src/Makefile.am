@@ -9,25 +9,33 @@ man_MANS = rifiuti.1
 
 EXTRA_DIST = rifiuti.1
 
+COMMON_SOURCES = \
+                 utils.c \
+                 utils.h \
+                 $(NULL)
+
 rifiuti_SOURCES = \
                   rifiuti.c \
                   rifiuti.h \
-                  utils.c \
-                  utils.h
+                  $(COMMON_SOURCES)
 
 rifiuti_LDADD = $(GLIB_LIBS)
 
 rifiuti_vista_SOURCES = \
                         rifiuti-vista.c \
                         rifiuti-vista.h \
-                        utils.c \
-                        utils.h
+                        $(COMMON_SOURCES)
 
 rifiuti_vista_LDADD = $(GLIB_LIBS)
 
 if OS_WINDOWS
-rifiuti_LDADD       += -luser32
-rifiuti_vista_LDADD += -luser32
+WIN_SOURCES = \
+              utils-win.c \
+              utils-win.h \
+              $(NULL)
+
+rifiuti_SOURCES       += $(WIN_SOURCES)
+rifiuti_vista_SOURCES += $(WIN_SOURCES)
 endif
 
 install-data-hook:

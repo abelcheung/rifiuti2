@@ -34,6 +34,9 @@
 #include <stdlib.h>
 
 #include "utils.h"
+#ifdef G_OS_WIN32
+#  include "utils-win.h"
+#endif
 
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
