@@ -489,8 +489,7 @@ free_record (rbin_struct *record)
 
 
 void
-print_footer (
-	FILE *outfile)
+print_footer (FILE *outfile)
 {
 	extern int output_format;
 
@@ -515,7 +514,9 @@ print_footer (
 	g_debug ("Leaving %s()", __func__);
 }
 
-/* GUI message box */
+/*
+ * All funcs below are for Windows only
+ */
 #ifdef G_OS_WIN32
 
 #include <windows.h>
@@ -536,6 +537,7 @@ convert_with_fallback (const char *string,
 	return output;
 }
 
+/* GUI message box */
 void
 gui_message (const char *message)
 {
@@ -550,6 +552,100 @@ gui_message (const char *message)
 	MessageBox (NULL, output, title, MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
 	g_free (title);
 	g_free (output);
+}
+
+/*
+ * A copy of latter part of g_win32_getlocale()
+ */
+#ifndef SUBLANG_SERBIAN_LATIN_BA
+#define SUBLANG_SERBIAN_LATIN_BA 0x06
+#endif
+
+static const char *
+get_win32_locale_script (int primary,
+                         int sub)
+{
+	switch (primary)
+    {
+	  case LANG_AZERI:
+		switch (sub)
+		{
+		  case SUBLANG_AZERI_LATIN:    return "@Latn";
+		  case SUBLANG_AZERI_CYRILLIC: return "@Cyrl";
+		}
+		break;
+
+	  case LANG_SERBIAN:		/* LANG_CROATIAN == LANG_SERBIAN */
+		switch (sub)
+		{
+		  case SUBLANG_SERBIAN_LATIN:
+		  case SUBLANG_SERBIAN_LATIN_BA: /* Serbian (Latin) - Bosnia and Herzegovina */
+			return "@Latn";
+		}
+		break;
+	  case LANG_UZBEK:
+		switch (sub)
+		{
+		  case SUBLANG_UZBEK_LATIN:    return "@Latn";
+		  case SUBLANG_UZBEK_CYRILLIC: return "@Cyrl";
+		}
+		break;
+	}
+	return NULL;
+}
+
+/*
+ * We can't use g_win32_getlocale() directly.
+ *
+ * There are 4 possible source for locale settings:
+ * - GetThreadLocale()  (used by g_win32_getlocale)
+ * - Installed language group
+ * - User default locale
+ * - System default locale
+ *
+ * First one is no good because rifiuti2 is a CLI program, where
+ * the caller is a console, so this 'locale' is merely determined
+ * by console code page, which is not an indicator of user preferred
+ * language. For example, CP850 can be used by multiple european
+ * languages but GetLocaleInfo() always treat it as en_US.
+ * Similarly, language group is not an indicator too.
+ *
+ * So we attempt to use the last 2, and do the dirty work in a manner
+ * almost identical to g_win32_getlocale().
+ */
+char *
+get_win32_locale (void)
+{
+	LCID lcid;
+	LANGID langid;
+	char *ev;
+	char iso639[10];
+	char iso3166[10];
+	const char *script;
+
+	/* Allow user overriding locale env */
+	if (((ev = getenv ("LC_ALL"))      != NULL && ev[0] != '\0') ||
+	    ((ev = getenv ("LC_MESSAGES")) != NULL && ev[0] != '\0') ||
+	    ((ev = getenv ("LANG"))        != NULL && ev[0] != '\0'))
+	return g_strdup (ev);
+
+	lcid = LOCALE_USER_DEFAULT;
+	if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+	    !GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
+	{
+		lcid = LOCALE_SYSTEM_DEFAULT;
+		if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+			!GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
+		return g_strdup ("C");
+	}
+
+	/* Strip off the sorting rules, keep only the language part.  */
+	langid = LANGIDFROMLCID (lcid);
+
+	/* Get script based on language and territory */
+	script = get_win32_locale_script (PRIMARYLANGID (langid), SUBLANGID (langid));
+
+	return g_strconcat (iso639, "_", iso3166, script, NULL);
 }
 
 #endif

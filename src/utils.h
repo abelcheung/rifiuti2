@@ -135,7 +135,7 @@ void       print_record             (rbin_struct         *record          ,
 
 void       print_footer             (FILE                *outfile         );
 
-void       print_version            ();
+void       print_version            (void);
 
 void       free_record              (rbin_struct         *record          );
 
@@ -148,6 +148,8 @@ void       maybe_convert_fprintf    (FILE                *file            ,
                                      const char          *format          , ...);
 #ifdef G_OS_WIN32
 void       gui_message              (const char          *message         );
+
+char *     get_win32_locale         (void);
 #endif
 
 #endif

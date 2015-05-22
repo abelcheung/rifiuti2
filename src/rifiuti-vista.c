@@ -415,6 +415,14 @@ main (int    argc,
 
 	setlocale (LC_ALL, "");
 
+#ifdef G_OS_WIN32
+	{
+		char *loc = get_win32_locale();
+		setlocale (LC_MESSAGES, loc);
+		g_free (loc);
+	}
+#endif
+
 	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
 		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 	else
