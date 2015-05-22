@@ -1,6 +1,7 @@
 ## 0.7.0
 #### Feature
 * Windows 95 (OSR1 and OSR2) and ME recycle bin support
+* Automatically use translation on Windows
 
 ----
 
