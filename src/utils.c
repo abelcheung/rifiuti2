@@ -38,7 +38,6 @@
 #  include "utils-win.h"
 #endif
 
-
 static GString *
 get_datetime_str (time_t  t,
                   int    *is_dst)
@@ -218,7 +217,9 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	 *
 	 * However this parsing doesn't work nice with path translation in MSYS;
 	 * directory separator in the middle of path would be translated to root
-	 * of MSYS folder if earlier path component is in pure non-ASCII.
+	 * of MSYS folder if earlier path component contains characters not in
+	 * console codepage. Problem only observed in MSYS bash and not Windows
+	 * console, so not a priority to fix.
 	 */
 #if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
 	{
@@ -290,14 +291,14 @@ char *
 filter_escapes (const char *str)
 {
 	GString *result, *debug_str;
-	char *i = (char *)str;
+	char *i = (char *) str;
 
-	if ((str == NULL) || (*str == '\0')) return NULL;
+	if ( !str || (!*str) ) return NULL;
 
 	result = g_string_new (NULL);
 	do
 	{
-		if ( (*i) != '\\' )
+		if ( *i != '\\' )
 		{
 			result = g_string_append_c (result, *i);
 			continue;
@@ -326,7 +327,7 @@ filter_escapes (const char *str)
 	i = result->str;
 	do
 	{
-		if (((*i) <= 0x7E) && ((*i) >= 0x20))
+		if ( g_ascii_isprint (*i) )
 			debug_str = g_string_append_c (debug_str, (*i));
 		else
 			g_string_append_printf (debug_str, "\\x%02X", (char) (*i));

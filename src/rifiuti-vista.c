@@ -141,7 +141,7 @@ validate_index_file (const char  *filename,
 
 	switch (*ver)
 	{
-	  case (uint64_t) VERSION_VISTA:
+	  case VERSION_VISTA:
 
 		expected = VERSION1_FILE_SIZE;
 		/* see populate_record_data() for reason */
@@ -155,7 +155,7 @@ validate_index_file (const char  *filename,
 		}
 		break;
 
-	  case (uint64_t) VERSION_WIN10:
+	  case VERSION_WIN10:
 
 		fseek (fp, VERSION2_FILENAME_OFFSET - sizeof (*pathlen),
 		       SEEK_SET);
@@ -236,12 +236,12 @@ populate_record_data (void *buf,
 	g_debug ("pathlen=%d", pathlen);
 	switch (version)
 	{
-	  case (uint64_t) VERSION_VISTA:
+	  case VERSION_VISTA:
 		record->utf8_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET - (int) erraneous),
 			                 pathlen + 1, &read, &write, &error);
 		break;
-	  case (uint64_t) VERSION_WIN10:
+	  case VERSION_WIN10:
 		record->utf8_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
 			                 pathlen + 1, &read, &write, &error);
@@ -410,7 +410,6 @@ main (int    argc,
 	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
 	metarecord      meta;
-	char           *fname;
 	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
@@ -496,10 +495,7 @@ main (int    argc,
 		}
 	}
 	else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
-	{
-		fname = g_strdup (fileargs[0]);
-		filelist = g_slist_prepend (filelist, fname);
-	}
+		filelist = g_slist_prepend ( filelist, g_strdup (fileargs[0]) );
 	else
 	{
 		g_printerr (_("'%s' is not a normal file or directory.\n"),
