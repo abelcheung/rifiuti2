@@ -310,80 +310,20 @@ main (int    argc,
 	void           *buf;
 	FILE           *infile, *outfile;
 	int             status;
-	GOptionGroup   *textoptgroup;
-	GOptionContext *context;
-	GError         *error = NULL;
-
 	rbin_struct    *record;
-	char           *bug_report_str;
 	metarecord      meta;
+	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
 
 	context = g_option_context_new ("INFO2");
 	g_option_context_set_summary
 		(context, _("Parse INFO2 file and dump recycle bin data."));
-	bug_report_str =
-		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
-	g_option_context_set_description (context, bug_report_str);
-	g_free (bug_report_str);
-	g_option_context_add_main_entries (context, mainoptions, "rifiuti");
-
-	textoptgroup =
-		g_option_group_new ("text", _("Plain text output options:"),
-		                    N_("Show plain text output options"), NULL, NULL);
-	g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
-	g_option_group_add_entries (textoptgroup, textoptions);
-	g_option_context_add_group (context, textoptgroup);
-
-	/* Must be done before parsing arguments since argc will be modified later */
-	if (argc <= 1)
-	{
-		char *msg = g_option_context_get_help (context, FALSE, NULL);
-
-#ifdef G_OS_WIN32
-		g_set_print_handler (gui_message);
-#endif
-		g_print ("%s", msg);
-		g_free (msg);
-		g_option_context_free (context);
-		exit (EXIT_SUCCESS);
-	}
-
-	{
-		gboolean i;
-		/*
-		 * The user case where this code won't provide benefit is VERY rare,
-		 * so don't bother doing fallback because it was always the case before.
-		 *
-		 * However this parsing doesn't work nice with path translation in MSYS;
-		 * directory separator in the middle of path would be translated to root
-		 * of MSYS folder if earlier path component is in pure non-ASCII.
-		 */
-#if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
-		char **args;
-
-		args = g_win32_get_command_line ();
-		i = g_option_context_parse_strv (context, &args, &error);
-		g_strfreev (args);
-#else
-		i = g_option_context_parse (context, &argc, &argv, &error);
-#endif
-		g_option_context_free (context);
-
-		if (!i)
-		{
-			g_printerr (_("Error parsing options: %s\n"), error->message);
-			g_clear_error (&error);
-			exit (RIFIUTI_ERR_ARG);
-		}
-	}
+	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
+	rifiuti_parse_opt_ctx (&context, &argc, &argv);
 
 	if (do_print_version)
-	{
-		print_version();
-		exit (EXIT_SUCCESS);
-	}
+		print_version(); /* bye bye */
 
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
@@ -391,19 +331,6 @@ main (int    argc,
 		g_printerr (_("Run program with '-?' option for more info.\n"));
 		exit (RIFIUTI_ERR_ARG);
 	}
-
-	if (outfilename)
-	{
-		outfile = g_fopen (outfilename, "wb");
-		if (NULL == outfile)
-		{
-			g_printerr (_("Error opening file '%s' for writing: %s\n"),
-			            outfilename, strerror (errno));
-			exit (RIFIUTI_ERR_OPEN_FILE);
-		}
-	}
-	else
-		outfile = stdout;
 
 	if (xml_output)
 	{
@@ -467,6 +394,19 @@ main (int    argc,
 		g_printerr (_("'%s' is not a normal file.\n"), fileargs[0]);
 		exit (RIFIUTI_ERR_OPEN_FILE);
 	}
+
+	if (outfilename)
+	{
+		outfile = g_fopen (outfilename, "wb");
+		if (NULL == outfile)
+		{
+			g_printerr (_("Error opening file '%s' for writing: %s\n"),
+			            outfilename, strerror (errno));
+			exit (RIFIUTI_ERR_OPEN_FILE);
+		}
+	}
+	else
+		outfile = stdout;
 
 	status = validate_index_file (fileargs[0], &infile, &meta);
 	if (status != EXIT_SUCCESS)

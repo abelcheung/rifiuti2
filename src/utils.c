@@ -167,6 +167,79 @@ rifiuti_init (char *progpath)
 }
 
 
+void
+rifiuti_setup_opt_ctx (GOptionContext **context,
+                       GOptionEntry     opt_main[],
+                       GOptionEntry     opt_add[])
+{
+	char *bug_report_str;
+	GOptionGroup *textoptgroup;
+
+	bug_report_str =
+		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
+	g_option_context_set_description (*context, bug_report_str);
+	g_free (bug_report_str);
+	g_option_context_add_main_entries (*context, opt_main, GETTEXT_PACKAGE);
+
+	textoptgroup =
+		g_option_group_new ("text", _("Plain text output options:"),
+		                    N_("Show plain text output options"), NULL, NULL);
+	g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
+	g_option_group_add_entries (textoptgroup, opt_add);
+	g_option_context_add_group (*context, textoptgroup);
+}
+
+
+void
+rifiuti_parse_opt_ctx (GOptionContext **context,
+                       int             *argc,
+                       char          ***argv)
+{
+	GError   *err = NULL;
+	gboolean  ret;
+
+	/* Must be done before parsing arguments since argc will be modified later */
+	if (*argc <= 1)
+	{
+#ifdef G_OS_WIN32
+		g_set_print_handler (gui_message);
+#endif
+		char *help_msg = g_option_context_get_help (*context, FALSE, NULL);
+		g_print ("%s", help_msg);
+		g_free (help_msg);
+
+		g_option_context_free (*context);
+		exit (EXIT_SUCCESS);
+	}
+
+	/*
+	 * The user case where this code won't provide benefit is VERY rare,
+	 * so don't bother doing fallback because it was always the case before.
+	 *
+	 * However this parsing doesn't work nice with path translation in MSYS;
+	 * directory separator in the middle of path would be translated to root
+	 * of MSYS folder if earlier path component is in pure non-ASCII.
+	 */
+#if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
+	{
+		char **args = g_win32_get_command_line ();
+		ret = g_option_context_parse_strv (*context, &args, &err);
+		g_strfreev (args);
+	}
+#else
+	ret = g_option_context_parse (*context, argc, argv, &err);
+#endif
+	g_option_context_free (*context);
+
+	if ( !ret )
+	{
+		g_printerr (_("Error parsing options: %s\n"), err->message);
+		g_error_free (err);
+		exit (RIFIUTI_ERR_ARG);
+	}
+}
+
+
 time_t
 win_filetime_to_epoch (uint64_t win_filetime)
 {
@@ -508,6 +581,7 @@ print_version ()
 	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
 	maybe_convert_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
 	                       PACKAGE, PACKAGE_URL);
+	exit (EXIT_SUCCESS);
 }
 
 

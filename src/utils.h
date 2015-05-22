@@ -119,6 +119,14 @@ typedef struct stat GStatBuf;
 /* shared functions */
 void       rifiuti_init             (char                *progpath        );
 
+void       rifiuti_setup_opt_ctx    (GOptionContext     **context         ,
+                                     GOptionEntry         opt_main[]      ,
+                                     GOptionEntry         opt_add[]       );
+
+void       rifiuti_parse_opt_ctx    (GOptionContext     **context         ,
+                                     int                 *argc            ,
+                                     char              ***argv            );
+
 time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
 
 char *     utf16le_to_utf8          (const gunichar2     *str             ,

@@ -410,11 +410,8 @@ main (int    argc,
 	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
 	metarecord      meta;
-	char           *fname, *bug_report_str;
-
-	GError         *error = NULL;
+	char           *fname;
 	GOptionContext *context;
-	GOptionGroup   *textoptgroup;
 
 	rifiuti_init (argv[0]);
 
@@ -423,63 +420,11 @@ main (int    argc,
 		(context, _("Parse index files in C:\\$Recycle.bin style folder "
 		            "and dump recycle bin data.  Can also dump "
 		            "a single index file."));
-	bug_report_str =
-		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
-	g_option_context_set_description (context, bug_report_str);
-	g_free (bug_report_str);
-	g_option_context_add_main_entries (context, mainoptions, "rifiuti");
-
-	textoptgroup =
-		g_option_group_new ("text", _("Plain text output options:"),
-		                    N_("Show plain text output options"), NULL, NULL);
-	g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
-	g_option_group_add_entries (textoptgroup, textoptions);
-	g_option_context_add_group (context, textoptgroup);
-
-	/* Must be done before parsing arguments since argc will be modified later */
-	if (argc <= 1)
-	{
-		char *msg = g_option_context_get_help (context, FALSE, NULL);
-
-#ifdef G_OS_WIN32
-		g_set_print_handler (gui_message);
-#endif
-		g_print ("%s", msg);
-		g_free (msg);
-		g_option_context_free (context);
-		exit (EXIT_SUCCESS);
-	}
-
-	{
-		gboolean i;
-
-		/* The user case where this code won't provide benefit is VERY rare,
-		 * so don't bother doing fallback because it never worked for them
-		 */
-#if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
-		char **args;
-
-		args = g_win32_get_command_line ();
-		i = g_option_context_parse_strv (context, &args, &error);
-		g_strfreev (args);
-#else
-		i = g_option_context_parse (context, &argc, &argv, &error);
-#endif
-		g_option_context_free (context);
-
-		if (!i)
-		{
-			g_printerr (_("Error parsing options: %s\n"), error->message);
-			g_clear_error (&error);
-			exit (RIFIUTI_ERR_ARG);
-		}
-	}
+	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
+	rifiuti_parse_opt_ctx (&context, &argc, &argv);
 
 	if (do_print_version)
-	{
-		print_version();
-		exit (EXIT_SUCCESS);
-	}
+		print_version(); /* bye bye */
 
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
@@ -489,19 +434,6 @@ main (int    argc,
 		g_printerr (_("Run program with '-?' option for more info.\n"));
 		exit (RIFIUTI_ERR_ARG);
 	}
-
-	if (outfilename)
-	{
-		outfile = g_fopen (outfilename, "wb");
-		if (NULL == outfile)
-		{
-			g_printerr (_("Error opening file '%s' for writing: %s\n"),
-			            outfilename, strerror (errno));
-			exit (RIFIUTI_ERR_OPEN_FILE);
-		}
-	}
-	else
-		outfile = stdout;
 
 	if (xml_output)
 	{
@@ -527,6 +459,19 @@ main (int    argc,
 	}
 
 	g_debug ("Start basic file checking...");
+
+	if (outfilename)
+	{
+		outfile = g_fopen (outfilename, "wb");
+		if (NULL == outfile)
+		{
+			g_printerr (_("Error opening file '%s' for writing: %s\n"),
+			            outfilename, strerror (errno));
+			exit (RIFIUTI_ERR_OPEN_FILE);
+		}
+	}
+	else
+		outfile = stdout;
 
 	if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
 	{
