@@ -5,7 +5,7 @@ Index	Deleted Time	Size	Path
 $IUVFB0M.rtf	2007-09-21 06:32:46	155	C:\Users\student\Desktop\New Rich Text Document.rtf
 $I0JGHX7	2007-09-21 06:47:49	0	C:\Users\student\Desktop\New Folder 1
 $I1IS2OK.txt	2007-09-21 06:48:13	0	C:\Users\student\Desktop\New Text Document blah.txt
-$IYAR1YY.exe	2007-09-21 07:54:23	20480	C:\dd.exe
+$IYAR1YY.exe	2007-09-21 07:54:23	???	C:\dd.exe
 $I95CUKU	2007-09-21 08:02:59	4096	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\sparsefile
 $IHMU3NR.zip	2007-09-21 08:17:19	5025829	C:\Users\student\Downloads\fau-1.3.0.2355(rc3).zip
 $I7FV8IY.exe	2007-09-21 08:23:18	153478296	C:\Users\student\Downloads\VMware-server-installer-1.0.4-56528.exe
@@ -15,5 +15,5 @@ $I1TDH1G.exe	2007-09-21 08:38:30	704512	C:\Users\student\Downloads\fau-1.3.0.235
 $IEQWWMF.exe	2007-09-21 08:38:30	679936	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\fmdata.exe
 $IFRN1CZ.exe	2007-09-21 08:38:30	110592	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\wipe.exe
 $IW527XU.exe	2007-09-21 08:38:30	331776	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\volume_dump.exe
-$IC6GEAW.exe	2007-09-21 08:50:16	20480	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\dd.exe
+$IC6GEAW.exe	2007-09-21 08:50:16	???	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\dd.exe
 $IZUFRX4.vmdk	2007-09-21 09:22:25	10737418240	C:\Virtual Machines\Windows XP Professional\Windows XP Professional-flat.vmdk
