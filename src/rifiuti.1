@@ -27,10 +27,15 @@ Optionally one can copy
 .nh
 \fCrifiuti\-l10n\fP
 .hy
-folder to the same location the binaries reside in, and set
-\fCLANGUAGE\fP environment variable to appropriate value to enable
-translations.  Supported language codes are the same as existing
-subdirectory names under
+folder to the same location where the binaries are located.
+The program shall be able to pick up translation automatically
+if user has correct Region / Language setting.  This setting 
+is under "Formats" tab of "Region and Language" (name may vary
+for different versions of Windows).
+
+Optionally one may use \fCLANGUAGE\fP environment variable to
+force using certain translation.  Supported language codes are
+the same as existing subdirectory names under
 .nh
 \fCrifiuti\-l10n\fP
 .hy
@@ -97,7 +102,7 @@ forensics. Rifiuti2 can extract file deletion time, original
 path and size of deleted files and whether the deleted files have
 been moved out from the recycle bin since they are trashed.
 .PP
-Rifiuti2 supports a wide range of Windows versions, from Windows 98 to
+Rifiuti2 supports a wide range of Windows versions, from Windows 95 to
 Windows 10. The command used for analysis depends on the version
 of Windows producing the recycle bin (\fBnot the version of users\'
 system!\fP), which uses vastly different format before and after Vista:
@@ -112,8 +117,9 @@ Each deleted file has its own accompanied index file remembering
 the original path, file size and deletion time.  If original file is
 permanentsly deleted, so is the index file.
 .IP \[bu]
-\fCrifiuti\fP: For Windows 98 to XP,
-which uses a single index file named INFO2 under either
+\fCrifiuti\fP: For Windows 95 to XP/2003,
+which uses a single index file named \fCINFO2\fP (98 or above) or
+\fCINFO\fP (95 and NT4) under either
 .nh
 \fC\\RECYCLED\\\fP
 .hy
@@ -179,7 +185,8 @@ European version, CP932 for Japanese, etc).
 
 .RS
 \fBNote\fP: This option is mandatory if INFO2 file is created by
-Windows 98. This option does not exist in \fCrifiuti-vista\fP.
+Windows 95, 98 or ME, since recycle bins under these OS don\'t contain
+Unicode file name. This option does not exist in \fCrifiuti-vista\fP.
 .RE
 .TP
 \fB\-z\fP, \fB\-\-localtime\fP

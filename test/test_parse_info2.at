@@ -6,24 +6,29 @@ AT_KEYWORDS([info2])
 _r2_basic_compare([$progf INFO2-empty], [INFO2-empty.txt])
 AT_CLEANUP
 
-AT_SETUP([INFO2 Sample 1 - XP/03])
-AT_KEYWORDS([info2])
-_r2_basic_compare([$progf -8 INFO2-sample1], [INFO2-sample1.txt])
-AT_CLEANUP
-
-AT_SETUP([INFO2 Sample 2 - 98])
-AT_KEYWORDS([info2])
-_r2_basic_compare([$progf -8 -l latin1 INFO2-sample2], [INFO2-sample2.txt])
-AT_CLEANUP
-
-AT_SETUP([INFO2 Sample 3 - 95])
+AT_SETUP([INFO2 Sample 1 - 95])
 AT_KEYWORDS([info2])
 _r2_basic_compare([$progf -8 -l CP932 INFO-95-ja-1], [INFO-95-ja-1.txt])
+AT_CLEANUP
+
+AT_SETUP([INFO2 Sample 2 - NT4])
+AT_KEYWORDS([info2])
+_r2_basic_compare([$progf INFO-NT-en-1], [INFO-NT-en-1.txt])
+AT_CLEANUP
+
+AT_SETUP([INFO2 Sample 3 - 98])
+AT_KEYWORDS([info2])
+_r2_basic_compare([$progf -8 -l latin1 INFO2-sample2], [INFO2-sample2.txt])
 AT_CLEANUP
 
 AT_SETUP([INFO2 Sample 4 - ME])
 AT_KEYWORDS([info2])
 _r2_basic_compare([$progf -8 -l latin1 INFO2-ME-en-1], [INFO2-ME-en-1.txt])
+AT_CLEANUP
+
+AT_SETUP([INFO2 Sample 5 - XP/03])
+AT_KEYWORDS([info2])
+_r2_basic_compare([$progf -8 INFO2-sample1], [INFO2-sample1.txt])
 AT_CLEANUP
 
 AT_SETUP([Legacy path names])

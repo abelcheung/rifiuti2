@@ -25,7 +25,7 @@ Depending on relevant Windows recycle bin format, there are 2 binaries to choose
 Program | Recycle bin from OS | Purpose
 --------|---------------------|--------
 `rifiuti-vista`|Vista or above|Scans `\$Recycle.bin` style folder
-`rifiuti`  |Windows 98 to XP/2003|Reads `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
+`rifiuti`  |Windows 95 to XP/2003|Reads `INFO` or `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
 
 Run programs without any option for more detail. Here are some of the
 more useful options:

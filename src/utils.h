@@ -64,6 +64,7 @@ enum
 
 	/* INFO / INFO2 */
 	VERSION_WIN95 = 0,
+	VERSION_NT4   = 2,
 	VERSION_WIN98 = 4,
 	VERSION_ME_03,
 };

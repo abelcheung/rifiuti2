@@ -1,0 +1,10 @@
+Recycle bin path: 'INFO-NT-en-1'
+Version: 2
+
+Index	Deleted Time	Size	Path
+12	2015-05-23 01:50:28	89355264	C:\WINNT\Profiles\Administrator\Desktop\IE 5.5 SP2 Full
+13	2015-05-23 01:50:31	6048256	C:\WINNT\Profiles\Administrator\Desktop\Firefox Setup 2[1].0.0.20.exe
+14	2015-05-23 01:50:31	2615296	C:\WINNT\Profiles\Administrator\Desktop\coreftplite[1].ansi.exe
+15	2015-05-23 01:50:31	3682816	C:\WINNT\Profiles\Administrator\Desktop\ie55sp2_nt.zip
+16	2015-05-23 01:50:49	20809216	C:\TEMP\ie6
+17	2015-05-23 01:50:49	8637952	C:\TEMP\ie6-standalone

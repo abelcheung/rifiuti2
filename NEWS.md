@@ -1,6 +1,6 @@
 ## 0.7.0
 #### Feature
-* Windows 95 (OSR1 and OSR2) and ME recycle bin support
+* Support recycle bin from older OS: Windows 95, NT4, ME
 * Automatically use translation on Windows
 
 #### Change

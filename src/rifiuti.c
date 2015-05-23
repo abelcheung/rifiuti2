@@ -199,7 +199,7 @@ validate_index_file (const char  *filename,
 		break;
 
 	  case UNICODE_RECORD_SIZE:
-		if ( ver != VERSION_ME_03 )
+		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
 		{
 			g_printerr (_("File is not supported, or it is probably not an "
 	              "INFO2 file.\n"));
