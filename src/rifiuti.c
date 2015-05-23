@@ -227,6 +227,10 @@ validate_index_file (const char  *filename,
 }
 
 
+/* convenience macro */
+#define copy_field(field, off1, off2) memcpy((field), \
+		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
+
 static rbin_struct *
 populate_record_data (void *buf)
 {
@@ -242,16 +246,13 @@ populate_record_data (void *buf)
 	/* Guarantees null-termination by allocating extra byte */
 	record->legacy_filename =
 		(char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
-	memcpy (record->legacy_filename, buf + LEGACY_FILENAME_OFFSET,
-	        RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+	copy_field (record->legacy_filename, LEGACY_FILENAME, RECORD_INDEX);
 
-	memcpy (&record->index_n, buf + RECORD_INDEX_OFFSET,
-	        DRIVE_LETTER_OFFSET - RECORD_INDEX_OFFSET);
+	copy_field (&record->index_n, RECORD_INDEX, DRIVE_LETTER);
 	record->index_n = GUINT32_FROM_LE (record->index_n);
 	g_debug ("index=%u", record->index_n);
 
-	memcpy (&drivenum, buf + DRIVE_LETTER_OFFSET,
-	        FILETIME_OFFSET - DRIVE_LETTER_OFFSET);
+	copy_field (&drivenum, DRIVE_LETTER, FILETIME);
 	drivenum = GUINT32_FROM_LE (drivenum);
 	g_debug ("drive=%u", drivenum);
 	if (drivenum >= sizeof (driveletters) - 1)
@@ -268,15 +269,13 @@ populate_record_data (void *buf)
 	}
 
 	/* File deletion time */
-	memcpy (&win_filetime, buf + FILETIME_OFFSET,
-	        FILESIZE_OFFSET - FILETIME_OFFSET);
+	copy_field (&win_filetime, FILETIME, FILESIZE);
 	win_filetime = GUINT64_FROM_LE (win_filetime);
 	record->deltime = win_filetime_to_epoch (win_filetime);
 
 	/* File size or occupied cluster size */
 	/* BEWARE! This is 32bit data casted to 64bit struct member */
-	memcpy (&record->filesize, buf + FILESIZE_OFFSET,
-	        UNICODE_FILENAME_OFFSET - FILESIZE_OFFSET);
+	copy_field (&record->filesize, FILESIZE, UNICODE_FILENAME);
 	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
@@ -419,7 +418,7 @@ main (int    argc,
 	meta.type     = RECYCLE_BIN_TYPE_FILE;
 	meta.filename = fileargs[0];
 	/* Keeping info for deleted entry is only available since 98 */
-	meta.keep_deleted_entry = ( meta.version > VERSION_WIN95 );
+	meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
 	meta.os_guess = NULL;    /* TODO */
 	if (!no_heading)
 		print_header (outfile, meta);
