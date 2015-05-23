@@ -327,7 +327,7 @@ filter_escapes (const char *str)
 	i = result->str;
 	do
 	{
-		if ( g_ascii_isprint (*i) )
+		if ( *i >= 0x20 && *i <= 0x7E )  /* problem during linking with g_ascii_isprint */
 			debug_str = g_string_append_c (debug_str, (*i));
 		else
 			g_string_append_printf (debug_str, "\\x%02X", (char) (*i));
