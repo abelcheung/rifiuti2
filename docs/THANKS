@@ -5,8 +5,25 @@ original version of rifiuti are available from ODESSA project:
 
 	http://odessa.sourceforge.net/
 
-
-But there are more people to say thanks:
+There are more people to say thanks:
 
 Hilda Chan (Providing Chinese Vista Recycle Bin sample data)
 Anthony Wong <ypwong@gmail.com> (Providing manpage & original Debian packaging)
+
+Finally, rifiuti2 won't have extensive testing without several OSS projects
+and software archives:
+
+1. winworldpc.com library, hosting many obsolete and unpurchaseable
+   versions of Windows, especially ancient beta versions which provide
+   insight on how Windows has evolved.
+
+2. VirtualBox and Qemu, without their excellent virtual machine emulation
+   it is simply impossible to test program behavior on different platforms.
+
+3. A few website hosting obsolete service packs and ancient IE installers,
+   relieving some pain on network access and tools installation in virtual
+   machines:
+
+   - Folks at browser.evolt.org who mirrored many ancient IE versions
+   - Mirror for all NT service packs in sdfox7.com/winntsp.htm
+   - There can be other website I forgot to mention
