@@ -309,6 +309,7 @@ main (int    argc,
 	void           *buf;
 	FILE           *infile, *outfile;
 	int             status;
+	GSList         *recordlist = NULL;
 	rbin_struct    *record;
 	metarecord      meta;
 	GOptionContext *context;
@@ -420,8 +421,6 @@ main (int    argc,
 	/* Keeping info for deleted entry is only available since 98 */
 	meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
 	meta.os_guess = NULL;    /* TODO */
-	if (!no_heading)
-		print_header (outfile, meta);
 
 	/*
 	 * Add 2 padding bytes as null-termination of unicode file name. Not so confident
@@ -444,18 +443,29 @@ main (int    argc,
 
 		record = populate_record_data (buf);
 		record->meta = &meta;
-		print_record (record, outfile);
-		free_record (record);
+		/* INFO2 already sort entries by time */
+		recordlist = g_slist_append (recordlist, record);
 	}
+	g_free (buf);
 
+	/* Print everything */
+	if (!no_heading)
+		print_header (outfile, meta);
+	g_slist_foreach (recordlist, (GFunc) print_record, outfile);
 	print_footer (outfile);
 
 	g_debug ("Cleaning up...");
 
+	/* g_slist_free_full() available only since 2.28 */
+	g_slist_foreach (recordlist, (GFunc) free_record, NULL);
+	g_slist_free (recordlist);
+
 	fclose (infile);
 	fclose (outfile);
 
-	g_free (buf);
+	g_strfreev (fileargs);
+	g_free (outfilename);
+	g_free (delim);
 
 	exit (EXIT_SUCCESS);
 }
