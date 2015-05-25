@@ -258,7 +258,7 @@ parse_record (char    *index_file,
 	uint64_t        version = 0;
 	uint32_t        pathlen = 0;
 	gsize           bufsize;
-	void           *buf;
+	void           *buf = NULL;
 
 	basename = g_path_get_basename (index_file);
 
@@ -297,6 +297,7 @@ parse_record (char    *index_file,
 	return;
 
   parse_record_error:
+	g_free (buf);
 	g_free (basename);
 }
 
