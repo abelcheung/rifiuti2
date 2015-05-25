@@ -227,10 +227,6 @@ validate_index_file (const char  *filename,
 }
 
 
-/* convenience macro */
-#define copy_field(field, off1, off2) memcpy((field), \
-		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
-
 static rbin_struct *
 populate_record_data (void *buf)
 {

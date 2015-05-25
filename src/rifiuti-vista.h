@@ -32,12 +32,13 @@
 
 #include "utils.h"
 
-#define VERSION1_FILE_SIZE           0x220
-
+#define VERSION_OFFSET               0x0
 #define FILESIZE_OFFSET              0x8
 #define FILETIME_OFFSET              0x10
 #define VERSION1_FILENAME_OFFSET     0x18
 #define VERSION2_FILENAME_OFFSET     0x1C
+
+#define VERSION1_FILE_SIZE           ((VERSION1_FILENAME_OFFSET) + (WIN_PATH_MAX) * 2)
 
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
 

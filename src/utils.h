@@ -117,6 +117,10 @@ typedef struct stat GStatBuf;
 #  endif
 #endif
 
+/* convenience macro */
+#define copy_field(field, off1, off2) memcpy((field), \
+		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
+
 /*
  * Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
  * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
