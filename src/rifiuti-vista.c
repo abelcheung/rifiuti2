@@ -53,6 +53,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   has_unicode_filename = TRUE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
+static metarecord meta;
 
 static GOptionEntry mainoptions[] =
 {
@@ -292,6 +293,7 @@ parse_record (char    *index_file,
 
 	g_debug ("Parsing done for '%s'", basename);
 	record->index_s = basename;
+	record->meta = &meta;
 	*recordlist = g_slist_prepend (*recordlist, record);
 	g_free (buf);
 	return;
@@ -320,7 +322,6 @@ main (int    argc,
 	FILE           *outfile;
 	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
-	metarecord      meta;
 	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
@@ -389,6 +390,7 @@ main (int    argc,
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
+	/* detect global recycle bin version from versions of all files */
 	{
 		GSList  *l = recordlist;
 		if (!l)
@@ -396,12 +398,9 @@ main (int    argc,
 		else
 		{
 			meta.version = (int64_t) ((rbin_struct *) recordlist->data)->version;
-			for (; l != NULL; l = l->next)
-			{
+			while ( (NULL != (l = l->next)) && (meta.version != VERSION_INCONSISTENT) )
 				if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
 					meta.version = VERSION_INCONSISTENT;
-				((rbin_struct *) l->data)->meta = &meta;
-			}
 		}
 	}
 
