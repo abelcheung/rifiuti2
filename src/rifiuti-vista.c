@@ -432,19 +432,6 @@ main (int    argc,
 
 	g_debug ("Start basic file checking...");
 
-	if (outfilename)
-	{
-		outfile = g_fopen (outfilename, "wb");
-		if (NULL == outfile)
-		{
-			g_printerr (_("Error opening file '%s' for writing: %s\n"),
-			            outfilename, strerror (errno));
-			exit (RIFIUTI_ERR_OPEN_FILE);
-		}
-	}
-	else
-		outfile = stdout;
-
 	if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
 	{
 		g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
@@ -478,8 +465,15 @@ main (int    argc,
 
 	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
 
+	/* Fill in recycle bin metadata */
+	meta.type = RECYCLE_BIN_TYPE_DIR;
+	meta.filename = fileargs[0];
+	meta.keep_deleted_entry = FALSE;
+	meta.os_guess = NULL;  /* TOOD */
+	meta.is_empty = (filelist == NULL);
+
 	/* NULL filelist at this point means a valid empty $Recycle.bin */
-	if ((filelist != NULL) && (recordlist == NULL))
+	if ( !meta.is_empty && (recordlist == NULL) )
 	{
 		g_printerr ("%s", _("No valid recycle bin index file found.\n"));
 		g_slist_foreach (filelist, (GFunc) g_free, NULL);
@@ -488,10 +482,6 @@ main (int    argc,
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
-	/* Fill in recycle bin metadata */
-	meta.type = RECYCLE_BIN_TYPE_DIR;
-	meta.keep_deleted_entry = FALSE;
-	meta.filename = fileargs[0];
 	{
 		GSList  *l = recordlist;
 		if (!l)
@@ -507,16 +497,30 @@ main (int    argc,
 			}
 		}
 	}
-	meta.os_guess = NULL;  /* TOOD */
 
+	if (outfilename)
+	{
+		outfile = g_fopen (outfilename, "wb");
+		if (NULL == outfile)
+		{
+			g_printerr (_("Error opening file '%s' for writing: %s\n"),
+			            outfilename, strerror (errno));
+			exit (RIFIUTI_ERR_OPEN_FILE);
+		}
+	}
+	else
+		outfile = stdout;
+
+	/*
+	 * TODO:
+	 * 1. Store return status of each file, then exit the program
+	 *    with last non-zero status
+	 * 2. Store errors accumulated when parsing each file, then print a summary
+	 *    of errors after normal result, instead of dumping all errors on the spot
+	 */
 	if (!no_heading)
 		print_header (outfile, meta);
-
-	/* TODO: store return status of each file, then exit the program with last non-zero status */
-	/* TODO: store errors accumulated when parsing each file, then print a summary of errors
-	 * after normal result, instead of dumping all errors on the spot */
 	g_slist_foreach (recordlist, (GFunc) print_record, outfile);
-
 	print_footer (outfile);
 
 	g_debug ("Cleaning up...");

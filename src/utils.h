@@ -84,6 +84,7 @@ struct _rbin_meta
 	int64_t         version;
 	uint32_t        recordsize;        /* INFO2 only */
 	gboolean        keep_deleted_entry;  /* true for 98-03 */
+	gboolean        is_empty;
 };
 
 typedef struct _rbin_meta metarecord;

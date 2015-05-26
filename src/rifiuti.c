@@ -55,6 +55,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   has_unicode_filename = FALSE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
+static metarecord meta;
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char   driveletters[28] =
@@ -235,8 +236,6 @@ populate_record_data (void *buf)
 	uint32_t        drivenum;
 	long            read, write;
 
-	g_debug ("Start populating record...");
-
 	record = g_malloc0 (sizeof (rbin_struct));
 
 	/* Guarantees null-termination by allocating extra byte */
@@ -298,16 +297,62 @@ populate_record_data (void *buf)
 	return record;
 }
 
+
+static void
+parse_record (char    *index_file,
+              GSList **recordlist)
+{
+	rbin_struct *record;
+	FILE        *infile;
+	size_t       size;
+	void        *buf = NULL;
+
+	if ( EXIT_SUCCESS != validate_index_file (index_file, &infile, &meta) )
+	{
+		g_printerr (_("File '%s' fails validation.\n"), index_file);
+		return;
+	}
+
+	g_debug ("Start populating record for '%s'...", index_file);
+
+	/*
+	 * Add 2 padding bytes as null-termination of unicode file name.
+	 * Not so confident that file names created with Win2K or earlier
+	 * are null terminated, because random memory fragments are copied
+	 * to the padding bytes.
+	 */
+	buf = g_malloc0 (meta.recordsize + 2);
+
+	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
+
+	meta.is_empty = TRUE;  /* EOF flag is cleared by fseek */
+	while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
+	{
+		record = populate_record_data (buf);
+		record->meta = &meta;
+		/* INFO2 already sort entries by time */
+		*recordlist = g_slist_append (*recordlist, record);
+		meta.is_empty = FALSE;
+	}
+	g_free (buf);
+
+	if ( ferror (infile) )
+		g_critical (_("Failed to read record at position %li: %s"),
+				   ftell (infile), strerror (errno));
+	if ( feof (infile) && size && ( size < meta.recordsize ) )
+		g_printerr (_("Premature end of file, last record (%zu bytes) discarded\n"), size);
+
+	fclose (infile);
+}
+
+
 int
 main (int    argc,
       char **argv)
 {
-	void           *buf;
-	FILE           *infile, *outfile;
-	int             status;
+	FILE           *outfile;
+	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
-	rbin_struct    *record;
-	metarecord      meta;
 	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
@@ -384,11 +429,33 @@ main (int    argc,
 		g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
 		exit (RIFIUTI_ERR_OPEN_FILE);
 	}
-
-	if (!g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+	else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
+		filelist = g_slist_prepend (filelist, g_strdup (fileargs[0]));
+	else
 	{
 		g_printerr (_("'%s' is not a normal file.\n"), fileargs[0]);
 		exit (RIFIUTI_ERR_OPEN_FILE);
+	}
+
+	/*
+	 * TODO May be silly for single file, but would be useful in future
+	 * when reading multiple files from live system
+	 */
+	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
+
+	/* Fill in recycle bin metadata */
+	meta.type     = RECYCLE_BIN_TYPE_FILE;
+	meta.filename = fileargs[0];
+	/* Keeping info for deleted entry is only available since 98 */
+	meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
+	meta.os_guess = NULL;    /* TODO */
+
+	if ( !meta.is_empty && (recordlist == NULL) )
+	{
+		g_printerr ("%s", _("Recycle bin file has no valid record.\n"));
+		g_slist_foreach (filelist, (GFunc) g_free, NULL);
+		g_slist_free (filelist);
+		exit (RIFIUTI_ERR_BROKEN_FILE);
 	}
 
 	if (outfilename)
@@ -404,49 +471,6 @@ main (int    argc,
 	else
 		outfile = stdout;
 
-	status = validate_index_file (fileargs[0], &infile, &meta);
-	if (status != EXIT_SUCCESS)
-	{
-		g_printerr (_("File '%s' fails validation.\n"), fileargs[0]);
-		exit (status);
-	}
-
-	/* Fill in recycle bin metadata */
-	meta.type     = RECYCLE_BIN_TYPE_FILE;
-	meta.filename = fileargs[0];
-	/* Keeping info for deleted entry is only available since 98 */
-	meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
-	meta.os_guess = NULL;    /* TODO */
-
-	/*
-	 * Add 2 padding bytes as null-termination of unicode file name. Not so confident
-	 * that file names created with Win2K or earlier are null terminated, because 
-	 * random memory fragments are copied to the padding bytes
-	 */
-	buf = g_malloc0 (meta.recordsize + 2);
-
-	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
-	{
-		size_t size;
-
-		while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
-		{
-			record = populate_record_data (buf);
-			record->meta = &meta;
-			/* INFO2 already sort entries by time */
-			recordlist = g_slist_append (recordlist, record);
-		}
-
-		if ( ferror (infile) )
-			g_critical (_("Failed to read record at position %li: %s"),
-			           ftell (infile), strerror (errno));
-		if ( feof (infile) && size && ( size < meta.recordsize ) )
-			g_printerr (_("Premature end of file, last record (%zu bytes) discarded\n"), size);
-	}
-	g_free (buf);
-
-
-
 	/* Print everything */
 	if (!no_heading)
 		print_header (outfile, meta);
@@ -459,7 +483,9 @@ main (int    argc,
 	g_slist_foreach (recordlist, (GFunc) free_record, NULL);
 	g_slist_free (recordlist);
 
-	fclose (infile);
+	g_slist_foreach (filelist, (GFunc) g_free, NULL);
+	g_slist_free (filelist);
+
 	fclose (outfile);
 
 	g_strfreev (fileargs);
