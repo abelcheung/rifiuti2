@@ -426,23 +426,26 @@ main (int    argc,
 	buf = g_malloc0 (meta.recordsize + 2);
 
 	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
-	while (TRUE)
 	{
-		status = fread (buf, meta.recordsize, 1, infile);
-		if (status != 1)
+		size_t size;
+
+		while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
 		{
-			if (!feof (infile))
-				g_warning (_("Failed to read next record: %s"),
-				           strerror (errno));
-			break;
+			record = populate_record_data (buf);
+			record->meta = &meta;
+			/* INFO2 already sort entries by time */
+			recordlist = g_slist_append (recordlist, record);
 		}
 
-		record = populate_record_data (buf);
-		record->meta = &meta;
-		/* INFO2 already sort entries by time */
-		recordlist = g_slist_append (recordlist, record);
+		if ( ferror (infile) )
+			g_critical (_("Failed to read record at position %li: %s"),
+			           ftell (infile), strerror (errno));
+		if ( feof (infile) && size && ( size < meta.recordsize ) )
+			g_printerr (_("Premature end of file, last record (%zu bytes) discarded\n"), size);
 	}
 	g_free (buf);
+
+
 
 	/* Print everything */
 	if (!no_heading)
