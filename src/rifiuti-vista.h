@@ -40,8 +40,6 @@
 
 #define VERSION1_FILE_SIZE           ((VERSION1_FILENAME_OFFSET) + (WIN_PATH_MAX) * 2)
 
-#define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
-
 #endif
 
 /* vim: set sw=4 ts=4 noexpandtab : */

@@ -422,20 +422,7 @@ main (int    argc,
 		}
 	}
 
-	g_debug ("Start basic file checking...");
-
-	if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
-	{
-		g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
-	else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
-		filelist = g_slist_prepend (filelist, g_strdup (fileargs[0]));
-	else
-	{
-		g_printerr (_("'%s' is not a normal file.\n"), fileargs[0]);
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
+	check_file_args (fileargs[0], &filelist, TRUE);
 
 	/*
 	 * TODO May be silly for single file, but would be useful in future

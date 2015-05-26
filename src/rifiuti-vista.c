@@ -302,68 +302,6 @@ parse_record (char    *index_file,
 }
 
 
-/* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
-static void
-populate_index_file_list (GSList **list,
-                          char    *path)
-{
-	GDir           *dir;
-	char           *direntry, *fname;
-	GPatternSpec   *pattern1, *pattern2;
-	GError         *error = NULL;
-
-	if (NULL == (dir = g_dir_open (path, 0, &error)))
-	{
-		g_printerr (_("Error opening directory '%s': %s\n"), path,
-		            error->message);
-		g_clear_error (&error);
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
-
-	pattern1 = g_pattern_spec_new ("$I??????.*");
-	pattern2 = g_pattern_spec_new ("$I??????");
-
-	while ((direntry = (char *) g_dir_read_name (dir)) != NULL)
-	{
-		if (!g_pattern_match_string (pattern1, direntry) &&
-		    !g_pattern_match_string (pattern2, direntry))
-			continue;
-		fname = g_build_filename (path, direntry, NULL);
-		*list = g_slist_prepend (*list, fname);
-	}
-
-	g_dir_close (dir);
-
-	g_pattern_spec_free (pattern1);
-	g_pattern_spec_free (pattern2);
-}
-
-/* Search for desktop.ini in folder for hint of recycle bin */
-static gboolean
-found_desktop_ini (char *path)
-{
-	char *filename, *content, *found;
-
-	filename = g_build_filename (path, "desktop.ini", NULL);
-	if (!g_file_test (filename, G_FILE_TEST_IS_REGULAR))
-		goto desktop_ini_error;
-
-	/* assume desktop.ini is ASCII and not something spurious */
-	if (!g_file_get_contents (filename, &content, NULL, NULL))
-		goto desktop_ini_error;
-
-	/* Don't bother parsing, we don't use the content at all */
-	found = strstr (content, RECYCLE_BIN_CLSID);
-	g_free (content);
-	g_free (filename);
-	return (found != NULL);
-
-  desktop_ini_error:
-	g_free (filename);
-	return FALSE;
-}
-
-
 static int
 sort_record_by_time (rbin_struct *a,
                      rbin_struct *b)
@@ -430,38 +368,7 @@ main (int    argc,
 		}
 	}
 
-	g_debug ("Start basic file checking...");
-
-	if (!g_file_test (fileargs[0], G_FILE_TEST_EXISTS))
-	{
-		g_printerr (_("'%s' does not exist.\n"), fileargs[0]);
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
-	else if (g_file_test (fileargs[0], G_FILE_TEST_IS_DIR))
-	{
-		populate_index_file_list (&filelist, fileargs[0]);
-		if (NULL == filelist)
-		{
-			/* last ditch effort: search for desktop.ini. Just print empty content
-			 * representing empty recycle bin if found.
-			 */
-			if (!found_desktop_ini (fileargs[0]))
-			{
-				g_printerr (_("No files with name pattern '%s' are found in "
-				              "directory. Probably not a $Recycle.bin directory.\n"),
-				            "$Ixxxxxx.*");
-				exit (RIFIUTI_ERR_OPEN_FILE);
-			}
-		}
-	}
-	else if (g_file_test (fileargs[0], G_FILE_TEST_IS_REGULAR))
-		filelist = g_slist_prepend ( filelist, g_strdup (fileargs[0]) );
-	else
-	{
-		g_printerr (_("'%s' is not a normal file or directory.\n"),
-		            fileargs[0]);
-		exit (RIFIUTI_ERR_OPEN_FILE);
-	}
+	check_file_args (fileargs[0], &filelist, FALSE);
 
 	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
 

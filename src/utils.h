@@ -122,8 +122,11 @@ typedef struct stat GStatBuf;
 #define copy_field(field, off1, off2) memcpy((field), \
 		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
 
+/* All Windows include this GUID in recycle bin desktop.ini */
+#define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
+
 /*
- * Most versions of recycle bin use full PATH_MAX (260 char) to represent file paths,
+ * Most versions of recycle bin use full PATH_MAX (260 char) to store file paths,
  * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
  */
 #define WIN_PATH_MAX 0x104
@@ -148,6 +151,10 @@ char *     utf16le_to_utf8          (const gunichar2     *str             ,
                                      GError             **error           );
 
 char *     filter_escapes           (const char          *str             );
+
+void       check_file_args          (const char          *path            ,
+                                     GSList             **list            ,
+                                     gboolean             is_info2        );
 
 void       print_header             (FILE                *outfile         ,
                                      metarecord           meta            );
