@@ -353,6 +353,7 @@ main (int    argc,
 	FILE           *outfile;
 	GSList         *filelist = NULL;
 	GSList         *recordlist = NULL;
+	char           *tmppath = NULL;
 	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
@@ -447,11 +448,14 @@ main (int    argc,
 
 	if (outfilename)
 	{
-		outfile = g_fopen (outfilename, "wb");
-		if (NULL == outfile)
+		int tmpfile;
+		tmppath = g_build_filename (g_get_tmp_dir(), "rifiuti-XXXXXX", NULL);
+		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
+		     ( NULL == (outfile = fdopen (tmpfile, "wb")) ) )
 		{
-			g_printerr (_("Error opening file '%s' for writing: %s\n"),
-			            outfilename, strerror (errno));
+			g_printerr (_("Error opening temp file for writing: %s\n"),
+			            strerror (errno) );
+			/* FIXME: cleanup */
 			exit (RIFIUTI_ERR_OPEN_FILE);
 		}
 	}
@@ -464,7 +468,21 @@ main (int    argc,
 	g_slist_foreach (recordlist, (GFunc) print_record, outfile);
 	print_footer (outfile);
 
+	fclose (outfile);
+
+	if ( ( outfile != stdout ) && ( -1 == g_rename (tmppath, outfilename) ) )
+	{
+		/* TRANSLATOR COMMENT: arg 1 is err message, 2nd is temp file
+		 * location when failed to be moved to proper location */
+		g_printerr (_("Error moving output data to desinated file: %s\n"
+					"Output content is left in '%s'.\n"),
+				strerror(errno), tmppath);
+		/* TODO: set bad exit status */
+	}
+
 	g_debug ("Cleaning up...");
+
+	g_free (tmppath);
 
 	/* g_slist_free_full() available only since 2.28 */
 	g_slist_foreach (recordlist, (GFunc) free_record, NULL);
