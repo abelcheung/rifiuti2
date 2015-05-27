@@ -75,8 +75,9 @@ INC_AT_FILES = \
                test_cli_option.at   \
                test_common.at       \
                test_encoding.at     \
-               test_parse_info2.at  \
+               test_faulty_dir.at     \
                test_parse_dir.at    \
+               test_parse_info2.at  \
                test_read_write.at   \
                test_xml.at
 

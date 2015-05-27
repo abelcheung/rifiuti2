@@ -53,6 +53,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   has_unicode_filename = TRUE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
+static int        exit_status          = EXIT_SUCCESS;
 static metarecord meta;
 
 static GOptionEntry mainoptions[] =
@@ -263,8 +264,9 @@ parse_record (char    *index_file,
 
 	basename = g_path_get_basename (index_file);
 
-	if ( EXIT_SUCCESS !=
-	     validate_index_file (index_file, &buf, &bufsize, &version, &pathlen))
+	exit_status = validate_index_file (index_file,
+	                                   &buf, &bufsize, &version, &pathlen);
+	if ( exit_status != EXIT_SUCCESS )
 	{
 		g_printerr (_("File '%s' fails validation.\n"), basename);
 		goto parse_record_error;
@@ -333,10 +335,15 @@ main (int    argc,
 		            "and dump recycle bin data.  Can also dump "
 		            "a single index file."));
 	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
-	rifiuti_parse_opt_ctx (&context, &argc, &argv);
+	exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
+	if ( EXIT_SUCCESS != exit_status )
+		goto cleanup;
 
 	if (do_print_version)
-		print_version(); /* bye bye */
+	{
+		print_version();
+		goto cleanup;
+	}
 
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
@@ -344,7 +351,8 @@ main (int    argc,
 		              "$Recycle.bin index files, or one such index file, "
 		              "as argument.\n\n"));
 		g_printerr (_("Run program with '-?' option for more info.\n"));
-		exit (RIFIUTI_ERR_ARG);
+		exit_status = RIFIUTI_ERR_ARG;
+		goto cleanup;
 	}
 
 	if (xml_output)
@@ -354,7 +362,8 @@ main (int    argc,
 		{
 			g_printerr (_("Plain text format options can not "
 			              "be used in XML mode.\n"));
-			exit (RIFIUTI_ERR_ARG);
+			exit_status = RIFIUTI_ERR_ARG;
+			goto cleanup;
 		}
 	}
 
@@ -370,7 +379,9 @@ main (int    argc,
 		}
 	}
 
-	check_file_args (fileargs[0], &filelist, FALSE);
+	exit_status = check_file_args (fileargs[0], &filelist, FALSE);
+	if ( EXIT_SUCCESS != exit_status )
+		goto cleanup;
 
 	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
 
@@ -385,9 +396,8 @@ main (int    argc,
 	if ( !meta.is_empty && (recordlist == NULL) )
 	{
 		g_printerr ("%s", _("No valid recycle bin index file found.\n"));
-		g_slist_foreach (filelist, (GFunc) g_free, NULL);
-		g_slist_free (filelist);
-		exit (RIFIUTI_ERR_BROKEN_FILE);
+		exit_status = RIFIUTI_ERR_BROKEN_FILE;
+		goto cleanup;
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
@@ -401,7 +411,10 @@ main (int    argc,
 			meta.version = (int64_t) ((rbin_struct *) recordlist->data)->version;
 			while ( (NULL != (l = l->next)) && (meta.version != VERSION_INCONSISTENT) )
 				if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
+				{
 					meta.version = VERSION_INCONSISTENT;
+					exit_status = RIFIUTI_ERR_BROKEN_FILE;
+				}
 		}
 	}
 
@@ -414,8 +427,8 @@ main (int    argc,
 		{
 			g_printerr (_("Error opening temp file for writing: %s\n"),
 			            strerror (errno) );
-			/* FIXME: cleanup */
-			exit (RIFIUTI_ERR_OPEN_FILE);
+			exit_status = RIFIUTI_ERR_OPEN_FILE;
+			goto cleanup;
 		}
 	}
 	else
@@ -442,9 +455,10 @@ main (int    argc,
 		g_printerr (_("Error moving output data to desinated file: %s\n"
 					"Output content is left in '%s'.\n"),
 				strerror(errno), tmppath);
-		/* TODO: set bad exit status */
+		exit_status = RIFIUTI_ERR_WRITE_FILE;
 	}
 
+  cleanup:
 	g_debug ("Cleaning up...");
 
 	g_free (tmppath);
@@ -460,7 +474,7 @@ main (int    argc,
 	g_free (outfilename);
 	g_free (delim);
 
-	exit (EXIT_SUCCESS);
+	return exit_status;
 }
 
 /* vim: set sw=4 ts=4 noexpandtab : */

@@ -189,7 +189,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 }
 
 
-void
+int
 rifiuti_parse_opt_ctx (GOptionContext **context,
                        int             *argc,
                        char          ***argv)
@@ -236,8 +236,9 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	{
 		g_printerr (_("Error parsing options: %s\n"), err->message);
 		g_error_free (err);
-		exit (RIFIUTI_ERR_ARG);
+		return RIFIUTI_ERR_ARG;
 	}
+	return EXIT_SUCCESS;
 }
 
 
@@ -444,19 +445,19 @@ found_desktop_ini (const char *path)
 
 
 /* Add potentially valid file(s) to list */
-void
+int
 check_file_args (const char  *path,
                  GSList     **list,
                  gboolean     is_info2)
 {
 	g_debug ("Start basic file checking...");
 
-	g_return_if_fail ( (path != NULL) && (list != NULL) );
+	g_return_val_if_fail ( (path != NULL) && (list != NULL), RIFIUTI_ERR_INTERNAL );
 
 	if ( !g_file_test (path, G_FILE_TEST_EXISTS) )
 	{
 		g_printerr (_("'%s' does not exist.\n"), path);
-		exit (RIFIUTI_ERR_OPEN_FILE);
+		return RIFIUTI_ERR_OPEN_FILE;
 	}
 	else if ( !is_info2 && g_file_test (path, G_FILE_TEST_IS_DIR) )
 	{
@@ -465,11 +466,12 @@ check_file_args (const char  *path,
 		 * last ditch effort: search for desktop.ini. Just print empty content
 		 * representing empty recycle bin if found.
 		 */
-		if ( *list || found_desktop_ini (path) ) return;
-
-		g_printerr (_("No files with name pattern '%s' are found in directory. "
-					"Probably not a $Recycle.bin directory.\n"), "$Ixxxxxx.*");
-		exit (RIFIUTI_ERR_OPEN_FILE);
+		if ( !*list && !found_desktop_ini (path) )
+		{
+			g_printerr (_("No files with name pattern '%s' are found in directory. "
+						"Probably not a $Recycle.bin directory.\n"), "$Ixxxxxx.*");
+			return RIFIUTI_ERR_OPEN_FILE;
+		}
 	}
 	else if ( g_file_test (path, G_FILE_TEST_IS_REGULAR) )
 		*list = g_slist_prepend ( *list, g_strdup (path) );
@@ -477,8 +479,9 @@ check_file_args (const char  *path,
 	{
 		g_printerr (!is_info2 ? _("'%s' is not a normal file or directory.\n") :
 		                        _("'%s' is not a normal file.\n"), path);
-		exit (RIFIUTI_ERR_OPEN_FILE);
+		return RIFIUTI_ERR_OPEN_FILE;
 	}
+	return EXIT_SUCCESS;
 }
 
 
@@ -688,7 +691,6 @@ print_version ()
 	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
 	maybe_convert_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
 	                       PACKAGE, PACKAGE_URL);
-	exit (EXIT_SUCCESS);
 }
 
 

@@ -21,7 +21,7 @@ AT_CLEANUP
 AT_SETUP([Invalid options])
 AT_KEYWORDS([option])
 _r2_check_empty_option([--invalid-option],[1])
-AT_CHECK([$progf -l foobar $sample/INFO2-sample2], [4], [], [ignore])
+AT_CHECK([$progf -l foobar $sample/INFO2-sample2], [1], [], [ignore])
 AT_CLEANUP
 
 AT_SETUP([Wrong combinations])

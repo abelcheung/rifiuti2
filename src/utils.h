@@ -40,8 +40,8 @@ enum
 {
 	RIFIUTI_ERR_ARG = 1,
 	RIFIUTI_ERR_OPEN_FILE,
-	RIFIUTI_ERR_BROKEN_FILE,
-	RIFIUTI_ERR_ENCODING,
+	RIFIUTI_ERR_BROKEN_FILE,  /* file format validation failure */
+	RIFIUTI_ERR_WRITE_FILE,
 	RIFIUTI_ERR_INTERNAL = 64
 };
 
@@ -138,7 +138,7 @@ void       rifiuti_setup_opt_ctx    (GOptionContext     **context         ,
                                      GOptionEntry         opt_main[]      ,
                                      GOptionEntry         opt_add[]       );
 
-void       rifiuti_parse_opt_ctx    (GOptionContext     **context         ,
+int        rifiuti_parse_opt_ctx    (GOptionContext     **context         ,
                                      int                 *argc            ,
                                      char              ***argv            );
 
@@ -152,7 +152,7 @@ char *     utf16le_to_utf8          (const gunichar2     *str             ,
 
 char *     filter_escapes           (const char          *str             );
 
-void       check_file_args          (const char          *path            ,
+int        check_file_args          (const char          *path            ,
                                      GSList             **list            ,
                                      gboolean             is_info2        );
 
