@@ -43,7 +43,6 @@ AT_CLEANUP
 
 AT_SETUP([Escaped char in delimiter])
 AT_KEYWORDS([option])
-dnl FreeBSD sed does not support escaped chars
 AT_CHECK([$has_perl || exit 77])
 AT_CHECK([
 	perl -p -e 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout

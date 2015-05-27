@@ -105,7 +105,7 @@ validate_index_file (const char  *filename,
 
 	g_return_val_if_fail ( (filename != NULL) && (*filename != '\0'),
 	                       RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (buf      != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (filebuf  != NULL), RIFIUTI_ERR_INTERNAL );
 	g_return_val_if_fail ( (bufsize  != NULL), RIFIUTI_ERR_INTERNAL );
 	g_return_val_if_fail ( (ver      != NULL), RIFIUTI_ERR_INTERNAL );
 	g_return_val_if_fail ( (pathlen  != NULL), RIFIUTI_ERR_INTERNAL );
@@ -252,8 +252,8 @@ populate_record_data (void *buf,
 }
 
 static void
-parse_record (char    *index_file,
-              GSList **recordlist)
+parse_record_cb (char    *index_file,
+                 GSList **recordlist)
 {
 	rbin_struct    *record;
 	char           *basename;
@@ -383,7 +383,7 @@ main (int    argc,
 	if ( EXIT_SUCCESS != exit_status )
 		goto cleanup;
 
-	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
+	g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
 
 	/* Fill in recycle bin metadata */
 	meta.type = RECYCLE_BIN_TYPE_DIR;
@@ -435,15 +435,12 @@ main (int    argc,
 		outfile = stdout;
 
 	/*
-	 * TODO:
-	 * 1. Store return status of each file, then exit the program
-	 *    with last non-zero status
-	 * 2. Store errors accumulated when parsing each file, then print a summary
-	 *    of errors after normal result, instead of dumping all errors on the spot
+	 * TODO: Store errors accumulated when parsing each file, then print a summary
+	 * of errors after normal result, instead of dumping all errors on the spot
 	 */
 	if (!no_heading)
 		print_header (outfile, meta);
-	g_slist_foreach (recordlist, (GFunc) print_record, outfile);
+	g_slist_foreach (recordlist, (GFunc) print_record_cb, outfile);
 	print_footer (outfile);
 
 	fclose (outfile);
@@ -464,7 +461,7 @@ main (int    argc,
 	g_free (tmppath);
 
 	/* g_slist_free_full() available only since 2.28 */
-	g_slist_foreach (recordlist, (GFunc) free_record, NULL);
+	g_slist_foreach (recordlist, (GFunc) free_record_cb, NULL);
 	g_slist_free (recordlist);
 
 	g_slist_foreach (filelist, (GFunc) g_free, NULL);

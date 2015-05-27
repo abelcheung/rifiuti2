@@ -296,10 +296,10 @@ Please see \fBBUGS\fP section below for problems when using this variable.
 .RE
 
 .SH EXIT STATUS
-Both programs return 0 on success, and >0 if error occurs.
+Both programs return 0 on success, and greater than 0 if error occurs.
 .PP
-However \fCrifiuti-vista\fP is more permissive: it still returns
-success if \fIsome\fP (not all) of index files are invalid.
+In particular, \fCrifiuti-vista\fP would exit with the latest non-zero
+status when error is encountered in \fIany\fP of the index files.
 
 .SH HISTORY
 \fIRifiuti2\fP is a rewrite of \fIrifiuti\fP, a tool of identical

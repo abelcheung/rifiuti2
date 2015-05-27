@@ -6,17 +6,17 @@ AT_KEYWORDS([recycledir])
 _r2_basic_compare([$progd dir-empty], [dir-empty.txt])
 AT_CLEANUP
 
-AT_SETUP([$Recycle.bin Sample 1])
+AT_SETUP([$Recycle.bin Sample 1 - Vista])
 AT_KEYWORDS([recycledir])
 _r2_basic_compare([$progd -8 dir-sample1], [dir-sample1.txt])
 AT_CLEANUP
 
-AT_SETUP([$Recycle.bin Sample 2])
+AT_SETUP([$Recycle.bin Sample 2 - Win 10])
 AT_KEYWORDS([recycledir])
 _r2_basic_compare([$progd -8 dir-win10-01], [dir-win10-01.txt])
 AT_CLEANUP
 
-AT_SETUP([$Recycle.bin single file])
+AT_SETUP([$Recycle.bin single index file])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
 	grep 'IHO61YT' $sample/dir-win10-01.txt > expout

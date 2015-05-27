@@ -159,14 +159,14 @@ int        check_file_args          (const char          *path            ,
 void       print_header             (FILE                *outfile         ,
                                      metarecord           meta            );
 
-void       print_record             (rbin_struct         *record          ,
+void       print_record_cb          (rbin_struct         *record          ,
                                      FILE                *outfile         );
 
 void       print_footer             (FILE                *outfile         );
 
 void       print_version            (void);
 
-void       free_record              (rbin_struct         *record          );
+void       free_record_cb           (rbin_struct         *record          );
 
 void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,

@@ -4,8 +4,10 @@
 * Automatically use translation on Windows
 
 #### Change
+* Won't overwrite destination file if it already exists
 * Vista version:
   * Not printing file size field if it is corrupt
+  * Exit with error status even if some errors are found
 
 ----
 

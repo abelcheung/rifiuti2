@@ -70,7 +70,7 @@ RHEL and Fedora.
 * [ArchAssault][10], a penetration testing derivative of Arch Linux, has
 `rifiuti2` packaged since late 2014.
 
-Official [FreeBSD port][11] is available since 8.x.
+Official [FreeBSD port][11] is available since 8.4.
 
 For platforms not listed above, users would need to compile program themselves.
 [Instructions are provided](docs/Compile.md) on how to compile on Linux,

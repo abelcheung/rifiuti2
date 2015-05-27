@@ -555,8 +555,8 @@ print_header (FILE       *outfile,
 
 
 void
-print_record (rbin_struct *record,
-              FILE        *outfile)
+print_record_cb (rbin_struct *record,
+                 FILE        *outfile)
 {
 	char           *utf8_filename, *timestr = NULL;
 	GString        *temp_timestr;
@@ -695,7 +695,7 @@ print_version ()
 
 
 void
-free_record (rbin_struct *record)
+free_record_cb (rbin_struct *record)
 {
 	if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
 		g_free (record->index_s);

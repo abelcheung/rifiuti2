@@ -300,8 +300,8 @@ populate_record_data (void *buf)
 
 
 static void
-parse_record (char    *index_file,
-              GSList **recordlist)
+parse_record_cb (char    *index_file,
+                 GSList **recordlist)
 {
 	rbin_struct *record;
 	FILE        *infile;
@@ -447,7 +447,7 @@ main (int    argc,
 	 * TODO May be silly for single file, but would be useful in future
 	 * when reading multiple files from live system
 	 */
-	g_slist_foreach (filelist, (GFunc) parse_record, &recordlist);
+	g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
 
 	/* Fill in recycle bin metadata */
 	meta.type     = RECYCLE_BIN_TYPE_FILE;
@@ -482,7 +482,7 @@ main (int    argc,
 	/* Print everything */
 	if (!no_heading)
 		print_header (outfile, meta);
-	g_slist_foreach (recordlist, (GFunc) print_record, outfile);
+	g_slist_foreach (recordlist, (GFunc) print_record_cb, outfile);
 	print_footer (outfile);
 
 	fclose (outfile);
@@ -503,7 +503,7 @@ main (int    argc,
 	g_free (tmppath);
 
 	/* g_slist_free_full() available only since 2.28 */
-	g_slist_foreach (recordlist, (GFunc) free_record, NULL);
+	g_slist_foreach (recordlist, (GFunc) free_record_cb, NULL);
 	g_slist_free (recordlist);
 
 	g_slist_foreach (filelist, (GFunc) g_free, NULL);
