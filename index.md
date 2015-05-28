@@ -9,49 +9,38 @@ forensics. Rifiuti2 can extract file deletion time, original
 path and size of deleted files and whether the deleted files have
 been moved out from the recycle bin since they are trashed.
 
-It is a rewrite of `rifiuti`, which is originally written by FoundStone
-folks for identical purpose. Then it was extended to cover more
-functionalities, such as:
+It is a [rewrite of `rifiuti`][1], which is [originally written][2]
+by FoundStone folks for identical purpose. Then it was extended to
+cover more functionalities, such as:
 
-* Handles recycle bin up to Windows 10 (no more uses INFO2 file since Vista)
-* Supports all localized versions of Windows &mdash;
-both newer Unicode-based ones and legacy ones
+* Handles recycle bin up to Windows 10
+  * Different recycle bin format since Vista
+  * 64-bit file size support
+* Handles ancient Windows like 95, NT4 and ME since 0.7.0
+* Supports all localized versions of Windows &mdash; both Unicode-based
+  ones and legacy ones (using ANSI code page)
 * Supports output in XML format as well as original tab-delimited text
 
-[1]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
+Latest features and bug fixes [are listed here][3].
 
-# Usage
+[1]: history.html
+[2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
+[3]: {{ site.repo_url }}/blob/master/NEWS.md
+
+# Download and Usage
+
+Please click on blue "Download on Github" link on top right corner of this
+website to download and use `rifiuti2`.
 
 `Rifiuti2` is designed to be portable, and runs on command line environment.
-Depending on relevant Windows recycle bin format,
-there are 2 binaries to choose (most users would probably want first one):
-
-Program | Recycle bin from OS | Purpose
---------|---------------------|--------
-`rifiuti-vista`|Vista or above|Scans `\$Recycle.bin` style folder
-`rifiuti`  |Windows 98 to XP/2003|Reads `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
-
-Run programs without any option for more detail. Here are some of the
-more useful options:
-
- Option | Purpose
--------:|:--------
--8      | Always print result in UTF-8 encoding
--o      | Output to file
--x      | Output XML instead of tab-separated fields
--l      | Display legacy (8.3) filenames and specify its codepage
+Two programs `rifiuti` and `rifiuti-vista` are chosen depending on relevant
+Windows recycle bin format.
 
 Please consult manpage (Unix) or README.html (bundled with Windows binaries)
-for complete options and detailed usage description.
+for complete options and detailed usage description. There are some
+usage samples [on Github page][3] as well.
 
-# Examples
-
-* <dl><dt><code>rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\</code></dt>
-  <dd>Scan for index files under <code>\case\S-1-2-3\</code>, adjust all deletion
-  time for local time zone, and write XML output to result.xml</dd></dl>
-* <dl><dt><code>rifiuti -l CP932 -8 INFO2</code></dt>
-  <dd>Assume INFO2 file is generated from Japanese Windows, and display
-  result on console in UTF-8 encoding</dd></dl>
+[4]: {{ site.repo_url }}
 
 ![Tab-separated list sample]({{ site.baseurl }}/images/screenshot-tsv.png)
 
