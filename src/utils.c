@@ -39,37 +39,19 @@
 #endif
 
 static GString *
-get_datetime_str (time_t  t,
-                  int    *is_dst)
+get_datetime_str (struct tm *tm)
 {
 	GString         *output;
 	size_t           len;
-	struct tm       *tm;
-	extern gboolean  use_localtime;
 
-	/*
-	 * According to localtime() in MSDN: If the TZ environment variable is set,
-	 * the C run-time library assumes rules appropriate to the United States for
-	 * implementing the calculation of daylight-saving time (DST).
-	 *
-	 * This means DST start/stop time would be wrong for other parts of the world,
-	 * and there is no way to indicate places whether DST is not +1 hour based on
-	 * standard time. So providing facility for user adjustable TZ would be useless
-	 * for non-US users. However, unsetting here still can't prevent user setting
-	 * $TZ in command line. Throw my hands up and just document the problem.
-	 */
-	tm = use_localtime ? localtime (&t) : gmtime (&t);
-	if ( is_dst != NULL )
-		*is_dst = tm->tm_isdst;
-	output = g_string_sized_new (40);
+	output = g_string_sized_new (40);  /* enough for appending numeric timezone */
 	len = strftime (output->str, output->allocated_len, "%Y-%m-%d %H:%M:%S", tm);
 	if ( !len )
 	{
 		g_string_free (output, TRUE);
 		return NULL;
 	}
-
-	output->len = len;   /* is this unorthodox? */
+	output->len = len;
 	return output;
 }
 
@@ -81,20 +63,12 @@ get_datetime_str (time_t  t,
  * Returns ISO 8601 formatted time.
  */
 static GString *
-get_iso8601_datetime_str (time_t t)
+get_iso8601_datetime_str (struct tm *tm)
 {
 	GString         *output;
 	extern gboolean  use_localtime;
-	int              is_dst;
-#ifdef G_OS_WIN32
-	struct _timeb    tstruct;
-	int              offset;
-#else
-	size_t           len;
-	struct tm       *tm;
-#endif
 
-	if ( ( output = get_datetime_str (t, &is_dst) ) == NULL )
+	if ( ( output = get_datetime_str (tm) ) == NULL )
 		return NULL;
 
 	output->str[10] = 'T';
@@ -102,7 +76,8 @@ get_iso8601_datetime_str (time_t t)
 		return g_string_append_c (output, 'Z');
 
 #ifdef G_OS_WIN32
-	_ftime (&tstruct);
+	struct _timeb timeb;
+	_ftime (&timeb);
 	/*
 	 * 1. timezone value is in opposite sign of what people expect
 	 * 2. it doesn't account for DST.
@@ -111,13 +86,12 @@ get_iso8601_datetime_str (time_t t)
 	 *    override timezone in C library other than $TZ, and it always use
 	 *    US rule, so again, just give up and use the value
 	 */
-	offset = MAX(is_dst, 0) * 60 - tstruct.timezone;
+	int offset = MAX(tm->tm_isdst, 0) * 60 - timeb.timezone;
 	g_string_append_printf (output, "%+.2i%.2i", offset / 60,
 	                        abs(offset) % 60);
 #else /* !def G_OS_WIN32 */
-	tm = localtime (&t);
-	len = strftime (output->str + output->len,
-	                output->allocated_len - output->len, "%z", tm);
+	size_t len = strftime (output->str + output->len,
+	                       output->allocated_len - output->len, "%z", tm);
 	if ( !len )
 	{
 		g_string_free (output, TRUE);
@@ -563,6 +537,8 @@ print_record_cb (rbin_struct *record,
 	GError         *error = NULL;
 	gboolean        is_info2;
 	char           *index;
+	struct tm      *tm;
+	extern gboolean use_localtime;
 
 	extern char    *legacy_encoding;
 	extern int      output_format;
@@ -576,6 +552,20 @@ print_record_cb (rbin_struct *record,
 
 	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
 	                   g_strdup (record->index_s);
+
+	/*
+	 * According to localtime() in MSDN: If the TZ environment variable is set,
+	 * the C run-time library assumes rules appropriate to the United States for
+	 * implementing the calculation of daylight-saving time (DST).
+	 *
+	 * This means DST start/stop time would be wrong for other parts of the world,
+	 * and there is no way to indicate places whether DST is not +1 hour based on
+	 * standard time. So providing facility for user adjustable TZ would be useless
+	 * for non-US users. However, unsetting here still can't prevent user setting
+	 * $TZ in command line. Throw my hands up and just document the problem.
+	 */
+	tm = use_localtime ? localtime (&(record->deltime)):
+	                        gmtime (&(record->deltime));
 
 	if (record->meta->has_unicode_path && !legacy_encoding)
 	{
@@ -608,7 +598,7 @@ print_record_cb (rbin_struct *record,
 	{
 	  case OUTPUT_CSV:
 
-		if ( NULL == ( temp_timestr = get_datetime_str (record->deltime, NULL) ) )
+		if ( NULL == ( temp_timestr = get_datetime_str (tm) ) )
 		{
 			g_warning (_("Error formatting file deletion time for record index %s."),
 					   index);
@@ -650,7 +640,7 @@ print_record_cb (rbin_struct *record,
 
 	  case OUTPUT_XML:
 
-		if ( NULL == ( temp_timestr = get_iso8601_datetime_str (record->deltime) ) )
+		if ( NULL == ( temp_timestr = get_iso8601_datetime_str (tm) ) )
 		{
 			g_warning (_("Error formatting file deletion time for record index %s."),
 					   index);
