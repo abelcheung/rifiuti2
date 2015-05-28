@@ -52,7 +52,6 @@ static char      *outfilename          = NULL;
 static gboolean   no_heading           = FALSE;
 static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
-       gboolean   has_unicode_filename = FALSE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
 static int        exit_status          = EXIT_SUCCESS;
@@ -107,8 +106,7 @@ static GOptionEntry textoptions[] =
  */
 static int
 validate_index_file (const char  *filename,
-                     FILE       **infile,
-                     metarecord  *meta)
+                     FILE       **infile)
 {
 	size_t          status;
 	GStatBuf        st;
@@ -118,7 +116,6 @@ validate_index_file (const char  *filename,
 	g_debug ("Start file validation...");
 
 	g_return_val_if_fail ( (infile != NULL), RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (meta   != NULL), RIFIUTI_ERR_INTERNAL );
 	*infile = NULL;
 
 	if (0 != g_stat (filename, &st))
@@ -171,6 +168,7 @@ validate_index_file (const char  *filename,
 	{
 	  case LEGACY_RECORD_SIZE:
 
+		meta.has_unicode_path = FALSE;
 		/* Windows ME still use 280 byte record */
 		if ( ( ver != VERSION_ME_03 ) &&
 		     ( ver != VERSION_WIN98 ) &&
@@ -201,6 +199,8 @@ validate_index_file (const char  *filename,
 		break;
 
 	  case UNICODE_RECORD_SIZE:
+
+		meta.has_unicode_path = TRUE;
 		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
 		{
 			g_printerr (_("File is not supported, or it is probably not an "
@@ -208,7 +208,6 @@ validate_index_file (const char  *filename,
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
-		has_unicode_filename = TRUE;
 		break;
 
 	  default:
@@ -218,8 +217,8 @@ validate_index_file (const char  *filename,
 
 	rewind (fp);
 	*infile = fp;
-	meta->version = (int64_t) ver;
-	meta->recordsize = size;
+	meta.version = (int64_t) ver;
+	meta.recordsize = size;
 
 	return EXIT_SUCCESS;
 
@@ -275,7 +274,7 @@ populate_record_data (void *buf)
 	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
-	if (has_unicode_filename)
+	if (meta.has_unicode_path)
 	{
 		GError *error = NULL;
 		/*
@@ -308,7 +307,7 @@ parse_record_cb (char    *index_file,
 	size_t       size;
 	void        *buf = NULL;
 
-	exit_status = validate_index_file (index_file, &infile, &meta);
+	exit_status = validate_index_file (index_file, &infile);
 	if ( exit_status != EXIT_SUCCESS )
 	{
 		g_printerr (_("File '%s' fails validation.\n"), index_file);

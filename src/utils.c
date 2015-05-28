@@ -565,7 +565,6 @@ print_record_cb (rbin_struct *record,
 	char           *index;
 
 	extern char    *legacy_encoding;
-	extern gboolean has_unicode_filename;
 	extern int      output_format;
 	extern char    *delim;
 	extern gboolean always_utf8;
@@ -578,7 +577,7 @@ print_record_cb (rbin_struct *record,
 	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
 	                   g_strdup (record->index_s);
 
-	if (has_unicode_filename && !legacy_encoding)
+	if (record->meta->has_unicode_path && !legacy_encoding)
 	{
 		utf8_filename = record->utf8_filename ?
 			g_strdup (record->utf8_filename) :

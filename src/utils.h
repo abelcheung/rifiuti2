@@ -82,9 +82,12 @@ struct _rbin_meta
 	const char     *filename;
 	const char     *os_guess;
 	int64_t         version;
-	uint32_t        recordsize;        /* INFO2 only */
+	uint32_t        recordsize;          /* INFO2 only */
 	gboolean        keep_deleted_entry;  /* true for 98-03 */
 	gboolean        is_empty;
+	gboolean        has_unicode_path;    /* NT4, 2000 or above */
+	gboolean        fill_junk;  /* Between 98-2000, path names are padded
+	                               with junk to satisfy PATH_MAX size */
 };
 
 typedef struct _rbin_meta metarecord;

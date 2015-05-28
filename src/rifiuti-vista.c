@@ -50,7 +50,6 @@ static char      *outfilename          = NULL;
 static gboolean   no_heading           = FALSE;
 static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
-       gboolean   has_unicode_filename = TRUE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
 static int        exit_status          = EXIT_SUCCESS;
@@ -391,6 +390,7 @@ main (int    argc,
 	meta.keep_deleted_entry = FALSE;
 	meta.os_guess = NULL;  /* TOOD */
 	meta.is_empty = (filelist == NULL);
+	meta.has_unicode_path = TRUE;
 
 	/* NULL filelist at this point means a valid empty $Recycle.bin */
 	if ( !meta.is_empty && (recordlist == NULL) )
