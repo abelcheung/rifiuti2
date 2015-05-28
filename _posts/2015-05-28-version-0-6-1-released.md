@@ -29,7 +29,7 @@ This is a bug fix release addressing 3 issues:
    it was not tested as rigorously as it should be, and the support for date/time
    in Windows C runtime library [turns out to be shaky][4].  Recent testing
    indicates [`_ftime()`][5] to be unreliable for use. In particular,
-   `tstruct.dstflag` does not respect `$TZ` environment variable and always use
+   `_timeb.dstflag` does not respect `$TZ` environment variable and always use
    control panel setting, so users modifying $TZ variable would see wrong
    result.
 

@@ -43,15 +43,52 @@ in 2nd line, timezone is set to UTC with [Daylight Saving Time][5]
 forcefully turned on!!! It costs me days of head scratching and several
 faulty &ldquo;fixes&rdquo;. God knows what the parser is doing!
 
+## `_timeb` structure does not respect `$TZ` variable
+
+The DST value returned from `_timeb` structure is faulty, in that it
+only respects the timezone setting from Control Panel and not `$TZ`
+variable. That&apos;s one of the bug addressed in 0.6.1 version.
+The following table shows comparison of values of `_timeb.dstflag` and
+`tm.tm_isdst`:
+
+<table style="border:1px black; text-align:center">
+<tr>
+<th style="border: 0" colspan="2" rowspan="2"></th>
+<th colspan="2">Control Panel</th>
+</tr>
+<tr><th>Use DST</th><th>No DST</th></tr>
+<tr>
+<th rowspan="3"><code>$TZ</code></th>
+<th>(unset)</th>
+<td>1 / 1</td>
+<td>0 / 0</td>
+</tr>
+<tr>
+<th>UTC</th>
+<td style="background: #fcc">1 / 0</td>
+<td>0 / 0</td>
+</tr>
+<tr>
+<th>PST8PDT</th>
+<td>1 / 1</td>
+<td style="background: #fcc">0 / 1</td>
+</tr>
+</table>
+
+Besides, `_timeb.timezone` does not take DST into account at all,
+requiring one to perform extra steps to detect and adjust the value
+based on DST status. Only `tm.tm_isdst` is reliable enough for use in
+`rifiuti2`.
+
 ## `INFO` file stores UTC time since 95
 
-It is surprising Microsoft is quite forward-thinking in some aspects.
+Enough Windows bashing. Actually, Microsoft developers are surprisingly
+forward-thinking in some aspects.
 The `INFO` file (in Win95, predates `INFO2` used in Win98) already uses
 [64-bit FileTime][6], when 32-bit systems were still not mature yet.
 And this FileTime stores UTC time, not local time which is still dominant
 in system time of current Windows. That saved lots of headache when
 constructing event timeline.
-
 
 [1]: https://msdn.microsoft.com/en-US/library/fe06s4ak(v=vs.80).aspx
 [2]: http://science.ksc.nasa.gov/software/winvn/userguide/3_1_4.htm
@@ -59,3 +96,7 @@ constructing event timeline.
 [4]: https://msdn.microsoft.com/en-us/library/90s5c885(VS.80).aspx
 [5]: https://en.wikipedia.org/wiki/Daylight_saving_time
 [6]: https://support.microsoft.com/en-us/kb/188768
+
+----
+
+2015-05-28 edit: Add description about problem in `_timeb`.
