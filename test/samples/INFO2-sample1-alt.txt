@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO2-sample1'
 Version: 5
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 44	2008-10-28 15:53:42	No	4096	C:\DOCUME~1\ALLUSE~1\Desktop\有道桌~1.LNK

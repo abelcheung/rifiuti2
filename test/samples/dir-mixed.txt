@@ -1,5 +1,6 @@
 Recycle bin path: 'dir-mixed'
 Version: ??? (version inconsistent)
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
 $IEQWWMF.exe	2007-09-21 08:38:30	679936	C:\Users\student\Downloads\fau-1.3.0.2355(rc3)\fau\FAU.x86\fmdata.exe

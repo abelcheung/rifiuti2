@@ -1,5 +1,6 @@
 Recycle bin path: 'dir-sample1'
 Version: 1
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
 $IUVFB0M.rtf	2007-09-21 06:32:46	155	C:\Users\student\Desktop\New Rich Text Document.rtf

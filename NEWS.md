@@ -2,6 +2,7 @@
 #### Feature
 * Support recycle bin from older OS: Windows 95, NT4, ME
 * Automatically use translation on Windows
+* Display timezone in tab-delimited output header
 
 #### Change
 * Won't overwrite destination file if it already exists

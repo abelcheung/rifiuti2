@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO-NT-en-1'
 Version: 2
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
 12	2015-05-23 01:50:28	89355264	C:\WINNT\Profiles\Administrator\Desktop\IE 5.5 SP2 Full

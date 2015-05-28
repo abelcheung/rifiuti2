@@ -44,7 +44,7 @@ get_datetime_str (struct tm *tm)
 	GString         *output;
 	size_t           len;
 
-	output = g_string_sized_new (40);  /* enough for appending numeric timezone */
+	output = g_string_sized_new (30);  /* enough for appending numeric timezone */
 	len = strftime (output->str, output->allocated_len, "%Y-%m-%d %H:%M:%S", tm);
 	if ( !len )
 	{
@@ -55,13 +55,56 @@ get_datetime_str (struct tm *tm)
 	return output;
 }
 
-/*
- * Turns out strftime is not so cross-platform, Windows one supports far
- * less format strings than Unix counterpart.
- * However, GDateTime is not available until 2.26, so bite the bullet.
- *
- * Returns ISO 8601 formatted time.
- */
+/* Return full name of current timezone */
+static const char *
+get_timezone_name (struct tm *tm)
+{
+	static char buf[100];   /* Don't know theorectical max size, so be generous */
+
+	if (tm == NULL)
+		return _("Coordinated Universal Time (UTC)");
+	if ( 0 == strftime (buf, sizeof(buf), "%Z", tm) )
+		return _("(Failed to retrieve timezone name)");
+	return (const char *) (&buf);
+}
+
+/* Return ISO8601 numeric timezone, like "+0400" */
+static const char *
+get_timezone_numeric (struct tm *tm)
+{
+	static char buf[10];
+
+	if (tm == NULL)
+		return "+0000";  /* ISO8601 forbids -0000 */
+
+	/*
+	 * Turns out strftime is not so cross-platform, Windows one supports far
+	 * less format strings than that defined in Single Unix Specification.
+	 * However, GDateTime is not available until 2.26, so bite the bullet.
+	 */
+#ifdef G_OS_WIN32
+	struct _timeb timeb;
+	_ftime (&timeb);
+	/*
+	 * 1. timezone value is in opposite sign of what people expect
+	 * 2. it doesn't account for DST.
+	 * 3. tm.tm_isdst is merely a flag and not indication on difference of
+	 *    hours between DST and standard time. But there is no way to
+	 *    override timezone in C library other than $TZ, and it always use
+	 *    US rule, so again, just give up and use the value
+	 */
+	int offset = MAX(tm->tm_isdst, 0) * 60 - timeb.timezone;
+	g_snprintf (buf, sizeof(buf), "%+.2i%.2i", offset / 60, abs(offset) % 60);
+
+#else /* !def G_OS_WIN32 */
+	size_t len = strftime (buf, sizeof(buf), "%z", tm);
+	if ( !len )
+		return "+????";
+#endif
+	return (const char *) (&buf);
+}
+
+/* Return ISO 8601 formatted time with timezone */
 static GString *
 get_iso8601_datetime_str (struct tm *tm)
 {
@@ -75,34 +118,8 @@ get_iso8601_datetime_str (struct tm *tm)
 	if ( !use_localtime )
 		return g_string_append_c (output, 'Z');
 
-#ifdef G_OS_WIN32
-	struct _timeb timeb;
-	_ftime (&timeb);
-	/*
-	 * 1. timezone value is in opposite sign of what people expect
-	 * 2. it doesn't account for DST.
-	 * 3. tm.tm_isdst is merely a flag and not indication on difference of
-	 *    hours between DST and standard time. But there is no way to
-	 *    override timezone in C library other than $TZ, and it always use
-	 *    US rule, so again, just give up and use the value
-	 */
-	int offset = MAX(tm->tm_isdst, 0) * 60 - timeb.timezone;
-	g_string_append_printf (output, "%+.2i%.2i", offset / 60,
-	                        abs(offset) % 60);
-#else /* !def G_OS_WIN32 */
-	size_t len = strftime (output->str + output->len,
-	                       output->allocated_len - output->len, "%z", tm);
-	if ( !len )
-	{
-		g_string_free (output, TRUE);
-		return NULL;
-	}
-	output->len += len;
-#endif
-
-	return output;
+	return g_string_append (output, get_timezone_numeric(tm));
 }
-
 
 void
 rifiuti_init (char *progpath)
@@ -139,7 +156,6 @@ rifiuti_init (char *progpath)
 	textdomain (GETTEXT_PACKAGE);
 }
 
-
 void
 rifiuti_setup_opt_ctx (GOptionContext **context,
                        GOptionEntry     opt_main[],
@@ -161,7 +177,6 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 	g_option_group_add_entries (textoptgroup, opt_add);
 	g_option_context_add_group (*context, textoptgroup);
 }
-
 
 int
 rifiuti_parse_opt_ctx (GOptionContext **context,
@@ -464,8 +479,12 @@ print_header (FILE       *outfile,
               metarecord  meta)
 {
 	char           *utf8_filename, *ver_string;
+	const char     *tz_name, *tz_numeric;
 	extern int      output_format;
 	extern char    *delim;
+	time_t          t;
+	struct tm      *tm;
+	extern gboolean use_localtime;
 
 	g_return_if_fail (meta.filename != NULL);
 	g_return_if_fail (outfile != NULL);
@@ -493,9 +512,22 @@ print_header (FILE       *outfile,
 		  default:
 			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 		}
-		maybe_convert_fprintf (outfile, _("Version: %s"), ver_string);
+		maybe_convert_fprintf (outfile, _("Version: %s\n"), ver_string);
 		g_free (ver_string);
-		fputs ("\n\n", outfile);
+
+		/* avoid too many localtime() calls by doing it here */
+		if (use_localtime)
+		{
+			t = time (NULL);
+			tm = localtime (&t);
+		}
+		else
+			tm = NULL;
+		tz_name    = get_timezone_name (tm);
+		tz_numeric = get_timezone_numeric (tm);
+		maybe_convert_fprintf (outfile, _("Time zone: %s [%s]\n"), tz_name, tz_numeric);
+
+		fputs ("\n", outfile);
 
 		if (meta.keep_deleted_entry)
 			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */

@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO2-sample2'
 Version: 4
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 0	2015-04-20 00:07:36	No	32768	C:\WINDOWS\All Users\Desktop\Connect to the Internet.LNK

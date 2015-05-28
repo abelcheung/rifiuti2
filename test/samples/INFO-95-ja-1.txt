@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO-95-ja-1'
 Version: 0
+Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
 1	2015-05-11 05:59:49	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\The Microsoft Network のｾｯﾄｱｯﾌﾟ.lnk
