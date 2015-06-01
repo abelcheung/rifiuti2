@@ -421,7 +421,7 @@ main (int    argc,
 	if (outfilename)
 	{
 		int tmpfile;
-		tmppath = g_build_filename (g_get_tmp_dir(), "rifiuti-XXXXXX", NULL);
+		tmppath = g_strdup ("rifiuti-XXXXXX");
 		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
 		     ( NULL == (outfile = fdopen (tmpfile, "wb")) ) )
 		{
