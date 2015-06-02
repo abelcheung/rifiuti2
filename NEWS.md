@@ -3,9 +3,10 @@
 * Support recycle bin from older OS: Windows 95, NT4, ME
 * Automatically use translation on Windows
 * Display timezone in tab-delimited output header
+* Guess Windows version based on recycle bin artifacts
 
 #### Change
-* Won't overwrite destination file if it already exists
+* Won&apos;t overwrite destination file if it already exists
 * Vista version:
   * Not printing file size field if it is corrupt
   * Exit with error status even if some errors are found

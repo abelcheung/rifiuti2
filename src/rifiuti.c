@@ -169,10 +169,10 @@ validate_index_file (const char  *filename,
 	  case LEGACY_RECORD_SIZE:
 
 		meta.has_unicode_path = FALSE;
-		/* Windows ME still use 280 byte record */
+
 		if ( ( ver != VERSION_ME_03 ) &&
 		     ( ver != VERSION_WIN98 ) &&
-		     ( ver != VERSION_WIN95 ) )
+		     ( ver != VERSION_WIN95 ) )  /* Windows ME still use 280 byte record */
 		{
 			g_printerr (_("File is not supported, or it is probably not an "
 	              "INFO2 file.\n"));
@@ -180,7 +180,6 @@ validate_index_file (const char  *filename,
 			goto validation_broken;
 		}
 
-		/* No version check; this size can be used in all versions */
 		if (!legacy_encoding)
 		{
 			g_printerr (_("This INFO2 file was produced on a legacy system "
@@ -196,6 +195,16 @@ validate_index_file (const char  *filename,
 			status = RIFIUTI_ERR_ARG;
 			goto validation_broken;
 		}
+		switch (ver)
+		{
+		  case VERSION_WIN95:
+			meta.os_guess = OS_GUESS_95; break;
+		  case VERSION_WIN98:
+			meta.os_guess = OS_GUESS_98; break;
+		  case VERSION_ME_03:
+			meta.os_guess = OS_GUESS_ME; break;
+		}
+
 		break;
 
 	  case UNICODE_RECORD_SIZE:
@@ -208,6 +217,8 @@ validate_index_file (const char  *filename,
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
+		/* guess is not complete yet, distinguish Win2k and XP/03 later */
+		meta.os_guess = (ver == VERSION_NT4) ? OS_GUESS_NT4 : OS_GUESS_2K_03;
 		break;
 
 	  default:
@@ -235,6 +246,7 @@ populate_record_data (void *buf)
 	uint64_t        win_filetime;
 	uint32_t        drivenum;
 	long            read, write;
+	static gboolean junk_detection_done = FALSE;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 
@@ -243,10 +255,12 @@ populate_record_data (void *buf)
 		(char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
 	copy_field (record->legacy_filename, LEGACY_FILENAME, RECORD_INDEX);
 
+	/* Index number associated with the record */
 	copy_field (&record->index_n, RECORD_INDEX, DRIVE_LETTER);
 	record->index_n = GUINT32_FROM_LE (record->index_n);
 	g_debug ("index=%u", record->index_n);
 
+	/* Number representing drive letter */
 	copy_field (&drivenum, DRIVE_LETTER, FILETIME);
 	drivenum = GUINT32_FROM_LE (drivenum);
 	g_debug ("drive=%u", drivenum);
@@ -292,6 +306,39 @@ populate_record_data (void *buf)
 			             "UTF-8 encoding for record %u: %s"),
 			           "UTF-16", record->index_n, error->message);
 			g_clear_error (&error);
+		}
+
+		/*
+		 * Check if there's junk memory filling the padding bytes of paths.
+		 *
+		 * It can't be done in legacy path, because experiment shows that
+		 * legacy path *always* contain more character after end of path
+		 * if path contains double-byte character. So far one theory fits
+		 * the observation: first an ANSI codepage full path is filled in
+		 * legacy path field, then this field was overwritten by a 8.3
+		 * version of the path (which was shorter than full path).
+		 *
+		 * Luckily, all of the Windows versions needing such distinguishment
+		 * do contain Unicode path field.
+		 */
+		if ( !junk_detection_done )  /* FIXME: Is first record enough? */
+		{
+			char *i = (char *) (buf + UNICODE_FILENAME_OFFSET);
+			meta.fill_junk = FALSE;
+			do { i += 2; } while ( *i || *(i+1) );  /* no ucs2_strlen :-( */
+
+			for (; i < (char *) (buf + UNICODE_RECORD_SIZE); i++)
+				if ( *i != '\0' )
+				{
+					/* ugly cast to curb compiler warning :-( */
+					g_debug ("Junk detected at offset 0x%p of unicode path",
+							(void *) (i - (char *) (buf + UNICODE_FILENAME_OFFSET)));
+					meta.fill_junk = TRUE;
+					break;
+				}
+			if ( meta.os_guess == OS_GUESS_2K_03 )
+				meta.os_guess = meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
+			junk_detection_done = TRUE;
 		}
 	}
 	return record;
@@ -442,18 +489,23 @@ main (int    argc,
 	if ( EXIT_SUCCESS != exit_status )
 		goto cleanup;
 
+	/* To be overwritten in parse_record_cb() when appropriate */
+	meta.os_guess = OS_GUESS_UNKNOWN;
+
 	/*
 	 * TODO May be silly for single file, but would be useful in future
 	 * when reading multiple files from live system
 	 */
 	g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
 
-	/* Fill in recycle bin metadata */
 	meta.type     = RECYCLE_BIN_TYPE_FILE;
 	meta.filename = fileargs[0];
-	/* Keeping info for deleted entry is only available since 98 */
+	/*
+	 * Keeping deleted entry is only available since 98
+	 * Note: always set this variable after parse_record_cb() because
+	 * meta.version is not set beforehand
+	 */
 	meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
-	meta.os_guess = NULL;    /* TODO */
 
 	if ( !meta.is_empty && (recordlist == NULL) )
 	{

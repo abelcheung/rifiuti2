@@ -388,7 +388,6 @@ main (int    argc,
 	meta.type = RECYCLE_BIN_TYPE_DIR;
 	meta.filename = fileargs[0];
 	meta.keep_deleted_entry = FALSE;
-	meta.os_guess = NULL;  /* TOOD */
 	meta.is_empty = (filelist == NULL);
 	meta.has_unicode_path = TRUE;
 
@@ -416,6 +415,21 @@ main (int    argc,
 					exit_status = RIFIUTI_ERR_BROKEN_FILE;
 				}
 		}
+	}
+
+	/*
+	 * No attempt is made to distinguish difference for Vista - 8.1.
+	 * The corrupt filesize artifact on Vista can't be reproduced,
+	 * therefore must be very rare.
+	 */
+	switch (meta.version)
+	{
+	  case VERSION_VISTA:
+		meta.os_guess = OS_GUESS_VISTA; break;
+	  case VERSION_WIN10:
+		meta.os_guess = OS_GUESS_10; break;
+	  default:
+		meta.os_guess = OS_GUESS_UNKNOWN;
 	}
 
 	if (outfilename)

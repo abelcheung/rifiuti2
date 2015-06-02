@@ -1,5 +1,6 @@
 Recycle bin path: 'dir-mixed'
 Version: ??? (version inconsistent)
+OS detection failed
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path

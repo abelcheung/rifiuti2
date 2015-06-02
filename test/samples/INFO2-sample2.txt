@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO2-sample2'
 Version: 4
+OS Guess: Windows 98 / 98 SE
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path

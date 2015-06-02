@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO2-ME-en-1'
 Version: 5
+OS Guess: Windows Me
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path

@@ -38,6 +38,19 @@
 #  include "utils-win.h"
 #endif
 
+/* WARNING: MUST match order of _os_guess enum */
+static char *os_strings[] = {
+	"Windows 95",
+	"Windows NT 4.0",
+	"Windows 98 / 98 SE",
+	"Windows Me",
+	"Windows 2000",
+	"Windows XP / 2003",
+	"Windows 2000 / XP / 2003",
+	"Windows Vista - 8.1",
+	"Windows 10"
+};
+
 static GString *
 get_datetime_str (struct tm *tm)
 {
@@ -514,6 +527,11 @@ print_header (FILE       *outfile,
 		}
 		maybe_convert_fprintf (outfile, _("Version: %s\n"), ver_string);
 		g_free (ver_string);
+
+		if (meta.os_guess == OS_GUESS_UNKNOWN)
+			maybe_convert_fprintf (outfile, _("OS detection failed\n"));
+		else
+			maybe_convert_fprintf (outfile, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
 
 		/* avoid too many localtime() calls by doing it here */
 		if (use_localtime)

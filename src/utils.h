@@ -69,6 +69,26 @@ enum
 	VERSION_ME_03,
 };
 
+/*
+ * The following enum is different from the versions above.
+ * This is more detailed breakdown, and for detection of exact
+ * Windows version from various recycle bin artifacts.
+ * WARNING: MUST match os_strings string array
+ */
+typedef enum
+{
+	OS_GUESS_UNKNOWN = -1,
+	OS_GUESS_95,
+	OS_GUESS_NT4,
+	OS_GUESS_98,
+	OS_GUESS_ME,
+	OS_GUESS_2K,
+	OS_GUESS_XP_03,
+	OS_GUESS_2K_03,   /* Empty recycle bin, full detection impossible */
+	OS_GUESS_VISTA,   /* includes everything up to 8.1 */
+	OS_GUESS_10
+} _os_guess;
+
 enum
 {
 	OUTPUT_CSV,
@@ -80,10 +100,10 @@ struct _rbin_meta
 {
 	rbin_type       type;
 	const char     *filename;
-	const char     *os_guess;
+	_os_guess       os_guess;
 	int64_t         version;
 	uint32_t        recordsize;          /* INFO2 only */
-	gboolean        keep_deleted_entry;  /* true for 98-03 */
+	gboolean        keep_deleted_entry;  /* affects output column */
 	gboolean        is_empty;
 	gboolean        has_unicode_path;    /* NT4, 2000 or above */
 	gboolean        fill_junk;  /* Between 98-2000, path names are padded

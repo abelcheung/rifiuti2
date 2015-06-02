@@ -1,5 +1,6 @@
 Recycle bin path: 'dir-sample1'
 Version: 1
+OS Guess: Windows Vista - 8.1
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
