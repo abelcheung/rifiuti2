@@ -195,6 +195,7 @@ validate_index_file (const char  *filename,
 			status = RIFIUTI_ERR_ARG;
 			goto validation_broken;
 		}
+
 		switch (ver)
 		{
 		  case VERSION_WIN95:
@@ -373,7 +374,7 @@ parse_record_cb (char    *index_file,
 
 	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
 
-	meta.is_empty = TRUE;  /* EOF flag is cleared by fseek */
+	meta.is_empty = TRUE;  /* no feof; EOF flag cleared by fseek */
 	while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
 	{
 		record = populate_record_data (buf);

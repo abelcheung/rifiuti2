@@ -135,7 +135,7 @@ get_iso8601_datetime_str (struct tm *tm)
 }
 
 void
-rifiuti_init (char *progpath)
+rifiuti_init (const char *progpath)
 {
 	g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
 
@@ -389,7 +389,8 @@ populate_index_file_list (GSList     **list,
                           const char  *path)
 {
 	GDir           *dir;
-	char           *direntry, *fname;
+	const char     *direntry;
+	char           *fname;
 	GPatternSpec   *pattern1, *pattern2;
 	GError         *error = NULL;
 
@@ -404,7 +405,7 @@ populate_index_file_list (GSList     **list,
 	pattern1 = g_pattern_spec_new ("$I??????.*");
 	pattern2 = g_pattern_spec_new ("$I??????");
 
-	while ((direntry = (char *) g_dir_read_name (dir)) != NULL)
+	while ((direntry = g_dir_read_name (dir)) != NULL)
 	{
 		if (!g_pattern_match_string (pattern1, direntry) &&
 		    !g_pattern_match_string (pattern2, direntry))

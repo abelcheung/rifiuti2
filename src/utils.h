@@ -155,7 +155,7 @@ typedef struct stat GStatBuf;
 #define WIN_PATH_MAX 0x104
 
 /* shared functions */
-void       rifiuti_init             (char                *progpath        );
+void       rifiuti_init             (const char          *progpath        );
 
 void       rifiuti_setup_opt_ctx    (GOptionContext     **context         ,
                                      GOptionEntry         opt_main[]      ,

@@ -123,11 +123,11 @@ which uses a single index file named \fCINFO2\fP (98 or above) or
 .nh
 \fC\\RECYCLED\\\fP
 .hy
-or
+(FAT 16/32) or
 .nh
 \fC\\RECYCLER\\\fP\fI<SID>\fP\fC\\\fP
 .hy
-(depending on filesystem).
+(NTFS).
 This file keeps track record for deletion status and info for \fIall\fP
 deleted items, including those permanently removed or restored.
 
@@ -145,24 +145,22 @@ pattern \(lq$I\fBxxxxxx\fP.\fI<ext>\fP\(rq, where \fBx\fP is random
 alphanumeric character.
 .PP
 Deleted time is represented in UTC time by default. Under tab-delimited
-mode, the original date/time format is preserved, while in XML mode
-ISO 8601 date/time format is used.
+mode, date/time is presented in format recognized by spreadsheet
+programs, while in XML mode ISO 8601 date/time format is used.
 For example, 3PM at 2014 X\'mas represented in these modes would be
 respectively:
 .RS
 \fC2014-12-25 15:00:00\fP
-.RE
-.RS
+
 \fC2014-12-25T15:00:00Z\fP
 .RE
-It would be easier for spreadsheet programs to interpret first format.
 .PP
 File size and file path are self-explanatory, but there are some
 special notes.  File size can mean the real size of deleted file,
 or the cluster size it occupies on filesystem, depending on recycle
 bin format. File path might not always be displayable on local system
 because it might contain characters from other localized version
-of Windows.
+of Windows not supported by current codepage.
 
 .SH OPTIONS
 .TP
@@ -198,7 +196,7 @@ time for Berlin (without daylight saving time) would be
 
 .RS
 \fBNote\fP: It is possible to use any timezone of users\' choice
-by setting $TZ environment variable, though not recommended.
+by setting \fC$TZ\fP environment variable, though not recommended.
 See \fBENVIRONMENT VARIABLE\fP section below.
 .RE
 
@@ -339,8 +337,9 @@ Windows \fBcmd\fP, where output is restricted to ANSI codepages).
 Storing UTF-8 result into file with \fB\-8\fP or \fB\-x\fP option
 and then opening it with Unicode capable editor could be a solution.
 .PP
-The calculation of local time might not be correct. For example,
-documentation of _tzset() function on Windows has this statement:
+It is always better to use UTC time whenever possible, because
+calculation of local time might not be correct, especially for non-US users.
+Documentation of \fC_tzset()\fP function on Windows has this statement:
 .RS
 The C run-time library assumes the United States\' rules for implementing
 the calculation of daylight saving time (DST).
@@ -350,7 +349,6 @@ recycle bin are produced on Windows using other countries as region
 settings. Besides, the difference between standard time and DST is
 hardcoded to be one hour, which is incorrect for a few selected regions.
 .PP
-So it is always better to use UTC time whenever possible.
 
 .SH REPORTING BUGS
 Report bugs to

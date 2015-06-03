@@ -1,20 +1,14 @@
-`Rifiuti2` is a rewrite of [rifiuti][1], a great tool from Foundstone
-folks for analyzing Windows Recycle Bin INFO2 file. Analysis of
+`Rifiuti2` is a for analyzing Windows Recycle Bin INFO2 file. Analysis of
 Windows Recycle Bin is usually carried out during Windows computer
 forensics. `Rifiuti2` can extract file deletion time, original path
 and size of deleted files and whether the trashed files have been
-permanently removed. It was extended to cover more functionalities, such as:
+permanently removed.
 
-- [x] Handles recycle bin up to Windows 10
-  - [x] Different recycle bin format since Vista
-  - [x] 64-bit file size support
-- [x] Supports all localized versions of Windows &mdash;
-      both newer Unicode-based ones and legacy ones, as old as Win95
-- [x] Supports output in XML format as well as original tab-delimited text
-
+For those interested in what it does, and what functionality it
+provides, please browse [official site][1] for more info.
 Latest features and changes can be found in [NEWS](NEWS.md) file.
 
-[1]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
+[1]: https://abelcheung.github.io/rifiuti2
 
 ## Usage
 
