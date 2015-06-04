@@ -29,6 +29,11 @@ AT_KEYWORDS([encoding])
 
 AT_CHECK([${has_perl} || exit 77])
 
+dnl g_convert_with_fallback() doesn't use \uXXXX style unicode escape
+dnl on NetBSD, and only display question marks. But basic functionality
+dnl is not encumbered.
+AT_XFAIL_IF([$is_netbsd])
+
 dnl 1. Curse those quadrigraphs
 dnl 2. I hate writing regex with m4! Takes so much time to make it work,
 dnl    and fragile as hell
@@ -59,6 +64,9 @@ AT_KEYWORDS([encoding])
 
 AT_CHECK([${has_perl} || exit 77])
 AT_CHECK([${has_iconv} || exit 77])
+
+dnl see previous test
+AT_XFAIL_IF([$is_netbsd])
 
 AT_CHECK([
 	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout

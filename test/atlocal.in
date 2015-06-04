@@ -10,7 +10,7 @@ xmllint="@XMLLINT@"
 
 # detect & set env
 is_mingw="test 'x@os_mingw@' != 'x'"
-is_bsd="test 'x@os_bsd@' != 'x'"
+is_netbsd="test 'x@os_netbsd@' != 'x'"
 getcharset="$abs_buildddir/getcharset"
 set_ascii="env CHARSET=ASCII"
 set_utf8="env CHARSET=UTF-8"

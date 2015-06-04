@@ -60,10 +60,10 @@ AC_CHECK_HEADERS([errno.h inttypes.h stdio.h time.h])
 dnl Platform specific check.
 case "$host" in
 	*-*-mingw*) os_mingw=y ;;
-	*-*-*bsd*)  os_bsd=y ;;
+	*-*-netbsd*)  os_netbsd=y ;;
 esac
 AC_SUBST(os_mingw)
-AC_SUBST(os_bsd)
+AC_SUBST(os_netbsd)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$os_mingw" != x])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
