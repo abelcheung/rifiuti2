@@ -30,6 +30,9 @@
 #include "config.h"
 
 #include <stdlib.h>
+#if HAVE_SETLOCALE && defined(__NetBSD__)
+#include <locale.h>
+#endif
 #include "utils.h"
 #include <glib/gi18n.h>
 
