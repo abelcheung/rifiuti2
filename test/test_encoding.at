@@ -42,13 +42,13 @@ dnl will be transformed into root of MinGW folder. This only happens
 dnl when folder with non-ASCII name is prepended before slash. Looks like
 dnl bug in g_win32_get_command_line()
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt > expout
+	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt > expout
 	cd $sample/
 	$set_ascii $progf ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt > expout
+	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt > expout
 	cd $sample/
 	$set_ascii $progd ./ごみ箱/dir-empty
 ],, [expout], [])
@@ -69,13 +69,13 @@ dnl see previous test
 AT_XFAIL_IF([$is_netbsd])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt | iconv -f utf-8 -t cp950 > expout
+	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt | $iconv -f utf-8 -t cp950 > expout
 	cd $sample/
 	env CHARSET=CP950 $progf ./ごみ箱/INFO2-empty
 ],, [expout], [])
 
 AT_CHECK([
-	PERLIO=":utf8" perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt | iconv -f utf-8 -t cp950 > expout
+	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt | $iconv -f utf-8 -t cp950 > expout
 	cd $sample/
 	env CHARSET=CP950 $progd ./ごみ箱/dir-empty
 ],, [expout], [])

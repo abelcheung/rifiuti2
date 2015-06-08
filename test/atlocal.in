@@ -3,10 +3,12 @@
 # Configurable variable values for Autoconf test suite.
 
 # prog checks
+iconv="@ICONV@"
 has_iconv="test 'x@ICONV@' != 'x'"
-has_xmllint="test 'x@XMLLINT@' != 'x'"
-has_perl="test 'x@PERL@' != 'x'"
 xmllint="@XMLLINT@"
+has_xmllint="test 'x@XMLLINT@' != 'x'"
+perl="@PERL@"
+has_perl="test 'x@PERL@' != 'x'"
 
 # detect & set env
 is_mingw="test 'x@os_mingw@' != 'x'"
