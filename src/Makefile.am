@@ -36,6 +36,8 @@ WIN_SOURCES = \
 
 rifiuti_SOURCES       += $(WIN_SOURCES)
 rifiuti_vista_SOURCES += $(WIN_SOURCES)
+rifiuti_LDADD         += -lauthz
+rifiuti_vista_LDADD   += -lauthz
 endif
 
 install-data-hook:

@@ -397,12 +397,21 @@ populate_index_file_list (GSList     **list,
 	GPatternSpec   *pattern1, *pattern2;
 	GError         *error = NULL;
 
+	/*
+	 * g_dir_open returns cryptic error message or even succeeds on Windows,
+	 * when in fact the directory content is inaccessible.
+	 */
+#ifdef G_OS_WIN32
+	if ( !can_list_win32_folder (path) )
+		return;
+#endif
+
 	if (NULL == (dir = g_dir_open (path, 0, &error)))
 	{
 		g_printerr (_("Error opening directory '%s': %s\n"), path,
 		            error->message);
 		g_clear_error (&error);
-		exit (RIFIUTI_ERR_OPEN_FILE);
+		return;
 	}
 
 	pattern1 = g_pattern_spec_new ("$I??????.*");
@@ -474,8 +483,8 @@ check_file_args (const char  *path,
 		 */
 		if ( !*list && !found_desktop_ini (path) )
 		{
-			g_printerr (_("No files with name pattern '%s' are found in directory. "
-						"Probably not a $Recycle.bin directory.\n"), "$Ixxxxxx.*");
+			g_printerr (_("No files with name pattern '%s' are found in directory.\n"),
+					"$Ixxxxxx.*");
 			return RIFIUTI_ERR_OPEN_FILE;
 		}
 	}

@@ -29,7 +29,12 @@
 
 #include "config.h"
 #include "utils-win.h"
+
+#include <lmcons.h>
 #include <windows.h>
+#include <aclapi.h>
+#include <authz.h>
+
 #include <glib.h>
 #include <glib/gi18n.h>
 
@@ -159,6 +164,154 @@ get_win32_locale (void)
 	script = get_win32_locale_script (PRIMARYLANGID (langid), SUBLANGID (langid));
 
 	return g_strconcat (iso639, "_", iso3166, script, NULL);
+}
+
+/*
+ * Following functions originates from example of GetEffectiveRightsFromAcl(),
+ * which is not about the function itself but a _replacement_ of it (shrug).
+ * https://msdn.microsoft.com/en-us/library/windows/desktop/aa446637(v=vs.85).aspx
+ */
+
+/*
+ * Retrieve current user name and convert it to SID
+ */
+static PSID
+get_user_sid (void)
+{
+	gboolean       status;
+	char           username[UNLEN + 1], *errmsg;
+	DWORD          err = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
+	PSID           sid;
+	LPTSTR         domainname;
+	SID_NAME_USE   sidtype;
+
+	if ( !GetUserName (username, &bufsize) )
+	{
+		errmsg = g_win32_error_message (GetLastError());
+		g_critical (_("Failed to get current user name: %s"), errmsg);
+		goto getsid_fail;
+	}
+
+	status = LookupAccountName (NULL, username, NULL, &sidsize,
+			NULL, &domainsize, &sidtype);
+	if ( !status )
+		err = GetLastError();
+	g_debug ("1st LookupAccountName(): status = %d", (int) status);
+
+	if ( err != ERROR_INSUFFICIENT_BUFFER )
+	{
+		errmsg = g_win32_error_message (err);
+		g_critical (_("LookupAccountName() failed: %s"), errmsg);
+		goto getsid_fail;
+	}
+
+	sid = (PSID) g_malloc (sidsize);
+	domainname = (LPTSTR) g_malloc (domainsize);
+
+	status = LookupAccountName (NULL, username, sid, &sidsize,
+			domainname, &domainsize, &sidtype);
+	err = status ? 0 : GetLastError();
+	g_debug ("2nd LookupAccountName(): status = %d", (int) status);
+	g_free (domainname);  /* unused */
+
+	if ( status != 0 )
+		return sid;    /* success */
+
+	errmsg = g_win32_error_message (err);
+	g_critical (_("LookupAccountName() failed: %s"), errmsg);
+	g_free (sid);
+
+  getsid_fail:
+	g_free (errmsg);
+	return NULL;
+}
+
+/*
+ * Fetch ACL access mask using Authz API
+ */
+_Bool
+can_list_win32_folder (const char *path)
+{
+	char                  *errmsg = NULL;
+	wchar_t               *wpath;
+	gboolean               ret = FALSE;
+	PSID                   sid;
+	DWORD                  dw, dw2;
+	PSECURITY_DESCRIPTOR   sec_desc;
+	ACCESS_MASK            mask;
+	AUTHZ_RESOURCE_MANAGER_HANDLE authz_manager;
+	AUTHZ_CLIENT_CONTEXT_HANDLE   authz_ctxt = NULL;
+	AUTHZ_ACCESS_REQUEST          authz_req = { MAXIMUM_ALLOWED, NULL, NULL, 0, NULL };
+	AUTHZ_ACCESS_REPLY            authz_reply;
+
+	if ( NULL == ( sid = get_user_sid() ) )
+		return FALSE;
+
+	wpath = g_utf8_to_utf16 (path, -1, NULL, NULL, NULL);
+	if (wpath == NULL)
+		return FALSE;
+
+	if ( !AuthzInitializeResourceManager (AUTHZ_RM_FLAG_NO_AUDIT,
+				NULL, NULL, NULL, NULL, &authz_manager) )
+	{
+		errmsg = g_win32_error_message (GetLastError());
+		g_critical (_("AuthzInitializeResourceManager() failed: %s"), errmsg);
+		goto traverse_fail;
+	}
+
+	dw = GetNamedSecurityInfoW (wpath, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION |
+			OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+			NULL, NULL, NULL, NULL, &sec_desc);
+	if ( dw != ERROR_SUCCESS )
+	{
+		errmsg = g_win32_error_message (dw);
+		g_printerr ("Failed to retrieve Discretionary ACL info for '%s': %s\n", path, errmsg);
+		goto traverse_getacl_fail;
+	}
+
+	if ( !AuthzInitializeContextFromSid (0, sid, authz_manager,
+				NULL, (LUID) {0} /* unused */, NULL, &authz_ctxt) )
+	{
+		errmsg = g_win32_error_message (GetLastError());
+		g_critical (_("AuthzInitializeContextFromSid() failed: %s"), errmsg);
+		goto traverse_getacl_fail;
+	}
+
+	authz_reply = (AUTHZ_ACCESS_REPLY) { 1, &mask, &dw2, &dw }; /* last 2 param unused */
+	if ( !AuthzAccessCheck (0, authz_ctxt, &authz_req, NULL, sec_desc,
+				NULL, 0, &authz_reply, NULL ) )
+	{
+		errmsg = g_win32_error_message (GetLastError());
+		g_critical (_("AuthzAccessCheck() failed: %s"), errmsg);
+	}
+	else
+	{
+		/*
+		 * We only need permission to list directory; even directory traversal is
+		 * not needed, because we are going to access the files directly later.
+		 * Unlike Unix, no read permission on parent folder is needed to list
+		 * files within.
+		 */
+		if ( (mask & FILE_LIST_DIRECTORY) == FILE_LIST_DIRECTORY &&
+				(mask & FILE_READ_EA) == FILE_READ_EA )
+			ret = TRUE;
+		else
+			g_printerr (_("Error listing directory: Insufficient permission.\n"));
+
+		/* use glib type to avoid including more header */
+		g_debug ("Access Mask hex for '%s': 0x%X", path, (guint32) mask);
+	}
+
+	AuthzFreeContext (authz_ctxt);
+
+  traverse_getacl_fail:
+	LocalFree (sec_desc);
+	AuthzFreeResourceManager (authz_manager);
+
+  traverse_fail:
+	g_free (sid);
+	g_free (errmsg);
+	return ret;
 }
 
 /* vim: set sw=4 ts=4 noexpandtab : */

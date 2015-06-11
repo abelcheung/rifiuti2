@@ -10,6 +10,7 @@
 * Vista version:
   * Not printing file size field if it is corrupt
   * Exit with error status even if some errors are found
+  * Better detection of folder with insufficient permission
 
 ----
 

@@ -10,4 +10,22 @@ AT_CHECK([
 ], [3], [expout])
 AT_CLEANUP
 
+AT_SETUP([Directory w/o access permission])
+AT_KEYWORDS([recycledir crafted])
+AT_CHECK([$is_mingw || exit 77])
+AT_CHECK([icacls.exe /? > /dev/null || exit 77])dnl need 2003 SP2 or later
+dnl Double slash prevents transformation of command options into drive letters
+AT_CHECK([
+	$as_ln_s $sample/dir-win10-01 dir1
+	icacls.exe dir1 //inheritance:r > /dev/null
+	icacls.exe dir1 //grant:r "Users:(OI)(CI)(S,REA)" > /dev/null
+	$set_ascii $progd dir1
+],
+	[2],, [Error listing directory: Insufficient permission.
+No files with name pattern '$Ixxxxxx.*' are found in directory.
+],
+	[icacls.exe dir1 //reset > /dev/null],
+	[icacls.exe dir1 //reset > /dev/null])
+AT_CLEANUP
+
 dnl vim: set ts=4 sw=4 noexpandtab :
