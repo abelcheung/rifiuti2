@@ -125,7 +125,7 @@ static GString *
 get_iso8601_datetime_str (struct tm *tm)
 {
 	GString         *output;
-	extern gboolean  use_localtime;
+	extern _Bool     use_localtime;
 
 	if ( ( output = get_datetime_str (tm) ) == NULL )
 		return NULL;
@@ -200,7 +200,7 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
                        char          ***argv)
 {
 	GError   *err = NULL;
-	gboolean  ret;
+	_Bool     ret;
 
 	/* Must be done before parsing arguments since argc will be modified later */
 	if (*argc <= 1)
@@ -364,7 +364,7 @@ maybe_convert_fprintf (FILE       *file,
 	va_list         args;
 	char           *utf_str;
 	const char     *charset;
-	extern gboolean always_utf8;
+	extern _Bool    always_utf8;
 
 	va_start (args, format);
 	utf_str = g_strdup_vprintf (format, args);
@@ -434,7 +434,7 @@ populate_index_file_list (GSList     **list,
 
 
 /* Search for desktop.ini in folder for hint of recycle bin */
-static gboolean
+static _Bool   
 found_desktop_ini (const char *path)
 {
 	char *filename, *content, *found;
@@ -463,7 +463,7 @@ found_desktop_ini (const char *path)
 int
 check_file_args (const char  *path,
                  GSList     **list,
-                 gboolean     is_info2)
+                 _Bool        is_info2)
 {
 	g_debug ("Start basic file checking...");
 
@@ -510,7 +510,7 @@ print_header (FILE       *outfile,
 	extern char    *delim;
 	time_t          t;
 	struct tm      *tm;
-	extern gboolean use_localtime;
+	extern _Bool    use_localtime;
 
 	g_return_if_fail (meta.filename != NULL);
 	g_return_if_fail (outfile != NULL);
@@ -598,15 +598,15 @@ print_record_cb (rbin_struct *record,
 	char           *utf8_filename, *timestr = NULL;
 	GString        *temp_timestr;
 	GError         *error = NULL;
-	gboolean        is_info2;
+	_Bool           is_info2;
 	char           *index;
 	struct tm      *tm;
-	extern gboolean use_localtime;
+	extern _Bool    use_localtime;
 
 	extern char    *legacy_encoding;
 	extern int      output_format;
 	extern char    *delim;
-	extern gboolean always_utf8;
+	extern _Bool    always_utf8;
 
 	g_return_if_fail (record != NULL);
 	g_return_if_fail (outfile != NULL);

@@ -103,10 +103,10 @@ struct _rbin_meta
 	_os_guess       os_guess;
 	int64_t         version;
 	uint32_t        recordsize;          /* INFO2 only */
-	gboolean        keep_deleted_entry;  /* affects output column */
-	gboolean        is_empty;
-	gboolean        has_unicode_path;    /* NT4, 2000 or above */
-	gboolean        fill_junk;  /* Between 98-2000, path names are padded
+	_Bool           keep_deleted_entry;  /* affects output column */
+	_Bool           is_empty;
+	_Bool           has_unicode_path;    /* NT4, 2000 or above */
+	_Bool           fill_junk;  /* Between 98-2000, path names are padded
 	                               with junk to satisfy PATH_MAX size */
 };
 
@@ -125,7 +125,7 @@ struct _rbin_struct
 	uint64_t        filesize;
 	char           *utf8_filename;
 	char           *legacy_filename;   /* INFO2 only */
-	gboolean        emptied;           /* INFO2 only */
+	_Bool           emptied;           /* INFO2 only */
 	unsigned char   drive;             /* INFO2 only */
 };
 
@@ -177,7 +177,7 @@ char *     filter_escapes           (const char          *str             );
 
 int        check_file_args          (const char          *path            ,
                                      GSList             **list            ,
-                                     gboolean             is_info2        );
+                                     _Bool                is_info2        );
 
 void       print_header             (FILE                *outfile         ,
                                      metarecord           meta            );

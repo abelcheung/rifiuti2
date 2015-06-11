@@ -178,7 +178,7 @@ get_win32_locale (void)
 static PSID
 get_user_sid (void)
 {
-	gboolean       status;
+	_Bool          status;
 	char           username[UNLEN + 1], *errmsg;
 	DWORD          err = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
 	PSID           sid;
@@ -234,7 +234,7 @@ can_list_win32_folder (const char *path)
 {
 	char                  *errmsg = NULL;
 	wchar_t               *wpath;
-	gboolean               ret = FALSE;
+	_Bool                  ret = FALSE;
 	PSID                   sid;
 	DWORD                  dw, dw2;
 	PSECURITY_DESCRIPTOR   sec_desc;

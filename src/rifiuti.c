@@ -49,11 +49,11 @@ static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
        char      *legacy_encoding      = NULL;
        int        output_format        = OUTPUT_CSV;
-static gboolean   no_heading           = FALSE;
-static gboolean   xml_output           = FALSE;
-       gboolean   always_utf8          = FALSE;
-       gboolean   use_localtime        = FALSE;
-static gboolean   do_print_version     = FALSE;
+static _Bool      no_heading           = FALSE;
+static _Bool      xml_output           = FALSE;
+       _Bool      always_utf8          = FALSE;
+       _Bool      use_localtime        = FALSE;
+static _Bool      do_print_version     = FALSE;
 static int        exit_status          = EXIT_SUCCESS;
 static metarecord meta;
 
@@ -247,7 +247,7 @@ populate_record_data (void *buf)
 	uint64_t        win_filetime;
 	uint32_t        drivenum;
 	long            read, write;
-	static gboolean junk_detection_done = FALSE;
+	static _Bool    junk_detection_done = FALSE;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 

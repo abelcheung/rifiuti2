@@ -29,10 +29,10 @@
 -T uint64_t
 -T int64_t
 -T off_t
+-T _Bool
 
 /* Glib types */
 -T GStatBuf
 -T GSList
--T gboolean
 -T GLogLevelFlags
 -T gpointer
