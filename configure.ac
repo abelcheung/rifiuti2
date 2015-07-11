@@ -92,6 +92,15 @@ LDFLAGS="$save_LDFLAGS"
 GLIB_LIBS="$GLIB_LIBS $GLIB_RPATH"
 fi
 
+AC_ARG_ENABLE(static,
+			  [AS_HELP_STRING([--enable-static],
+							  [build static binaries [default=no]])],,
+			  [enable_static=no])
+
+AS_IF([test "x$enable_static" = "xyes"],
+	  [GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` $GLIB_RPATH"])
+AM_CONDITIONAL([STATIC_BUILD], [test "x$enable_static" = "xyes"])
+
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 

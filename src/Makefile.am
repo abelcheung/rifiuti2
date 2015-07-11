@@ -4,6 +4,10 @@ AM_CPPFLAGS = \
               -DLOCALEDIR=\"$(localedir)\"    \
               -DG_LOG_DOMAIN=\"$(PACKAGE)\"
 
+if STATIC_BUILD
+AM_LDFLAGS = -static
+endif
+
 bin_PROGRAMS = rifiuti rifiuti-vista
 man_MANS = rifiuti.1
 
