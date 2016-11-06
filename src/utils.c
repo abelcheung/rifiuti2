@@ -357,34 +357,72 @@ my_debug_handler (const char     *log_domain,
 		g_printerr ("DEBUG: %s\n", message);
 }
 
-void
-maybe_convert_fprintf (FILE       *file,
-                       const char *format, ...)
+/*
+ * printf wrappers that convert utf-8 string to locale charset
+ */
+static char *
+locale_vasprintf (const char *format,
+                  va_list     args)
 {
-	va_list         args;
 	char           *utf_str;
 	const char     *charset;
 	extern _Bool    always_utf8;
 
-	va_start (args, format);
+	g_return_val_if_fail (format != NULL, NULL);
+
 	utf_str = g_strdup_vprintf (format, args);
-	va_end (args);
+	if ( !g_utf8_validate (utf_str, -1, NULL) )
+	{
+		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
+		g_free (utf_str);
+		return NULL;
+	}
 
-	g_return_if_fail (g_utf8_validate (utf_str, -1, NULL));
-
-	if (always_utf8 || g_get_charset (&charset))
-		fputs (utf_str, file);
+	if ( always_utf8 || g_get_charset (&charset) )
+		return utf_str;
 	else
 	{
+		GError *error = NULL;
 		char *locale_str =
 			g_convert_with_fallback (utf_str, -1, charset, "UTF-8", NULL,
-			                         NULL, NULL, NULL);
-		fputs (locale_str, file);
-		g_free (locale_str);
+			                         NULL, NULL, &error);
+		if ( error != NULL )
+		{
+			g_critical (_("Failed to convert string to locale charset with fallback: %s"), error->message);
+			g_error_free (error);
+		}
+		g_free (utf_str);
+		return locale_str;
 	}
-	g_free (utf_str);
 }
 
+void
+locale_fprintf (FILE       *file,
+                const char *format, ...)
+{
+	va_list     args;
+	char       *str;
+
+	va_start (args, format);
+	str = locale_vasprintf (format, args);
+	va_end (args);
+
+	fputs (str, file);
+	g_free (str);
+}
+
+char *
+locale_asprintf (const char *format, ...)
+{
+	va_list     args;
+	char       *str;
+
+	va_start (args, format);
+	str = locale_vasprintf (format, args);
+	va_end (args);
+
+	return str;
+}
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static void
@@ -522,8 +560,7 @@ print_header (FILE       *outfile,
 	switch (output_format)
 	{
 	  case OUTPUT_CSV:
-		maybe_convert_fprintf (outfile, _("Recycle bin path: '%s'"),
-		                       utf8_filename);
+		locale_fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
 		fputs ("\n", outfile);
 		switch (meta.version)
 		{
@@ -538,13 +575,13 @@ print_header (FILE       *outfile,
 		  default:
 			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 		}
-		maybe_convert_fprintf (outfile, _("Version: %s\n"), ver_string);
+		locale_fprintf (outfile, _("Version: %s\n"), ver_string);
 		g_free (ver_string);
 
 		if (meta.os_guess == OS_GUESS_UNKNOWN)
-			maybe_convert_fprintf (outfile, _("OS detection failed\n"));
+			locale_fprintf (outfile, _("OS detection failed\n"));
 		else
-			maybe_convert_fprintf (outfile, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
+			locale_fprintf (outfile, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
 
 		/* avoid too many localtime() calls by doing it here */
 		if (use_localtime)
@@ -556,19 +593,17 @@ print_header (FILE       *outfile,
 			tm = NULL;
 		tz_name    = get_timezone_name (tm);
 		tz_numeric = get_timezone_numeric (tm);
-		maybe_convert_fprintf (outfile, _("Time zone: %s [%s]\n"), tz_name, tz_numeric);
+		locale_fprintf (outfile, _("Time zone: %s [%s]\n"), tz_name, tz_numeric);
 
 		fputs ("\n", outfile);
 
 		if (meta.keep_deleted_entry)
 			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
-			maybe_convert_fprintf (outfile,
-			                       _("Index%sDeleted Time%sGone?%sSize%sPath"),
-			                       delim, delim, delim, delim);
+			locale_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
+					delim, delim, delim, delim);
 		else
-			maybe_convert_fprintf (outfile,
-			                       _("Index%sDeleted Time%sSize%sPath"),
-			                       delim, delim, delim);
+			locale_fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"),
+					delim, delim, delim);
 		fputs ("\n", outfile);
 		break;
 
@@ -672,9 +707,8 @@ print_record_cb (rbin_struct *record,
 
 		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
 		if (record->meta->keep_deleted_entry)
-			maybe_convert_fprintf (outfile, "%s%s",
-			                       record->emptied ? _("Yes") : _("No"),
-			                       delim);
+			locale_fprintf (outfile, "%s%s",
+					record->emptied ? _("Yes") : _("No"), delim);
 		if ( record->filesize == G_MAXUINT64 ) /* faulty */
 			fprintf (outfile, "???%s", delim);
 		else
@@ -735,14 +769,13 @@ print_record_cb (rbin_struct *record,
 void
 print_version ()
 {
-	maybe_convert_fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
+	locale_fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
 	/* TRANSLATOR COMMENT: %s is software name */
-	maybe_convert_fprintf (stdout,
-	                       _("%s is distributed under the "
-	                         "BSD 3-Clause License.\n"), PACKAGE);
+	locale_fprintf (stdout, _("%s is distributed under the "
+				"BSD 3-Clause License.\n"), PACKAGE);
 	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
-	maybe_convert_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
-	                       PACKAGE, PACKAGE_URL);
+	locale_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
+			PACKAGE, PACKAGE_URL);
 }
 
 

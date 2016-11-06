@@ -38,37 +38,20 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-static char *
-convert_with_fallback (const char *string,
-                       const char *fallback)
-{
-	GError *err = NULL;
-	char   *output = g_locale_from_utf8 (string, -1, NULL, NULL, &err);
-	if (err != NULL)
-	{
-		g_critical ("Failed to convert message to display: %s\n", err->message);
-		g_clear_error (&err);
-		return g_strdup (fallback);
-	}
-
-	return output;
-}
+extern char *locale_asprintf (const char *format, ...);
 
 /* GUI message box */
 void
 gui_message (const char *message)
 {
-	char *title, *output;
+	char *title, *body;
 
-	title = convert_with_fallback (_("This is a command line application"),
-	                               "This is a command line application");
-	output = convert_with_fallback (message,
-	                                "Fail to display help message. Please "
-	                                "invoke program with '--help' option.");
+	title = locale_asprintf ("%s", _("This is a command line application"));
+	body = locale_asprintf ("%s", message);
 
-	MessageBox (NULL, output, title, MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
+	MessageBox (NULL, body, title, MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
 	g_free (title);
-	g_free (output);
+	g_free (body);
 }
 
 /*

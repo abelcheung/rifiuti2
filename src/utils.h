@@ -196,8 +196,11 @@ void       my_debug_handler         (const char          *log_domain      ,
                                      const char          *message         ,
                                      gpointer             data            );
 
-void       maybe_convert_fprintf    (FILE                *file            ,
+void       locale_fprintf           (FILE                *file            ,
                                      const char          *format          , ...);
+
+char *     locale_asprintf          (const char          *format          , ...);
+
 #endif
 
 /* vim: set sw=4 ts=4 noexpandtab : */
