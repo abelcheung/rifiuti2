@@ -9,14 +9,14 @@ grief for me, though lots of &ldquo;fun&rdquo; are uncovered during the
 process.
 <!--more-->
 
-## `strftime()` is not very platform neutral
+### `strftime()` is not very platform neutral
 
 [`strftime()` on Windows][1] is less capable then the Unix ones. For
 compatibility, the date / time format would need to be expressed as
 `%Y-%m-%d %H:%M:%S` in place of just `%F %T`; nor does it print
 numerical time zones.
 
-## `TZ` environment variable on Windows is crap
+### `TZ` environment variable on Windows is crap
 
 Current systems don&apos;t use `$TZ` variable for any common purpose now.
 It [used to be][2], in Windows 3.1. Older Linux systems also use it for
@@ -43,7 +43,7 @@ in 2nd line, timezone is set to UTC with [Daylight Saving Time][5]
 forcefully turned on!!! It costs me days of head scratching and several
 faulty &ldquo;fixes&rdquo;. God knows what the parser is doing!
 
-## `_timeb` structure does not respect `$TZ` variable
+### `_timeb` structure does not respect `$TZ` variable
 
 The DST value returned from `_timeb` structure is faulty, in that it
 only respects the timezone setting from Control Panel and not `$TZ`
@@ -53,7 +53,7 @@ The following table shows comparison of values of `_timeb.dstflag` and
 
 <table style="border:1px black; text-align:center">
 <tr>
-<th style="border: 0" colspan="2" rowspan="2"></th>
+<td style="border: 0" colspan="2" rowspan="2"></td>
 <th colspan="2">Control Panel</th>
 </tr>
 <tr><th>Use DST</th><th>No DST</th></tr>
@@ -80,7 +80,7 @@ requiring one to perform extra steps to detect and adjust the value
 based on DST status. Only `tm.tm_isdst` is reliable enough for use in
 `rifiuti2`.
 
-## `INFO` file stores UTC time since 95
+### `INFO` file stores UTC time since 95
 
 Enough Windows bashing. Actually, Microsoft developers are surprisingly
 forward-thinking in some aspects.

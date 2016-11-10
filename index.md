@@ -25,7 +25,7 @@ Latest features and bug fixes [are listed here][3].
 
 [1]: history.html
 [2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
-[3]: {{ site.repo_url }}/blob/master/NEWS.md
+[3]: {{ site.repo_url }}/blob/master/README.md
 
 # Download and Usage
 
