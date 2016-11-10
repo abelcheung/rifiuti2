@@ -32,7 +32,7 @@ to override system setting. But the situation on Windows is different.
    junk &mdash; except that using 4 letters (like `EEST` which is a valid
    timezone in Istanbul) and the parser for `$TZ` variable immediately fails.
 
-1. Compare these 2 commands: (_hint_: drag and highlight lines with mouse)
+1. Compare these 2 commands: (_hint_: drag and highlight *each line* with mouse)
 {% highlight sh %}
 set TZ=
 set TZ= 

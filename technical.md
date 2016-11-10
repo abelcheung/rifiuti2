@@ -16,7 +16,7 @@ in my opinion regarding the INFO2 data fields. Besides, available info
 generally covers XP/2003 format, which is a bit different from earlier
 Windows (95, 98, ME, etc).
 
-_Note_: &lt;sid&gt; stands for [Security Identifier][3], which is unique
+_Note_: `<sid>` stands for [Security Identifier][3], which is unique
 for each user on a system.
 
 [1]: http://blogs.msdn.com/b/oldnewthing/archive/2006/01/31/520225.aspx
