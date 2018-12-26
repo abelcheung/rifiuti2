@@ -12,7 +12,7 @@ Latest features and changes can be found in [NEWS](NEWS.md) file.
 
 ## Usage
 
-`rifiuti` is designed to be portable, and runs on command line environment.
+`rifiuti2` is designed to be portable, and runs on command line environment.
 Depending on relevant Windows recycle bin format, there are 2 binaries to choose
 (most users would probably want first one):
 
@@ -36,12 +36,12 @@ for complete options and detailed usage description.
 
 #### Examples
 
-* <dl><dt>`rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`</dt>
-  <dd>Scan for index files under `\case\S-1-2-3\`, adjust all deletion time
-  for local time zone, and write XML output to `result.xml`</dd></dl>
-* <dl><dt>`rifiuti -l CP932 -8 INFO2`</dt>
-  <dd>Assume INFO2 file is generated from Japanese Windows, and display
-  result on console in UTF-8 encoding</dd></dl>
+* `rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`
+> Scan for index files under `\case\S-1-2-3\`, adjust all deletion time
+> for local time zone, and write XML output to `result.xml`
+* `rifiuti -l CP932 -8 INFO2`
+> Assume INFO2 file is generated from Japanese Windows, and display
+> result on console in UTF-8 encoding
 
 ## Supported platform
 

@@ -47,8 +47,7 @@ Follow the following procedure to setup MSYS2 necessary for building `rifiuti2`:
 
 1. Grab installer from [MSYS2 page][1], and follow all instructions on that page.
 In particular, please **tread carefully** when starting to use `pacman` for upgrading
-packages. [Some pitfalls may result from careless update.][6] (Read section III of
-this page carefully)
+packages; [read section III of detailed installation page carefully.][6]
 
 2. After basic setup is done, grab Glib runtime and development packages
   - Install with `pacman -Sy mingw-w64-x86_64-glib2` for 64bit build, and/or
@@ -68,11 +67,11 @@ version of glib available in MSYS2 &mdash; 2.44 as of May 2015.
 
 **Note 2**:
 MSYS 1.0 might still be able to compile `rifiuti2`, but no effort will be
-made to ensure it's working at all.
+made to ensure it is working at all.
 
 [1]: https://msys2.github.io/
 [2]: http://mingw-w64.yaxm.org/doku.php
 [3]: https://cygwin.com/
 [4]: http://win-builds.org/doku.php
 [5]: http://www.mingw.org/wiki/msys
-[6]: https://sourceforge.net/p/msys2/wiki/MSYS2%20installation/
+[6]: https://github.com/msys2/msys2/wiki/MSYS2-installation
