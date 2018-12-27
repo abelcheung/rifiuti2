@@ -62,7 +62,7 @@ AC_SUBST([ICONV],[$ac_cv_path_ICONV])
 
 dnl Checks for libraries.
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0],,
-                  [AC_MSG_ERROR([*** GLib not found. Error is: $DEP_PKG_ERRORS])])
+                  [AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
 
 dnl See if glib is linked to Solaris implementation of iconv
 dnl Too many code pages support were missing
@@ -97,8 +97,12 @@ AC_ARG_ENABLE(static,
 							  [build static binaries [default=no]])],,
 			  [enable_static=no])
 
-AS_IF([test "x$enable_static" = "xyes"],
-	  [GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` $GLIB_RPATH"])
+dnl Need to pull in libiconv manually for static build
+dnl And this undocumented GLIB_STATIC_COMPILATION thing... dang
+AS_IF([test "x$enable_static" = "xyes"], [
+	   GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` -liconv $GLIB_RPATH"
+	   GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
+	   ])
 AM_CONDITIONAL([STATIC_BUILD], [test "x$enable_static" = "xyes"])
 
 AC_SUBST(GLIB_CFLAGS)
