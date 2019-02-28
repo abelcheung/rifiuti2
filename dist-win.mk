@@ -3,8 +3,10 @@
 # Handle binary distribution for Windows
 #
 
+ZIPNAME ?= $(distdir)-win-$(build_cpu)
+
 dist-win: win-pkg-data win-pkg-bin
-	cd win-pkg && zip -9 -r $(abs_top_builddir)/$(distdir)-win-$(build_cpu).zip .
+	cd win-pkg && 7z a -bd -o$(abs_top_builddir) $(ZIPNAME).zip .
 
 win-pkg-data: win-pkg/rifiuti-l10n win-pkg/README.html
 
@@ -44,4 +46,3 @@ win-pkg/rifiuti-vista$(EXEEXT): $(top_builddir)/src/rifiuti-vista$(EXEEXT)
 	strip --strip-unneeded -o $@ $<
 
 .PHONY: win-pkg-data win-pkg-bin dist-win
-

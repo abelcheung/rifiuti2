@@ -21,7 +21,7 @@ C:\msys64\usr\bin\pacman.exe --noconfirm --noprogressbar -Syu
 :: Wastes too much time updating unnecessary non-core stuff
 :: bash -lc "pacman --noconfirm --noprogressbar -Syu"
 
-C:\msys64\usr\bin\pacman.exe --noconfirm --noprogressbar -S --needed zip markdown mingw-w64-%MSYS2_ARCH%-glib2
+C:\msys64\usr\bin\pacman.exe --noconfirm --noprogressbar -S --needed markdown mingw-w64-%MSYS2_ARCH%-glib2
 bash -lc "./autogen.sh && ./configure --enable-static && make -C po rifiuti.pot && make all"
 
 @echo off
@@ -52,4 +52,3 @@ bash -lc "make dist-win"
 
 @echo off
 goto :eof
-
