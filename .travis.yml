@@ -6,7 +6,7 @@ branches:
 os:
   - linux
 install:
-  - sudo apt-get install -qq libglib2.0-dev
+  - sudo apt-get install -qq libglib2.0-dev libxml2-utils
 script:
   - ./autogen.sh && ./configure && make && sudo make install
   - make check TESTSUITEFLAGS='-v'
