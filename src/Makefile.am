@@ -1,8 +1,8 @@
 AM_CPPFLAGS = \
-              -I$(srcdir)                     \
-              $(GLIB_CFLAGS)                  \
-              -DLOCALEDIR=\"$(localedir)\"    \
-              -DG_LOG_DOMAIN=\"$(PACKAGE)\"
+	-I$(srcdir)                     \
+	$(GLIB_CFLAGS)                  \
+	-DLOCALEDIR=\"$(localedir)\"    \
+	-DG_LOG_DOMAIN=\"$(PACKAGE)\"
 
 if STATIC_BUILD
 AM_LDFLAGS = -static
@@ -14,29 +14,29 @@ man_MANS = rifiuti.1
 EXTRA_DIST = rifiuti.1
 
 COMMON_SOURCES = \
-                 utils.c \
-                 utils.h \
-                 $(NULL)
+	utils.c \
+	utils.h \
+	$(NULL)
 
 rifiuti_SOURCES = \
-                  rifiuti.c \
-                  rifiuti.h \
-                  $(COMMON_SOURCES)
+	rifiuti.c \
+	rifiuti.h \
+	$(COMMON_SOURCES)
 
 rifiuti_LDADD = $(GLIB_LIBS)
 
 rifiuti_vista_SOURCES = \
-                        rifiuti-vista.c \
-                        rifiuti-vista.h \
-                        $(COMMON_SOURCES)
+	rifiuti-vista.c \
+	rifiuti-vista.h \
+	$(COMMON_SOURCES)
 
 rifiuti_vista_LDADD = $(GLIB_LIBS)
 
 if OS_WINDOWS
 WIN_SOURCES = \
-              utils-win.c \
-              utils-win.h \
-              $(NULL)
+	utils-win.c \
+	utils-win.h \
+	$(NULL)
 
 rifiuti_SOURCES       += $(WIN_SOURCES)
 rifiuti_vista_SOURCES += $(WIN_SOURCES)

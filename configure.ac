@@ -93,16 +93,16 @@ GLIB_LIBS="$GLIB_LIBS $GLIB_RPATH"
 fi
 
 AC_ARG_ENABLE(static,
-			  [AS_HELP_STRING([--enable-static],
-							  [build static binaries [default=no]])],,
-			  [enable_static=no])
+              [AS_HELP_STRING([--enable-static],
+                              [build static binaries [default=no]])],,
+              [enable_static=no])
 
 dnl Need to pull in libiconv manually for static build
 dnl And this undocumented GLIB_STATIC_COMPILATION thing... dang
 AS_IF([test "x$enable_static" = "xyes"], [
-	   GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` -liconv $GLIB_RPATH"
-	   GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
-	   ])
+       GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` -liconv $GLIB_RPATH"
+       GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
+       ])
 AM_CONDITIONAL([STATIC_BUILD], [test "x$enable_static" = "xyes"])
 
 AC_SUBST(GLIB_CFLAGS)
