@@ -125,7 +125,7 @@ static GString *
 get_iso8601_datetime_str (struct tm *tm)
 {
 	GString         *output;
-	extern _Bool     use_localtime;
+	extern gboolean  use_localtime;
 
 	if ( ( output = get_datetime_str (tm) ) == NULL )
 		return NULL;
@@ -200,7 +200,7 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
                        char          ***argv)
 {
 	GError   *err = NULL;
-	_Bool     ret;
+	gboolean  ret;
 
 	/* Must be done before parsing arguments since argc will be modified later */
 	if (*argc <= 1)
@@ -366,7 +366,7 @@ locale_vasprintf (const char *format,
 {
 	char           *utf_str;
 	const char     *charset;
-	extern _Bool    always_utf8;
+	extern gboolean always_utf8;
 
 	g_return_val_if_fail (format != NULL, NULL);
 
@@ -472,7 +472,7 @@ populate_index_file_list (GSList     **list,
 
 
 /* Search for desktop.ini in folder for hint of recycle bin */
-static _Bool   
+static gboolean
 found_desktop_ini (const char *path)
 {
 	char *filename, *content, *found;
@@ -501,7 +501,7 @@ found_desktop_ini (const char *path)
 int
 check_file_args (const char  *path,
                  GSList     **list,
-                 _Bool        is_info2)
+                 gboolean     is_info2)
 {
 	g_debug ("Start basic file checking...");
 
@@ -548,7 +548,7 @@ print_header (FILE       *outfile,
 	extern char    *delim;
 	time_t          t;
 	struct tm      *tm;
-	extern _Bool    use_localtime;
+	extern gboolean use_localtime;
 
 	g_return_if_fail (meta.filename != NULL);
 	g_return_if_fail (outfile != NULL);
@@ -633,15 +633,15 @@ print_record_cb (rbin_struct *record,
 	char           *utf8_filename, *timestr = NULL;
 	GString        *temp_timestr;
 	GError         *error = NULL;
-	_Bool           is_info2;
+	gboolean        is_info2;
 	char           *index;
 	struct tm      *tm;
-	extern _Bool    use_localtime;
+	extern gboolean use_localtime;
 
 	extern char    *legacy_encoding;
 	extern int      output_format;
 	extern char    *delim;
-	extern _Bool    always_utf8;
+	extern gboolean always_utf8;
 
 	g_return_if_fail (record != NULL);
 	g_return_if_fail (outfile != NULL);

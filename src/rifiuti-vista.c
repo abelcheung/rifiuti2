@@ -47,11 +47,11 @@ static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
        char      *legacy_encoding      = NULL;
        int        output_format        = OUTPUT_CSV;
-static _Bool      no_heading           = FALSE;
-static _Bool      xml_output           = FALSE;
-       _Bool      always_utf8          = FALSE;
-       _Bool      use_localtime        = FALSE;
-static _Bool      do_print_version     = FALSE;
+static gboolean   no_heading           = FALSE;
+static gboolean   xml_output           = FALSE;
+       gboolean   always_utf8          = FALSE;
+       gboolean   use_localtime        = FALSE;
+static gboolean   do_print_version     = FALSE;
 static int        exit_status          = EXIT_SUCCESS;
 static metarecord meta;
 
@@ -186,7 +186,7 @@ static rbin_struct *
 populate_record_data (void *buf,
                       uint64_t version,
                       uint32_t pathlen,
-                      _Bool    erraneous)
+                      gboolean erraneous)
 {
 	uint64_t        win_filetime;
 	rbin_struct    *record;
