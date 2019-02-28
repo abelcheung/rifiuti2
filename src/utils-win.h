@@ -30,9 +30,11 @@
 #ifndef _RIFIUTI_UTILS_WIN_H
 #define _RIFIUTI_UTILS_WIN_H
 
+#include <glib.h>
+
 void       gui_message              (const char          *message         );
 char *     get_win32_locale         (void);
-_Bool      can_list_win32_folder    (const char          *dir             );
+gboolean   can_list_win32_folder    (const char          *dir             );
 
 #endif
 

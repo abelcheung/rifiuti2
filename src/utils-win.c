@@ -212,7 +212,7 @@ get_user_sid (void)
 /*
  * Fetch ACL access mask using Authz API
  */
-_Bool
+gboolean
 can_list_win32_folder (const char *path)
 {
 	char                  *errmsg = NULL;
