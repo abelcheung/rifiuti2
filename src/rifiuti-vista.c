@@ -472,18 +472,13 @@ main (int    argc,
   cleanup:
 	g_debug ("Cleaning up...");
 
-	g_free (tmppath);
-
-	/* g_slist_free_full() available only since 2.28 */
-	g_slist_foreach (recordlist, (GFunc) free_record_cb, NULL);
-	g_slist_free (recordlist);
-
-	g_slist_foreach (filelist, (GFunc) g_free, NULL);
-	g_slist_free (filelist);
+	g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
+	g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
 
 	g_strfreev (fileargs);
 	g_free (outfilename);
 	g_free (delim);
+	g_free (tmppath);
 
 	return exit_status;
 }

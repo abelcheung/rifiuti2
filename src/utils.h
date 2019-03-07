@@ -131,16 +131,6 @@ struct _rbin_struct
 
 typedef struct _rbin_struct rbin_struct;
 
-/* Glib doc is lying; GStatBuf not available until 2.25.
- * Use the definition as of 2.44 */
-#if !GLIB_CHECK_VERSION(2,25,0)
-#  if (defined (__MINGW64_VERSION_MAJOR) || defined (_MSC_VER)) && !defined(_WIN64)
-typedef struct _stat32 GStatBuf;
-#  else
-typedef struct stat GStatBuf;
-#  endif
-#endif
-
 /* convenience macro */
 #define copy_field(field, off1, off2) memcpy((field), \
 		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)

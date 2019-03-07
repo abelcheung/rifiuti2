@@ -61,7 +61,8 @@ AC_CACHE_CHECK([for iconv that supports more Windows codepages], [ac_cv_path_ICO
 AC_SUBST([ICONV],[$ac_cv_path_ICONV])
 
 dnl Checks for libraries.
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0],,
+dnl g_slist_free_full() requires 2.28.0
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28.0],,
                   [AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
 
 dnl See if glib is linked to Solaris implementation of iconv

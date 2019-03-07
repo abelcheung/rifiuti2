@@ -2,7 +2,7 @@
 
 Bootstraping process can be done for Unix/Linux like OS released since 2010.
 
-  * `glib` ≥ 2.16 (deveopment headers and libraries, available since 2008)
+  * `glib` ≥ 2.28 (deveopment headers and libraries, available since 2010)
   * `pkg-config` (or its replacement on *BSD, `pkgconf`)
   * basic autotools-based development toolchain
     * C compiler &mdash; both `gcc` and `clang` are tested
@@ -10,7 +10,7 @@ Bootstraping process can be done for Unix/Linux like OS released since 2010.
     * automake ≥ 1.11
     * autoconf
 
-A few extra programs are also checked (`perl`, `iconv`, `xmllint`), but they are 
+A few extra programs are also checked (`perl`, `iconv`, `xmllint`), but they are
 for testsuite only and not necessary for building software.
 
 ## Compile procedure on Linux / BSD
