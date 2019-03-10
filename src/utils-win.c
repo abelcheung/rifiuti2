@@ -38,18 +38,31 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-extern char *locale_asprintf (const char *format, ...);
-
 /* GUI message box */
 void
 gui_message (const char *message)
 {
-	char *title, *body;
+	gunichar2 *title, *body;
+	GError *error = NULL;
 
-	title = locale_asprintf ("%s", _("This is a command line application"));
-	body = locale_asprintf ("%s", message);
+	title = g_utf8_to_utf16 (_("This is a command line application"),
+		-1, NULL, NULL, &error);
+	if (error) {
+		g_clear_error (&error);
+		title = g_utf8_to_utf16 ("This is a command line application",
+			-1, NULL, NULL, NULL);
+	}
 
-	MessageBox (NULL, body, title, MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
+	body = g_utf8_to_utf16 (message, -1, NULL, NULL, &error);
+	if (error) {
+		g_clear_error (&error);
+		body = g_utf8_to_utf16 ("(Original message failed to be displayed in UTF-16)",
+			-1, NULL, NULL, NULL);
+	}
+
+	/* Takes advantage of the fact that LPCWSTR (wchar_t) is actually 16bit on Windows */
+	MessageBoxW (NULL, (LPCWSTR) body, (LPCWSTR) title,
+		MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
 	g_free (title);
 	g_free (body);
 }
