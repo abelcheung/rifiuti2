@@ -185,12 +185,6 @@ void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,
                                      const char          *message         ,
                                      gpointer             data            );
-
-void       locale_fprintf           (FILE                *file            ,
-                                     const char          *format          , ...);
-
-char *     locale_asprintf          (const char          *format          , ...);
-
 #endif
 
 /* vim: set sw=4 ts=4 noexpandtab : */

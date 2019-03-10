@@ -7,7 +7,6 @@ _r2_check_empty_option([-?])
 _r2_check_empty_option([-v])
 _r2_check_option([-t :])
 _r2_check_option([-n])
-_r2_check_option([-8])
 AT_CLEANUP
 
 AT_SETUP([Long Options])
@@ -15,7 +14,6 @@ AT_KEYWORDS([option])
 _r2_check_empty_option([--help-all])
 _r2_check_option([--delimiter=:])
 _r2_check_option([--no-heading])
-_r2_check_option([--always-utf8])
 AT_CLEANUP
 
 AT_SETUP([Invalid options])
@@ -28,12 +26,11 @@ AT_SETUP([Wrong combinations])
 AT_KEYWORDS([option])
 _r2_check_option([-x -t :], [1])
 _r2_check_option([-x -n], [1])
-_r2_check_option([-x -8], [1])
 AT_CLEANUP
 
 AT_SETUP([Err on no file args])
 AT_KEYWORDS([file option])
-_r2_check_ignore_err([-8], [1])
+_r2_check_ignore_err([-x], [1])
 AT_CLEANUP
 
 AT_SETUP([Err on multiple file args])
@@ -47,12 +44,12 @@ AT_CHECK([$has_perl || exit 77])
 AT_CHECK([
 	perl -p -e 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
 	cd $sample
-	$set_ascii $progf -8 -t "\n\t" INFO2-sample1
+	$progf -t "\n\t" INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
 	perl -p -e 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
 	cd $sample
-	$set_ascii $progd -8 -t "\n\t" dir-sample1
+	$progd -t "\n\t" dir-sample1
 ],, [expout], [])
 AT_CLEANUP
 

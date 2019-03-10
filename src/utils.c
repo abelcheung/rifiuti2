@@ -357,73 +357,6 @@ my_debug_handler (const char     *log_domain,
 		g_printerr ("DEBUG: %s\n", message);
 }
 
-/*
- * printf wrappers that convert utf-8 string to locale charset
- */
-static char *
-locale_vasprintf (const char *format,
-                  va_list     args)
-{
-	char           *utf_str;
-	const char     *charset;
-	extern gboolean always_utf8;
-
-	g_return_val_if_fail (format != NULL, NULL);
-
-	utf_str = g_strdup_vprintf (format, args);
-	if ( !g_utf8_validate (utf_str, -1, NULL) )
-	{
-		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
-		g_free (utf_str);
-		return NULL;
-	}
-
-	if ( always_utf8 || g_get_charset (&charset) )
-		return utf_str;
-	else
-	{
-		GError *error = NULL;
-		char *locale_str =
-			g_convert_with_fallback (utf_str, -1, charset, "UTF-8", NULL,
-			                         NULL, NULL, &error);
-		if ( error != NULL )
-		{
-			g_critical (_("Failed to convert string to locale charset with fallback: %s"), error->message);
-			g_error_free (error);
-		}
-		g_free (utf_str);
-		return locale_str;
-	}
-}
-
-void
-locale_fprintf (FILE       *file,
-                const char *format, ...)
-{
-	va_list     args;
-	char       *str;
-
-	va_start (args, format);
-	str = locale_vasprintf (format, args);
-	va_end (args);
-
-	fputs (str, file);
-	g_free (str);
-}
-
-char *
-locale_asprintf (const char *format, ...)
-{
-	va_list     args;
-	char       *str;
-
-	va_start (args, format);
-	str = locale_vasprintf (format, args);
-	va_end (args);
-
-	return str;
-}
-
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static void
 populate_index_file_list (GSList     **list,
@@ -560,8 +493,9 @@ print_header (FILE       *outfile,
 	switch (output_format)
 	{
 	  case OUTPUT_CSV:
-		locale_fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
+		fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
 		fputs ("\n", outfile);
+
 		switch (meta.version)
 		{
 		  case VERSION_NOT_FOUND:
@@ -575,13 +509,15 @@ print_header (FILE       *outfile,
 		  default:
 			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 		}
-		locale_fprintf (outfile, _("Version: %s\n"), ver_string);
+		fprintf (outfile, _("Version: %s"), ver_string);
+		fputs ("\n", outfile);
 		g_free (ver_string);
 
 		if (meta.os_guess == OS_GUESS_UNKNOWN)
-			locale_fprintf (outfile, _("OS detection failed\n"));
+			fprintf (outfile, _("OS detection failed"));
 		else
-			locale_fprintf (outfile, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
+			fprintf (outfile, _("OS Guess: %s"), os_strings[meta.os_guess]);
+		fputs ("\n", outfile);
 
 		/* avoid too many localtime() calls by doing it here */
 		if (use_localtime)
@@ -593,16 +529,16 @@ print_header (FILE       *outfile,
 			tm = NULL;
 		tz_name    = get_timezone_name (tm);
 		tz_numeric = get_timezone_numeric (tm);
-		locale_fprintf (outfile, _("Time zone: %s [%s]\n"), tz_name, tz_numeric);
+		fprintf (outfile, _("Time zone: %s [%s]"), tz_name, tz_numeric);
 
-		fputs ("\n", outfile);
+		fputs ("\n\n", outfile);
 
 		if (meta.keep_deleted_entry)
 			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
-			locale_fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
+			fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
 					delim, delim, delim, delim);
 		else
-			locale_fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"),
+			fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"),
 					delim, delim, delim);
 		fputs ("\n", outfile);
 		break;
@@ -641,7 +577,6 @@ print_record_cb (rbin_struct *record,
 	extern char    *legacy_encoding;
 	extern int      output_format;
 	extern char    *delim;
-	extern gboolean always_utf8;
 
 	g_return_if_fail (record != NULL);
 	g_return_if_fail (outfile != NULL);
@@ -673,7 +608,7 @@ print_record_cb (rbin_struct *record,
 	}
 	else	/* this part is info2 only */
 	{
-		/* 
+		/*
 		 * On Windows, conversion from the file path's legacy charset to display codepage
 		 * charset is most likely not supported unless the 2 legacy charsets happen to be
 		 * equal. Try <legacy> -> UTF-8 -> <codepage> and see which step fails.
@@ -707,7 +642,7 @@ print_record_cb (rbin_struct *record,
 
 		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
 		if (record->meta->keep_deleted_entry)
-			locale_fprintf (outfile, "%s%s",
+			fprintf (outfile, "%s%s",
 					record->emptied ? _("Yes") : _("No"), delim);
 		if ( record->filesize == G_MAXUINT64 ) /* faulty */
 			fprintf (outfile, "???%s", delim);
@@ -715,24 +650,8 @@ print_record_cb (rbin_struct *record,
 			fprintf (outfile, "%" G_GUINT64_FORMAT "%s",
 			         record->filesize, delim);
 
-		if (always_utf8)
-			fprintf (outfile, "%s\n", utf8_filename);
-		else
-		{
-			char *shown =
-				g_locale_from_utf8 (utf8_filename, -1, NULL, NULL, &error);
-			if (error)
-			{
-				g_warning (_("Error converting path name to display for record %s: %s"),
-				           index, error->message);
-				g_clear_error (&error);
-				shown = g_locale_from_utf8 (
-						_("(File name not representable in current language)"),
-						-1, NULL, NULL, NULL);
-			}
-			fprintf (outfile, "%s\n", shown);
-			g_free (shown);
-		}
+		fprintf (outfile, "%s\n", utf8_filename);
+
 		break;
 
 	  case OUTPUT_XML:
@@ -769,12 +688,12 @@ print_record_cb (rbin_struct *record,
 void
 print_version ()
 {
-	locale_fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
+	fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
 	/* TRANSLATOR COMMENT: %s is software name */
-	locale_fprintf (stdout, _("%s is distributed under the "
+	fprintf (stdout, _("%s is distributed under the "
 				"BSD 3-Clause License.\n"), PACKAGE);
 	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
-	locale_fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
+	fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
 			PACKAGE, PACKAGE_URL);
 }
 

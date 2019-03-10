@@ -23,19 +23,13 @@ AT_CLEANUP
 AT_SETUP([UTF-8 console/file output are equal])
 AT_KEYWORDS([file])
 AT_CHECK([
-	$progf -8 -o expout $sample/INFO2-sample1
-	$progf -8           $sample/INFO2-sample1
+	$progf -o expout $sample/INFO2-sample1
+	$progf           $sample/INFO2-sample1
 ],, [expout])
 AT_CHECK([
-	$progd -8 -o expout $sample/dir-sample1
-	$progd -8           $sample/dir-sample1
+	$progd -o expout $sample/dir-sample1
+	$progd           $sample/dir-sample1
 ],, [expout])
-AT_CLEANUP
-
-AT_SETUP([Read non-ASCII path])
-AT_KEYWORDS([file encoding])
-AT_CHECK([$progf $sample/ごみ箱/INFO2-empty],, [ignore], [ignore])
-AT_CHECK([$progd $sample/ごみ箱/dir-empty],, [ignore], [ignore])
 AT_CLEANUP
 
 dnl vim: set ts=4 sw=4 noexpandtab :

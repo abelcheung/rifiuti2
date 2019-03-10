@@ -4,81 +4,21 @@ dnl Test suite for rifiuti2
 dnl
 dnl ごみ箱 is 'recycle bin' in Japanese
 dnl
-AT_SETUP([UTF-8 - No Fallback For Path])
+AT_SETUP([Unicode characters in recycle bin path])
 AT_KEYWORDS([encoding])
 AT_CHECK([
 	cp $sample/japanese-path-file.txt expout
 	cd $sample
-	$set_utf8 $progf ./ごみ箱/INFO2-empty
+	$progf ./ごみ箱/INFO2-empty
 ],, [expout])
 
 AT_CHECK([
 	rm -f expout
 	cp $sample/japanese-path-dir.txt expout
 	cd $sample
-	$set_utf8 $progd ./ごみ箱/dir-empty
+	$progd ./ごみ箱/dir-empty
 ],, [expout])
 
-AT_CLEANUP
-
-dnl
-dnl For the case when entire non-ASCII path can't be displayed
-dnl
-AT_SETUP([Fallback For Path 1])
-AT_KEYWORDS([encoding])
-
-AT_CHECK([${has_perl} || exit 77])
-
-dnl g_convert_with_fallback() doesn't use \uXXXX style unicode escape
-dnl on NetBSD, and only display question marks. But basic functionality
-dnl is not encumbered.
-AT_XFAIL_IF([$is_netbsd])
-
-dnl 1. Curse those quadrigraphs
-dnl 2. I hate writing regex with m4! Takes so much time to make it work,
-dnl    and fragile as hell
-dnl 3. Path need to have ./ as prefix, without that and the middle slash
-dnl will be transformed into root of MinGW folder. This only happens
-dnl when folder with non-ASCII name is prepended before slash. Looks like
-dnl bug in g_win32_get_command_line()
-AT_CHECK([
-	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt > expout
-	cd $sample/
-	$set_ascii $progf ./ごみ箱/INFO2-empty
-],, [expout], [])
-
-AT_CHECK([
-	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Han}\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt > expout
-	cd $sample/
-	$set_ascii $progd ./ごみ箱/dir-empty
-],, [expout], [])
-AT_CLEANUP
-
-
-dnl
-dnl For the case when part of non-ASCII path can't be displayed
-dnl in CP950, only the character 箱 can be displayed as is
-dnl
-AT_SETUP([Fallback For Path 2])
-AT_KEYWORDS([encoding])
-
-AT_CHECK([${has_perl} || exit 77])
-AT_CHECK([${has_iconv} || exit 77])
-
-dnl see previous test
-AT_XFAIL_IF([$is_netbsd])
-
-AT_CHECK([
-	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-file.txt | $iconv -f utf-8 -t cp950 > expout
-	cd $sample/
-	env CHARSET=CP950 $progf ./ごみ箱/INFO2-empty
-],, [expout], [])
-
-AT_CHECK([
-	PERLIO=":utf8" $perl -C -p -e 's/@{:@@<:@\p{Hiragana}@:>@@:}@/sprintf "\\u%x", ord@{:@@S|@1@:}@/ge' < $sample/japanese-path-dir.txt | $iconv -f utf-8 -t cp950 > expout
-	cd $sample/
-	env CHARSET=CP950 $progd ./ごみ箱/dir-empty
-],, [expout], [])
 AT_CLEANUP
 
 dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :

@@ -8,20 +8,20 @@ AT_CLEANUP
 
 AT_SETUP([$Recycle.bin Sample 1 - Vista])
 AT_KEYWORDS([recycledir])
-_r2_basic_compare([$progd -8 dir-sample1], [dir-sample1.txt])
+_r2_basic_compare([$progd dir-sample1], [dir-sample1.txt])
 AT_CLEANUP
 
 AT_SETUP([$Recycle.bin Sample 2 - Win 10])
 AT_KEYWORDS([recycledir])
-_r2_basic_compare([$progd -8 dir-win10-01], [dir-win10-01.txt])
+_r2_basic_compare([$progd dir-win10-01], [dir-win10-01.txt])
 AT_CLEANUP
 
 AT_SETUP([$Recycle.bin single index file])
 AT_KEYWORDS([recycledir])
 AT_CHECK([
 	grep 'IHO61YT' $sample/dir-win10-01.txt > expout
-	$set_ascii $progd -n -8 $sample/dir-win10-01/\$IHO61YT
+	$progd -n $sample/dir-win10-01/\$IHO61YT
 ],, [expout], [])
 AT_CLEANUP
-	
+
 dnl vim: set ts=4 sw=4 noexpandtab :

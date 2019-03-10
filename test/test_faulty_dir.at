@@ -6,7 +6,7 @@ AT_KEYWORDS([recycledir crafted])
 AT_CHECK([
 	cp $sample/dir-mixed.txt expout
 	cd $sample
-	$set_ascii $progd dir-mixed
+	$progd dir-mixed
 ], [3], [expout])
 AT_CLEANUP
 
@@ -19,7 +19,7 @@ AT_CHECK([
 	$as_ln_s $sample/dir-win10-01 dir1
 	icacls.exe dir1 //inheritance:r > /dev/null
 	icacls.exe dir1 //grant:r "Users:(OI)(CI)(S,REA)" > /dev/null
-	$set_ascii $progd dir1
+	$progd dir1
 ],
 	[2],, [Error listing directory: Insufficient permission.
 No files with name pattern '$Ixxxxxx.*' are found in directory.

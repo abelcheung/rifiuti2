@@ -93,7 +93,7 @@ static GOptionEntry textoptions[] =
 	{"no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
 	 N_("Don't show header info"), NULL},
 	{"always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-	 N_("Always display result in UTF-8 encoding"), NULL},
+	 N_("(This option is deprecated)"), NULL},
 	{NULL}
 };
 
@@ -435,10 +435,16 @@ main (int    argc,
 		goto cleanup;
 	}
 
+    if (always_utf8)
+    {
+        g_warning ("%s", _("'-8' option is deprecated; "
+            "UTF-8 output is always enforced now.\n"));
+    }
+
 	if (xml_output)
 	{
 		output_format = OUTPUT_XML;
-		if (no_heading || always_utf8 || (NULL != delim))
+		if (no_heading || (NULL != delim))
 		{
 			g_printerr (_("Plain text format options "
 			              "can not be used in XML mode.\n"));
