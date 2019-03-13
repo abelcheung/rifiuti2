@@ -424,7 +424,7 @@ found_desktop_ini (const char *path)
 	g_free (filename);
 	return (found != NULL);
 
-  desktop_ini_error:
+	desktop_ini_error:
 	g_free (filename);
 	return FALSE;
 }
@@ -492,69 +492,72 @@ print_header (FILE       *outfile,
 
 	switch (output_format)
 	{
-	  case OUTPUT_CSV:
-		fprintf (outfile, _("Recycle bin path: '%s'"), utf8_filename);
-		fputs ("\n", outfile);
-
-		switch (meta.version)
+		case OUTPUT_CSV:
 		{
-		  case VERSION_NOT_FOUND:
-			/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
-			ver_string = g_strdup (_("??? (empty folder)"));
-			break;
-		  case VERSION_INCONSISTENT:
-			/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
-			ver_string = g_strdup (_("??? (version inconsistent)"));
-			break;
-		  default:
-			ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
+			GString *s = g_string_new (NULL);
+			char *outstr;
+
+			g_string_printf (s, _("Recycle bin path: '%s'\n"), utf8_filename);
+
+			switch (meta.version)
+			{
+			  case VERSION_NOT_FOUND:
+				/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
+				ver_string = g_strdup (_("??? (empty folder)"));
+				break;
+			  case VERSION_INCONSISTENT:
+				/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
+				ver_string = g_strdup (_("??? (version inconsistent)"));
+				break;
+			default:
+				ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
+			}
+			g_string_append_printf (s, _("Version: %s\n"), ver_string);
+			g_free (ver_string);
+
+			if (meta.os_guess == OS_GUESS_UNKNOWN)
+				s = g_string_append (s, _("OS detection failed\n"));
+			else
+				g_string_append_printf (s, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
+
+			/* avoid too many localtime() calls by doing it here */
+			if (use_localtime)
+			{
+				t = time (NULL);
+				tm = localtime (&t);
+			}
+			else
+				tm = NULL;
+			tz_name    = get_timezone_name (tm);
+			tz_numeric = get_timezone_numeric (tm);
+			g_string_append_printf (s, _("Time zone: %s [%s]\n\n"), tz_name, tz_numeric);
+
+			if (meta.keep_deleted_entry)
+				/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
+				g_string_append_printf (s, _("Index%sDeleted Time%sGone?%sSize%sPath\n"),
+						delim, delim, delim, delim);
+			else
+				g_string_append_printf (s, _("Index%sDeleted Time%sSize%sPath\n"),
+						delim, delim, delim);
+
+			outstr = g_string_free (s, FALSE);
+			fprintf (outfile, "%s", outstr);
+			g_free (outstr);
 		}
-		fprintf (outfile, _("Version: %s"), ver_string);
-		fputs ("\n", outfile);
-		g_free (ver_string);
-
-		if (meta.os_guess == OS_GUESS_UNKNOWN)
-			fprintf (outfile, _("OS detection failed"));
-		else
-			fprintf (outfile, _("OS Guess: %s"), os_strings[meta.os_guess]);
-		fputs ("\n", outfile);
-
-		/* avoid too many localtime() calls by doing it here */
-		if (use_localtime)
-		{
-			t = time (NULL);
-			tm = localtime (&t);
-		}
-		else
-			tm = NULL;
-		tz_name    = get_timezone_name (tm);
-		tz_numeric = get_timezone_numeric (tm);
-		fprintf (outfile, _("Time zone: %s [%s]"), tz_name, tz_numeric);
-
-		fputs ("\n\n", outfile);
-
-		if (meta.keep_deleted_entry)
-			/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
-			fprintf (outfile, _("Index%sDeleted Time%sGone?%sSize%sPath"),
-					delim, delim, delim, delim);
-		else
-			fprintf (outfile, _("Index%sDeleted Time%sSize%sPath"),
-					delim, delim, delim);
-		fputs ("\n", outfile);
 		break;
 
-	  case OUTPUT_XML:
-		fputs ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", outfile);
-		/* No proper way to report wrong version info yet */
-		fprintf (outfile,
-		         "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n",
-		         ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
-		         MAX (meta.version, 0));
-		fprintf (outfile, "  <filename>%s</filename>\n", utf8_filename);
-		break;
+		case OUTPUT_XML:
+			/* No proper way to report wrong version info yet */
+			fprintf (outfile,
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+				"<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
+				"  <filename>%s</filename>\n",
+				( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
+				MAX (meta.version, 0), utf8_filename);
+			break;
 
-	  default:
-		g_warn_if_reached ();
+		default:
+			g_assert_not_reached();
 	}
 	g_free (utf8_filename);
 
@@ -566,11 +569,10 @@ void
 print_record_cb (rbin_struct *record,
                  FILE        *outfile)
 {
-	char           *utf8_filename, *timestr = NULL;
-	GString        *temp_timestr;
-	GError         *error = NULL;
+	char           *utf8_filename, *index, *size = NULL;
+	char           *outstr = NULL, *deltime = NULL;
+	GString        *t;
 	gboolean        is_info2;
-	char           *index;
 	struct tm      *tm;
 	extern gboolean use_localtime;
 
@@ -608,10 +610,10 @@ print_record_cb (rbin_struct *record,
 	}
 	else	/* this part is info2 only */
 	{
+		GError *error = NULL;
 		/*
-		 * On Windows, conversion from the file path's legacy charset to display codepage
-		 * charset is most likely not supported unless the 2 legacy charsets happen to be
-		 * equal. Try <legacy> -> UTF-8 -> <codepage> and see which step fails.
+		 * TODO Write a variant of g_convert_with_fallback that dumps hex chars
+		 * instead of unicode escapes.
 		 */
 		utf8_filename =
 			g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
@@ -629,58 +631,75 @@ print_record_cb (rbin_struct *record,
 
 	switch (output_format)
 	{
-	  case OUTPUT_CSV:
+		case OUTPUT_CSV:
 
-		if ( NULL == ( temp_timestr = get_datetime_str (tm) ) )
+			if ((t = get_datetime_str (tm)) != NULL)
+				deltime = g_string_free (t, FALSE);
+			else
+			{
+				g_warning (_("Error formatting file deletion time for record index %s."),
+						index);
+				deltime = g_strdup ("???");
+			}
+
+			if ( record->filesize == G_MAXUINT64 ) /* faulty */
+				size = g_strdup ("???");
+			else
+				size = g_strdup_printf ("%" G_GUINT64_FORMAT, record->filesize);
+
+			if (record->meta->keep_deleted_entry)
+			{
+				const char *purged = record->emptied ? _("Yes") : _("No");
+				outstr = g_strjoin (delim, index, deltime, purged, size, utf8_filename, NULL);
+			}
+			else
+				outstr = g_strjoin (delim, index, deltime, size, utf8_filename, NULL);
+
+			fprintf (outfile, "%s\n", outstr);
+
+			break;
+
+		case OUTPUT_XML:
 		{
-			g_warning (_("Error formatting file deletion time for record index %s."),
-					   index);
-			timestr = g_strdup ("???");
+			GString *s = g_string_new (NULL);
+
+			if ((t = get_iso8601_datetime_str (tm)) != NULL)
+				deltime = g_string_free (t, FALSE);
+			else
+			{
+				g_warning (_("Error formatting file deletion time for record index %s."),
+						index);
+				deltime = g_strdup ("???");
+			}
+
+			g_string_printf (s, "  <record index=\"%s\" time=\"%s\"", index, deltime);
+
+			if (record->meta->keep_deleted_entry)
+				g_string_append_printf (s, " emptied=\"%c\"", record->emptied ? 'Y' : 'N');
+
+			if ( record->filesize == G_MAXUINT64 ) /* faulty */
+				size = g_strdup_printf (" size=\"-1\"");
+			else
+				size = g_strdup_printf (" size=\"%" G_GUINT64_FORMAT "\"", record->filesize);
+			s = g_string_append (s, (const gchar*) size);
+
+			g_string_append_printf (s,
+				">\n"
+				"    <path>%s</path>\n"
+				"  </record>\n", utf8_filename);
+
+			outstr = g_string_free (s, FALSE);
+			fprintf (outfile, "%s", outstr);
 		}
-		else
-			timestr = g_string_free (temp_timestr, FALSE);
+			break;
 
-		fprintf (outfile, "%s%s%s%s", index, delim, timestr, delim);
-		if (record->meta->keep_deleted_entry)
-			fprintf (outfile, "%s%s",
-					record->emptied ? _("Yes") : _("No"), delim);
-		if ( record->filesize == G_MAXUINT64 ) /* faulty */
-			fprintf (outfile, "???%s", delim);
-		else
-			fprintf (outfile, "%" G_GUINT64_FORMAT "%s",
-			         record->filesize, delim);
-
-		fprintf (outfile, "%s\n", utf8_filename);
-
-		break;
-
-	  case OUTPUT_XML:
-
-		if ( NULL == ( temp_timestr = get_iso8601_datetime_str (tm) ) )
-		{
-			g_warning (_("Error formatting file deletion time for record index %s."),
-					   index);
-			timestr = g_strdup ("???");
-		}
-		else
-			timestr = g_string_free (temp_timestr, FALSE);
-
-		fprintf (outfile, "  <record index=\"%s\" time=\"%s\" ", index,
-		         timestr);
-		if (record->meta->keep_deleted_entry)
-			fprintf (outfile, "emptied=\"%c\" ", record->emptied ? 'Y' : 'N');
-		fprintf (outfile,
-		         "size=\"%" G_GUINT64_FORMAT "\">\n"
-		         "    <path>%s</path>\n"
-		         "  </record>\n",
-		         record->filesize, utf8_filename);
-		break;
-
-	  default:
-		g_warn_if_reached ();
+		default:
+			g_assert_not_reached();
 	}
+	g_free (outstr);
 	g_free (utf8_filename);
-	g_free (timestr);
+	g_free (deltime);
+	g_free (size);
 	g_free (index);
 }
 
@@ -720,20 +739,18 @@ print_footer (FILE *outfile)
 
 	switch (output_format)
 	{
-	  case OUTPUT_CSV:
-		/* do nothing */
-		break;
+		case OUTPUT_CSV:
+			/* do nothing */
+			break;
 
-	  case OUTPUT_XML:
-		fputs ("</recyclebin>\n", outfile);
-		break;
+		case OUTPUT_XML:
+			fputs ("</recyclebin>\n", outfile);
+			break;
 
-	  default:
-		g_return_if_reached ();
-		break;
+		default:
+			g_assert_not_reached();
 	}
 	g_debug ("Leaving %s()", __func__);
 }
-
 
 /* vim: set sw=4 ts=4 noexpandtab : */
