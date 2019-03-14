@@ -169,13 +169,11 @@ int        check_file_args          (const char          *path            ,
                                      GSList             **list            ,
                                      gboolean             is_info2        );
 
-void       print_header             (FILE                *outfile         ,
-                                     metarecord           meta            );
+void       print_header             (metarecord           meta            );
 
-void       print_record_cb          (rbin_struct         *record          ,
-                                     FILE                *outfile         );
+void       print_record_cb          (rbin_struct         *record          );
 
-void       print_footer             (FILE                *outfile         );
+void       print_footer             (void);
 
 void       print_version            (void);
 

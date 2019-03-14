@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007, 2015 Abel Cheung.
  * All rights reserved.
@@ -471,20 +472,56 @@ check_file_args (const char  *path,
 }
 
 
-void
-print_header (FILE       *outfile,
-              metarecord  meta)
+static gboolean
+_local_printf (const char *format, ...)
 {
-	char           *utf8_filename, *ver_string;
-	const char     *tz_name, *tz_numeric;
-	extern int      output_format;
-	extern char    *delim;
-	time_t          t;
-	struct tm      *tm;
-	extern gboolean use_localtime;
+	va_list        args;
+	char          *str;
+	extern FILE   *out_fh;
+
+	g_return_val_if_fail (format != NULL, FALSE);
+
+	va_start (args, format);
+	str = g_strdup_vprintf (format, args);
+	va_end (args);
+
+	if ( !g_utf8_validate (str, -1, NULL)) {
+		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
+		g_free (str);
+		return FALSE;
+	}
+
+#ifdef G_OS_WIN32
+	/*
+	 * Use Windows API only if:
+	 * 1. On Windows console
+	 * 2. Output is not piped nor redirected
+	 * See init_wincon_handle().
+	 */
+	if (out_fh == NULL)
+		print_wincon (str);
+	else
+#endif
+		fputs (str, out_fh);
+
+	g_free (str);
+	return TRUE;
+}
+
+
+void
+print_header (metarecord  meta)
+{
+	char             *utf8_filename, *ver_string;
+	const char       *tz_name, *tz_numeric;
+	extern int        output_format;
+	extern char      *delim;
+	time_t            t;
+	struct tm        *tm;
+	extern gboolean   use_localtime;
+	extern FILE      *out_fh;
 
 	g_return_if_fail (meta.filename != NULL);
-	g_return_if_fail (outfile != NULL);
 
 	g_debug ("Entering %s()", __func__);
 
@@ -541,14 +578,14 @@ print_header (FILE       *outfile,
 						delim, delim, delim);
 
 			outstr = g_string_free (s, FALSE);
-			fprintf (outfile, "%s", outstr);
+			_local_printf ("%s", outstr);
 			g_free (outstr);
 		}
 		break;
 
 		case OUTPUT_XML:
 			/* No proper way to report wrong version info yet */
-			fprintf (outfile,
+			_local_printf (
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				"<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
 				"  <filename>%s</filename>\n",
@@ -566,22 +603,21 @@ print_header (FILE       *outfile,
 
 
 void
-print_record_cb (rbin_struct *record,
-                 FILE        *outfile)
+print_record_cb (rbin_struct *record)
 {
-	char           *utf8_filename, *index, *size = NULL;
-	char           *outstr = NULL, *deltime = NULL;
-	GString        *t;
-	gboolean        is_info2;
-	struct tm      *tm;
-	extern gboolean use_localtime;
+	char             *utf8_filename, *index, *size = NULL;
+	char             *outstr = NULL, *deltime = NULL;
+	GString          *t;
+	gboolean          is_info2;
+	struct tm        *tm;
 
-	extern char    *legacy_encoding;
-	extern int      output_format;
-	extern char    *delim;
+	extern gboolean   use_localtime;
+	extern char      *legacy_encoding;
+	extern int        output_format;
+	extern char      *delim;
+	extern FILE      *out_fh;
 
 	g_return_if_fail (record != NULL);
-	g_return_if_fail (outfile != NULL);
 
 	is_info2 = (record->meta->type == RECYCLE_BIN_TYPE_FILE);
 
@@ -655,7 +691,7 @@ print_record_cb (rbin_struct *record,
 			else
 				outstr = g_strjoin (delim, index, deltime, size, utf8_filename, NULL);
 
-			fprintf (outfile, "%s\n", outstr);
+			_local_printf ("%s\n", outstr);
 
 			break;
 
@@ -689,7 +725,7 @@ print_record_cb (rbin_struct *record,
 				"  </record>\n", utf8_filename);
 
 			outstr = g_string_free (s, FALSE);
-			fprintf (outfile, "%s", outstr);
+			_local_printf ("%s", outstr);
 		}
 			break;
 
@@ -701,6 +737,27 @@ print_record_cb (rbin_struct *record,
 	g_free (deltime);
 	g_free (size);
 	g_free (index);
+}
+
+
+void
+print_footer (void)
+{
+	extern int output_format;
+
+	switch (output_format)
+	{
+		case OUTPUT_CSV:
+			/* do nothing */
+			break;
+
+		case OUTPUT_XML:
+			_local_printf ("%s", "</recyclebin>\n");
+			break;
+
+		default:
+			g_assert_not_reached();
+	}
 }
 
 
@@ -726,31 +783,3 @@ free_record_cb (rbin_struct *record)
 	g_free (record->legacy_filename);
 	g_free (record);
 }
-
-
-void
-print_footer (FILE *outfile)
-{
-	extern int output_format;
-
-	g_return_if_fail (outfile != NULL);
-
-	g_debug ("Entering %s()", __func__);
-
-	switch (output_format)
-	{
-		case OUTPUT_CSV:
-			/* do nothing */
-			break;
-
-		case OUTPUT_XML:
-			fputs ("</recyclebin>\n", outfile);
-			break;
-
-		default:
-			g_assert_not_reached();
-	}
-	g_debug ("Leaving %s()", __func__);
-}
-
-/* vim: set sw=4 ts=4 noexpandtab : */

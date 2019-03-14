@@ -44,6 +44,7 @@
 #include "rifiuti.h"
 
 
+       FILE      *out_fh               = NULL;
        char      *delim                = NULL;
 static char     **fileargs             = NULL;
 static char      *outfilename          = NULL;
@@ -405,10 +406,9 @@ int
 main (int    argc,
       char **argv)
 {
-	FILE           *outfile;
-	GSList         *filelist = NULL;
+	GSList         *filelist   = NULL;
 	GSList         *recordlist = NULL;
-	char           *tmppath = NULL;
+	char           *tmppath    = NULL;
 	GOptionContext *context;
 
 	rifiuti_init (argv[0]);
@@ -526,7 +526,7 @@ main (int    argc,
 		int tmpfile;
 		tmppath = g_strdup ("rifiuti-XXXXXX");
 		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
-		     ( NULL == (outfile = fdopen (tmpfile, "wb")) ) )
+		     ( NULL == (out_fh = fdopen (tmpfile, "wb")) ) )
 		{
 			g_printerr (_("Error opening temp file for writing: %s\n"),
 			            strerror (errno) );
@@ -535,17 +535,27 @@ main (int    argc,
 		}
 	}
 	else
-		outfile = stdout;
+	{
+#ifdef G_OS_WIN32
+		if (!init_wincon_handle())
+#endif
+			out_fh = stdout;
+	}
 
 	/* Print everything */
 	if (!no_heading)
-		print_header (outfile, meta);
-	g_slist_foreach (recordlist, (GFunc) print_record_cb, outfile);
-	print_footer (outfile);
+		print_header (meta);
+	g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
+	print_footer ();
 
-	fclose (outfile);
+	if (out_fh != NULL)
+		fclose (out_fh);
+#ifdef G_OS_WIN32
+	close_wincon_handle();
+#endif
 
-	if ( ( outfile != stdout ) && ( -1 == g_rename (tmppath, outfilename) ) )
+	/* file descriptor should have been closed at this point */
+	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
 	{
 		/* TRANSLATOR COMMENT: arg 1 is err message, 2nd is temp file
 		 * location when failed to be moved to proper location */

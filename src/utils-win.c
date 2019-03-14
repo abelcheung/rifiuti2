@@ -38,6 +38,10 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+
+HANDLE  wincon_fh = NULL;
+
+
 /* GUI message box */
 void
 gui_message (const char *message)
@@ -308,6 +312,62 @@ can_list_win32_folder (const char *path)
 	g_free (sid);
 	g_free (errmsg);
 	return ret;
+}
+
+gboolean
+init_wincon_handle (void)
+{
+	HANDLE h = GetStdHandle (STD_OUTPUT_HANDLE);
+
+	/*
+	 * FILE_TYPE_CHAR only happens when output is a native Windows cmd
+	 * console. For Cygwin and Msys shell environments (and output redirection),
+	 * GetFileType() would return FILE_TYPE_PIPE. In those cases printf
+	 * family outputs UTF-8 data properly. Only Windows console needs to be
+	 * dealt with using wide char API.
+	 */
+	if (GetFileType (h) == FILE_TYPE_CHAR) {
+		wincon_fh = h;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void
+close_wincon_handle (void)
+{
+	if (wincon_fh != NULL)
+		CloseHandle (wincon_fh);
+	return;
+}
+
+gboolean
+print_wincon (const char *str)
+{
+	gboolean   status;
+	gunichar2 *u16_str;
+	glong      read, written;
+	GError    *err = NULL;
+
+	g_return_val_if_fail (str       != NULL, FALSE);
+	g_return_val_if_fail (wincon_fh != NULL, FALSE);
+
+	/* No big endian issue, as it is Windows only here */
+	u16_str = g_utf8_to_utf16 (str, -1, &read, &written, &err);
+	if (err != NULL) {
+		g_critical (_("Error converting output from UTF-8 to UTF-16: %s\n"), err->message);
+	}
+
+	if (WriteConsoleW (wincon_fh, u16_str, (DWORD) written, NULL, NULL))
+		status = (err == NULL);
+	else
+		status = FALSE;
+
+	g_free (u16_str);
+	if (err != NULL)
+		g_error_free (err);
+
+	return status;
 }
 
 /* vim: set sw=4 ts=4 noexpandtab : */
