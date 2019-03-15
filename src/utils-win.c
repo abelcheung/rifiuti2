@@ -233,7 +233,7 @@ gboolean
 can_list_win32_folder (const char *path)
 {
 	char                  *errmsg = NULL;
-	wchar_t               *wpath;
+	gunichar2             *wpath;
 	gboolean               ret = FALSE;
 	PSID                   sid;
 	DWORD                  dw, dw2;
@@ -259,7 +259,7 @@ can_list_win32_folder (const char *path)
 		goto traverse_fail;
 	}
 
-	dw = GetNamedSecurityInfoW (wpath, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION |
+	dw = GetNamedSecurityInfoW ((wchar_t *)wpath, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION |
 			OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
 			NULL, NULL, NULL, NULL, &sec_desc);
 	if ( dw != ERROR_SUCCESS )
@@ -311,6 +311,7 @@ can_list_win32_folder (const char *path)
   traverse_fail:
 	g_free (sid);
 	g_free (errmsg);
+	g_free (wpath);
 	return ret;
 }
 
