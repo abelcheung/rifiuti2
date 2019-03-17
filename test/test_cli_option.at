@@ -40,14 +40,13 @@ AT_CLEANUP
 
 AT_SETUP([Escaped char in delimiter])
 AT_KEYWORDS([option])
-AT_CHECK([$has_perl || exit 77])
 AT_CHECK([
-	perl -p -e 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
+	sed 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
 	cd $sample
 	$progf -t "\n\t" INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
-	perl -p -e 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
+	sed 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
 	cd $sample
 	$progd -t "\n\t" dir-sample1
 ],, [expout], [])

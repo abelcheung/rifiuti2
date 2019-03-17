@@ -4,7 +4,7 @@ dnl Test suite for rifiuti2
 dnl
 dnl ごみ箱 is 'recycle bin' in Japanese
 dnl
-AT_SETUP([Unicode characters in recycle bin path])
+AT_SETUP([Unicode characters in file argument])
 AT_KEYWORDS([encoding])
 AT_CHECK([
 	cp $sample/japanese-path-file.txt expout
@@ -18,7 +18,21 @@ AT_CHECK([
 	cd $sample
 	$progd ./ごみ箱/dir-empty
 ],, [expout])
+AT_CLEANUP
 
+dnl
+dnl Original file in Windows ANSI (CP1252), but users attempts
+dnl to treat it as Shift-JIS, and fails
+dnl TODO: also check stderr
+dnl TODO: determine if exit status should be non-zero
+dnl
+AT_SETUP([Err when converting from wrong charset])
+AT_KEYWORDS([encoding])
+AT_CHECK([
+	cp $sample/INFO2-sample2-wrong-enc.txt expout
+	cd $sample
+	$progf -l CP932 INFO2-sample2
+],, [expout], [ignore])
 AT_CLEANUP
 
 dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :

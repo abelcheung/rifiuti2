@@ -40,11 +40,9 @@ changequote([,])dnl
 dnl Platform specific check.
 case "$host" in
 	*-*-mingw*)   os_mingw=y ;;
-	*-*-netbsd*)  os_netbsd=y ;;
 	*-*-solaris*) os_solaris=y ;;
 esac
 AC_SUBST(os_mingw)
-AC_SUBST(os_netbsd)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$os_mingw" != x])
 
 
@@ -53,7 +51,6 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 dnl For test suite
 AC_PATH_PROG([XMLLINT],[xmllint])
-AC_PATH_PROG([PERL],[perl])
 AC_CACHE_CHECK([for iconv that supports more Windows codepages], [ac_cv_path_ICONV],
                [AC_PATH_PROGS_FEATURE_CHECK([ICONV], [iconv],
                 [$ac_path_ICONV -f UTF-8 -t CP950 < /dev/null > /dev/null 2>&1 \
