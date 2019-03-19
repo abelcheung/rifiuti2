@@ -609,7 +609,7 @@ print_record_cb (rbin_struct *record)
 	char             *outstr = NULL, *deltime = NULL;
 	GString          *t;
 	gboolean          is_info2;
-	struct tm        *tm;
+	struct tm         del_tm;
 
 	extern gboolean   use_localtime;
 	extern char      *legacy_encoding;
@@ -635,8 +635,21 @@ print_record_cb (rbin_struct *record)
 	 * for non-US users. However, unsetting here still can't prevent user setting
 	 * $TZ in command line. Throw my hands up and just document the problem.
 	 */
-	tm = use_localtime ? localtime (&(record->deltime)):
-	                        gmtime (&(record->deltime));
+
+	/*
+	 * g_warning() further down below is an inline func that makes use of
+	 * localtime(), and if localtime/gmtime is used here (it used to be),
+	 * the value would be overwritten upon the g_warning call, into current
+	 * machine time. Nasty.
+	 *
+	 * But why is the behavior occuring on MinGW-w64, but not even on MSYS2
+	 * itself or any other OS; and why only manifesting now but not earlier?
+	 * -- 2019-03-19
+	 */
+	if (use_localtime)
+		localtime_r (&(record->deltime), &del_tm);
+	else
+		gmtime_r    (&(record->deltime), &del_tm);
 
 	if (record->meta->has_unicode_path && !legacy_encoding)
 	{
@@ -669,7 +682,7 @@ print_record_cb (rbin_struct *record)
 	{
 		case OUTPUT_CSV:
 
-			if ((t = get_datetime_str (tm)) != NULL)
+			if ((t = get_datetime_str (&del_tm)) != NULL)
 				deltime = g_string_free (t, FALSE);
 			else
 			{
@@ -699,7 +712,7 @@ print_record_cb (rbin_struct *record)
 		{
 			GString *s = g_string_new (NULL);
 
-			if ((t = get_iso8601_datetime_str (tm)) != NULL)
+			if ((t = get_iso8601_datetime_str (&del_tm)) != NULL)
 				deltime = g_string_free (t, FALSE);
 			else
 			{
