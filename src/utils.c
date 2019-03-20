@@ -499,7 +499,20 @@ _local_printf (const char *format, ...)
 	 * See init_wincon_handle().
 	 */
 	if (out_fh == NULL)
-		print_wincon (str);
+	{
+		GError  *err  = NULL;
+		wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, &err);
+
+		if (err != NULL) {
+			g_critical (_("Error converting output from UTF-8 to UTF-16: %s\n"), err->message);
+			g_clear_error (&err);
+			wstr = g_utf8_to_utf16 ("(Original message failed to be displayed in UTF-16)",
+				-1, NULL, NULL, NULL);
+		}
+
+		puts_wincon (wstr);
+		g_free (wstr);
+	}
 	else
 #endif
 		fputs (str, out_fh);

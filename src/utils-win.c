@@ -343,32 +343,15 @@ close_wincon_handle (void)
 }
 
 gboolean
-print_wincon (const char *str)
+puts_wincon (const wchar_t *wstr)
 {
-	gboolean   status;
-	gunichar2 *u16_str;
-	glong      read, written;
-	GError    *err = NULL;
-
-	g_return_val_if_fail (str       != NULL, FALSE);
+	g_return_val_if_fail (wstr      != NULL, FALSE);
 	g_return_val_if_fail (wincon_fh != NULL, FALSE);
 
-	/* No big endian issue, as it is Windows only here */
-	u16_str = g_utf8_to_utf16 (str, -1, &read, &written, &err);
-	if (err != NULL) {
-		g_critical (_("Error converting output from UTF-8 to UTF-16: %s\n"), err->message);
-	}
-
-	if (WriteConsoleW (wincon_fh, u16_str, (DWORD) written, NULL, NULL))
-		status = (err == NULL);
+	if (WriteConsoleW (wincon_fh, wstr, wcslen (wstr), NULL, NULL))
+		return TRUE;
 	else
-		status = FALSE;
-
-	g_free (u16_str);
-	if (err != NULL)
-		g_error_free (err);
-
-	return status;
+		return FALSE;
 }
 
 /* vim: set sw=4 ts=4 noexpandtab : */

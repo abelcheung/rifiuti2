@@ -37,7 +37,7 @@ char *     get_win32_locale         (void);
 gboolean   can_list_win32_folder    (const char     *dir     );
 gboolean   init_wincon_handle       (void);
 void       close_wincon_handle      (void);
-gboolean   print_wincon             (const char     *str     );
+gboolean   puts_wincon              (const wchar_t  *wstr    );
 
 #endif
 
