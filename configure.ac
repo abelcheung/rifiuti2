@@ -39,11 +39,13 @@ changequote([,])dnl
 
 dnl Platform specific check.
 case "$host" in
-	*-*-mingw*)   os_mingw=y ;;
-	*-*-solaris*) os_solaris=y ;;
+	*-*-cygwin*           ) is_cygwin=y;;
+	*-*-msys* | *-*-mingw*) is_mingw=y;;
+	*-*-solaris*          ) os_solaris=y ;;
 esac
-AC_SUBST(os_mingw)
-AM_CONDITIONAL([OS_WINDOWS], [test "x$os_mingw" != x])
+AC_SUBST(is_mingw)
+AC_SUBST(is_cygwin)
+AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 
 
 dnl Checks for programs.

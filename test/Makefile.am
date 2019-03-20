@@ -36,6 +36,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	echo 'm4_define([AT_PACKAGE_STRING],  [$(PACKAGE_STRING)])' && \
 	echo 'm4_define([AT_PACKAGE_BUGREPORT],  [$(PACKAGE_BUGREPORT)])'; \
 	echo 'm4_define([AT_PACKAGE_URL],  [$(PACKAGE_URL)])'; \
+	echo 'm4_include([ax_at_check_pattern.m4])'; \
 	} >'$(srcdir)/package.m4'
 
 TESTSUITE = $(srcdir)/testsuite

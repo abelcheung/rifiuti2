@@ -13,30 +13,34 @@ AT_CLEANUP
 AT_SETUP([Directory w/o Windows access permission])
 AT_KEYWORDS([recycledir crafted windows])
 AT_CHECK([which icacls.exe > /dev/null || exit 77])dnl need 2003 SP2 or later
-dnl Double slash prevents transformation of command options into drive letters
+AT_SKIP_IF([! $is_mingw])
+dnl
+dnl MSYS2_ARG_CONV_EXCL would prevent command line options automagically
+dnl treated as unix paths (and translated into windows paths or drive letters)
+dnl
 AT_CHECK([
 	cp -pR $sample/dir-win10-01 dir1
-	icacls.exe dir1 //inheritance:r > /dev/null
-	icacls.exe dir1 //grant:r "Users:(OI)(CI)(S,REA)" > /dev/null
+	icacls.exe dir1 /inheritance:r > /dev/null
+	icacls.exe dir1 /grant:r "Users:(OI)(CI)(S,REA)" > /dev/null
 	$progd dir1
 ],
 	[2],, [Error listing directory: Insufficient permission.
-No files with name pattern '$Ixxxxxx.*' are found in directory.
 ],
-	[icacls.exe dir1 //reset > /dev/null],
-	[icacls.exe dir1 //reset > /dev/null])
+	[MSYS2_ARG_CONV_EXCL="/reset" icacls.exe dir1 /reset > /dev/null],
+	[MSYS2_ARG_CONV_EXCL="/reset" icacls.exe dir1 /reset > /dev/null])
 AT_CLEANUP
 
+dnl MinGW mounts root with noacl option by default. Though user can change
+dnl mount options, it is safer to skip this test altogether
 AT_SETUP([Directory w/o Unix access permission])
 AT_KEYWORDS([recycledir crafted unix])
-AT_SKIP_IF([$is_windows])
-AT_CHECK([
+AT_SKIP_IF([$is_mingw])
+AX_AT_CHECK_PATTERN([
 	cp -pR $sample/dir-win10-01 dir1
 	chmod u= dir1
 	$progd dir1
 ],
-	[2],, [Error opening directory 'dir1': Error opening directory 'dir1': Permission denied
-No files with name pattern '$Ixxxxxx.*' are found in directory.
+	[2], [], [Error opening directory 'dir1': Error opening directory .dir1.: Permission denied
 ])
 AT_CLEANUP
 

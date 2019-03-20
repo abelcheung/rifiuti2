@@ -9,7 +9,8 @@ xmllint="@XMLLINT@"
 has_xmllint="test 'x@XMLLINT@' != 'x'"
 
 # detect & set env
-is_windows="test x$USERPROFILE != x"
+is_mingw="test x@is_mingw@ != x"
+is_cygwin="test x@is_cygwin@ != x"
 
 # abbrev
 progf="$abs_top_builddir/src/rifiuti"

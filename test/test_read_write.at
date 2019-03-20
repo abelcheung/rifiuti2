@@ -6,17 +6,18 @@ AT_KEYWORDS([file])
 _r2_check_ignore_err([foobar], [2])
 AT_CLEANUP
 
-AT_SETUP([Err on non-regular file (Unix)])
+AT_SETUP([Err on non-regular file])
 AT_KEYWORDS([file unix])
-AT_SKIP_IF([$is_windows])
 _r2_check_ignore_err([/dev/zero], [2])
 AT_CLEANUP
 
-dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered as regular files.
-dnl Therefore file can't be determined early as unusable, they have to be actually parsed.
+dnl g_file_test() was not so usable on Windows: NUL, CON etc are considered
+dnl as regular files. Therefore they can't be determined ahead as unusable,
+dnl they have to be actually parsed. Only MinGW can access the special files;
+dnl cygwin hides them from user.
 AT_SETUP([Err on non-regular file (Windows)])
 AT_KEYWORDS([file windows])
-AT_SKIP_IF([! $is_windows])
+AT_SKIP_IF([! $is_mingw])
 _r2_check_ignore_err([nul], [3])
 AT_CLEANUP
 
