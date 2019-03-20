@@ -359,8 +359,8 @@ my_debug_handler (const char     *log_domain,
 }
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
-static void
-populate_index_file_list (GSList     **list,
+static gboolean
+_populate_index_file_list (GSList     **list,
                           const char  *path)
 {
 	GDir           *dir;
@@ -375,15 +375,15 @@ populate_index_file_list (GSList     **list,
 	 */
 #ifdef G_OS_WIN32
 	if ( !can_list_win32_folder (path) )
-		return;
+		return FALSE;
 #endif
 
 	if (NULL == (dir = g_dir_open (path, 0, &error)))
 	{
 		g_printerr (_("Error opening directory '%s': %s\n"), path,
-		            error->message);
+			error->message);
 		g_clear_error (&error);
-		return;
+		return FALSE;
 	}
 
 	pattern1 = g_pattern_spec_new ("$I??????.*");
@@ -402,6 +402,8 @@ populate_index_file_list (GSList     **list,
 
 	g_pattern_spec_free (pattern1);
 	g_pattern_spec_free (pattern2);
+
+	return TRUE;
 }
 
 
@@ -448,7 +450,8 @@ check_file_args (const char  *path,
 	}
 	else if ( !is_info2 && g_file_test (path, G_FILE_TEST_IS_DIR) )
 	{
-		populate_index_file_list (list, path);
+		if ( ! _populate_index_file_list (list, path) )
+			return RIFIUTI_ERR_OPEN_FILE;
 		/*
 		 * last ditch effort: search for desktop.ini. Just print empty content
 		 * representing empty recycle bin if found.
