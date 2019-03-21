@@ -36,7 +36,6 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	echo 'm4_define([AT_PACKAGE_STRING],  [$(PACKAGE_STRING)])' && \
 	echo 'm4_define([AT_PACKAGE_BUGREPORT],  [$(PACKAGE_BUGREPORT)])'; \
 	echo 'm4_define([AT_PACKAGE_URL],  [$(PACKAGE_URL)])'; \
-	echo 'm4_include([ax_at_check_pattern.m4])'; \
 	} >'$(srcdir)/package.m4'
 
 TESTSUITE = $(srcdir)/testsuite
@@ -68,6 +67,7 @@ $(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES)
 	mv $@.tmp $@
 
 INC_AT_FILES = \
+  ax_at_check_pattern.m4 \
 	test_cli_option.at   \
 	test_common.at       \
 	test_encoding.at     \

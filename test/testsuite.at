@@ -5,6 +5,8 @@ AT_INIT
 
 AT_COPYRIGHT([Copyright (c) 2015, Abel Cheung])
 
+m4_include([ax_at_check_pattern.m4])
+
 m4_include([test_common.at])
 
 AT_BANNER([Command Line Options])

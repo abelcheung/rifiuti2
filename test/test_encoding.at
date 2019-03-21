@@ -28,11 +28,13 @@ dnl TODO: determine if exit status should be non-zero
 dnl
 AT_SETUP([Err when converting from wrong charset])
 AT_KEYWORDS([encoding])
-AT_CHECK([
+AX_AT_CHECK_PATTERN([
 	cp $sample/INFO2-sample2-wrong-enc.txt expout
 	cd $sample
 	$progf -l CP932 INFO2-sample2
-],, [expout], [ignore])
+],, [expout], [
+.*: rifiuti2-WARNING .*: Error converting file name from CP932 encoding to UTF-8 for index 3: Invalid byte sequence in conversion input
+])
 AT_CLEANUP
 
 dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :
