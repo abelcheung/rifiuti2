@@ -1,8 +1,10 @@
 ## Compile requirements
 
-Bootstraping process can be done for Unix/Linux like OS released since 2010.
+Building current git source can be done for Unix/Linux:
 
   * `glib` ≥ 2.28 (deveopment headers and libraries, available since 2010)
+    * For ancient platforms, only 0.6.1 source is buildable, which
+      requires `glib` 2.16.
   * `pkg-config` (or its replacement on \*BSD, `pkgconf`)
   * basic autotools-based development toolchain
     * C compiler &mdash; both `gcc` and `clang` are tested

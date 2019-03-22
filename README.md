@@ -61,17 +61,18 @@ for complete options and detailed usage description.
 
 ## Supported platform
 
-It has been tested on Linux, Windows XP, Windows 7, and recent FreeBSD.
+It has been tested on Linux, Windows 7 and FreeBSD.
 Some testing on big endian platforms are done with Qemu emulator.
 More compatibility fix for other architectures welcome.
-
-For ancient Linux/Unix (say, released before 2014) please use 0.6.1 version.
 
 ## Download
 
 ### Windows
 Windows binaries, if applicable, would be officially provided
 [on Github release page][6].
+
+Note that 0.6.1 version is the last version suporting Windows XP and 2003;
+upcoming versions would require Vista or above.
 
 ### Linux
 * DEB packages available officially on [Debian][7] and [Ubuntu][8],

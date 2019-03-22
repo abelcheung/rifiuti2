@@ -9,6 +9,7 @@
   the case when recycle bin artifact is in ASCII encoding
   * File output is also in UTF-8 encoding under Windows
   * `-8` option is rendered obsolete as a result
+* Drops Windows XP/2003 support
 * Won&apos;t overwrite destination file if it already exists
 * `$Recycle.bin` version:
   * Not printing file size field if it is corrupt
