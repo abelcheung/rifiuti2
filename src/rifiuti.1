@@ -15,21 +15,16 @@
 
 .SH INSTALLATION ON WINDOWS
 
-\fBRifiuti2\fP is designed to run as portable Windows command line
-application, and no installation is required. Copy the binaries
-corresponding to your system (\fCx64\\\fP for 64 bit systems,
-\fCx86\\\fP for 32 bit) to any folder of your choice and they are
-ready for use. Read sections below on how to use the programs.
+\fBRifiuti2\fP is designed to run as portable Windows
+\fIcommand line\fP
+application, and no installation is required. Extract zip file onto
+any folder of your choice and programs are ready for use.
+Read sections below on how to use them.
 
 .SS Translation
 By default output messages of rifiuti2 are in English.
-Optionally one can copy
-.nh
-\fCrifiuti\-l10n\fP
-.hy
-folder to the same location where the binaries are located.
 The program shall be able to pick up translation automatically
-if user has correct Region / Language setting.  This setting 
+if user has correct Region / Language setting.  This setting
 is under "Formats" tab of "Region and Language" (name may vary
 for different versions of Windows).
 
@@ -43,7 +38,7 @@ folder.  For example, assuming folder
 .nh
 \fCrifiuti\-l10n\\fr\\\fP
 .hy
-exists, running following in Windows \fCcmd\fP would enable French
+exists, running following in Windows console would enable French
 translation:
 .RS
 \fCset LANGUAGE=fr\fP
@@ -74,11 +69,16 @@ rifiuti2 \- MS Windows recycle bin analysis tool
 
 .SH SYNOPSIS
 .B rifiuti
-.RB [ \-hvz ]
+or
+.B rifiuti-vista
+.RB [ \-hv ]
+
+.B rifiuti
 .RB [ \-x " |"
-.RB [ \-8n ]
+.RB [ \-n ]
 .RB [ \-t
 .IR delim "]]"
+.RB [ \-z ]
 .RB [ \-l
 .IR codepage ]
 .RB [ \-o
@@ -86,11 +86,11 @@ rifiuti2 \- MS Windows recycle bin analysis tool
 .I filename
 
 .B rifiuti-vista
-.RB [ \-hvz ]
 .RB [ \-x " |"
-.RB [ \-8n ]
+.RB [ \-n ]
 .RB [ \-t
 .IR delim "]]"
+.RB [ \-z ]
 .RB [ \-o
 .IR outfile ]
 .I file_or_directory
@@ -137,6 +137,9 @@ screen, which can be viewed on screen or imported into spreadsheet
 program. \fB\-x\fP option instructs program to dump XML formatted
 content instead.
 .PP
+\fBSince 0.7.0 version\fP, rifiuti2 output is in UTF-8 encoding only,
+including the case of writing file under Windows.
+.PP
 Index field has different meaning for pre-Vista
 and post-Vista versions.  INFO2 has an index number for each of
 deletion item indicating the chronological order of items. For Vista
@@ -151,7 +154,7 @@ For example, 3PM at 2014 X\'mas represented in these modes would be
 respectively:
 .RS
 \fC2014-12-25 15:00:00\fP
-
+.br
 \fC2014-12-25T15:00:00Z\fP
 .RE
 .PP
@@ -204,15 +207,26 @@ See \fBENVIRONMENT VARIABLE\fP section below.
 PLAIN TEXT OUTPUT OPTIONS
 .TP
 \fB\-t\fP, \fB\-\-delimiter\fP=\fI\,STRING\/\fP
-String to use as delimiter (TAB by default). Several escaped characters
-are recognised: \\r (CARRIAGE RETURN), \\n (NEW LINE), \\t (TAB),
-\\f (FORM FEED), \\v (VERTICAL TAB), \\e (ESCAPE)
+String to use as delimiter (TAB by default). Other than normal
+characters, several escape sequences are also recognised:
+.br
+\\r (carriage return)
+.br
+\\n (line feed)
+.br
+\\t (tab)
+.br
+\\f (form feed)
+.br
+\\v (vertical tab)
+.br
+\\e (escape)
 .TP
 \fB\-n\fP, \fB\-\-no\-heading\fP
-Don\'t show recycle bin path name, version and header for each field
+Don\'t show recycle bin path name, metadata and field headers
 .TP
 \fB\-8\fP, \fB\-\-always\-utf8\fP
-Always display result in UTF\-8 encoding
+(Option deprecated since 0.7.0 version)
 .PP
 
 .SS
@@ -239,8 +253,8 @@ Scan for index files under \\case\\S\-1\-2\-3\\, adjust all deletion
 time for local time zone, and write XML output to result.xml
 .RE
 .TP
-\fCrifiuti-vista \-n \-8 \\case\\S\-1\-2\-3\\\fP
-Show tab-delimited result on screen in UTF-8 encoding without header
+\fCrifiuti-vista \-n \\case\\S\-1\-2\-3\\\fP
+Show tab-delimited result on screen without header and metadata
 .TP
 \fCrifiuti-vista -t '\\r\\n' \\case\\S\-1\-2\-3\\$IF96NJ3.rtf\fP
 Only analyse a single index file and print each field in its own line
@@ -248,27 +262,33 @@ Only analyse a single index file and print each field in its own line
 \fCrifiuti \-t ',' -o result.csv INFO2\fP
 Change tab-delimited result to comma-delimited and write to result.csv
 .TP
-\fCrifiuti \-l CP1255 \-8 \-n INFO2\fP
+\fCrifiuti \-l CP1255 \-n INFO2\fP
 .RS
-Read INFO2 from Hebrew version of Windows, display 8.3 file names
-on screen in UTF-8 encoding without header
+Assuming INFO2 from Hebrew version of Windows, display 8.3 file names
+without header and metadata
 .RE
 
 .SH ENVIRONMENT VARIABLES
 The following environment variables affect execution of program:
 
 .TP
-\fBCHARSET\fP, \fBLC_CTYPE\fP
+\fBLANG\fP / \fBLC_MESSAGES\fP / \fBLC_ALL\fP / \fBLANGUAGE\fP
+.RS
+Listed in order of increasing importance, these variables determine
+the translation to use. They belong to the group of locale
+environment variables. In general, these variables are already
+properly set up on Unix-like systems, while unused on Windows.
+Please consult relevant document of user\'s operating
+system for more detail.
+.RE
+.TP
+\fBLANG\fP / \fBLC_CTYPE\fP / \fBLC_ALL\fP
 .RS
 If recycle bin path contains non-ASCII character, these variables
-affect how they are displayed. UTF-8 capable systems are recommended
-to set
-.nh
-\fCCHARSET=UTF-8\fP
-.hy
-or use appropriate UTF-8 values for
-\fCLC_CTYPE\fP explicitly, otherwise path might be displayed in
-Universal Character Name sequences like \\u1234.
+affect how they are displayed, in a manner similar to translation
+related variables described above. However it is not recommended
+to modify them, as since 0.7.0 version rifiuti2 no more
+expects any environment using non UTF-8 encoding.
 .RE
 .TP
 \fBRIFIUTI_DEBUG\fP
@@ -332,10 +352,9 @@ Handling of non-ASCII file argument is not satisfactory; it may not
 work in certain case under MinGW bash.
 .PP
 Non-ASCII deleted item path name may not be always displayed
-appropriately, especially on systems with non-UTF-8 locale (such as
-Windows \fBcmd\fP, where output is restricted to ANSI codepages).
-Storing UTF-8 result into file with \fB\-8\fP or \fB\-x\fP option
-and then opening it with Unicode capable editor could be a solution.
+appropriately, especially on Windows console, where output is
+sometimes restricted to ANSI/OEM codepages. Dumping result into
+file and open with UTF-8 capable text editor is an option.
 .PP
 It is always better to use UTC time whenever possible, because
 calculation of local time might not be correct, especially for non-US users.
@@ -428,4 +447,3 @@ Anthony Wong
 \fC<ypwong@debian.org>\fP
 .hy
 helped in Debian packaging and was author of the original manpage.
-

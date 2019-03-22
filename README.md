@@ -1,3 +1,9 @@
+| Appveyor | Travis |
+|----------|--------|
+| [![Appveyor status](https://ci.appveyor.com/api/projects/status/tr93qef3blm1m9ye?svg=true)](https://ci.appveyor.com/project/abelcheung/rifiuti2) | [![Travis status](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master)](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master) |
+
+## Introduction
+
 `Rifiuti2` is a for analyzing Windows Recycle Bin INFO2 file. Analysis of
 Windows Recycle Bin is usually carried out during Windows computer
 forensics. `Rifiuti2` can extract file deletion time, original path
@@ -5,75 +11,93 @@ and size of deleted files and whether the trashed files have been
 permanently removed.
 
 For those interested in what it does, and what functionality it
-provides, please browse [official site][1] for more info.
-Latest features and changes can be found in [NEWS](NEWS.md) file.
+provides, please [check out official site][1] for more info.
+Latest features and changes can be found in [NEWS file](NEWS.md).
 
 [1]: https://abelcheung.github.io/rifiuti2
+
+## Special note for 0.7.0 (to be released)
+* Windows binaries will be automatically built from
+  [Appveyor](https://www.appveyor.com/) and published to Github.
+* **Systems supporting UTF-8 encoding is mandatory, except on Windows console
+  (file output is also in UTF-8).** This shouldn't be problematic though,
+  as UTF-8 locale is pretty much standard for Linux and macOS these years.
+  On Windows front, there are already many featureful text editors
+  capable of opening UTF-8 unicode text files.
+* As a result, `-8` option is obsolete and no more affects output in any way.
+
 
 ## Usage
 
 `rifiuti2` is designed to be portable, and runs on command line environment.
-Depending on relevant Windows recycle bin format, there are 2 binaries to choose
-(most users would probably want first one):
+Depending on relevant Windows recycle bin format, there are 2 binaries to
+choose from (most users would want first one):
 
-Program | Recycle bin from OS | Purpose
---------|---------------------|--------
-`rifiuti-vista`|Vista or above|Scans `\$Recycle.bin` style folder
-`rifiuti`  |Windows 95 to XP/2003|Reads `INFO` or `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
+Program        | Recycle bin from OS | Purpose
+---------------|---------------------|--------
+`rifiuti-vista`|Vista &ndash; Win10  | Scans `\$Recycle.bin` style folder
+`rifiuti`      |Win95 &ndash; XP/2003| Reads `INFO` or `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
 
-Run programs without any option for more detail. Here are some of the
-more useful options:
+Run programs without any option for more detail. Here are some more
+frequently used options:
 
- Option | Purpose
--------:|:--------
--8      | Always print result in UTF-8 encoding
--o      | Output to file
--x      | Output XML instead of tab-separated fields
--l      | Display legacy (8.3) filenames and specify its codepage
+ Option    | Purpose
+----------:|:--------
+`-o <FILE>`| Output to file
+`-x`       | Output XML instead of tab-separated fields
+`-l <CP>`  | Display legacy (8.3) filenames and specify its codepage
 
 Please consult manpage (Unix) or README.html (bundled with Windows binaries)
 for complete options and detailed usage description.
 
-#### Examples
+### Examples
 
 * `rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`
 > Scan for index files under `\case\S-1-2-3\`, adjust all deletion time
 > for local time zone, and write XML output to `result.xml`
-* `rifiuti -l CP932 -8 INFO2`
-> Assume INFO2 file is generated from Japanese Windows, and display
-> result on console in UTF-8 encoding
+* `rifiuti -l CP932 -t "\n" INFO2`
+> Assume INFO2 file is generated from Japanese Windows (codepage 932),
+> and display each field line by line, instead of separated by tab
 
 ## Supported platform
 
-It has been tested on Linux (as early as Ubuntu 8.04), Windows XP,
-Windows 7, and recent FreeBSD, on both 32 and 64-bit intel CPU.
+It has been tested on Linux, Windows XP, Windows 7, and recent FreeBSD.
 Some testing on big endian platforms are done with Qemu emulator.
 More compatibility fix for other architectures welcome.
 
+For ancient Linux/Unix (say, released before 2014) please use 0.6.1 version.
+
 ## Download
 
+### Windows
 Windows binaries, if applicable, would be officially provided
 [on Github release page][6].
 
-On Linux side:
-* DEB format packages are available officially on [Debian][7]
-and [Ubuntu][8].
-* There are some third party RPM packages, such as from
-[CERT Linux Forensics Tools Repository][9], which might work on CentOS,
-RHEL and Fedora.
-* [ArchAssault][10], a penetration testing derivative of Arch Linux, has
-`rifiuti2` packaged since late 2014.
+### Linux
+* DEB packages available officially on [Debian][7] and [Ubuntu][8],
+  so available on any derivative distribution as well (such as
+  Kali Linux and BackBox Linux).
+* RPM packages from [Linux Forensics Tools Repository (LiFTeR)][9]
+  can be used on CentOS, RHEL and Fedora.
+* [ArchStrike (formerly ArchAssault)][10], a penetration testing
+  derivative of Arch Linux, has `rifiuti2` packaged since late 2014.
 
+### FreeBSD
 Official [FreeBSD port][11] is available since 8.4.
 
-For platforms not listed above, users would need to compile program themselves.
-[Instructions are provided](docs/Compile.md) on how to compile on Linux,
-\*BSD and Windows.
+### Others
+For OS where `rifiuti2` is not readily available,
+[instructions are provided](docs/Compile.md) on how to compile this
+program from source.
+
+## License
+
+`rifiuti2` is released under BSD license. Please refer to
+[license file](docs/LICENSE.md) for more detail.
 
 [6]: https://github.com/abelcheung/rifiuti2/releases
 [7]: https://packages.debian.org/search?keywords=rifiuti2
 [8]: http://packages.ubuntu.com/search?keywords=rifiuti2
-[9]: https://forensics.cert.org/
-[10]: https://archassault.org/packages/?q=rifiuti2
-[11]: http://portsmon.freebsd.org/portoverview.py?category=security&portname=rifiuti2
-
+[9]: https://forensics.cert.org/ByPackage/rifiuti2.html
+[10]: https://archstrike.org/packages/rifiuti2
+[11]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2

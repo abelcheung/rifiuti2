@@ -1,16 +1,22 @@
-## 0.7.0
-#### Feature
-* Support recycle bin from older OS: Windows 95, NT4, ME
-* Automatically use translation on Windows
+## 0.7.0 (to be released)
+#### Feature Addition
+* Support recycle bin from jurassic Windows: 95, NT4, ME
 * Display timezone in tab-delimited output header
 * Guess Windows version based on recycle bin artifacts
 
 #### Change
+* Now **mandates UTF-8 locale**, except on Windows, and except
+  the case when recycle bin artifact is in ASCII encoding
+  * File output is also in UTF-8 encoding under Windows
+  * `-8` option is rendered obsolete as a result
 * Won&apos;t overwrite destination file if it already exists
-* Vista version:
+* `$Recycle.bin` version:
   * Not printing file size field if it is corrupt
-  * Exit with error status even if some errors are found
-  * Better detection of folder with insufficient permission
+  * Exit with error status whenever errors are found in any entry
+  * Better detection of folder with insufficient permission (obeys Windows ACL)
+
+#### Bug fix
+* Fix unicode display on Windows console (Issue #12)
 
 ----
 
