@@ -35,12 +35,14 @@ dnl mount options, it is safer to skip this test altogether
 AT_SETUP([Directory w/o Unix access permission])
 AT_KEYWORDS([recycledir crafted unix])
 AT_SKIP_IF([$is_mingw])
+dnl in front of root, permission is futile
+AT_SKIP_IF([test "`id -u`" = "0"])
 AX_AT_CHECK_PATTERN([
 	cp -pR $sample/dir-win10-01 dir1
 	chmod u= dir1
 	$progd dir1
 ],
-	[2], [], [Error opening directory 'dir1': Error opening directory .dir1.: Permission denied
+	[2],, [Error opening directory 'dir1': Error opening directory .+dir1.+: Permission denied
 ])
 AT_CLEANUP
 
