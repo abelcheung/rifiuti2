@@ -50,4 +50,3 @@ install-data-hook:
 uninstall-hook:
 	-rm -f $(DESTDIR)$(mandir)/man1/rifiuti-vista.1
 
--include $(top_srcdir)/git.mk

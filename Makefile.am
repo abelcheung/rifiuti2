@@ -23,4 +23,3 @@ MAINTAINERCLEANFILES = \
 distclean-local:
 	-rm -rf win-pkg
 
--include $(top_srcdir)/git.mk
