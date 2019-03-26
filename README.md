@@ -1,6 +1,6 @@
 | Appveyor | Travis |
 |----------|--------|
-| [![Appveyor status](https://ci.appveyor.com/api/projects/status/tr93qef3blm1m9ye?svg=true)](https://ci.appveyor.com/project/abelcheung/rifiuti2) | [![Travis status](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master)](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master) |
+| [![Appveyor status](https://ci.appveyor.com/api/projects/status/github/abelcheung/rifiuti2?svg=true&branch=master)](https://ci.appveyor.com/project/abelcheung/rifiuti2) | [![Travis status](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master)](https://travis-ci.org/abelcheung/rifiuti2) |
 
 ## Introduction
 

@@ -54,10 +54,8 @@ to main author for inclusion in next release.
 ####CHANGELOG####
 
 .PP
-Changes for previous versions are available from
-.RS
-https://github.com/abelcheung/rifiuti2/blob/master/NEWS.md
-.RE
+.URL https://github.com/abelcheung/rifiuti2/blob/master/NEWS.md "Changes for previous versions"
+are available on Github.
 
 .  \}
 .  el \{\
@@ -104,7 +102,7 @@ been moved out from the recycle bin since they are trashed.
 .PP
 Rifiuti2 supports a wide range of Windows versions, from Windows 95 to
 Windows 10. The command used for analysis depends on the version
-of Windows producing the recycle bin (\fBnot the version of users\'
+of Windows producing the recycle bin (\fBnot the version of users'
 system!\fP), which uses vastly different format before and after Vista:
 .PP
 
@@ -150,7 +148,7 @@ alphanumeric character.
 Deleted time is represented in UTC time by default. Under tab-delimited
 mode, date/time is presented in format recognized by spreadsheet
 programs, while in XML mode ISO 8601 date/time format is used.
-For example, 3PM at 2014 X\'mas represented in these modes would be
+For example, 3PM at 2014 X'mas represented in these modes would be
 respectively:
 .RS
 \fC2014-12-25 15:00:00\fP
@@ -186,19 +184,19 @@ European version, CP932 for Japanese, etc).
 
 .RS
 \fBNote\fP: This option is mandatory if INFO2 file is created by
-Windows 95, 98 or ME, since recycle bins under these OS don\'t contain
+Windows 95, 98 or ME, since recycle bins under these OS don't contain
 Unicode file name. This option does not exist in \fCrifiuti-vista\fP.
 .RE
 .TP
 \fB\-z\fP, \fB\-\-localtime\fP
 Present deletion time in numeric time zone of local system running
 the program.  By default, UTC time is displayed, which is the time
-value recorded in index files. Using the X\'mas example above, the
+value recorded in index files. Using the X'mas example above, the
 time for Berlin (without daylight saving time) would be
 \fC2014-12-25T16:00:00+0100\fP in ISO 8601 format.
 
 .RS
-\fBNote\fP: It is possible to use any timezone of users\' choice
+\fBNote\fP: It is possible to use any timezone of users' choice
 by setting \fC$TZ\fP environment variable, though not recommended.
 See \fBENVIRONMENT VARIABLE\fP section below.
 .RE
@@ -210,20 +208,20 @@ PLAIN TEXT OUTPUT OPTIONS
 String to use as delimiter (TAB by default). Other than normal
 characters, several escape sequences are also recognised:
 .br
-\\r (carriage return)
+\fC\\r\fP (carriage return)
 .br
-\\n (line feed)
+\fC\\n\fP (line feed)
 .br
-\\t (tab)
+\fC\\t\fP (tab)
 .br
-\\f (form feed)
+\fC\\f\fP (form feed)
 .br
-\\v (vertical tab)
+\fC\\v\fP (vertical tab)
 .br
-\\e (escape)
+\fC\\e\fP (escape)
 .TP
 \fB\-n\fP, \fB\-\-no\-heading\fP
-Don\'t show recycle bin path name, metadata and field headers
+Don't show recycle bin path name, metadata and field headers
 .TP
 \fB\-8\fP, \fB\-\-always\-utf8\fP
 (Option deprecated since 0.7.0 version)
@@ -278,7 +276,7 @@ Listed in order of increasing importance, these variables determine
 the translation to use. They belong to the group of locale
 environment variables. In general, these variables are already
 properly set up on Unix-like systems, while unused on Windows.
-Please consult relevant document of user\'s operating
+Please consult relevant document of user's operating
 system for more detail.
 .RE
 .TP
@@ -326,7 +324,7 @@ McAfee. Quoting from the original FoundStone page:
 
 .RS
 Many computer crime investigations require the reconstruction of a
-subject\'s Recycle Bin. Since this analysis technique is executed
+subject's Recycle Bin. Since this analysis technique is executed
 regularly, we researched the structure of the data found in the
 Recycle Bin repository files (INFO2 files). Rifiuti, the Italian word
 meaning "trash", was developed to examine the contents of the INFO2
@@ -336,17 +334,17 @@ Linux, and *BSD platforms.
 .RE
 
 .PP
-However, since the original rifiuti (last updated 2004) can\'t analyze
+However, since the original rifiuti (last updated 2004) can't analyze
 recycle bin from any localized version of Windows (restricted to
 English), this rewrite effort is born to overcome the limitation. Later
 rifiuti2 was improved to add support for Vista format recycle bin, XML
 output and other extra features not available from original version.
 
 .SH BUGS
-In very special circumstance (which author can\'t reproduce now),
+In very special circumstance (which author can't reproduce now),
 index file of certain deleted item can be corrupt, causing incorrect
 deleted file size to be stored. There is no way to report correct size.
-This problem shouldn\'t happen after Vista though.
+This problem shouldn't happen after Vista though.
 .PP
 Handling of non-ASCII file argument is not satisfactory; it may not
 work in certain case under MinGW bash.
@@ -360,7 +358,7 @@ It is always better to use UTC time whenever possible, because
 calculation of local time might not be correct, especially for non-US users.
 Documentation of \fC_tzset()\fP function on Windows has this statement:
 .RS
-The C run-time library assumes the United States\' rules for implementing
+The C run-time library assumes the United States' rules for implementing
 the calculation of daylight saving time (DST).
 .RE
 Therefore the time might not be correct in case the files inside
@@ -401,14 +399,13 @@ https://abelcheung.github.io/rifiuti2/
 .URL http://odessa.sourceforge.net/ "Open Digital Evidence Search and Seizure Architecture project"
 , which contains the original rifiuti tool
 .PP
-Forensics tools and other security related utilities
-.URL http://www.mcafee.com/us/downloads/free-tools/index.aspx "originally written by FoundStone"
-are now available under McAfee\'s own license
+.URL https://www.blackbagtech.com/blog/2017/01/19/examining-the-windows-10-recycle-bin/ "Windows 10 Recycle Bin Index Structure"
+, by BlackBag Technologies
 .PP
-.URL http://me.abelcheung.org/wp-content/uploads/2007/09/vista-recycle-bin-sample.pdf "Vista recycle bin file structure"
-, by Abel Cheung
+.URL https://pdfs.semanticscholar.org/db62/a02a2f90c569200bf37ead369221e04393d8.pdf "$Recycle.Bin Forensics for Windows 7 and Windows Vista"
+, by Timothy R. Leschke
 .PP
-.URL http://www.csisite.net/downloads/INFO2.pdf "INFO2 recycle bin file example"
+.URL http://www.cyber-ssct.com/resources/INFO2.pdf "INFO2 recycle bin file example"
 , by Steve Hailey
 .  \}
 .  el \{\
@@ -416,14 +413,14 @@ are now available under McAfee\'s own license
 Open Digital Evidence Search and Seizure Architecture project, which contains the original rifiuti tool
 http://odessa.sourceforge.net/
 .TP
-Forensics tools and other security related utilities originally written by FoundStone are now available under McAfee\'s own license.
-http://www.mcafee.com/us/downloads/free-tools/index.aspx
+Windows 10 Recycle Bin Index Structure, by BlackBag Technologies
+https://www.blackbagtech.com/blog/2017/01/19/examining-the-windows-10-recycle-bin/
 .TP
-Vista recycle bin file structure, by Abel Cheung
-http://me.abelcheung.org/wp-content/uploads/2007/09/vista-recycle-bin-sample.pdf
+$Recycle.Bin Forensics for Windows 7 and Windows Vista, by Timothy R. Leschke
+https://pdfs.semanticscholar.org/db62/a02a2f90c569200bf37ead369221e04393d8.pdf
 .TP
 INFO2 recycle bin file example, by Steve Hailey
-http://www.csisite.net/downloads/INFO2.pdf
+http://www.cyber-ssct.com/resources/INFO2.pdf
 .  \}
 .PP
 
