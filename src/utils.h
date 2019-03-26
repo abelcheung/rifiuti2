@@ -30,10 +30,16 @@
 #ifndef _RIFIUTI_UTILS_H
 #define _RIFIUTI_UTILS_H
 
-#include <inttypes.h>
+/*
+ * Rifiuti itself only need _POSIX_C_SOURCE == 1 for usage of
+ * localtime_r(); however glib2's usage of siginfo_t pushes
+ * the requirement further. It's undefined in some Unices.
+ */
 #ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 1
+#define _POSIX_C_SOURCE 199309L
 #endif
+
+#include <inttypes.h>
 #include <time.h>
 #include <stdio.h>
 #include <glib.h>

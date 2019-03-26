@@ -33,7 +33,7 @@ AT_CLEANUP
 
 AT_SETUP([Legacy path names])
 AT_KEYWORDS([info2])
-_r2_basic_compare([$progf -l CP936 INFO2-sample1], [INFO2-sample1-alt.txt])
+_r2_basic_compare([$progf -l $gbk_enc_name INFO2-sample1], [INFO2-sample1-alt.txt])
 AT_CLEANUP
 
 dnl vim: set ts=4 sw=4 noexpandtab :

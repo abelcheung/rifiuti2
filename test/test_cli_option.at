@@ -41,12 +41,12 @@ AT_CLEANUP
 AT_SETUP([Escaped char in delimiter])
 AT_KEYWORDS([option])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $sample/INFO2-sample1.txt > expout
+	$awk '{ gsub("\t","\n\t"); print; }' < $sample/INFO2-sample1.txt > expout
 	cd $sample
 	$progf -t "\n\t" INFO2-sample1
 ],, [expout], [])
 AT_CHECK([
-	sed 's/\t/\n\t/g' < $sample/dir-sample1.txt > expout
+	$awk '{ gsub("\t","\n\t"); print; }' < $sample/dir-sample1.txt > expout
 	cd $sample
 	$progd -t "\n\t" dir-sample1
 ],, [expout], [])

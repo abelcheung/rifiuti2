@@ -54,18 +54,22 @@ INC_AT_FILES = \
 AUTOM4TE = $(SHELL) $(top_srcdir)/missing --run autom4te
 AUTOTEST = $(AUTOM4TE) --language=autotest
 
+# Autotest won't use AC_ macros, therefore pass the result
+# of AC_CHECK_PROGS as external variables
+TEST_FLAGS_EXTRA = 'AWK=$(AWK)'
+
 check-local: atconfig atlocal $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
+	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS) $(TEST_FLAGS_EXTRA)
 
 installcheck-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir)' \
-		$(TESTSUITEFLAGS)
+		$(TESTSUITEFLAGS) $(TEST_FLAGS_EXTRA)
 
 clean-local:
 	test ! -f '$(TESTSUITE)' || $(SHELL) '$(TESTSUITE)' --clean
 	-rm -f *.tmp
 
-$(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES)
+$(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES) atconfig atlocal
 	$(AUTOTEST) -I '$(srcdir)' -o $@.tmp $@.at
 	mv $@.tmp $@
 

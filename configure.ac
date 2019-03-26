@@ -51,11 +51,16 @@ AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 dnl Checks for programs.
 AC_PROG_INSTALL
 AC_PROG_LN_S
+dnl
 dnl For test suite
+dnl
+AS_BOX([Test suite programs])
 AC_PATH_PROG([XMLLINT],[xmllint])
+dnl CP932 is commonly available among glibc, libiconv,
+dnl as well as solaris with extra iconv module installed
 AC_CACHE_CHECK([for iconv that supports more Windows codepages], [ac_cv_path_ICONV],
                [AC_PATH_PROGS_FEATURE_CHECK([ICONV], [iconv],
-                [$ac_path_ICONV -f UTF-8 -t CP950 < /dev/null > /dev/null 2>&1 \
+                [$ac_path_ICONV -f UTF-8 -t CP932 < /dev/null > /dev/null 2>&1 \
                  && ac_cv_path_ICONV=$ac_path_ICONV ac_path_ICONV_found=:])])
 AC_SUBST([ICONV],[$ac_cv_path_ICONV])
 
@@ -64,33 +69,40 @@ dnl g_slist_free_full() requires 2.28.0
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28.0],,
                   [AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
 
+dnl
 dnl See if glib is linked to Solaris implementation of iconv
-dnl Too many code pages support were missing
-if test -n "$os_solaris"; then
+dnl FIXME this check goes berserk under MinGW but magically works
+dnl after manual gcc argument reordering
+dnl
+dnl There exists solaris derivatives that can install external
+dnl glib2 package that links with libiconv, and they would require
+dnl appropriate RPATH settings. However this is exception rather than
+dnl the norm, and I don't have such system readily available now.
+dnl GLIB_RPATH=`pkg-config --libs-only-L glib-2.0 | sed -e 's#-L#-R#g'`
+dnl GLIB_LIBS="$GLIB_LIBS $GLIB_RPATH"
+
+AS_VAR_SET_IF([os_solaris],[dnl
 save_CFLAGS="$CFLAGS"
 save_LDFLAGS="$LDFLAGS"
-# todo: Determine path for 32/64bit
-GLIB_RPATH=`pkg-config --libs-only-L glib-2.0 | sed -e 's#-L#-R#g'`
 CFLAGS="$CFLAGS $GLIB_CFLAGS"
 LDFLAGS="$LDFLAGS $GLIB_LIBS $GLIB_RPATH"
 AC_LANG_ASSERT([C])
-AC_MSG_CHECKING([whether glib2 is linked with appropriate iconv])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([dnl
-#include <glib.h>
-#include <glib/gi18n.h>
-], [return (g_iconv_open("UTF-8","CP950") == (GIConv) -1);])],
-              [AC_MSG_RESULT([yes])],
-              [AC_MSG_RESULT([no])
-               AC_MSG_ERROR([
-iconv() implementation used by Solaris stock glib2 is not supported.
-Please install external glib2 package that uses GNU libiconv
-on such system, and set \@S|@PKG_CONFIG_PATH accordingly.
-Glib2 packages from OpenCSW or Sunfreeware are known to work.])])
-
+AC_MSG_CHECKING([iconv implementation used by glib2])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
+	[return (g_iconv_open("UTF-8","CP950") == (GIConv) -1);])],
+	[AC_MSG_RESULT([native/libiconv])],
+	[AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
+		[return (g_iconv_open("UTF-8","646") == (GIConv) -1);])],
+		[AC_MSG_RESULT([solaris])
+		 AC_SUBST(solaris_iconv)],
+		[AC_MSG_RESULT([unknown])
+		 AC_MSG_ERROR([dnl
+iconv() implementation used by glib2 is not recognized, which
+would encumber functionality of rifiuti2. Please contact maintainer
+if you think this is a bug.])])])
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
-GLIB_LIBS="$GLIB_LIBS $GLIB_RPATH"
-fi
+])dnl end AS_VAR_SET_IF os_solaris
 
 AC_ARG_ENABLE(static,
               [AS_HELP_STRING([--enable-static],

@@ -43,7 +43,8 @@ AX_AT_CHECK_PATTERN([
 	$progd dir1
 ],
 	[2],, [Error opening directory 'dir1': Error opening directory .+dir1.+: Permission denied
-])
+],
+	[chmod u=rwx dir1])
 AT_CLEANUP
 
 dnl vim: set ts=4 sw=4 noexpandtab :

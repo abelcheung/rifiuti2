@@ -7,12 +7,21 @@ iconv="@ICONV@"
 has_iconv="test 'x@ICONV@' != 'x'"
 xmllint="@XMLLINT@"
 has_xmllint="test 'x@XMLLINT@' != 'x'"
+awk="@AWK@"
 
 # detect & set env
 is_mingw="test x@is_mingw@ != x"
 is_cygwin="test x@is_cygwin@ != x"
+os_solaris="test x@os_solaris@ != x"
 
 # abbrev
 progf="$abs_top_builddir/src/rifiuti"
 progd="$abs_top_builddir/src/rifiuti-vista"
 sample="$abs_srcdir/samples"
+
+# platform specific stuff
+if $os_solaris; then
+    gbk_enc_name=GBK
+else
+    gbk_enc_name=CP936
+fi
