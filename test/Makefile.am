@@ -36,18 +36,23 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	echo 'm4_define([AT_PACKAGE_STRING],  [$(PACKAGE_STRING)])' && \
 	echo 'm4_define([AT_PACKAGE_BUGREPORT],  [$(PACKAGE_BUGREPORT)])'; \
 	echo 'm4_define([AT_PACKAGE_URL],  [$(PACKAGE_URL)])'; \
-	} >'$(srcdir)/package.m4'
+	} > $@
 
 TESTSUITE = $(srcdir)/testsuite
 
-EXTRA_DIST = \
-	rifiuti.dtd          \
-	samples              \
-	$(srcdir)/package.m4 \
-	testsuite.at         \
-	$(TESTSUITE)         \
-	atlocal.in           \
-	$(NULL)
+INC_AT_FILES = \
+	ax_at_check_pattern.m4 \
+	test_cli_option.at   \
+	test_common.at       \
+	test_encoding.at     \
+	test_faulty_dir.at   \
+	test_parse_dir.at    \
+	test_parse_info2.at  \
+	test_read_write.at   \
+	test_xml.at
+
+AUTOM4TE = $(SHELL) $(top_srcdir)/missing --run autom4te
+AUTOTEST = $(AUTOM4TE) --language=autotest
 
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
@@ -60,28 +65,24 @@ clean-local:
 	test ! -f '$(TESTSUITE)' || $(SHELL) '$(TESTSUITE)' --clean
 	-rm -f *.tmp
 
-AUTOM4TE = $(SHELL) $(top_srcdir)/missing --run autom4te
-AUTOTEST = $(AUTOM4TE) --language=autotest
 $(TESTSUITE): $(srcdir)/testsuite.at $(srcdir)/package.m4 $(INC_AT_FILES)
 	$(AUTOTEST) -I '$(srcdir)' -o $@.tmp $@.at
 	mv $@.tmp $@
 
-INC_AT_FILES = \
-  ax_at_check_pattern.m4 \
-	test_cli_option.at   \
-	test_common.at       \
-	test_encoding.at     \
-	test_faulty_dir.at   \
-	test_parse_dir.at    \
-	test_parse_info2.at  \
-	test_read_write.at   \
-	test_xml.at
-
-EXTRA_DIST += $(INC_AT_FILES)
+EXTRA_DIST = \
+	rifiuti.dtd          \
+	samples              \
+	$(srcdir)/package.m4 \
+	testsuite.at         \
+	$(TESTSUITE)         \
+	atlocal.in           \
+	$(INC_AT_FILES)      \
+	$(NULL)
 
 DISTCLEANFILES = atconfig atlocal
 CLEANFILES = testsuite.log
-MAINTAINERCLEANFILES = testsuite $(srcdir)/package.m4
-
-GITIGNOREFILES = testsuite.dir
-
+MAINTAINERCLEANFILES = \
+	$(TESTSUITE)           \
+	$(srcdir)/package.m4   \
+	$(srcdir)/Makefile.in  \
+	$(NULL)
