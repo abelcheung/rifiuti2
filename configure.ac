@@ -1,4 +1,7 @@
 dnl vim: set sw=2 ts=2 expandtab :
+dnl
+dnl Copyright (C) 2007-2019 Abel Cheung.
+dnl All rights reserved.
 
 AC_INIT([rifiuti2], [0.6.90],
         [https://github.com/abelcheung/rifiuti2/issues], [],

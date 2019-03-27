@@ -5,7 +5,18 @@ dnl Test suite for rifiuti2
 
 AT_INIT
 
-AT_COPYRIGHT([Copyright (c) 2015, Abel Cheung])
+AT_COPYRIGHT([
+Copyright (c) 2015-2019, Abel Cheung
+All rights reserved.
+
+Makes use of macros from pyrediff project, which carries following notice:
+
+    Copyright (c) 2013-2017 Luke Mewburn luke@mewburn.net
+    Copying and distribution of this file, with or without modification,
+	are permitted in any medium without royalty provided the copyright
+	notice and this notice are preserved. This file is offered as-is,
+	without any warranty.
+])
 
 m4_include([ax_at_check_pattern.m4])
 

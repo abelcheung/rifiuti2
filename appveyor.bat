@@ -1,6 +1,6 @@
 @echo off
-:: Copyright 2018-19 Abel Cheung
-:: License same as main package
+:: Copyright 2018-2019 Abel Cheung
+:: All rights reserved.
 
 set OLDPATH=%PATH%
 PATH C:\msys64\%MSYSTEM%\bin;C:\msys64\usr\bin;%OLDPATH%
