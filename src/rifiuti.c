@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2003, by Keith J. Jones.
  * Copyright (C) 2007, 2015 Abel Cheung.
@@ -579,5 +580,3 @@ main (int    argc,
 
 	return exit_status;
 }
-
-/* vim: set sw=4 ts=4 noexpandtab : */

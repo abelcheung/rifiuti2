@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007, 2015 Abel Cheung.
  * All rights reserved.
@@ -40,5 +41,3 @@ void       close_wincon_handle      (void);
 gboolean   puts_wincon              (const wchar_t  *wstr    );
 
 #endif
-
-/* vim: set sw=4 ts=4 noexpandtab : */

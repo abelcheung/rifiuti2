@@ -1,4 +1,6 @@
 dnl -*- mode: m4; -*-
+dnl vim: set ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 AT_SETUP([INFO2: XML validation])
@@ -36,5 +38,3 @@ AT_CHECK([
 	$xmllint --noout --dtdvalid $srcdir/rifiuti.dtd -
 ])
 AT_CLEANUP
-
-dnl vim: set ts=4 sw=4 noexpandtab :

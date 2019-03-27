@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2003, by Keith J. Jones.
  * Copyright (C) 2007, 2015 Abel Cheung.
@@ -49,5 +50,3 @@
 #define UNICODE_RECORD_SIZE     ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
 
 #endif
-
-/* vim: set sw=4 ts=4 noexpandtab : */

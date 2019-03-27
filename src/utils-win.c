@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2015 Abel Cheung.
  * All rights reserved.
@@ -353,5 +354,3 @@ puts_wincon (const wchar_t *wstr)
 	else
 		return FALSE;
 }
-
-/* vim: set sw=4 ts=4 noexpandtab : */

@@ -1,4 +1,4 @@
-dnl Process this file with autoconf to produce a configure script.
+dnl vim: set sw=2 ts=2 expandtab :
 
 AC_INIT([rifiuti2], [0.6.90],
         [https://github.com/abelcheung/rifiuti2/issues], [],
@@ -147,5 +147,3 @@ test/atlocal
 ])
 
 AC_OUTPUT
-
-dnl vim: set sw=2 ts=2 expandtab :

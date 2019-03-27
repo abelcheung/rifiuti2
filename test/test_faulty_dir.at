@@ -1,4 +1,6 @@
 dnl -*- mode: m4; -*-
+dnl vim: set ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 AT_SETUP([Index files of different versions])
@@ -46,5 +48,3 @@ AX_AT_CHECK_PATTERN([
 ],
 	[chmod u=rwx dir1])
 AT_CLEANUP
-
-dnl vim: set ts=4 sw=4 noexpandtab :

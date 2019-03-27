@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007, 2015 Abel Cheung.
  * All rights reserved.
@@ -41,5 +42,3 @@
 #define VERSION1_FILE_SIZE           ((VERSION1_FILENAME_OFFSET) + (WIN_PATH_MAX) * 2)
 
 #endif
-
-/* vim: set sw=4 ts=4 noexpandtab : */

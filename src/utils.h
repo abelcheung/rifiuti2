@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007, 2015 Abel Cheung.
  * All rights reserved.
@@ -193,5 +194,3 @@ void       my_debug_handler         (const char          *log_domain      ,
                                      const char          *message         ,
                                      gpointer             data            );
 #endif
-
-/* vim: set sw=4 ts=4 noexpandtab : */

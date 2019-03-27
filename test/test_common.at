@@ -1,4 +1,6 @@
 dnl -*- mode: m4; -*-
+dnl vim: set ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 m4_defun([_r2_check_empty_option], [

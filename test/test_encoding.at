@@ -1,4 +1,6 @@
 dnl -*- coding: utf-8; mode: m4; -*-
+dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 dnl
@@ -36,5 +38,3 @@ AX_AT_CHECK_PATTERN([
 .*: rifiuti2-WARNING .*: Error converting file name from CP932 encoding to UTF-8 for index 3: Invalid byte sequence in conversion input
 ])
 AT_CLEANUP
-
-dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :

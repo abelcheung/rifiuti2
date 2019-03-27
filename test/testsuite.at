@@ -1,4 +1,6 @@
 dnl -*- mode: m4; -*-
+dnl vim: set ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 AT_INIT
@@ -29,5 +31,3 @@ m4_include([test_encoding.at])
 
 AT_BANNER([XML Validation])
 m4_include([test_xml.at])
-
-dnl vim: set ts=4 sw=4 noexpandtab :

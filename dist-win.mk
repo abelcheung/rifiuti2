@@ -1,3 +1,4 @@
+# vim: set sw=4 ts=4 noexpandtab :
 #
 # Make file fragment for rifiuti2 -- maintainer only
 # Handle binary distribution for Windows

@@ -1,4 +1,6 @@
 dnl -*- mode: m4; -*-
+dnl vim: set ts=4 sw=4 noexpandtab :
+dnl
 dnl Test suite for rifiuti2
 
 AT_SETUP([Err on non-existent input])
@@ -32,5 +34,3 @@ AT_CHECK([
 	$progd           $sample/dir-sample1
 ],, [expout])
 AT_CLEANUP
-
-dnl vim: set ts=4 sw=4 noexpandtab :
