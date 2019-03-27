@@ -26,8 +26,5 @@ MAINTAINERCLEANFILES = \
 	$(top_srcdir)/po/Makefile.in.in  \
 	$(NULL)
 
--include $(top_srcdir)/dist-win.mk
-
 distclean-local:
 	-rm -rf win-pkg
-

@@ -227,7 +227,7 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	 * console codepage. Problem only observed in MSYS bash and not Windows
 	 * console, so not a priority to fix.
 	 */
-#if GLIB_CHECK_VERSION(2, 40, 0) && defined (G_OS_WIN32)
+#ifdef G_OS_WIN32
 	{
 		char **args = g_win32_get_command_line ();
 		ret = g_option_context_parse_strv (*context, &args, &err);

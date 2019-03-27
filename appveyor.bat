@@ -49,9 +49,9 @@ goto :eof
 
 if "%APPVEYOR_REPO_TAG%" == "true" (
     echo "*** Building official release ***"
-    bash -lc "make dist-win"
+    bash -lc "make -f dist-win.mk dist-win"
 ) else (
-    bash -lc "make dist-win ZIPNAME=%APPVEYOR_PROJECT_SLUG%-%APPVEYOR_REPO_COMMIT:~0,8%-win-%MSYS2_ARCH%"
+    bash -lc "make -f dist-win.mk dist-win ZIPNAME=%APPVEYOR_PROJECT_SLUG%-%APPVEYOR_REPO_COMMIT:~0,8%-win-%MSYS2_ARCH%"
 )
 
 @echo off

@@ -1,14 +1,23 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rifiuti2], [0.7.0],
-        [https://github.com/abelcheung/rifiuti2/issues],,
+AC_INIT([rifiuti2], [0.6.90],
+        [https://github.com/abelcheung/rifiuti2/issues], [],
         [https://abelcheung.github.io/rifiuti2/])
 AC_CONFIG_SRCDIR([src/rifiuti-vista.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([test])
 AM_INIT_AUTOMAKE([1.11])
 
 AC_CANONICAL_HOST
+dnl Platform check.
+AS_CASE([$host],
+        [*-*-msys* | *-*-mingw*], [is_mingw=y  ],
+        [*-*-cygwin*           ], [is_cygwin=y ],
+        [*-*-solaris*          ], [os_solaris=y])
+AC_SUBST(is_mingw)
+AC_SUBST(is_cygwin)
+AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
+
 
 dnl I18N
 GETTEXT_PACKAGE=rifiuti
@@ -19,7 +28,8 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
 
 AM_GLIB_GNU_GETTEXT
 
-dnl Compiler checks.
+dnl Compiler and devel toolchain checks.
+AS_BOX([Compiler and toolchain])
 AC_PROG_CC
 AC_PROG_CC_STDC
 
@@ -28,29 +38,14 @@ if test "x$ac_cv_prog_cc_c99" = "xno"; then
 fi
 
 dnl Always use -Wall for gcc
-changequote(,)dnl
-if test "x$GCC" = "xyes"; then
-	case " $CFLAGS " in
-		*[\ \ ]-Wall[\ \	]*) ;;
-		*) CFLAGS="$CFLAGS -Wall" ;;
-	esac
-fi
-changequote([,])dnl
+AC_MSG_CHECKING(whether compiler understands -Wall)
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wall"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+   CFLAGS="$old_CFLAGS"])
 
-dnl Platform specific check.
-case "$host" in
-	*-*-cygwin*           ) is_cygwin=y;;
-	*-*-msys* | *-*-mingw*) is_mingw=y;;
-	*-*-solaris*          ) os_solaris=y ;;
-esac
-AC_SUBST(is_mingw)
-AC_SUBST(is_cygwin)
-AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
-
-
-dnl Checks for programs.
-AC_PROG_INSTALL
-AC_PROG_LN_S
 dnl
 dnl For test suite
 dnl
@@ -64,10 +59,18 @@ AC_CACHE_CHECK([for iconv that supports more Windows codepages], [ac_cv_path_ICO
                  && ac_cv_path_ICONV=$ac_path_ICONV ac_path_ICONV_found=:])])
 AC_SUBST([ICONV],[$ac_cv_path_ICONV])
 
+dnl
 dnl Checks for libraries.
-dnl g_slist_free_full() requires 2.28.0
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28.0],,
-                  [AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
+dnl
+AS_BOX([Libraries])
+
+dnl g_slist_free_full() requires 2.28.0, and
+dnl g_win32_get_command_line() needs 2.40.0
+AS_VAR_SET_IF([is_mingw],
+	[glib_req="glib-2.0 >= 2.40.0"],
+	[glib_req="glib-2.0 >= 2.28.0"])
+PKG_CHECK_MODULES([GLIB], [$glib_req],,
+	[AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
 
 dnl
 dnl See if glib is linked to Solaris implementation of iconv
@@ -111,10 +114,13 @@ AC_ARG_ENABLE(static,
 
 dnl Need to pull in libiconv manually for mingw static build
 dnl And this undocumented GLIB_STATIC_COMPILATION thing... dang
-AS_IF([test "x$enable_static" = "xyes"],
-      [GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"])
-AS_IF([test "x$enable_static" = "xyes" -a "x$is_mingw" != "x"],
-      [GLIB_LIBS="`$PKG_CONFIG --libs --static glib-2.0` -liconv $GLIB_RPATH"])
+AS_VAR_IF([enable_static], [yes], [dnl
+	AS_VAR_SET_IF([is_mingw],
+		[pcfiles="glib-2.0 iconv"],
+		[pcfiles="glib-2.0"])
+	GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
+	GLIB_LIBS="`$PKG_CONFIG --libs --static $pcfiles` $GLIB_RPATH"
+	])
 AM_CONDITIONAL([STATIC_BUILD], [test "x$enable_static" = "xyes"])
 
 AC_SUBST(GLIB_CFLAGS)
@@ -142,4 +148,4 @@ test/atlocal
 
 AC_OUTPUT
 
-dnl vim: set sw=4 ts=4 noexpandtab :
+dnl vim: set sw=2 ts=2 expandtab :
