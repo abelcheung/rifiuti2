@@ -1,5 +1,5 @@
 dnl -*- coding: utf-8; mode: m4; -*-
-dnl vim: set fileencoding=utf-8 ts=4 sw=4 noexpandtab :
+dnl vim: set fileencoding=utf-8 filetype=m4 ts=4 sw=4 noexpandtab :
 dnl
 dnl Test suite for rifiuti2
 
