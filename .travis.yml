@@ -1,23 +1,30 @@
 language: c
-compiler: gcc
+compiler: clang
 branches:
-  except:
-    - gh-pages
+    except:
+        - gh-pages
 os:
-  - linux
-install:
-  - sudo apt-get install -qq libglib2.0-dev libxml2-utils
+    - linux
+dist: xenial
+addons:
+    apt:
+        update: true
+        packages:
+            - libglib2.0-dev
+            - libxml2-utils
+            - autopoint
+before_script:
+    - autoreconf -f -i -v
 script:
-  - ./autogen.sh && ./configure && make
-  - make check TESTSUITEFLAGS='-v'
-  - make distcheck
+    - ./configure && make check TESTSUITEFLAGS='-v'
+    - make distcheck
 deploy:
-  provider: releases
-  api_key:
-    secure: "BHyNz+01netkQ0knn17Fgj27YUnwtuu/ensNNfMgUaPiobsLHOhXg6W6PCugjCGcBldA5NeLtTf2b1ee64iyGO8Fhh6m4PE0GwkAIjWhbYHHwlvA7G9PWXVhFadXbLezH2iAVzYU8S1pC92qlBwBeBQSnKCSK9wJduaPA35Lz+k="
-  file: "rifiuti2-*.tar.xz"
-  file_glob: "true"
-  skip_cleanup: true
-  draft: true
-  on:
-    tags: true
+    provider: releases
+    api_key:
+        secure: "BHyNz+01netkQ0knn17Fgj27YUnwtuu/ensNNfMgUaPiobsLHOhXg6W6PCugjCGcBldA5NeLtTf2b1ee64iyGO8Fhh6m4PE0GwkAIjWhbYHHwlvA7G9PWXVhFadXbLezH2iAVzYU8S1pC92qlBwBeBQSnKCSK9wJduaPA35Lz+k="
+    file: "rifiuti2-*.tar.xz"
+    file_glob: "true"
+    skip_cleanup: true
+    draft: true
+    on:
+        tags: true

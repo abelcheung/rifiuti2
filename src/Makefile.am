@@ -4,6 +4,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)                     \
 	$(GLIB_CFLAGS)                  \
 	-DLOCALEDIR=\"$(localedir)\"    \
+	-DLOCALEDIR_PORTABLE=\"$(LOCALEDIR_PORTABLE)\" \
 	-DG_LOG_DOMAIN=\"$(PACKAGE)\"
 
 if STATIC_BUILD

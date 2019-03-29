@@ -4,6 +4,7 @@
 **/Makefile
 **/Makefile.in
 /.dirstamp
+/ABOUT-NLS
 /aclocal.m4
 /autom4te.cache
 /compile
@@ -17,6 +18,7 @@
 /configure
 /depcomp
 /install-sh
+/m4
 /missing
 /mkinstalldirs
 /po/*.gmo
@@ -24,9 +26,11 @@
 /po/*.mo
 /po/*.pot
 /po/*.sed
+/po/insert-header.sin
 /po/Makefile.in.in
 /po/Makevars.template
 /po/POTFILES
+/po/remove-potcdate.sin
 /po/Rules-quot
 /po/stamp-it
 /src/rifiuti

@@ -3,6 +3,7 @@ dnl
 dnl Copyright (C) 2007-2019 Abel Cheung.
 dnl All rights reserved.
 
+AC_PREREQ([2.69])
 AC_INIT([rifiuti2], [0.6.90],
         [https://github.com/abelcheung/rifiuti2/issues], [],
         [https://abelcheung.github.io/rifiuti2/])
@@ -21,15 +22,11 @@ AC_SUBST(is_mingw)
 AC_SUBST(is_cygwin)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 
-
 dnl I18N
-GETTEXT_PACKAGE=rifiuti
-ALL_LINGUAS="`cat $srcdir/po/LINGUAS`"
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"],
-                   [Define the gettext package to be used])
-
-AM_GLIB_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19])
+LOCALEDIR_PORTABLE="${PACKAGE}-l10n"
+AC_SUBST([LOCALEDIR_PORTABLE])
 
 dnl Compiler and devel toolchain checks.
 AS_BOX([Compiler and toolchain])

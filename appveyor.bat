@@ -23,7 +23,7 @@ pacman.exe --noconfirm --noprogressbar -Syu
 :: pacman --noconfirm --noprogressbar -Syu
 
 pacman.exe --noconfirm --noprogressbar -S --needed markdown mingw-w64-%MSYS2_ARCH%-glib2
-bash -lc "./autogen.sh && ./configure --enable-static && make -C po rifiuti.pot && make all"
+bash -lc "autoreconf -f -i -v && ./configure --enable-static && make all"
 
 @echo off
 goto :eof

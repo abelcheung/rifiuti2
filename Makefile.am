@@ -25,7 +25,6 @@ MAINTAINERCLEANFILES = \
 	$(top_srcdir)/install-sh         \
 	$(top_srcdir)/Makefile.in        \
 	$(top_srcdir)/missing            \
-	$(top_srcdir)/po/Makefile.in.in  \
 	$(NULL)
 
 distclean-local:

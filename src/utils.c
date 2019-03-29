@@ -155,22 +155,22 @@ rifiuti_init (const char *progpath)
 #endif
 
 	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
-		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+		bindtextdomain (PACKAGE, LOCALEDIR);
 	else
 	{
 		/* searching current dir is more useful on Windows */
 		char *d = g_path_get_dirname (progpath);
-		char *p = g_build_filename (d, "rifiuti-l10n", NULL);
+		char *p = g_build_filename (d, LOCALEDIR_PORTABLE, NULL);
 		if (g_file_test (p, G_FILE_TEST_IS_DIR))
 		{
-			g_debug ("Alternative LOCALEDIR = %s", p);
-			bindtextdomain (GETTEXT_PACKAGE, p);
+			g_debug ("Portable LOCALEDIR = %s", p);
+			bindtextdomain (PACKAGE, p);
 		}
 		g_free (p);
 		g_free (d);
 	}
-	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-	textdomain (GETTEXT_PACKAGE);
+	bind_textdomain_codeset (PACKAGE, "UTF-8");
+	textdomain (PACKAGE);
 }
 
 void
@@ -185,12 +185,12 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
 	g_option_context_set_description (*context, bug_report_str);
 	g_free (bug_report_str);
-	g_option_context_add_main_entries (*context, opt_main, GETTEXT_PACKAGE);
+	g_option_context_add_main_entries (*context, opt_main, PACKAGE);
 
 	textoptgroup =
 		g_option_group_new ("text", _("Plain text output options:"),
 		                    N_("Show plain text output options"), NULL, NULL);
-	g_option_group_set_translation_domain (textoptgroup, GETTEXT_PACKAGE);
+	g_option_group_set_translation_domain (textoptgroup, PACKAGE);
 	g_option_group_add_entries (textoptgroup, opt_add);
 	g_option_context_add_group (*context, textoptgroup);
 }
