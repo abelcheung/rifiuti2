@@ -13,6 +13,7 @@
 /config.h
 /config.h.in
 /config.log
+/config.rpath
 /config.status
 /config.sub
 /configure

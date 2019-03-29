@@ -46,6 +46,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
   [AC_MSG_RESULT(no)
    CFLAGS="$old_CFLAGS"])
 
+dnl Checks for programs.
+AC_PROG_LN_S
+
 dnl
 dnl For test suite
 dnl
