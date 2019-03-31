@@ -3,8 +3,11 @@
 * Support recycle bin from jurassic Windows: 95, NT4, ME
 * Display timezone in tab-delimited output header
 * Guess Windows version based on recycle bin artifacts
-* Distributed Windows binaries copes better with Windows ACL,
-  detecting folder with insufficient permissions
+* Distributed Windows binaries:
+  * Copes better with Windows ACL, detecting folder with
+    insufficient permissions
+  * Attempts to detect Windows locale setting and automatically determine
+    translation to use
 
 #### Change
 * Now **mandates UTF-8 locale**, except on Windows, and except

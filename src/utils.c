@@ -147,9 +147,19 @@ rifiuti_init (const char *progpath)
 
 #ifdef G_OS_WIN32
 	{
+		/*
+		 * FIXME: can gettext recognise Windows locale settings
+		 * without resorting to env variable? Wish I knew how
+		 * GETTEXT_MUI works.
+		 */
 		char *loc = get_win32_locale();
-		g_debug ("Use LC_MESSAGES = %s", loc);
-		setlocale (LC_MESSAGES, loc);
+
+		if (0 == _putenv_s ("LC_MESSAGES", loc)) {
+			g_debug ("(Windows) Use LC_MESSAGES = %s", loc);
+		} else {
+			g_warning (_("Failed setting LC_MESSAGES variable, "
+				"move on as if no translation is used."));
+		}
 		g_free (loc);
 	}
 #endif

@@ -123,14 +123,15 @@ get_win32_locale_script (int primary,
  *
  * First one is no good because rifiuti2 is a CLI program, where
  * the caller is a console, so this 'language' is merely determined
- * by console code page, which is not an indicator of user preferred
- * language. For example, CP850 can be used by multiple european
- * languages but GetLocaleInfo() always treat it as en_US.
+ * by console code page, which is not always equivalent to user
+ * preferred language. For example, CP850 can be used by multiple
+ * european languages but GetLocaleInfo() always treat it as en_US.
  * Language group is not an indicator too because it can imply
  * several similar languages.
  *
- * So we attempt to use the last 2, and do the dirty work in a manner
- * almost identical to g_win32_getlocale().
+ * Here we attempt to use User default first, followed by GetThreadLocale
+ * locale; and do the dirty work in a manner almost identical to
+ * g_win32_getlocale().
  */
 char *
 get_win32_locale (void)
@@ -149,11 +150,11 @@ get_win32_locale (void)
 	return g_strdup (ev);
 
 	lcid = LOCALE_USER_DEFAULT;
-	if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+	if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME , iso639 , sizeof (iso639)) ||
 	    !GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
 	{
-		lcid = LOCALE_SYSTEM_DEFAULT;
-		if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+		lcid = GetThreadLocale();
+		if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME , iso639 , sizeof (iso639)) ||
 			!GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
 		return g_strdup ("C");
 	}
