@@ -257,7 +257,8 @@ can_list_win32_folder (const char *path)
 				NULL, NULL, NULL, NULL, &authz_manager) )
 	{
 		errmsg = g_win32_error_message (GetLastError());
-		g_critical (_("AuthzInitializeResourceManager() failed: %s"), errmsg);
+		g_printerr (_("AuthzInitializeResourceManager() failed: %s"), errmsg);
+		g_printerr ("\n");
 		goto traverse_fail;
 	}
 
@@ -267,7 +268,8 @@ can_list_win32_folder (const char *path)
 	if ( dw != ERROR_SUCCESS )
 	{
 		errmsg = g_win32_error_message (dw);
-		g_printerr ("Failed to retrieve Discretionary ACL info for '%s': %s\n", path, errmsg);
+		g_printerr (_("Failed to retrieve Discretionary ACL info for '%s': %s"), path, errmsg);
+		g_printerr ("\n");
 		goto traverse_getacl_fail;
 	}
 
@@ -275,7 +277,8 @@ can_list_win32_folder (const char *path)
 				NULL, (LUID) {0} /* unused */, NULL, &authz_ctxt) )
 	{
 		errmsg = g_win32_error_message (GetLastError());
-		g_critical (_("AuthzInitializeContextFromSid() failed: %s"), errmsg);
+		g_printerr (_("AuthzInitializeContextFromSid() failed: %s"), errmsg);
+		g_printerr ("\n");
 		goto traverse_getacl_fail;
 	}
 
@@ -284,7 +287,8 @@ can_list_win32_folder (const char *path)
 				NULL, 0, &authz_reply, NULL ) )
 	{
 		errmsg = g_win32_error_message (GetLastError());
-		g_critical (_("AuthzAccessCheck() failed: %s"), errmsg);
+		g_printerr (_("AuthzAccessCheck() failed: %s"), errmsg);
+		g_printerr ("\n");
 	}
 	else
 	{
@@ -297,8 +301,10 @@ can_list_win32_folder (const char *path)
 		if ( (mask & FILE_LIST_DIRECTORY) == FILE_LIST_DIRECTORY &&
 				(mask & FILE_READ_EA) == FILE_READ_EA )
 			ret = TRUE;
-		else
-			g_printerr (_("Error listing directory: Insufficient permission.\n"));
+		else {
+			g_printerr (_("Error listing directory: Insufficient permission."));
+			g_printerr ("\n");
+		}
 
 		/* use glib type to avoid including more header */
 		g_debug ("Access Mask hex for '%s': 0x%X", path, (guint32) mask);

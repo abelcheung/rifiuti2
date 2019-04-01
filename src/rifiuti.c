@@ -122,8 +122,9 @@ validate_index_file (const char  *filename,
 
 	if (0 != g_stat (filename, &st))
 	{
-		g_printerr (_("Error getting metadata of file '%s': %s\n"), filename,
-		            strerror (errno));
+		g_printerr (_("Error getting metadata of file '%s': %s"),
+			filename, strerror (errno));
+		g_printerr ("\n");
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
 
@@ -136,8 +137,9 @@ validate_index_file (const char  *filename,
 
 	if ( !(fp = g_fopen (filename, "rb")) )
 	{
-		g_printerr (_("Error opening file '%s' for reading: %s\n"), filename,
-		            strerror (errno));
+		g_printerr (_("Error opening file '%s' for reading: %s"),
+			filename, strerror (errno));
+		g_printerr ("\n");
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
 
@@ -176,8 +178,8 @@ validate_index_file (const char  *filename,
 		     ( ver != VERSION_WIN98 ) &&
 		     ( ver != VERSION_WIN95 ) )  /* Windows ME still use 280 byte record */
 		{
-			g_printerr (_("File is not supported, or it is probably not an "
-	              "INFO2 file.\n"));
+			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
+			g_printerr ("\n");
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
@@ -187,13 +189,18 @@ validate_index_file (const char  *filename,
 			g_printerr (_("This INFO2 file was produced on a legacy system "
 			              "without Unicode file name (Windows ME or earlier). "
 			              "Please specify codepage of concerned system with "
-			              "'-l' or '--legacy-filename' option.\n\n"));
-			/* TRANSLATOR COMMENT: use suitable example from YOUR language & code page */
+			              "'-l' or '--legacy-filename' option."));
+			g_printerr ("\n\n");
+			/* TRANSLATOR COMMENT: can choose example from YOUR language & code page */
 			g_printerr (_("For example, if file name was expected to contain "
 			              "accented latin characters, use '-l CP1252' option; "
-			              "or in case of Japanese characters, '-l CP932'.\n\n"
-			              "Code pages (or any other encodings) supported by "
-			              "'iconv' can be used.\n"));
+			              "or in case of Japanese Shift JIS characters, '-l CP932'."));
+			g_printerr ("\n\n");
+#ifdef G_OS_UNIX
+			g_printerr (_("Any encoding supported by 'iconv' can be used."));
+			g_printerr ("\n");
+#endif
+
 			status = RIFIUTI_ERR_ARG;
 			goto validation_broken;
 		}
@@ -215,8 +222,8 @@ validate_index_file (const char  *filename,
 		meta.has_unicode_path = TRUE;
 		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
 		{
-			g_printerr (_("File is not supported, or it is probably not an "
-	              "INFO2 file.\n"));
+			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
+			g_printerr ("\n");
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
@@ -298,47 +305,47 @@ populate_record_data (void *buf)
 	 * Part below deals with unicode path only *
 	 *******************************************/
 
-		record->utf8_filename =
-			utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-			                 WIN_PATH_MAX + 1, &read, &write, &error);
-		g_debug ("utf16->8 r=%li w=%li", read, write);
+	record->utf8_filename =
+		utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
+							WIN_PATH_MAX + 1, &read, &write, &error);
+	g_debug ("utf16->utf8 read=%li write=%li", read, write);
 
-		if (error)
-		{
-			g_warning (_("Error converting file name from %s encoding to "
-			             "UTF-8 encoding for record %u: %s"),
-			           "UTF-16", record->index_n, error->message);
-			g_clear_error (&error);
-		}
+	if (error)
+	{
+		g_warning (_("Error converting file name from %s encoding to "
+						"UTF-8 encoding for record %u: %s"),
+					"UTF-16", record->index_n, error->message);
+		g_clear_error (&error);
+	}
 
-		/*
+	/*
 	 * We check for junk memory filling the padding area after
 	 * unicode path, using it as the indicator of OS generating this
 	 * INFO2 file. (server 2000 / 2003)
-		 *
+	 *
 	 * The padding area after legacy path is no good; experiment
 	 * shows that legacy path *always* contain non-zero bytes after
 	 * null terminator if path contains double-byte character,
 	 * regardless of OS.
-		 *
+	 *
 	 * Those non-zero bytes resemble partial end of full path.
 	 * Looks like an ANSI codepage full path is filled in
 	 * legacy path field, then overwritten in place by a 8.3
 	 * version of path whenever applicable (which was always shorter).
-		 */
+	 */
 	if (! meta.fill_junk)
-		{
+	{
 		void *ptr;
 
 		for (ptr = buf + UNICODE_FILENAME_OFFSET + read * sizeof (gunichar2);
 				ptr < buf + UNICODE_RECORD_SIZE; ptr++)
 			if ( *(char *) ptr != '\0' )
-				{
+			{
 				g_debug ("Junk detected at offset 0x%tx of unicode path",
 					ptr - buf - UNICODE_FILENAME_OFFSET);
-					meta.fill_junk = TRUE;
-					break;
-				}
+				meta.fill_junk = TRUE;
+				break;
+			}
 	}
 
 	return record;
@@ -357,7 +364,8 @@ parse_record_cb (char    *index_file,
 	exit_status = validate_index_file (index_file, &infile);
 	if ( exit_status != EXIT_SUCCESS )
 	{
-		g_printerr (_("File '%s' fails validation.\n"), index_file);
+		g_printerr (_("File '%s' fails validation."), index_file);
+		g_printerr ("\n");
 		return;
 	}
 
@@ -396,7 +404,7 @@ parse_record_cb (char    *index_file,
 	}
 	if ( feof (infile) && size && ( size < meta.recordsize ) )
 	{
-		g_printerr (_("Premature end of file, last record (%zu bytes) discarded\n"), size);
+		g_warning (_("Premature end of file, last record (%zu bytes) discarded"), size);
 		exit_status = RIFIUTI_ERR_BROKEN_FILE;
 	}
 
@@ -431,25 +439,26 @@ main (int    argc,
 
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
-		g_printerr (_("Must specify exactly one INFO2 file as argument.\n\n"));
-		g_printerr (_("Run program with '-?' option for more info.\n"));
+		g_printerr (_("Must specify exactly one INFO2 file as argument."));
+		g_printerr ("\n");
+		g_printerr (_("Run program with '-h' option for more info."));
+		g_printerr ("\n");
 		exit_status = RIFIUTI_ERR_ARG;
 		goto cleanup;
 	}
 
-    if (always_utf8)
-    {
-        g_warning ("%s", _("'-8' option is deprecated; "
-            "UTF-8 output is always enforced now.\n"));
-    }
+    if (always_utf8) {
+        g_printerr (_("'-8' option is deprecated and ignored."));
+		g_printerr ("\n");
+	}
 
 	if (xml_output)
 	{
 		output_format = OUTPUT_XML;
 		if (no_heading || (NULL != delim))
 		{
-			g_printerr (_("Plain text format options "
-			              "can not be used in XML mode.\n"));
+			g_printerr (_("Plain text format options can not be used in XML mode."));
+			g_printerr ("\n");
 			exit_status = RIFIUTI_ERR_ARG;
 			goto cleanup;
 		}
@@ -462,18 +471,20 @@ main (int    argc,
 		try = g_iconv_open (legacy_encoding, "UTF-8");
 		if (try == (GIConv) - 1)
 		{
-			g_printerr (_("'%s' is not a valid code page or encoding. "
-			              "Only those supported by 'iconv' can be used.\n"),
-					legacy_encoding);
+			g_printerr (_("'%s' is not a valid encoding on this system. "
+				"Only those supported by 'iconv' can be used."),
+				legacy_encoding);
+			g_printerr ("\n");
 #ifdef G_OS_WIN32
+			/* TRANSLATOR COMMENT: argument is software name, 'rifiuti2' */
 			g_printerr (_("Please visit following web page for a list "
-			              "closely resembling encodings supported by "
-			              "rifiuti:\n\n\t%s\n\n"),
-					"https://www.gnu.org/software/libiconv/");
+				"closely resembling encodings supported by %s:"), PACKAGE);
+
+			g_printerr ("\n\n\t%s\n", "https://www.gnu.org/software/libiconv/");
 #endif
 #ifdef G_OS_UNIX
-			g_printerr (_("Please execute 'iconv -l' for list "
-			              "of supported encodings.\n"));
+			g_printerr (_("Please execute 'iconv -l' for list of supported encodings."));
+			g_printerr ("\n");
 #endif
 			exit_status = RIFIUTI_ERR_ARG;
 			goto cleanup;
@@ -530,8 +541,10 @@ main (int    argc,
 		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
 		     ( NULL == (out_fh = fdopen (tmpfile, "wb")) ) )
 		{
-			g_printerr (_("Error opening temp file for writing: %s\n"),
-			            strerror (errno) );
+			/* TRANSLATOR COMMENT: argument is system error message */
+			g_printerr (_("Error opening temp file for writing: %s"),
+				strerror (errno));
+			g_printerr ("\n");
 			exit_status = RIFIUTI_ERR_OPEN_FILE;
 			goto cleanup;
 		}
@@ -559,11 +572,16 @@ main (int    argc,
 	/* file descriptor should have been closed at this point */
 	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
 	{
-		/* TRANSLATOR COMMENT: arg 1 is err message, 2nd is temp file
-		 * location when failed to be moved to proper location */
-		g_printerr (_("Error moving output data to desinated file: %s\n"
-					"Output content is left in '%s'.\n"),
-				strerror(errno), tmppath);
+		/* TRANSLATOR COMMENT: argument is system error message */
+		g_printerr (_("Error moving output data to desinated file: %s"),
+			strerror(errno));
+		g_printerr ("\n");
+
+		/* TRANSLATOR COMMENT: argument is temp file location, which
+		 * failed to be moved to proper location */
+		g_printerr (_("Output content is left in '%s'."), tmppath);
+		g_printerr ("\n");
+
 		exit_status = RIFIUTI_ERR_WRITE_FILE;
 	}
 

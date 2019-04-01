@@ -159,8 +159,8 @@ rifiuti_init (const char *progpath)
 		if (0 == _putenv_s ("LC_MESSAGES", loc)) {
 			g_debug ("(Windows) Use LC_MESSAGES = %s", loc);
 		} else {
-			g_warning (_("Failed setting LC_MESSAGES variable, "
-				"move on as if no translation is used."));
+			g_warning ("Failed setting LC_MESSAGES variable, "
+				"move on as if no translation is used.");
 		}
 		g_free (loc);
 	}
@@ -252,7 +252,8 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 
 	if ( !ret )
 	{
-		g_printerr (_("Error parsing options: %s\n"), err->message);
+		g_printerr (_("Error parsing options: %s"), err->message);
+		g_printerr ("\n");
 		g_error_free (err);
 		return RIFIUTI_ERR_ARG;
 	}
@@ -388,8 +389,8 @@ _populate_index_file_list (GSList     **list,
 
 	if (NULL == (dir = g_dir_open (path, 0, &error)))
 	{
-		g_printerr (_("Error opening directory '%s': %s\n"), path,
-			error->message);
+		g_printerr (_("Error opening directory '%s': %s"), path, error->message);
+		g_printerr ("\n");
 		g_clear_error (&error);
 		return FALSE;
 	}
@@ -453,7 +454,8 @@ check_file_args (const char  *path,
 
 	if ( !g_file_test (path, G_FILE_TEST_EXISTS) )
 	{
-		g_printerr (_("'%s' does not exist.\n"), path);
+		g_printerr (_("'%s' does not exist."), path);
+		g_printerr ("\n");
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
 	else if ( !is_info2 && g_file_test (path, G_FILE_TEST_IS_DIR) )
@@ -466,8 +468,9 @@ check_file_args (const char  *path,
 		 */
 		if ( !*list && !found_desktop_ini (path) )
 		{
-			g_printerr (_("No files with name pattern '%s' are found in directory.\n"),
+			g_printerr (_("No files with name pattern '%s' are found in directory."),
 					"$Ixxxxxx.*");
+			g_printerr ("\n");
 			return RIFIUTI_ERR_OPEN_FILE;
 		}
 	}
@@ -475,8 +478,10 @@ check_file_args (const char  *path,
 		*list = g_slist_prepend ( *list, g_strdup (path) );
 	else
 	{
-		g_printerr (!is_info2 ? _("'%s' is not a normal file or directory.\n") :
-		                        _("'%s' is not a normal file.\n"), path);
+		g_printerr (!is_info2 ?
+			_("'%s' is not a normal file or directory.") :
+			_("'%s' is not a normal file."), path);
+		g_printerr ("\n");
 		return RIFIUTI_ERR_OPEN_FILE;
 	}
 	return EXIT_SUCCESS;
@@ -515,7 +520,7 @@ _local_printf (const char *format, ...)
 		wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, &err);
 
 		if (err != NULL) {
-			g_critical (_("Error converting output from UTF-8 to UTF-16: %s\n"), err->message);
+			g_critical (_("Error converting output from UTF-8 to UTF-16: %s"), err->message);
 			g_clear_error (&err);
 			wstr = g_utf8_to_utf16 ("(Original message failed to be displayed in UTF-16)",
 				-1, NULL, NULL, NULL);
@@ -558,7 +563,8 @@ print_header (metarecord  meta)
 			GString *s = g_string_new (NULL);
 			char *outstr;
 
-			g_string_printf (s, _("Recycle bin path: '%s'\n"), utf8_filename);
+			g_string_printf (s, _("Recycle bin path: '%s'"), utf8_filename);
+			s = g_string_append_c (s, '\n');
 
 			switch (meta.version)
 			{
@@ -573,13 +579,15 @@ print_header (metarecord  meta)
 			default:
 				ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 			}
-			g_string_append_printf (s, _("Version: %s\n"), ver_string);
+			g_string_append_printf (s, _("Version: %s"), ver_string);
 			g_free (ver_string);
+			s = g_string_append_c (s, '\n');
 
 			if (meta.os_guess == OS_GUESS_UNKNOWN)
-				s = g_string_append (s, _("OS detection failed\n"));
+				s = g_string_append (s, _("OS detection failed"));
 			else
-				g_string_append_printf (s, _("OS Guess: %s\n"), os_strings[meta.os_guess]);
+				g_string_append_printf (s, _("OS Guess: %s"), os_strings[meta.os_guess]);
+			s = g_string_append_c (s, '\n');
 
 			/* avoid too many localtime() calls by doing it here */
 			if (use_localtime)
@@ -591,15 +599,18 @@ print_header (metarecord  meta)
 				tm = NULL;
 			tz_name    = get_timezone_name (tm);
 			tz_numeric = get_timezone_numeric (tm);
-			g_string_append_printf (s, _("Time zone: %s [%s]\n\n"), tz_name, tz_numeric);
+			g_string_append_printf (s, _("Time zone: %s [%s]"), tz_name, tz_numeric);
+			s = g_string_append_c (s, '\n');
+			s = g_string_append_c (s, '\n');
 
 			if (meta.keep_deleted_entry)
 				/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
-				g_string_append_printf (s, _("Index%sDeleted Time%sGone?%sSize%sPath\n"),
+				g_string_append_printf (s, _("Index%sDeleted Time%sGone?%sSize%sPath"),
 						delim, delim, delim, delim);
 			else
-				g_string_append_printf (s, _("Index%sDeleted Time%sSize%sPath\n"),
+				g_string_append_printf (s, _("Index%sDeleted Time%sSize%sPath"),
 						delim, delim, delim);
+			s = g_string_append_c (s, '\n');
 
 			outstr = g_string_free (s, FALSE);
 			_local_printf ("%s", outstr);

@@ -126,7 +126,8 @@ validate_index_file (const char  *filename,
 	{
 		g_debug ("File size expected to be more than %" G_GSIZE_FORMAT,
 		         (gsize) VERSION1_FILENAME_OFFSET);
-		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file.\n"));
+		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file."));
+		g_printerr ("\n");
 		status = RIFIUTI_ERR_BROKEN_FILE;
 		goto validation_error;
 	}
@@ -145,7 +146,8 @@ validate_index_file (const char  *filename,
 		{
 			g_debug ("File size expected to be %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT,
 			         expected, expected - 1);
-			g_printerr (_("Index file expected size and real size do not match.\n"));
+			g_printerr (_("Index file expected size and real size do not match."));
+			g_printerr ("\n");
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_error;
 		}
@@ -162,15 +164,16 @@ validate_index_file (const char  *filename,
 		if (*bufsize != expected)
 		{
 			g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
-			g_printerr (_("Index file expected size and real size do not match.\n"));
+			g_printerr (_("Index file expected size and real size do not match."));
+			g_printerr ("\n");
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_error;
 		}
 		break;
 
 	  default:
-		g_printerr (_("File is not supported, or it is probably "
-		              "not a $Recycle.bin index file.\n"));
+		g_printerr (_("Unsupported file version, or probably not a $Recycle.bin index file."));
+		g_printerr ("\n");
 		status = RIFIUTI_ERR_BROKEN_FILE;
 		goto validation_error;
 	}
@@ -269,7 +272,8 @@ parse_record_cb (char    *index_file,
 	                                   &buf, &bufsize, &version, &pathlen);
 	if ( exit_status != EXIT_SUCCESS )
 	{
-		g_printerr (_("File '%s' fails validation.\n"), basename);
+		g_printerr (_("File '%s' fails validation."), basename);
+		g_printerr ("\n");
 		goto parse_record_error;
 	}
 
@@ -330,10 +334,9 @@ main (int    argc,
 	rifiuti_init (argv[0]);
 
 	context = g_option_context_new (_("DIR_OR_FILE"));
-	g_option_context_set_summary
-		(context, _("Parse index files in C:\\$Recycle.bin style folder "
-		            "and dump recycle bin data.  Can also dump "
-		            "a single index file."));
+	g_option_context_set_summary (context, _(
+		"Parse index files in C:\\$Recycle.bin style folder "
+		"and dump recycle bin data.  Can also dump a single index file."));
 	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
 	exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
 	if ( EXIT_SUCCESS != exit_status )
@@ -348,17 +351,19 @@ main (int    argc,
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
 		g_printerr (_("Must specify exactly one directory containing "
-		              "$Recycle.bin index files, or one such index file, "
-		              "as argument.\n\n"));
-		g_printerr (_("Run program with '-?' option for more info.\n"));
+		              "$Recycle.bin index files, or one such index file "
+		              "as argument."));
+		g_printerr ("\n");
+		g_printerr (_("Run program with '-h' option for more info."));
+		g_printerr ("\n");
 		exit_status = RIFIUTI_ERR_ARG;
 		goto cleanup;
 	}
 
     if (always_utf8)
     {
-        g_warning ("%s", _("'-8' option is deprecated; "
-            "UTF-8 output is always enforced now.\n"));
+        g_printerr (_("'-8' option is deprecated and ignored."));
+		g_printerr ("\n");
     }
 
 	if (xml_output)
@@ -366,8 +371,8 @@ main (int    argc,
 		output_format = OUTPUT_XML;
 		if (no_heading || (NULL != delim))
 		{
-			g_printerr (_("Plain text format options can not "
-			              "be used in XML mode.\n"));
+			g_printerr (_("Plain text format options can not be used in XML mode."));
+			g_printerr ("\n");
 			exit_status = RIFIUTI_ERR_ARG;
 			goto cleanup;
 		}
@@ -401,7 +406,8 @@ main (int    argc,
 	/* NULL filelist at this point means a valid empty $Recycle.bin */
 	if ( !meta.is_empty && (recordlist == NULL) )
 	{
-		g_printerr ("%s", _("No valid recycle bin index file found.\n"));
+		g_printerr (_("No valid recycle bin index file found."));
+		g_printerr ("\n");
 		exit_status = RIFIUTI_ERR_BROKEN_FILE;
 		goto cleanup;
 	}
@@ -446,8 +452,9 @@ main (int    argc,
 		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
 		     ( NULL == (out_fh = fdopen (tmpfile, "wb")) ) )
 		{
-			g_printerr (_("Error opening temp file for writing: %s\n"),
-			            strerror (errno) );
+			g_printerr (_("Error opening temp file for writing: %s"),
+				strerror (errno));
+			g_printerr ("\n");
 			exit_status = RIFIUTI_ERR_OPEN_FILE;
 			goto cleanup;
 		}
@@ -477,11 +484,16 @@ main (int    argc,
 
 	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
 	{
-		/* TRANSLATOR COMMENT: arg 1 is err message, 2nd is temp file
-		 * location when failed to be moved to proper location */
-		g_printerr (_("Error moving output data to desinated file: %s\n"
-					"Output content is left in '%s'.\n"),
-				strerror(errno), tmppath);
+		/* TRANSLATOR COMMENT: argument is system error message */
+		g_printerr (_("Error moving output data to desinated file: %s"),
+			strerror(errno));
+		g_printerr ("\n");
+
+		/* TRANSLATOR COMMENT: argument is temp file location, which
+		 * failed to be moved to proper location */
+		g_printerr (_("Output content is left in '%s'."), tmppath);
+		g_printerr ("\n");
+
 		exit_status = RIFIUTI_ERR_WRITE_FILE;
 	}
 
