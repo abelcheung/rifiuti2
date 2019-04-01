@@ -141,7 +141,9 @@ get_iso8601_datetime_str (struct tm *tm)
 void
 rifiuti_init (const char *progpath)
 {
-	g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, my_debug_handler, NULL);
+	if (NULL != g_getenv ("RIFIUTI_DEBUG"))
+		g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
+			my_debug_handler, NULL);
 
 	setlocale (LC_ALL, "");
 
@@ -361,10 +363,6 @@ my_debug_handler (const char     *log_domain,
                   const char     *message,
                   gpointer        data)
 {
-	if (log_level != G_LOG_LEVEL_DEBUG) return;
-
-	const char *val = g_getenv ("RIFIUTI_DEBUG");
-	if (val != NULL)
 		g_printerr ("DEBUG: %s\n", message);
 }
 
