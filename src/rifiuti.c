@@ -220,7 +220,7 @@ validate_index_file (const char  *filename,
 			status = RIFIUTI_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
-		/* guess is not complete yet, distinguish Win2k and XP/03 later */
+		/* guess is not complete yet for latter case, see populate_record_data */
 		meta.os_guess = (ver == VERSION_NT4) ? OS_GUESS_NT4 : OS_GUESS_2K_03;
 		break;
 
@@ -249,7 +249,7 @@ populate_record_data (void *buf)
 	uint64_t        win_filetime;
 	uint32_t        drivenum;
 	long            read, write;
-	static gboolean junk_detection_done = FALSE;
+	GError         *error        = NULL;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 
@@ -291,13 +291,13 @@ populate_record_data (void *buf)
 	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
 
-	if (meta.has_unicode_path)
-	{
-		GError *error = NULL;
-		/*
-		 * Added safeguard to memory buffer (2 bytes larger than necessary),
-		 * so safely assume string is null terminated
-		 */
+	if (! meta.has_unicode_path)
+		return record;
+
+	/*******************************************
+	 * Part below deals with unicode path only *
+	 *******************************************/
+
 		record->utf8_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
 			                 WIN_PATH_MAX + 1, &read, &write, &error);
@@ -312,38 +312,35 @@ populate_record_data (void *buf)
 		}
 
 		/*
-		 * Check if there's junk memory filling the padding bytes of paths.
+	 * We check for junk memory filling the padding area after
+	 * unicode path, using it as the indicator of OS generating this
+	 * INFO2 file. (server 2000 / 2003)
 		 *
-		 * It can't be done in legacy path, because experiment shows that
-		 * legacy path *always* contain more character after end of path
-		 * if path contains double-byte character. So far one theory fits
-		 * the observation: first an ANSI codepage full path is filled in
-		 * legacy path field, then this field was overwritten by a 8.3
-		 * version of the path (which was shorter than full path).
+	 * The padding area after legacy path is no good; experiment
+	 * shows that legacy path *always* contain non-zero bytes after
+	 * null terminator if path contains double-byte character,
+	 * regardless of OS.
 		 *
-		 * Luckily, all of the Windows versions needing such distinguishment
-		 * do contain Unicode path field.
+	 * Those non-zero bytes resemble partial end of full path.
+	 * Looks like an ANSI codepage full path is filled in
+	 * legacy path field, then overwritten in place by a 8.3
+	 * version of path whenever applicable (which was always shorter).
 		 */
-		if ( !junk_detection_done )  /* FIXME: Is first record enough? */
+	if (! meta.fill_junk)
 		{
-			char *i = (char *) (buf + UNICODE_FILENAME_OFFSET);
-			meta.fill_junk = FALSE;
-			do { i += 2; } while ( *i || *(i+1) );  /* no ucs2_strlen :-( */
+		void *ptr;
 
-			for (; i < (char *) (buf + UNICODE_RECORD_SIZE); i++)
-				if ( *i != '\0' )
+		for (ptr = buf + UNICODE_FILENAME_OFFSET + read * sizeof (gunichar2);
+				ptr < buf + UNICODE_RECORD_SIZE; ptr++)
+			if ( *(char *) ptr != '\0' )
 				{
-					/* ugly cast to curb compiler warning :-( */
-					g_debug ("Junk detected at offset 0x%p of unicode path",
-							(void *) (i - (char *) (buf + UNICODE_FILENAME_OFFSET)));
+				g_debug ("Junk detected at offset 0x%tx of unicode path",
+					ptr - buf - UNICODE_FILENAME_OFFSET);
 					meta.fill_junk = TRUE;
 					break;
 				}
-			if ( meta.os_guess == OS_GUESS_2K_03 )
-				meta.os_guess = meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
-			junk_detection_done = TRUE;
-		}
 	}
+
 	return record;
 }
 
@@ -367,12 +364,12 @@ parse_record_cb (char    *index_file,
 	g_debug ("Start populating record for '%s'...", index_file);
 
 	/*
-	 * Add 2 padding bytes as null-termination of unicode file name.
-	 * Not so confident that file names created with Win2K or earlier
-	 * are null terminated, because random memory fragments are copied
-	 * to the padding bytes.
+	 * Add padding bytes as null-termination of unicode file name.
+	 * Normally Windows should have done the null termination within
+	 * WIN_PATH_MAX limit, but on 98/ME/2000 programmers were sloppy
+	 * and use junk memory as padding, so just play safe.
 	 */
-	buf = g_malloc0 (meta.recordsize + 2);
+	buf = g_malloc0 (meta.recordsize + sizeof(gunichar2));
 
 	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
 
@@ -386,6 +383,10 @@ parse_record_cb (char    *index_file,
 		meta.is_empty = FALSE;
 	}
 	g_free (buf);
+
+	/* do this only when all entries are scanned */
+	if ((!meta.is_empty) && (meta.os_guess == OS_GUESS_2K_03))
+		meta.os_guess = meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
 
 	if ( ferror (infile) )
 	{
