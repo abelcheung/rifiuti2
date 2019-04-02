@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+#include <unistd.h>
 #include <stdlib.h>
 #if HAVE_SETLOCALE
 #include <locale.h>
@@ -365,6 +366,40 @@ my_debug_handler (const char     *log_domain,
                   gpointer        data)
 {
 		g_printerr ("DEBUG: %s\n", message);
+}
+
+int
+get_tempfile (FILE   **fh,
+              char   **tmppath)
+{
+	int         fd;
+	FILE       *h;
+	char       *t;
+
+	t = g_strdup ("rifiuti-XXXXXX");
+
+	/* segfaults if string is pre-allocated in stack */
+	fd = g_mkstemp (t);
+	if (fd == -1)
+		goto tempfile_fail;
+
+	h = fdopen (fd, "wb");
+	if (h == NULL) {
+		int e = errno;
+		close (fd);
+		errno = e;
+		goto tempfile_fail;
+	}
+
+	*fh      = h;
+	*tmppath = t;
+	return EXIT_SUCCESS;
+
+	tempfile_fail:
+	g_printerr (_("Error opening temp file for writing: %s"),
+		strerror (errno));
+	g_printerr ("\n");
+	return RIFIUTI_ERR_OPEN_FILE;
 }
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */

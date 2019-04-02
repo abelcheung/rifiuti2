@@ -193,4 +193,6 @@ void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,
                                      const char          *message         ,
                                      gpointer             data            );
+int        get_tempfile             (FILE               **fh              ,
+                                     char               **tmppath         );
 #endif

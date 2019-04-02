@@ -447,17 +447,10 @@ main (int    argc,
 
 	if (outfilename)
 	{
-		int tmpfile;
-		tmppath = g_strdup ("rifiuti-XXXXXX");
-		if ( ( -1 == (tmpfile = g_mkstemp (tmppath)) ) ||
-		     ( NULL == (out_fh = fdopen (tmpfile, "wb")) ) )
-		{
-			g_printerr (_("Error opening temp file for writing: %s"),
-				strerror (errno));
-			g_printerr ("\n");
-			exit_status = RIFIUTI_ERR_OPEN_FILE;
+		exit_status = get_tempfile (&out_fh, &tmppath);
+
+		if (exit_status != EXIT_SUCCESS)
 			goto cleanup;
-		}
 	}
 	else
 	{
