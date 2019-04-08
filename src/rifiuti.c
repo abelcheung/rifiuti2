@@ -305,7 +305,7 @@ populate_record_data (void *buf)
 	 * Part below deals with unicode path only *
 	 *******************************************/
 
-	record->utf8_filename =
+	record->uni_filename =
 		utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
 							WIN_PATH_MAX + 1, &read, &write, &error);
 	g_debug ("utf16->utf8 read=%li write=%li", read, write);
@@ -468,8 +468,9 @@ main (int    argc,
 	if (legacy_encoding)
 	{
 		GIConv try;
-		try = g_iconv_open (legacy_encoding, "UTF-8");
-		if (try == (GIConv) - 1)
+
+		try = g_iconv_open ("UTF-8", legacy_encoding);
+		if (try == (GIConv) -1)
 		{
 			g_printerr (_("'%s' is not a valid encoding on this system. "
 				"Only those supported by 'iconv' can be used."),

@@ -10,8 +10,7 @@
     translation to use
 
 #### Change
-* Now **mandates UTF-8 locale**, except on Windows, and except
-  the case when recycle bin artifact is in ASCII encoding
+* Now **mandates UTF-8 locale**, except on Windows
   * File output is also in UTF-8 encoding under Windows
   * `-8` option is rendered obsolete as a result
 * Distributed Windows binaries **don't support running on

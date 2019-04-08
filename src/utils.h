@@ -124,6 +124,8 @@ typedef struct _rbin_meta metarecord;
 
 struct _rbin_struct
 {
+	/* For $Recycle.bin, version of each index file is kept here,
+	 * while meta.version keeps the global status of whole dir */
 	uint64_t        version;           /* $Recycle.bin only */
 	const metarecord *meta;
 	union
@@ -133,7 +135,8 @@ struct _rbin_struct
 	};
 	time_t          deltime;
 	uint64_t        filesize;
-	char           *utf8_filename;
+	/* despite var names, all filenames are converted to UTF-8 upon parsing */
+	char           *uni_filename;
 	char           *legacy_filename;   /* INFO2 only */
 	gboolean        emptied;           /* INFO2 only */
 	unsigned char   drive;             /* INFO2 only */

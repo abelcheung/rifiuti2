@@ -234,12 +234,12 @@ populate_record_data (void *buf,
 	switch (version)
 	{
 	  case VERSION_VISTA:
-		record->utf8_filename =
+		record->uni_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET - (int) erraneous),
 			                 pathlen + 1, &read, &write, &error);
 		break;
 	  case VERSION_WIN10:
-		record->utf8_filename =
+		record->uni_filename =
 			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
 			                 pathlen + 1, &read, &write, &error);
 		break;
@@ -333,8 +333,8 @@ main (int    argc,
 
 	rifiuti_init (argv[0]);
 
-	context = g_option_context_new (_("DIR_OR_FILE"));
-	g_option_context_set_summary (context, _(
+	context = g_option_context_new (N_("DIR_OR_FILE"));
+	g_option_context_set_summary (context, N_(
 		"Parse index files in C:\\$Recycle.bin style folder "
 		"and dump recycle bin data.  Can also dump a single index file."));
 	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);

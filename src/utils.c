@@ -192,20 +192,25 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
                        GOptionEntry     opt_add[])
 {
 	char *bug_report_str;
-	GOptionGroup *textoptgroup;
+	GOptionGroup *optgroup_text;
+
+	g_option_context_set_translation_domain (*context, PACKAGE);
 
 	bug_report_str =
 		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
 	g_option_context_set_description (*context, bug_report_str);
 	g_free (bug_report_str);
+
 	g_option_context_add_main_entries (*context, opt_main, PACKAGE);
 
-	textoptgroup =
-		g_option_group_new ("text", _("Plain text output options:"),
+	optgroup_text =
+		g_option_group_new ("text", N_("Plain text output options:"),
 		                    N_("Show plain text output options"), NULL, NULL);
-	g_option_group_set_translation_domain (textoptgroup, PACKAGE);
-	g_option_group_add_entries (textoptgroup, opt_add);
-	g_option_context_add_group (*context, textoptgroup);
+	g_option_group_add_entries (optgroup_text, opt_add);
+	g_option_group_set_translation_domain (optgroup_text, PACKAGE);
+	g_option_context_add_group (*context, optgroup_text);
+
+	g_option_context_set_help_enabled (*context, TRUE);
 }
 
 int
@@ -240,15 +245,16 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	 * console codepage. Problem only observed in MSYS bash and not Windows
 	 * console, so not a priority to fix.
 	 */
-#ifdef G_OS_WIN32
 	{
-		char **args = g_win32_get_command_line ();
+		char **args;
+#ifdef G_OS_WIN32
+		args = g_win32_get_command_line ();
+#else
+		args = g_strdupv (*argv);
+#endif
 		ret = g_option_context_parse_strv (*context, &args, &err);
 		g_strfreev (args);
 	}
-#else
-	ret = g_option_context_parse (*context, argc, argv, &err);
-#endif
 	g_option_context_free (*context);
 
 	if ( !ret )
@@ -365,7 +371,7 @@ my_debug_handler (const char     *log_domain,
                   const char     *message,
                   gpointer        data)
 {
-		g_printerr ("DEBUG: %s\n", message);
+	g_printerr ("DEBUG: %s\n", message);
 }
 
 int
@@ -576,7 +582,7 @@ _local_printf (const char *format, ...)
 void
 print_header (metarecord  meta)
 {
-	char             *utf8_filename, *ver_string;
+	char             *rbin_path, *ver_string;
 	const char       *tz_name, *tz_numeric;
 	extern int        output_format;
 	extern char      *delim;
@@ -589,7 +595,7 @@ print_header (metarecord  meta)
 
 	g_debug ("Entering %s()", __func__);
 
-	utf8_filename = g_filename_display_name (meta.filename);
+	rbin_path = g_filename_display_name (meta.filename);
 
 	switch (output_format)
 	{
@@ -598,7 +604,7 @@ print_header (metarecord  meta)
 			GString *s = g_string_new (NULL);
 			char *outstr;
 
-			g_string_printf (s, _("Recycle bin path: '%s'"), utf8_filename);
+			g_string_printf (s, _("Recycle bin path: '%s'"), rbin_path);
 			s = g_string_append_c (s, '\n');
 
 			switch (meta.version)
@@ -660,13 +666,13 @@ print_header (metarecord  meta)
 				"<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
 				"  <filename>%s</filename>\n",
 				( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
-				MAX (meta.version, 0), utf8_filename);
+				MAX (meta.version, 0), rbin_path);
 			break;
 
 		default:
 			g_assert_not_reached();
 	}
-	g_free (utf8_filename);
+	g_free (rbin_path);
 
 	g_debug ("Leaving %s()", __func__);
 }
@@ -675,7 +681,7 @@ print_header (metarecord  meta)
 void
 print_record_cb (rbin_struct *record)
 {
-	char             *utf8_filename, *index, *size = NULL;
+	char             *out_fname, *index, *size = NULL;
 	char             *outstr = NULL, *deltime = NULL;
 	GString          *t;
 	gboolean          is_info2;
@@ -723,8 +729,8 @@ print_record_cb (rbin_struct *record)
 
 	if (record->meta->has_unicode_path && !legacy_encoding)
 	{
-		utf8_filename = record->utf8_filename ?
-			g_strdup (record->utf8_filename) :
+		out_fname = record->uni_filename ?
+			g_strdup (record->uni_filename) :
 			g_strdup (_("(File name not representable in UTF-8 encoding)"));
 	}
 	else	/* this part is info2 only */
@@ -734,7 +740,7 @@ print_record_cb (rbin_struct *record)
 		 * TODO Write a variant of g_convert_with_fallback that dumps hex chars
 		 * instead of unicode escapes.
 		 */
-		utf8_filename =
+		out_fname =
 			g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
 			           NULL, NULL, &error);
 		if (error)
@@ -743,7 +749,7 @@ print_record_cb (rbin_struct *record)
 			             "to UTF-8 for index %s: %s"),
 			           legacy_encoding, index, error->message);
 			g_clear_error (&error);
-			utf8_filename =
+			out_fname =
 				g_strdup (_("(File name not representable in UTF-8 encoding)"));
 		}
 	}
@@ -769,10 +775,10 @@ print_record_cb (rbin_struct *record)
 			if (record->meta->keep_deleted_entry)
 			{
 				const char *purged = record->emptied ? _("Yes") : _("No");
-				outstr = g_strjoin (delim, index, deltime, purged, size, utf8_filename, NULL);
+				outstr = g_strjoin (delim, index, deltime, purged, size, out_fname, NULL);
 			}
 			else
-				outstr = g_strjoin (delim, index, deltime, size, utf8_filename, NULL);
+				outstr = g_strjoin (delim, index, deltime, size, out_fname, NULL);
 
 			_local_printf ("%s\n", outstr);
 
@@ -805,7 +811,7 @@ print_record_cb (rbin_struct *record)
 			g_string_append_printf (s,
 				">\n"
 				"    <path>%s</path>\n"
-				"  </record>\n", utf8_filename);
+				"  </record>\n", out_fname);
 
 			outstr = g_string_free (s, FALSE);
 			_local_printf ("%s", outstr);
@@ -816,7 +822,7 @@ print_record_cb (rbin_struct *record)
 			g_assert_not_reached();
 	}
 	g_free (outstr);
-	g_free (utf8_filename);
+	g_free (out_fname);
 	g_free (deltime);
 	g_free (size);
 	g_free (index);
@@ -862,7 +868,7 @@ free_record_cb (rbin_struct *record)
 {
 	if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
 		g_free (record->index_s);
-	g_free (record->utf8_filename);
+	g_free (record->uni_filename);
 	g_free (record->legacy_filename);
 	g_free (record);
 }

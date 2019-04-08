@@ -42,7 +42,7 @@ Run programs without any option for more detail. Here are some more
 frequently used options:
 
  Option    | Purpose
-----------:|:--------
+:----------|:--------
 `-o <FILE>`| Output to file
 `-x`       | Output XML instead of tab-separated fields
 `-l <CP>`  | Display legacy (8.3) filenames and specify its codepage
@@ -68,7 +68,7 @@ More compatibility fix for other architectures welcome.
 ## Download
 
 ### Windows
-Windows binaries, if applicable, would be officially provided
+Windows binaries are officially provided
 [on Github release page][6].
 
 Note that 0.6.1 version is the last version suporting Windows XP and 2003;
