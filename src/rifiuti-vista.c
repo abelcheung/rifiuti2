@@ -105,18 +105,18 @@ validate_index_file (const char  *filename,
 	g_debug ("Start file validation for '%s'...", filename);
 
 	g_return_val_if_fail ( (filename != NULL) && (*filename != '\0'),
-	                       RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (filebuf  != NULL), RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (bufsize  != NULL), RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (ver      != NULL), RIFIUTI_ERR_INTERNAL );
-	g_return_val_if_fail ( (pathlen  != NULL), RIFIUTI_ERR_INTERNAL );
+	                       R2_ERR_INTERNAL );
+	g_return_val_if_fail ( (filebuf  != NULL), R2_ERR_INTERNAL );
+	g_return_val_if_fail ( (bufsize  != NULL), R2_ERR_INTERNAL );
+	g_return_val_if_fail ( (ver      != NULL), R2_ERR_INTERNAL );
+	g_return_val_if_fail ( (pathlen  != NULL), R2_ERR_INTERNAL );
 
 	if ( !g_file_get_contents (filename, &buf, bufsize, &err) )
 	{
 		g_critical (_("%s(): failed to retrieve file content for '%s': %s"),
 		            __func__, filename, err->message);
 		g_clear_error (&err);
-		status = RIFIUTI_ERR_OPEN_FILE;
+		status = R2_ERR_OPEN_FILE;
 		goto validation_error;
 	}
 
@@ -128,7 +128,7 @@ validate_index_file (const char  *filename,
 		         (gsize) VERSION1_FILENAME_OFFSET);
 		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file."));
 		g_printerr ("\n");
-		status = RIFIUTI_ERR_BROKEN_FILE;
+		status = R2_ERR_BROKEN_FILE;
 		goto validation_error;
 	}
 
@@ -148,7 +148,7 @@ validate_index_file (const char  *filename,
 			         expected, expected - 1);
 			g_printerr (_("Index file expected size and real size do not match."));
 			g_printerr ("\n");
-			status = RIFIUTI_ERR_BROKEN_FILE;
+			status = R2_ERR_BROKEN_FILE;
 			goto validation_error;
 		}
 		*pathlen = WIN_PATH_MAX;
@@ -166,7 +166,7 @@ validate_index_file (const char  *filename,
 			g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
 			g_printerr (_("Index file expected size and real size do not match."));
 			g_printerr ("\n");
-			status = RIFIUTI_ERR_BROKEN_FILE;
+			status = R2_ERR_BROKEN_FILE;
 			goto validation_error;
 		}
 		break;
@@ -174,7 +174,7 @@ validate_index_file (const char  *filename,
 	  default:
 		g_printerr (_("Unsupported file version, or probably not a $Recycle.bin index file."));
 		g_printerr ("\n");
-		status = RIFIUTI_ERR_BROKEN_FILE;
+		status = R2_ERR_BROKEN_FILE;
 		goto validation_error;
 	}
 
@@ -356,7 +356,7 @@ main (int    argc,
 		g_printerr ("\n");
 		g_printerr (_("Run program with '-h' option for more info."));
 		g_printerr ("\n");
-		exit_status = RIFIUTI_ERR_ARG;
+		exit_status = R2_ERR_ARG;
 		goto cleanup;
 	}
 
@@ -373,7 +373,7 @@ main (int    argc,
 		{
 			g_printerr (_("Plain text format options can not be used in XML mode."));
 			g_printerr ("\n");
-			exit_status = RIFIUTI_ERR_ARG;
+			exit_status = R2_ERR_ARG;
 			goto cleanup;
 		}
 	}
@@ -408,7 +408,7 @@ main (int    argc,
 	{
 		g_printerr (_("No valid recycle bin index file found."));
 		g_printerr ("\n");
-		exit_status = RIFIUTI_ERR_BROKEN_FILE;
+		exit_status = R2_ERR_BROKEN_FILE;
 		goto cleanup;
 	}
 	recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
@@ -425,7 +425,7 @@ main (int    argc,
 				if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
 				{
 					meta.version = VERSION_INCONSISTENT;
-					exit_status = RIFIUTI_ERR_BROKEN_FILE;
+					exit_status = R2_ERR_BROKEN_FILE;
 				}
 		}
 	}
@@ -487,7 +487,7 @@ main (int    argc,
 		g_printerr (_("Output content is left in '%s'."), tmppath);
 		g_printerr ("\n");
 
-		exit_status = RIFIUTI_ERR_WRITE_FILE;
+		exit_status = R2_ERR_WRITE_FILE;
 	}
 
   cleanup:

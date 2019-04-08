@@ -100,6 +100,143 @@ static GOptionEntry textoptions[] =
 };
 
 
+static void
+_advance_char (gchar      **in_str,
+               gsize       *read_bytes,
+               gchar      **out_str,
+               gsize       *write_bytes,
+               const char  *tmpl)
+{
+	unsigned char c = (unsigned char) **in_str;
+	gchar *repl = g_strdup_printf (tmpl, c);
+
+	(*in_str)++;
+	if (read_bytes != NULL)
+		(*read_bytes)--;
+
+	*out_str = g_stpcpy (*out_str, (const char *) repl);
+	if (write_bytes != NULL)
+		*write_bytes -= strlen (repl);
+
+	g_free (repl);
+	return;
+}
+
+/* Last argument is there to avoid recomputing */
+static char *
+_filter_cntrl_char (const char *str,
+                    const char *tmpl,
+                    size_t      byte_per_char)
+{
+	char *result, *i_ptr, *o_ptr;
+	int cnt = 0;
+
+	for (i_ptr = (char *)str; *i_ptr; i_ptr++) {
+		if (((*i_ptr > 0) && (*i_ptr < 0x20)) || (*i_ptr == 0x7F)) cnt++;
+	}
+
+	if (!cnt)
+		return g_strdup (str);
+
+	/* FIXME: any better way to estimate malloc size w/o iterating whole str? */
+	result = g_malloc0 (strlen (str) + cnt * byte_per_char);
+	o_ptr = result;
+
+	i_ptr = (char *) str;
+	while (*i_ptr)
+	{
+		if (((*i_ptr > 0) && (*i_ptr < 0x20)) || (*i_ptr == 0x7F))
+			_advance_char (&i_ptr, NULL, &o_ptr, NULL, tmpl);
+		else
+			*o_ptr++ = *i_ptr++;
+	}
+
+	return result;
+}
+
+char *
+conv_to_utf8_with_fallback_tmpl (const char *str,
+                                 const char *from_enc,
+                                 const char *tmpl)
+{
+	char *u8str, *result, *i_ptr, *o_ptr;
+	gsize rbyte, wbyte, status;
+	static size_t byte_per_char = 0;
+	GIConv conv;
+
+	g_return_val_if_fail ((     str != NULL) && (     *str != '\0'), NULL);
+	g_return_val_if_fail ((from_enc != NULL) && (*from_enc != '\0'), NULL);
+	g_return_val_if_fail ((    tmpl != NULL) && (    *tmpl != '\0'), NULL);
+
+	/* try the template */
+	if (! byte_per_char)
+	{
+		char *s = g_strdup_printf (tmpl, 0xFF);
+		/* UTF-8 character occupies at most 6 bytes */
+		byte_per_char = MAX (strlen(s), 6);
+		g_free (s);
+		/*g_printf ("byte_per_char = %zd\n", byte_per_char);*/
+	}
+	rbyte = strlen (str);
+	wbyte = rbyte * byte_per_char;
+	u8str = g_malloc0 (wbyte);
+
+	i_ptr = (char *) str;
+	o_ptr = u8str;
+
+	/* Shouldn't fail, as it has been tested upon start of prog */
+	conv = g_iconv_open ("UTF-8", from_enc);
+
+	g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
+			rbyte, wbyte);
+
+	/* Pass 1: Convert whole string to UTF-8, all illegal seq become escaped hex */
+	while (*i_ptr != '\0')
+	{
+		int e;
+
+		status = g_iconv (conv, &i_ptr, &rbyte, &o_ptr, &wbyte);
+		e = errno;
+
+		if ( status != (gsize) -1 ) break;
+
+		g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
+			", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
+			rbyte, wbyte, status, strerror(e), u8str);
+
+		switch (e) {
+			case EILSEQ:
+			case EINVAL:
+				_advance_char (&i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
+				/* reset state, hopefully Windows don't use stateful encoding at all */
+				g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);
+                exit_status = R2_ERR_USER_ENCODING;
+				break;
+			case E2BIG:
+				/* Should have already allocated enough buffer. Let it KABOOM! otherwise. */
+				g_assert_not_reached();
+		}
+	}
+
+	g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
+		", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8str);
+
+	g_iconv_close (conv);
+
+	/* Pass 2: Convert all ctrl characters (and some more) to hex */
+	/*
+	if (! g_utf8_validate (u8str, -1, NULL)) {
+		g_critical (_("Intermediate string failed UTF-8 validation"));
+		return NULL;
+	}
+	*/
+
+	result = _filter_cntrl_char (u8str, tmpl, byte_per_char);
+	g_free (u8str);
+
+	return result;
+}
+
 /*
  * Check if index file has sufficient amount of data for reading
  * 0 = success, all other return status = error
@@ -117,7 +254,7 @@ validate_index_file (const char  *filename,
 
 	g_debug ("Start file validation...");
 
-	g_return_val_if_fail ( (infile != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (infile != NULL), R2_ERR_INTERNAL );
 	*infile = NULL;
 
 	if (0 != g_stat (filename, &st))
@@ -125,14 +262,14 @@ validate_index_file (const char  *filename,
 		g_printerr (_("Error getting metadata of file '%s': %s"),
 			filename, strerror (errno));
 		g_printerr ("\n");
-		return RIFIUTI_ERR_OPEN_FILE;
+		return R2_ERR_OPEN_FILE;
 	}
 
 	if (st.st_size < RECORD_START_OFFSET)  /* empty INFO2 file has 20 bytes */
 	{
 		g_debug ("file size = %d, expect at least %d\n", (int) st.st_size,
 		         RECORD_START_OFFSET);
-		return RIFIUTI_ERR_BROKEN_FILE;
+		return R2_ERR_BROKEN_FILE;
 	}
 
 	if ( !(fp = g_fopen (filename, "rb")) )
@@ -140,7 +277,7 @@ validate_index_file (const char  *filename,
 		g_printerr (_("Error opening file '%s' for reading: %s"),
 			filename, strerror (errno));
 		g_printerr ("\n");
-		return RIFIUTI_ERR_OPEN_FILE;
+		return R2_ERR_OPEN_FILE;
 	}
 
 	/* with file size check already done, fread fail -> serious problem */
@@ -150,7 +287,7 @@ validate_index_file (const char  *filename,
 		/* TRANSLATOR COMMENT: the variable is function name */
 		g_critical (_("%s(): fread() failed when reading version info from '%s'"),
 		            __func__, filename);
-		status = RIFIUTI_ERR_OPEN_FILE;
+		status = R2_ERR_OPEN_FILE;
 		goto validation_broken;
 	}
 	ver = GUINT32_FROM_LE (ver);
@@ -162,7 +299,7 @@ validate_index_file (const char  *filename,
 		/* TRANSLATOR COMMENT: the variable is function name */
 		g_critical (_("%s(): fread() failed when reading recordsize from '%s'"),
 		            __func__, filename);
-		status = RIFIUTI_ERR_OPEN_FILE;
+		status = R2_ERR_OPEN_FILE;
 		goto validation_broken;
 	}
 	size = GUINT32_FROM_LE (size);
@@ -180,7 +317,7 @@ validate_index_file (const char  *filename,
 		{
 			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
-			status = RIFIUTI_ERR_BROKEN_FILE;
+			status = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
 
@@ -201,7 +338,7 @@ validate_index_file (const char  *filename,
 			g_printerr ("\n");
 #endif
 
-			status = RIFIUTI_ERR_ARG;
+			status = R2_ERR_ARG;
 			goto validation_broken;
 		}
 
@@ -224,7 +361,7 @@ validate_index_file (const char  *filename,
 		{
 			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
-			status = RIFIUTI_ERR_BROKEN_FILE;
+			status = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
 		/* guess is not complete yet for latter case, see populate_record_data */
@@ -232,7 +369,7 @@ validate_index_file (const char  *filename,
 		break;
 
 	  default:
-		status = RIFIUTI_ERR_BROKEN_FILE;
+		status = R2_ERR_BROKEN_FILE;
 		goto validation_broken;
 	}
 
@@ -252,18 +389,19 @@ validate_index_file (const char  *filename,
 static rbin_struct *
 populate_record_data (void *buf)
 {
-	rbin_struct    *record;
-	uint64_t        win_filetime;
-	uint32_t        drivenum;
-	long            read, write;
-	GError         *error        = NULL;
+	rbin_struct *record;
+	uint64_t     win_filetime;
+	uint32_t     drivenum;
+	long         read, write;
+	char        *legacy_fname;
+	GError      *error = NULL;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 
-	/* Guarantees null-termination by allocating extra byte */
-	record->legacy_filename =
-		(char *) g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
-	copy_field (record->legacy_filename, LEGACY_FILENAME, RECORD_INDEX);
+	/* Guarantees null-termination by allocating extra byte; same goes with
+	 * unicode filename */
+	legacy_fname = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
+	copy_field (legacy_fname, LEGACY_FILENAME, RECORD_INDEX);
 
 	/* Index number associated with the record */
 	copy_field (&record->index_n, RECORD_INDEX, DRIVE_LETTER);
@@ -281,10 +419,10 @@ populate_record_data (void *buf)
 
 	record->emptied = FALSE;
 	/* first byte will be removed from filename if file is not in recycle bin */
-	if (!*record->legacy_filename)
+	if (!*legacy_fname)
 	{
 		record->emptied = TRUE;
-		*record->legacy_filename = record->drive;
+		*legacy_fname = record->drive;
 	}
 
 	/* File deletion time */
@@ -297,6 +435,19 @@ populate_record_data (void *buf)
 	copy_field (&record->filesize, FILESIZE, UNICODE_FILENAME);
 	record->filesize = GUINT64_FROM_LE (record->filesize);
 	g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
+
+	/*
+	 * 1. Only bother populating legacy path if users need it,
+	 *    because otherwise we don't know which encoding to use
+	 * 2. Enclose with angle brackets because they are not allowed
+	 *    in Windows file name, therefore stands out better that
+	 *    the escaped hex sequences are not part of real file name
+	 */
+	if (legacy_encoding)
+		record->legacy_filename = conv_to_utf8_with_fallback_tmpl (
+			legacy_fname, legacy_encoding, "<\\%02X>");
+
+	g_free (legacy_fname);
 
 	if (! meta.has_unicode_path)
 		return record;
@@ -316,6 +467,7 @@ populate_record_data (void *buf)
 						"UTF-8 encoding for record %u: %s"),
 					"UTF-16", record->index_n, error->message);
 		g_clear_error (&error);
+		exit_status = R2_ERR_INTERNAL;
 	}
 
 	/*
@@ -400,12 +552,12 @@ parse_record_cb (char    *index_file,
 	{
 		g_critical (_("Failed to read record at position %li: %s"),
 				   ftell (infile), strerror (errno));
-		exit_status = RIFIUTI_ERR_OPEN_FILE;
+		exit_status = R2_ERR_OPEN_FILE;
 	}
 	if ( feof (infile) && size && ( size < meta.recordsize ) )
 	{
 		g_warning (_("Premature end of file, last record (%zu bytes) discarded"), size);
-		exit_status = RIFIUTI_ERR_BROKEN_FILE;
+		exit_status = R2_ERR_BROKEN_FILE;
 	}
 
 	fclose (infile);
@@ -443,7 +595,7 @@ main (int    argc,
 		g_printerr ("\n");
 		g_printerr (_("Run program with '-h' option for more info."));
 		g_printerr ("\n");
-		exit_status = RIFIUTI_ERR_ARG;
+		exit_status = R2_ERR_ARG;
 		goto cleanup;
 	}
 
@@ -459,7 +611,7 @@ main (int    argc,
 		{
 			g_printerr (_("Plain text format options can not be used in XML mode."));
 			g_printerr ("\n");
-			exit_status = RIFIUTI_ERR_ARG;
+			exit_status = R2_ERR_ARG;
 			goto cleanup;
 		}
 	}
@@ -487,7 +639,7 @@ main (int    argc,
 			g_printerr (_("Please execute 'iconv -l' for list of supported encodings."));
 			g_printerr ("\n");
 #endif
-			exit_status = RIFIUTI_ERR_ARG;
+			exit_status = R2_ERR_ARG;
 			goto cleanup;
 		}
 		else
@@ -531,7 +683,7 @@ main (int    argc,
 	if ( !meta.is_empty && (recordlist == NULL) )
 	{
 		g_printerr ("%s", _("Recycle bin file has no valid record.\n"));
-		exit_status = RIFIUTI_ERR_BROKEN_FILE;
+		exit_status = R2_ERR_BROKEN_FILE;
 		goto cleanup;
 	}
 
@@ -575,10 +727,19 @@ main (int    argc,
 		g_printerr (_("Output content is left in '%s'."), tmppath);
 		g_printerr ("\n");
 
-		exit_status = RIFIUTI_ERR_WRITE_FILE;
+		exit_status = R2_ERR_WRITE_FILE;
 	}
 
   cleanup:
+	/* Some last minute error messages */
+	switch (exit_status) {
+		case R2_ERR_USER_ENCODING:
+			g_printerr (_("Some entries could not be interpreted in %s encoding, "
+				"and characters are displayed in hex value instead. "
+				"Very likely the (localised) Windows generating the recycle bin "
+				"artifact does not use specified codepage."), legacy_encoding);
+			break;
+	}
 	g_debug ("Cleaning up...");
 
 	g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);

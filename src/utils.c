@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #if HAVE_SETLOCALE
@@ -262,7 +263,7 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 		g_printerr (_("Error parsing options: %s"), err->message);
 		g_printerr ("\n");
 		g_error_free (err);
-		return RIFIUTI_ERR_ARG;
+		return R2_ERR_ARG;
 	}
 	return EXIT_SUCCESS;
 }
@@ -405,7 +406,7 @@ get_tempfile (FILE   **fh,
 	g_printerr (_("Error opening temp file for writing: %s"),
 		strerror (errno));
 	g_printerr ("\n");
-	return RIFIUTI_ERR_OPEN_FILE;
+	return R2_ERR_OPEN_FILE;
 }
 
 /* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
@@ -491,18 +492,18 @@ check_file_args (const char  *path,
 {
 	g_debug ("Start basic file checking...");
 
-	g_return_val_if_fail ( (path != NULL) && (list != NULL), RIFIUTI_ERR_INTERNAL );
+	g_return_val_if_fail ( (path != NULL) && (list != NULL), R2_ERR_INTERNAL );
 
 	if ( !g_file_test (path, G_FILE_TEST_EXISTS) )
 	{
 		g_printerr (_("'%s' does not exist."), path);
 		g_printerr ("\n");
-		return RIFIUTI_ERR_OPEN_FILE;
+		return R2_ERR_OPEN_FILE;
 	}
 	else if ( !is_info2 && g_file_test (path, G_FILE_TEST_IS_DIR) )
 	{
 		if ( ! _populate_index_file_list (list, path) )
-			return RIFIUTI_ERR_OPEN_FILE;
+			return R2_ERR_OPEN_FILE;
 		/*
 		 * last ditch effort: search for desktop.ini. Just print empty content
 		 * representing empty recycle bin if found.
@@ -512,7 +513,7 @@ check_file_args (const char  *path,
 			g_printerr (_("No files with name pattern '%s' are found in directory."),
 					"$Ixxxxxx.*");
 			g_printerr ("\n");
-			return RIFIUTI_ERR_OPEN_FILE;
+			return R2_ERR_OPEN_FILE;
 		}
 	}
 	else if ( g_file_test (path, G_FILE_TEST_IS_REGULAR) )
@@ -523,7 +524,7 @@ check_file_args (const char  *path,
 			_("'%s' is not a normal file or directory.") :
 			_("'%s' is not a normal file."), path);
 		g_printerr ("\n");
-		return RIFIUTI_ERR_OPEN_FILE;
+		return R2_ERR_OPEN_FILE;
 	}
 	return EXIT_SUCCESS;
 }
@@ -727,31 +728,13 @@ print_record_cb (rbin_struct *record)
 	else
 		gmtime_r    (&(record->deltime), &del_tm);
 
-	if (record->meta->has_unicode_path && !legacy_encoding)
+	if (legacy_encoding)	/* user requested, or no unicode path */
+		out_fname = g_strdup (record->legacy_filename);
+	else
 	{
 		out_fname = record->uni_filename ?
 			g_strdup (record->uni_filename) :
 			g_strdup (_("(File name not representable in UTF-8 encoding)"));
-	}
-	else	/* this part is info2 only */
-	{
-		GError *error = NULL;
-		/*
-		 * TODO Write a variant of g_convert_with_fallback that dumps hex chars
-		 * instead of unicode escapes.
-		 */
-		out_fname =
-			g_convert (record->legacy_filename, -1, "UTF-8", legacy_encoding,
-			           NULL, NULL, &error);
-		if (error)
-		{
-			g_warning (_("Error converting file name from %s encoding "
-			             "to UTF-8 for index %s: %s"),
-			           legacy_encoding, index, error->message);
-			g_clear_error (&error);
-			out_fname =
-				g_strdup (_("(File name not representable in UTF-8 encoding)"));
-		}
 	}
 
 	switch (output_format)

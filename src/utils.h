@@ -48,11 +48,12 @@
 /* Error and exit status */
 enum
 {
-	RIFIUTI_ERR_ARG = 1,
-	RIFIUTI_ERR_OPEN_FILE,
-	RIFIUTI_ERR_BROKEN_FILE,  /* file format validation failure */
-	RIFIUTI_ERR_WRITE_FILE,
-	RIFIUTI_ERR_INTERNAL = 64
+	R2_ERR_ARG = 1,
+	R2_ERR_OPEN_FILE,
+	R2_ERR_BROKEN_FILE,  /* file format validation failure */
+	R2_ERR_WRITE_FILE,
+	R2_ERR_USER_ENCODING,
+	R2_ERR_INTERNAL = 64
 };
 
 typedef enum

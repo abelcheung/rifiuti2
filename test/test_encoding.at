@@ -25,16 +25,12 @@ AT_CLEANUP
 dnl
 dnl Original file in Windows ANSI (CP1252), but users attempts
 dnl to treat it as Shift-JIS, and fails
-dnl TODO: also check stderr
-dnl TODO: determine if exit status should be non-zero
 dnl
 AT_SETUP([Err when converting from wrong charset])
 AT_KEYWORDS([encoding])
-AX_AT_CHECK_PATTERN([
+AT_CHECK([
 	cp $sample/INFO2-sample2-wrong-enc.txt expout
 	cd $sample
 	$progf -l CP932 INFO2-sample2
-],, [expout], [
-.*: rifiuti2-WARNING .*: Error converting file name from CP932 encoding to UTF-8 for index 3: Invalid byte sequence in conversion input
-])
+], 5, [expout], [ignore])
 AT_CLEANUP
