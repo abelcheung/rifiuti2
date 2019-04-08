@@ -665,7 +665,7 @@ print_header (metarecord  meta)
 			_local_printf (
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				"<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
-				"  <filename>%s</filename>\n",
+				"  <filename><![CDATA[%s]]></filename>\n",
 				( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
 				MAX (meta.version, 0), rbin_path);
 			break;
@@ -793,7 +793,7 @@ print_record_cb (rbin_struct *record)
 
 			g_string_append_printf (s,
 				">\n"
-				"    <path>%s</path>\n"
+				"    <path><![CDATA[%s]]></path>\n"
 				"  </record>\n", out_fname);
 
 			outstr = g_string_free (s, FALSE);
