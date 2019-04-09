@@ -90,7 +90,7 @@ static GOptionEntry textoptions[] =
  * If successful, its file content will be stored in buf.
  * Return 0 if successful, non-zero on error
  */
-static int
+static r2status
 validate_index_file (const char  *filename,
                      void       **filebuf,
                      gsize       *bufsize,

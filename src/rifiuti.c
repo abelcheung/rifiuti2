@@ -56,7 +56,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
-static int        exit_status          = EXIT_SUCCESS;
+static r2status   exit_status          = EXIT_SUCCESS;
 static metarecord meta;
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
@@ -243,7 +243,7 @@ conv_to_utf8_with_fallback_tmpl (const char *str,
  * If success, infile will be set to file pointer and other args
  * will be filled, otherwise file pointer = NULL
  */
-static int
+static r2status
 validate_index_file (const char  *filename,
                      FILE       **infile)
 {
@@ -329,12 +329,12 @@ validate_index_file (const char  *filename,
 			              "'-l' or '--legacy-filename' option."));
 			g_printerr ("\n\n");
 			/* TRANSLATOR COMMENT: can choose example from YOUR language & code page */
-			g_printerr (_("For example, if file name was expected to contain "
-			              "accented latin characters, use '-l CP1252' option; "
-			              "or in case of Japanese Shift JIS characters, '-l CP932'."));
+			g_printerr (_("For example, if recycle bin is expected to come from West "
+			              "European versions of Windows, use '-l CP1252' option; "
+			              "or in case of Japanese Windows, use '-l CP932'."));
 			g_printerr ("\n\n");
 #ifdef G_OS_UNIX
-			g_printerr (_("Any encoding supported by 'iconv' can be used."));
+			g_printerr (_("Code pages supported by 'iconv' can be used."));
 			g_printerr ("\n");
 #endif
 
@@ -563,6 +563,69 @@ parse_record_cb (char    *index_file,
 	fclose (infile);
 }
 
+static r2status
+_check_legacy_encoding (const char *enc)
+{
+	char     *s;
+	GError   *err = NULL;
+	r2status  st  = EXIT_SUCCESS;
+
+	if (enc == NULL)
+		return EXIT_SUCCESS;
+
+	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &err);
+
+	if (err != NULL)
+	{
+		int e = err->code;
+		g_clear_error (&err);
+
+		switch (e)
+		{
+			case G_CONVERT_ERROR_NO_CONVERSION:
+
+				st = R2_ERR_ARG;
+
+				g_printerr (_("'%s' is not a valid encoding on this system."), enc);
+				g_printerr ("\n");
+#ifdef G_OS_WIN32
+				/* TRANSLATOR COMMENT: argument is software name, 'rifiuti2' */
+				g_printerr (_("Please visit following web page for a list "
+					"closely resembling encodings supported by %s:"), PACKAGE);
+
+				g_printerr ("\n\n\t%s\n", "https://www.gnu.org/software/libiconv/");
+#endif
+#ifdef G_OS_UNIX
+				g_printerr (_("Run 'iconv -l' for list of supported encodings."));
+				g_printerr ("\n");
+#endif
+				break;
+
+			/* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
+			case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
+			case G_CONVERT_ERROR_PARTIAL_INPUT:
+
+				st = R2_ERR_ARG;
+
+				g_printerr (_("'%s' can't possibly be a code page or compatible encoding "
+					"used by localized Windows."), enc);
+				g_printerr ("\n");
+
+				break;
+
+			default:
+				g_assert_not_reached ();
+		}
+	} else if (strcmp ("C:\\", s) != 0) {	/* Can happen for EBCDIC based code pages */
+		st = R2_ERR_ARG;
+		g_printerr (_("'%s' can't possibly be a code page or compatible encoding "
+			"used by localized Windows."), enc);
+		g_printerr ("\n");
+	}
+
+	g_free (s);
+	return st;
+}
 
 int
 main (int    argc,
@@ -616,35 +679,9 @@ main (int    argc,
 		}
 	}
 
-	/* Is charset valid? */
-	if (legacy_encoding)
-	{
-		GIConv try;
-
-		try = g_iconv_open ("UTF-8", legacy_encoding);
-		if (try == (GIConv) -1)
-		{
-			g_printerr (_("'%s' is not a valid encoding on this system. "
-				"Only those supported by 'iconv' can be used."),
-				legacy_encoding);
-			g_printerr ("\n");
-#ifdef G_OS_WIN32
-			/* TRANSLATOR COMMENT: argument is software name, 'rifiuti2' */
-			g_printerr (_("Please visit following web page for a list "
-				"closely resembling encodings supported by %s:"), PACKAGE);
-
-			g_printerr ("\n\n\t%s\n", "https://www.gnu.org/software/libiconv/");
-#endif
-#ifdef G_OS_UNIX
-			g_printerr (_("Please execute 'iconv -l' for list of supported encodings."));
-			g_printerr ("\n");
-#endif
-			exit_status = R2_ERR_ARG;
-			goto cleanup;
-		}
-		else
-			g_iconv_close (try);
-	}
+	exit_status = _check_legacy_encoding (legacy_encoding);
+	if (exit_status != EXIT_SUCCESS)
+		goto cleanup;
 
 	if (NULL == delim)
 		delim = g_strndup ("\t", 2);
@@ -731,13 +768,15 @@ main (int    argc,
 	}
 
   cleanup:
-	/* Some last minute error messages */
+	/* Last minute error messages for accumulated non-fatal errors */
 	switch (exit_status) {
 		case R2_ERR_USER_ENCODING:
 			g_printerr (_("Some entries could not be interpreted in %s encoding, "
 				"and characters are displayed in hex value instead. "
 				"Very likely the (localised) Windows generating the recycle bin "
 				"artifact does not use specified codepage."), legacy_encoding);
+			break;
+		default:
 			break;
 	}
 	g_debug ("Cleaning up...");

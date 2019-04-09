@@ -46,15 +46,16 @@
 #include <glib.h>
 
 /* Error and exit status */
-enum
+typedef enum
 {
-	R2_ERR_ARG = 1,
+	R2_OK = 0, /* as synonym of EXIT_SUCCESS */
+	R2_ERR_ARG,
 	R2_ERR_OPEN_FILE,
 	R2_ERR_BROKEN_FILE,  /* file format validation failure */
 	R2_ERR_WRITE_FILE,
 	R2_ERR_USER_ENCODING,
 	R2_ERR_INTERNAL = 64
-};
+} r2status;
 
 typedef enum
 {
