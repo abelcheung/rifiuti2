@@ -9,27 +9,73 @@ dnl
 AT_SETUP([Unicode characters in file argument])
 AT_KEYWORDS([encoding])
 AT_CHECK([
-	cp $sample/japanese-path-file.txt expout
+	$as_ln_s $sample/japanese-path-file.txt expout
 	cd $sample
 	$progf ./ごみ箱/INFO2-empty
 ],, [expout])
 
 AT_CHECK([
 	rm -f expout
-	cp $sample/japanese-path-dir.txt expout
+	$as_ln_s $sample/japanese-path-dir.txt expout
 	cd $sample
 	$progd ./ごみ箱/dir-empty
 ],, [expout])
 AT_CLEANUP
 
+AT_SETUP([Legacy path encoding - correct])
+AT_KEYWORDS([info2 encoding])
+_r2_basic_compare([$progf -l $gbk_enc_name INFO2-sample1], [INFO2-sample1-alt.txt])
+AT_CLEANUP
+
+AT_SETUP([Legacy path encoding - illegal (1)])
+AT_KEYWORDS([info2 encoding])
+
+AT_DATA([experr-win],[dnl
+.* is not a valid encoding on this system\.
+Please visit following web page .*
+
+	https://.*
+])
+
+AT_DATA([experr-unix],[dnl
+.* is not a valid encoding on this system\.
+Run 'iconv -l' for list of supported encodings\.
+])
+
+AX_AT_CHECK_PATTERN([
+	if $is_mingw ; then
+		$as_ln_s experr-win experr
+	else
+		$as_ln_s experr-unix experr
+	fi
+	cd $sample
+	$progf -l xxx INFO2-sample1
+], 1,, [experr])
+AT_CLEANUP
+
+dnl
+dnl Despite IBM037 encoding being supported in Freebsd iconv
+dnl (and usable in cmdline), glib can't make use of it
+dnl
+AT_SETUP([Legacy path encoding - illegal (2)])
+AT_KEYWORDS([info2 encoding])
+AT_XFAIL_IF([$os_freebsd])
+AX_AT_CHECK_PATTERN([
+	cd $sample
+	$progf -l $ebcdic_enc_name INFO2-sample1
+], 1,, [dnl
+.* can't possibly be a code page or compatible encoding .*
+])
+AT_CLEANUP
+
 dnl
 dnl Original file in Windows ANSI (CP1252), but users attempts
-dnl to treat it as Shift-JIS, and fails
+dnl to treat it as Shift-JIS, and got hex escapes as result
 dnl
-AT_SETUP([Err when converting from wrong charset])
+AT_SETUP([Legacy path encoding - wrong])
 AT_KEYWORDS([encoding])
 AT_CHECK([
-	cp $sample/INFO2-sample2-wrong-enc.txt expout
+	$as_ln_s $sample/INFO2-sample2-wrong-enc.txt expout
 	cd $sample
 	$progf -l CP932 INFO2-sample2
 ], 5, [expout], [ignore])

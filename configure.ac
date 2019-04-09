@@ -17,9 +17,12 @@ dnl Platform check.
 AS_CASE([$host],
         [*-*-msys* | *-*-mingw*], [is_mingw=y  ],
         [*-*-cygwin*           ], [is_cygwin=y ],
-        [*-*-solaris*          ], [os_solaris=y])
+        [*-*-solaris*          ], [os_solaris=y],
+        [*-*-freebsd*          ], [os_freebsd=y])
 AC_SUBST(is_mingw)
 AC_SUBST(is_cygwin)
+AC_SUBST(os_solaris)
+AC_SUBST(os_freebsd)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 
 dnl I18N
@@ -99,8 +102,7 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
 	[AC_MSG_RESULT([native/libiconv])],
 	[AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
 		[return (g_iconv_open("UTF-8","646") == (GIConv) -1);])],
-		[AC_MSG_RESULT([solaris])
-		 AC_SUBST(solaris_iconv)],
+		[AC_MSG_RESULT([solaris])],
 		[AC_MSG_RESULT([unknown])
 		 AC_MSG_ERROR([dnl
 iconv() implementation used by glib2 is not recognized, which

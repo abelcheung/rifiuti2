@@ -14,6 +14,7 @@ awk="@AWK@"
 is_mingw="test x@is_mingw@ != x"
 is_cygwin="test x@is_cygwin@ != x"
 os_solaris="test x@os_solaris@ != x"
+os_freebsd="test x@os_freebsd@ != x"
 
 # abbrev
 progf="$abs_top_builddir/src/rifiuti"
@@ -23,6 +24,8 @@ sample="$abs_srcdir/samples"
 # platform specific stuff
 if $os_solaris; then
     gbk_enc_name=GBK
+	ebcdic_enc_name=IBM-037
 else
     gbk_enc_name=CP936
+	ebcdic_enc_name=IBM037
 fi

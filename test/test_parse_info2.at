@@ -37,8 +37,3 @@ AT_SETUP([INFO2 Sample 6 - XP/03])
 AT_KEYWORDS([info2])
 _r2_basic_compare([$progf INFO2-sample1], [INFO2-sample1.txt])
 AT_CLEANUP
-
-AT_SETUP([Legacy path names])
-AT_KEYWORDS([info2])
-_r2_basic_compare([$progf -l $gbk_enc_name INFO2-sample1], [INFO2-sample1-alt.txt])
-AT_CLEANUP
