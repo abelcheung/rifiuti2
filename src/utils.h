@@ -198,6 +198,12 @@ void       my_debug_handler         (const char          *log_domain      ,
                                      GLogLevelFlags       log_level       ,
                                      const char          *message         ,
                                      gpointer             data            );
+
 int        get_tempfile             (FILE               **fh              ,
                                      char               **tmppath         );
+
+char *     conv_to_utf8_with_fallback_tmpl (const char   *str             ,
+                                            const char   *from_enc        ,
+                                            const char   *tmpl            ,
+                                            r2status     *st              );
 #endif
