@@ -54,7 +54,7 @@ static gboolean   xml_output           = FALSE;
        gboolean   always_utf8          = FALSE;
        gboolean   use_localtime        = FALSE;
 static gboolean   do_print_version     = FALSE;
-static int        exit_status          = EXIT_SUCCESS;
+static r2status   exit_status          = EXIT_SUCCESS;
 static metarecord meta;
 
 static GOptionEntry mainoptions[] =
@@ -193,10 +193,9 @@ populate_record_data (void *buf,
                       uint32_t pathlen,
                       gboolean erraneous)
 {
-	uint64_t        win_filetime;
-	rbin_struct    *record;
-	GError         *error = NULL;
-	long            read, write;
+	uint64_t      win_filetime;
+	rbin_struct  *record;
+	size_t        read;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 	record->version = version;
@@ -233,25 +232,28 @@ populate_record_data (void *buf,
 	g_debug ("pathlen = %d", pathlen);
 	switch (version)
 	{
-	  case VERSION_VISTA:
-		record->uni_filename =
-			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION1_FILENAME_OFFSET - (int) erraneous),
-			                 pathlen + 1, &read, &write, &error);
-		break;
-	  case VERSION_WIN10:
-		record->uni_filename =
-			utf16le_to_utf8 ((gunichar2 *) (buf + VERSION2_FILENAME_OFFSET),
-			                 pathlen + 1, &read, &write, &error);
-		break;
-	}
-	g_debug ("utf16->8 r=%li w=%li", read, write);
+		case VERSION_VISTA:
+			record->uni_filename = conv_path_to_utf8_with_tmpl (
+				(const char *) (buf - erraneous + VERSION1_FILENAME_OFFSET),
+				NULL, "<\\u%04X>", &read, &exit_status);
+			break;
 
-	if (error)
-	{
-		g_warning (_("Error converting file name from %s encoding to "
-		             "UTF-8 encoding: %s"), "UTF-16", error->message);
-		g_clear_error (&error);
+		case VERSION_WIN10:
+			record->uni_filename = conv_path_to_utf8_with_tmpl (
+				(const char *) (buf + VERSION2_FILENAME_OFFSET),
+				NULL, "<\\u%04X>", &read, &exit_status);
+			break;
+
+		default:
+			g_assert_not_reached ();
 	}
+
+	if (record->uni_filename == NULL) {
+		g_warning (_("(Record %s) Error converting unicode path to UTF-8."),
+			record->index_s);
+		record->uni_filename = "";
+	}
+
 	return record;
 }
 
@@ -265,15 +267,17 @@ parse_record_cb (char    *index_file,
 	uint32_t        pathlen = 0;
 	gsize           bufsize;
 	void           *buf = NULL;
+	r2status        validate_st;
 
 	basename = g_path_get_basename (index_file);
 
-	exit_status = validate_index_file (index_file,
-	                                   &buf, &bufsize, &version, &pathlen);
-	if ( exit_status != EXIT_SUCCESS )
+	validate_st = validate_index_file (
+		index_file, &buf, &bufsize, &version, &pathlen);
+	if ( validate_st != EXIT_SUCCESS )
 	{
 		g_printerr (_("File '%s' fails validation."), basename);
 		g_printerr ("\n");
+		exit_status = validate_st;
 		goto parse_record_error;
 	}
 
@@ -281,21 +285,18 @@ parse_record_cb (char    *index_file,
 
 	switch (version)
 	{
-	  case VERSION_VISTA:
-		/* see populate_record_data() for meaning of last parameter */
-		record = populate_record_data (buf, version, pathlen,
-		                               (bufsize == VERSION1_FILE_SIZE - 1));
-		break;
+		case VERSION_VISTA:
+			/* see populate_record_data() for meaning of last parameter */
+			record = populate_record_data (buf, version, pathlen,
+										(bufsize == VERSION1_FILE_SIZE - 1));
+			break;
 
-	  case VERSION_WIN10:
-		record = populate_record_data (buf, version, pathlen, FALSE);
-		break;
+		case VERSION_WIN10:
+			record = populate_record_data (buf, version, pathlen, FALSE);
+			break;
 
-	  default:
-		/* VERY wrong if reaching here. Version info has already been filtered once */
-		g_critical (_("Version info for '%s' still wrong "
-		              "despite file validation."), basename);
-		goto parse_record_error;
+		default:
+			g_assert_not_reached();
 	}
 
 	g_debug ("Parsing done for '%s'", basename);
@@ -305,7 +306,8 @@ parse_record_cb (char    *index_file,
 	g_free (buf);
 	return;
 
-  parse_record_error:
+	parse_record_error:
+
 	g_free (buf);
 	g_free (basename);
 }
@@ -490,7 +492,21 @@ main (int    argc,
 		exit_status = R2_ERR_WRITE_FILE;
 	}
 
-  cleanup:
+	cleanup:
+	/* Last minute error messages for accumulated non-fatal errors */
+	switch (exit_status)
+	{
+		case R2_ERR_USER_ENCODING:
+			g_printerr (_("Some entries could not be presented as correct "
+				"unicode path.  The concerned characters are displayed "
+				"in escaped unicode sequences."));
+			g_printerr ("\n");
+			break;
+
+		default:
+			break;
+	}
+
 	g_debug ("Cleaning up...");
 
 	g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);

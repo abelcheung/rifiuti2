@@ -255,9 +255,8 @@ populate_record_data (void *buf)
 	rbin_struct *record;
 	uint64_t     win_filetime;
 	uint32_t     drivenum;
-	long         read, write;
+	size_t       read;
 	char        *legacy_fname;
-	GError      *error = NULL;
 
 	record = g_malloc0 (sizeof (rbin_struct));
 
@@ -307,8 +306,16 @@ populate_record_data (void *buf)
 	 *    the escaped hex sequences are not part of real file name
 	 */
 	if (legacy_encoding)
-		record->legacy_filename = conv_to_utf8_with_fallback_tmpl (
-			legacy_fname, legacy_encoding, "<\\%02X>", &exit_status);
+	{
+		record->legacy_filename = conv_path_to_utf8_with_tmpl (
+			legacy_fname, legacy_encoding, "<\\%02X>", &read, &exit_status);
+
+		if (record->legacy_filename == NULL) {
+			g_warning (_("(Record %u) Error converting legacy path to UTF-8."),
+				record->index_n);
+			record->legacy_filename = "";
+		}
+	}
 
 	g_free (legacy_fname);
 
@@ -319,18 +326,14 @@ populate_record_data (void *buf)
 	 * Part below deals with unicode path only *
 	 *******************************************/
 
-	record->uni_filename =
-		utf16le_to_utf8 ((gunichar2 *) (buf + UNICODE_FILENAME_OFFSET),
-							WIN_PATH_MAX + 1, &read, &write, &error);
-	g_debug ("utf16->utf8 read=%li write=%li", read, write);
+	record->uni_filename = conv_path_to_utf8_with_tmpl (
+		(char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
+		"<\\u%04X>", &read, &exit_status);
 
-	if (error)
-	{
-		g_warning (_("Error converting file name from %s encoding to "
-						"UTF-8 encoding for record %u: %s"),
-					"UTF-16", record->index_n, error->message);
-		g_clear_error (&error);
-		exit_status = R2_ERR_INTERNAL;
+	if (record->uni_filename == NULL) {
+		g_warning (_("(Record %u) Error converting unicode path to UTF-8."),
+			record->index_n);
+		record->uni_filename = "";
 	}
 
 	/*
@@ -352,8 +355,9 @@ populate_record_data (void *buf)
 	{
 		void *ptr;
 
-		for (ptr = buf + UNICODE_FILENAME_OFFSET + read * sizeof (gunichar2);
-				ptr < buf + UNICODE_RECORD_SIZE; ptr++)
+		for (ptr = buf + UNICODE_FILENAME_OFFSET + read;
+			ptr < buf + UNICODE_RECORD_SIZE; ptr++)
+		{
 			if ( *(char *) ptr != '\0' )
 			{
 				g_debug ("Junk detected at offset 0x%tx of unicode path",
@@ -361,6 +365,7 @@ populate_record_data (void *buf)
 				meta.fill_junk = TRUE;
 				break;
 			}
+		}
 	}
 
 	return record;
@@ -632,13 +637,22 @@ main (int    argc,
 
   cleanup:
 	/* Last minute error messages for accumulated non-fatal errors */
-	switch (exit_status) {
+	switch (exit_status)
+	{
 		case R2_ERR_USER_ENCODING:
-			g_printerr (_("Some entries could not be interpreted in %s encoding, "
-				"and characters are displayed in hex value instead. "
-				"Very likely the (localised) Windows generating the recycle bin "
+		if (legacy_encoding) {
+			g_printerr (_("Some entries could not be interpreted in %s encoding."
+				"  The concerned characters are displayed in hex value instead."
+				"  Very likely the (localised) Windows generating the recycle bin "
 				"artifact does not use specified codepage."), legacy_encoding);
+		} else {
+			g_printerr (_("Some entries could not be presented as correct "
+				"unicode path.  The concerned characters are displayed "
+				"in escaped unicode sequences."));
+		}
+			g_printerr ("\n");
 			break;
+
 		default:
 			break;
 	}

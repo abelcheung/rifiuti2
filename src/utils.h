@@ -202,8 +202,9 @@ void       my_debug_handler         (const char          *log_domain      ,
 int        get_tempfile             (FILE               **fh              ,
                                      char               **tmppath         );
 
-char *     conv_to_utf8_with_fallback_tmpl (const char   *str             ,
-                                            const char   *from_enc        ,
-                                            const char   *tmpl            ,
-                                            r2status     *st              );
+char *     conv_path_to_utf8_with_tmpl (const char       *str             ,
+                                        const char       *from_enc        ,
+                                        const char       *tmpl            ,
+                                        size_t           *read            ,
+                                        r2status         *st              );
 #endif

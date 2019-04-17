@@ -58,19 +58,58 @@ static char *os_strings[] = {
 };
 
 
+size_t
+ucs2_strnlen (const gunichar2 *str, size_t max_sz)
+{
+#ifdef G_OS_WIN32
+
+	return wcsnlen_s ((const wchar_t *) str, max_sz);
+
+#else
+
+	size_t i;
+
+	if (str == NULL)
+		return 0;
+
+	for (i=0; (i<max_sz) && str[i]; i++) {}
+	return i;
+
+#endif
+}
+
 static void
-_advance_char (gchar      **in_str,
+_advance_char (size_t       sz,
+               gchar      **in_str,
                gsize       *read_bytes,
                gchar      **out_str,
                gsize       *write_bytes,
                const char  *tmpl)
 {
-	unsigned char c = (unsigned char) **in_str;
-	gchar *repl = g_strdup_printf (tmpl, c);
+	gchar *repl;
 
-	(*in_str)++;
+	switch (sz) {
+		case 1:
+		{
+			unsigned char c = *(unsigned char *) (*in_str);
+			repl = g_strdup_printf (tmpl, c);
+		}
+			break;
+
+		case 2:
+		{
+			gunichar2 c = *(gunichar2 *) (*in_str);
+			repl = g_strdup_printf (tmpl, c);
+		}
+			break;
+
+		default:
+			g_assert_not_reached();
+	}
+
+	(*in_str) += sz;
 	if (read_bytes != NULL)
-		(*read_bytes)--;
+		(*read_bytes) -= sz;
 
 	*out_str = g_stpcpy (*out_str, (const char *) repl);
 	if (write_bytes != NULL)
@@ -82,77 +121,109 @@ _advance_char (gchar      **in_str,
 
 /* Last argument is there to avoid recomputing */
 static char *
-_filter_cntrl_char (const char *str,
-                    const char *tmpl,
-                    size_t      byte_per_char)
+_filter_printable_char (const char *str,
+                        const char *tmpl,
+                        size_t      out_ch_width)
 {
-	char *result, *i_ptr, *o_ptr;
-	int cnt = 0;
+	char     *p, *np;
+	gunichar  c;
+	GString  *s;
 
-	for (i_ptr = (char *)str; *i_ptr; i_ptr++) {
-		if (((*i_ptr > 0) && (*i_ptr < 0x20)) || (*i_ptr == 0x7F)) cnt++;
-	}
-
-	if (!cnt)
-		return g_strdup (str);
-
-	/* FIXME: any better way to estimate malloc size w/o iterating whole str? */
-	result = g_malloc0 (strlen (str) + cnt * byte_per_char);
-	o_ptr = result;
-
-	i_ptr = (char *) str;
-	while (*i_ptr)
+	s = g_string_sized_new (strlen (str) * 2);
+	p = (char *) str;
+	while (*p)
 	{
-		if (((*i_ptr > 0) && (*i_ptr < 0x20)) || (*i_ptr == 0x7F))
-			_advance_char (&i_ptr, NULL, &o_ptr, NULL, tmpl);
+		c  = g_utf8_get_char  (p);
+		np = g_utf8_next_char (p);
+
+		/*
+		 * ASCII space is the norm (e.g. Program Files), but
+		 * all other kinds of spaces are rare, so escape them too
+		 */
+		if (g_unichar_isgraph (c) || (c == 0x20))
+			s = g_string_append_len (s, p, (gssize) (np - p));
 		else
-			*o_ptr++ = *i_ptr++;
+			g_string_append_printf (s, tmpl, c);
+
+		p = np;
 	}
 
-	return result;
+	return g_string_free (s, FALSE);
 }
 
+/*
+ * Converts a Windows path in specified legacy encoding or unicode
+ * path into UTF-8 encoded version. When encoding error arises,
+ * it attempts to be robust and substitute concerned bytes or
+ * unicode codepoints with escaped ones specified by printf-style
+ * template. This routine is not for generic charset conversion.
+ *
+ * 1. Caller is responsible to only supply non-stateful encoding
+ * meant to be used as Windows code page, or use NULL to represent
+ * UTF-16LE (the Windows unicode path encoding). Never supply
+ * any unicode encoding directly.
+ *
+ * 2. Caller is responsible for using correct printf template
+ * for desired data type, no check is done here.
+ */
 char *
-conv_to_utf8_with_fallback_tmpl (const char *str,
-                                 const char *from_enc,
-                                 const char *tmpl,
-                                 r2status   *st)
+conv_path_to_utf8_with_tmpl (const char *path,
+                             const char *from_enc,
+                             const char *tmpl,
+                             size_t     *read,
+                             r2status   *st)
 {
-	char *u8str, *result, *i_ptr, *o_ptr;
-	gsize rbyte, wbyte, status;
-	static size_t byte_per_char = 0;
+	char *u8_path, *i_ptr, *o_ptr, *result = NULL;
+	gsize len, r_total, rbyte, wbyte, status, in_ch_width, out_ch_width;
 	GIConv conv;
 
-	g_return_val_if_fail ((     str != NULL) && (     *str != '\0'), NULL);
-	g_return_val_if_fail ((from_enc != NULL) && (*from_enc != '\0'), NULL);
+	/* for UTF-16, first byte of str can be null */
+	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail ((from_enc == NULL) || (*from_enc != '\0'), NULL);
 	g_return_val_if_fail ((    tmpl != NULL) && (    *tmpl != '\0'), NULL);
 
 	/* try the template */
-	if (! byte_per_char)
 	{
-		char *s = g_strdup_printf (tmpl, 0xFF);
+		char *s = g_strdup_printf (tmpl, from_enc ? 0xFF : 0xFFFF);
 		/* UTF-8 character occupies at most 6 bytes */
-		byte_per_char = MAX (strlen(s), 6);
+		out_ch_width = MAX (strlen(s), 6);
 		g_free (s);
-		/*g_printf ("byte_per_char = %zd\n", byte_per_char);*/
 	}
-	rbyte = strlen (str);
-	wbyte = rbyte * byte_per_char;
-	u8str = g_malloc0 (wbyte);
 
-	i_ptr = (char *) str;
-	o_ptr = u8str;
+	if (from_enc != NULL) {
+		in_ch_width = sizeof (char);
+		len = strnlen (path, WIN_PATH_MAX);
+	} else {
+		in_ch_width = sizeof (gunichar2);
+		len = ucs2_strnlen ((const gunichar2 *)path, WIN_PATH_MAX);
+	}
 
-	/* Shouldn't fail, as it has been tested upon start of prog */
-	conv = g_iconv_open ("UTF-8", from_enc);
+	if (! len)
+		return NULL;
+
+	rbyte   = len *  in_ch_width;
+	wbyte   = len * out_ch_width;
+	u8_path = g_malloc0 (wbyte);
+
+	r_total = rbyte;
+	i_ptr   = (char *) path;
+	o_ptr   = u8_path;
+
+	/* Shouldn't fail, from_enc already tested upon start of prog */
+	conv = g_iconv_open ("UTF-8", from_enc ? from_enc : "UTF-16LE");
 
 	g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
 			rbyte, wbyte);
 
 	/* Pass 1: Convert whole string to UTF-8, all illegal seq become escaped hex */
-	while (*i_ptr != '\0')
+	while (TRUE)
 	{
 		int e;
+
+		if (*i_ptr == '\0') {
+			if (from_enc   != NULL) break;
+			if (*(i_ptr+1) == '\0') break; /* utf-16: check "\0\0" */
+		}
 
 		status = g_iconv (conv, &i_ptr, &rbyte, &o_ptr, &wbyte);
 		e = errno;
@@ -161,15 +232,16 @@ conv_to_utf8_with_fallback_tmpl (const char *str,
 
 		g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
 			", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
-			rbyte, wbyte, status, strerror(e), u8str);
+			rbyte, wbyte, status, strerror(e), u8_path);
 
+		/* XXX Should I consider the possibility of odd bytes for EINVAL? */
 		switch (e) {
 			case EILSEQ:
 			case EINVAL:
-				_advance_char (&i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
+				_advance_char (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
 				/* reset state, hopefully Windows don't use stateful encoding at all */
 				g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);
-                *st = R2_ERR_USER_ENCODING;
+				*st = R2_ERR_USER_ENCODING;
 				break;
 			case E2BIG:
 				/* Should have already allocated enough buffer. Let it KABOOM! otherwise. */
@@ -178,20 +250,22 @@ conv_to_utf8_with_fallback_tmpl (const char *str,
 	}
 
 	g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-		", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8str);
+		", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8_path);
 
 	g_iconv_close (conv);
 
-	/* Pass 2: Convert all ctrl characters (and some more) to hex */
-	/*
-	if (! g_utf8_validate (u8str, -1, NULL)) {
-		g_critical (_("Intermediate string failed UTF-8 validation"));
-		return NULL;
-	}
-	*/
+	if (read != NULL)
+		*read = r_total - rbyte;
 
-	result = _filter_cntrl_char (u8str, tmpl, byte_per_char);
-	g_free (u8str);
+	/* Pass 2: Convert all ctrl characters (and some more) to hex */
+	if (g_utf8_validate (u8_path, -1, NULL))
+		result = _filter_printable_char (u8_path, tmpl, out_ch_width);
+	else {
+		g_critical (_("Converted path failed UTF-8 validation"));
+		*st = R2_ERR_INTERNAL;
+	}
+
+	g_free (u8_path);
 
 	return result;
 }
