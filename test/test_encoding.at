@@ -80,3 +80,15 @@ AT_CHECK([
 	$progf -l CP932 INFO2-sample2
 ], 5, [expout], [ignore])
 AT_CLEANUP
+
+dnl
+dnl Test for: single surrogate, swapped surrogate pair, unassigned codepoint
+dnl
+AT_SETUP([Bad unicode path])
+AT_KEYWORDS([encoding])
+AT_CHECK([
+	$as_ln_s $sample/dir-bad-uni.txt expout
+	cd $sample
+	$progd dir-bad-uni
+], 5, [expout], [ignore])
+AT_CLEANUP
