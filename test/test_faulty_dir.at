@@ -5,11 +5,12 @@ dnl Test suite for rifiuti2
 
 AT_SETUP([Index files of different versions])
 AT_KEYWORDS([recycledir crafted])
-AT_CHECK([
-	cp $sample/dir-mixed.txt expout
+AX_AT_CHECK_PATTERN([
 	cd $sample
 	$progd dir-mixed
-], [3], [expout])
+], [3],, [dnl
+Index files come from multiple versions of Windows\..*
+])
 AT_CLEANUP
 
 AT_SETUP([Directory w/o Windows access permission])

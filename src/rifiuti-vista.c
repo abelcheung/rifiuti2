@@ -423,12 +423,24 @@ main (int    argc,
 		else
 		{
 			meta.version = (int64_t) ((rbin_struct *) recordlist->data)->version;
-			while ( (NULL != (l = l->next)) && (meta.version != VERSION_INCONSISTENT) )
+
+			while (NULL != (l = l->next))
+			{
 				if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
 				{
 					meta.version = VERSION_INCONSISTENT;
-					exit_status = R2_ERR_BROKEN_FILE;
+					break;
 				}
+			}
+
+			if (meta.version == VERSION_INCONSISTENT)
+			{
+				g_printerr (_("Index files come from multiple versions of Windows."
+					"  Please check each file independently."));
+				g_printerr ("\n");
+				exit_status = R2_ERR_BROKEN_FILE;
+				goto cleanup;
+			}
 		}
 	}
 
