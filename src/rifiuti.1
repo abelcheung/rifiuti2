@@ -11,6 +11,10 @@
 .\" see groff_www(7)
 .BCL black #bbffee blue blue #302226
 
+.HEAD "<style type=""text/css""> \
+  body { width: 800px; margin: 0px auto; } \
+  </style>"
+
 .TH "RIFIUTI2 0.7.0" "1"
 
 .SH INSTALLATION ON WINDOWS
@@ -106,18 +110,19 @@ of Windows producing the recycle bin (\fBnot the version of users'
 system!\fP), which uses vastly different format before and after Vista:
 .PP
 
-.IP \[bu]
-\fCrifiuti-vista\fP: For Vista or later, which is located in
+.TP
+\fCrifiuti-vista\fP
+For Vista or later, which is located in
 .nh
 \fC\\$Recycle.bin\\\fP\fI<SID>\fP\fC\\\fP.
 .hy
 Each deleted file has its own accompanied index file remembering
 the original path, file size and deletion time.  If original file is
 permanentsly deleted, so is the index file.
-.IP \[bu]
-\fCrifiuti\fP: For Windows 95 to XP/2003,
-which uses a single index file named \fCINFO2\fP (98 or above) or
-\fCINFO\fP (95 and NT4) under either
+.TP
+\fCrifiuti\fP
+For Windows 95 to XP/2003, which uses a single index file named
+\fCINFO2\fP (98 or above) or \fCINFO\fP (95 and NT4) under either
 .nh
 \fC\\RECYCLED\\\fP
 .hy
@@ -143,7 +148,8 @@ and post-Vista versions.  INFO2 has an index number for each of
 deletion item indicating the chronological order of items. For Vista
 version, it means the index file name instead, which matches
 pattern \(lq$I\fBxxxxxx\fP.\fI<ext>\fP\(rq, where \fBx\fP is random
-alphanumeric character.
+alphanumeric character, and \fI<ext>\fP matches the extension of
+original deleted item.
 .PP
 Deleted time is represented in UTC time by default. Under tab-delimited
 mode, date/time is presented in format recognized by spreadsheet
@@ -157,11 +163,8 @@ respectively:
 .RE
 .PP
 File size and file path are self-explanatory, but there are some
-special notes.  File size can mean the real size of deleted file,
-or the cluster size it occupies on filesystem, depending on recycle
-bin format. File path might not always be displayable on local system
-because it might contain characters from other localized version
-of Windows not supported by current codepage.
+special issues to take care about.  Refer to \fBCAVEATS\fP section
+below for more detail.
 
 .SH OPTIONS
 .TP
@@ -308,7 +311,7 @@ the value for Windows is \(lqPST8PDT\(rq, while corresponding value on
 Linux would be \(lqAmerica/Los_Angeles\(rq. Please consult manual for
 your operating system for more info.
 .PP
-Please see \fBBUGS\fP section below for problems when using this variable.
+Please see \fBCAVEATS\fP section below for problems when using this variable.
 .RE
 
 .SH EXIT STATUS
@@ -334,6 +337,7 @@ Error when writing output to file
 User supplied wrong encoding for legacy path
 
 .SH HISTORY
+.PP
 \fIRifiuti2\fP is a rewrite of \fIrifiuti\fP, a tool of identical
 purpose written by Foundstone which was later purchased by
 McAfee. Quoting from the original FoundStone page:
@@ -356,32 +360,50 @@ English), this rewrite effort is born to overcome the limitation. Later
 rifiuti2 was improved to add support for Vista format recycle bin, XML
 output and other extra features not available from original version.
 
-.SH BUGS
+.SH CAVEATS
 In very special circumstance (which author can't reproduce now),
 index file of certain deleted item can be corrupt, causing incorrect
 deleted file size to be stored. There is no way to report correct size.
-This problem shouldn't happen after Vista though.
-.PP
-Handling of non-ASCII file argument is not satisfactory; it may not
-work in certain case under MinGW bash.
+This problem was only observed in Vista though, not any other versions
+of Window.
 .PP
 Non-ASCII deleted item path name may not be always displayed
-appropriately, especially on Windows console, where output is
-sometimes restricted to ANSI/OEM codepages. Dumping result into
-file and open with UTF-8 capable text editor is an option.
+appropriately on console. Although great care is taken to
+display path name as much as possible (resorting to escaped hex
+.nh
+\fC<\\XX>\fP
+.hy
+or escaped unicode
+.nh
+\fC<\\uXXXX>\fP
+.hy
+in case of invalid or invisible characters), the font used in console
+might not be able to display all characters needed. Dumping result
+into file and open with UTF-8 capable text editor is an option.
 .PP
 It is always better to use UTC time whenever possible, because
 calculation of local time might not be correct, especially for non-US users.
-Documentation of \fC_tzset()\fP function on Windows has this statement:
+Documentation of
+.  ie \n[www-html] \{\
+.URL https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset "\fC_tzset()\fP function on Windows"
+.  \}
+.  el \{\
+\fC_tzset()\fP function on Windows
+.  \}
+has this statement:
 .RS
 The C run-time library assumes the United States' rules for implementing
 the calculation of daylight saving time (DST).
 .RE
-Therefore the time might not be correct in case the files inside
-recycle bin are produced on Windows using other countries as region
-settings. Besides, the difference between standard time and DST is
-hardcoded to be one hour, which is incorrect for a few selected regions.
+Since the difference between standard time and DST is hardcoded to be
+one hour (which is incorrect for a few selected regions), the file
+deletion time might not be correct for these regions when DST is in
+effect.
 .PP
+File size can mean the real size of deleted file, or the cluster size
+it occupies on filesystem, depending on recycle bin format. As a rule
+of thumb, if all sizes of entries are multiples of 512, it can be assumed
+the concerned sizes refer to cluster size.
 
 .SH REPORTING BUGS
 Report bugs to

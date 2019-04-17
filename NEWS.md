@@ -10,18 +10,26 @@
     translation to use
 
 #### Change
-* Now **mandates UTF-8 locale**, except on Windows
+* Now **mandates UTF-8 locale except on Windows**
   * File output is also in UTF-8 encoding under Windows
   * `-8` option is rendered obsolete as a result
-* Distributed Windows binaries **don't support running on
-  Windows XP/2003** anymore; at least Vista is required
+* **Distributed Windows binaries can only run on Vista or above**
+  * Windows XP/2003 support removed due to glib changes
 * Won&apos;t overwrite destination file if it already exists
 * `$Recycle.bin` version:
   * Not printing file size field if it is corrupt
-  * Exit with error status whenever errors are found in any entry
+  * Exit with error status whenever errors are found in any entry,
+    not just the last entry
+* `INFO2` version:
+  * Restricts the choice of legacy path character encoding; generally,
+    all encodings not ASCII compatible are disallowed
+* Remove GNUism for part of build toolchain (`make`, `awk`)
+* Requires GNU gettext
 
 #### Bug fix
 * Fix unicode display on Windows console (Issue #12)
+* More robust handling of invalid or undecipherable characters,
+  displaying escaped hex or unicode sequences in such cases (Issue #5)
 
 ----
 
