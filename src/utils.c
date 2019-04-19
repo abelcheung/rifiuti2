@@ -450,26 +450,22 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 		exit (EXIT_SUCCESS);
 	}
 
-	/*
-	 * The user case where this code won't provide benefit is VERY rare,
-	 * so don't bother doing fallback because it was always the case before.
-	 *
-	 * However this parsing doesn't work nice with path translation in MSYS;
-	 * directory separator in the middle of path would be translated to root
-	 * of MSYS folder if earlier path component contains characters not in
-	 * console codepage. Problem only observed in MSYS bash and not Windows
-	 * console, so not a priority to fix.
-	 */
+#if GLIB_CHECK_VERSION (2, 40, 0)
 	{
 		char **args;
-#ifdef G_OS_WIN32
+
+#  ifdef G_OS_WIN32
 		args = g_win32_get_command_line ();
-#else
+#  else
 		args = g_strdupv (*argv);
-#endif
+#  endif
 		ret = g_option_context_parse_strv (*context, &args, &err);
 		g_strfreev (args);
 	}
+#else /* glib < 2.40 */
+	ret = g_option_context_parse (*context, argc, argv, &err);
+#endif
+
 	g_option_context_free (*context);
 
 	if ( !ret )
