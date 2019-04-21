@@ -541,7 +541,7 @@ filter_escapes (const char *str)
 			result = g_string_append_c (result, *i);
 			continue;
 		}
-		/* TODO remove \v \f */
+
 		switch ( *(++i) )
 		{
 		  case 'r':
@@ -550,10 +550,6 @@ filter_escapes (const char *str)
 			result = g_string_append_c (result, '\n'); break;
 		  case 't':
 			result = g_string_append_c (result, '\t'); break;
-		  case 'v':
-			result = g_string_append_c (result, '\v'); break;
-		  case 'f':
-			result = g_string_append_c (result, '\f'); break;
 		  case 'e':
 			result = g_string_append_c (result, '\x1B'); break;
 		  default:
