@@ -495,7 +495,7 @@ win_filetime_to_epoch (uint64_t win_filetime)
 
 /*
  * Wrapper of g_utf16_to_utf8 for big endian system.
- * Always assume string is nul-terminated.
+ * Always assume string is nul-terminated. (Unused now?)
  */
 char *
 utf16le_to_utf8 (const gunichar2   *str,
@@ -541,7 +541,8 @@ filter_escapes (const char *str)
 			result = g_string_append_c (result, *i);
 			continue;
 		}
-		switch ((char) (* (++i)))
+		/* TODO remove \v \f */
+		switch ( *(++i) )
 		{
 		  case 'r':
 			result = g_string_append_c (result, '\r'); break;
@@ -559,18 +560,18 @@ filter_escapes (const char *str)
 			result = g_string_append_c (result, '\\'); i--;
 		}
 	}
-	while ((char) (* (++i)) != '\0');
+	while ( *(++i) );
 
 	debug_str = g_string_new ("filtered delimiter = ");
 	i = result->str;
 	do
 	{
 		if ( *i >= 0x20 && *i <= 0x7E )  /* problem during linking with g_ascii_isprint */
-			debug_str = g_string_append_c (debug_str, (*i));
+			debug_str = g_string_append_c (debug_str, *i);
 		else
-			g_string_append_printf (debug_str, "\\x%02X", (char) (*i));
+			g_string_append_printf (debug_str, "\\x%02X", *(unsigned char *) i);
 	}
-	while ((char) (* (++i)) != '\0');
+	while ( *(++i) );
 	g_debug ("%s", debug_str->str);
 	g_string_free (debug_str, TRUE);
 	return g_string_free (result, FALSE);
@@ -698,7 +699,7 @@ found_desktop_ini (const char *path)
 int
 check_file_args (const char  *path,
                  GSList     **list,
-                 gboolean     is_info2)
+                 rbin_type    type)
 {
 	g_debug ("Start basic file checking...");
 
@@ -710,7 +711,8 @@ check_file_args (const char  *path,
 		g_printerr ("\n");
 		return R2_ERR_OPEN_FILE;
 	}
-	else if ( !is_info2 && g_file_test (path, G_FILE_TEST_IS_DIR) )
+	else if ( (type == RECYCLE_BIN_TYPE_DIR) &&
+		g_file_test (path, G_FILE_TEST_IS_DIR) )
 	{
 		if ( ! _populate_index_file_list (list, path) )
 			return R2_ERR_OPEN_FILE;
@@ -720,8 +722,8 @@ check_file_args (const char  *path,
 		 */
 		if ( !*list && !found_desktop_ini (path) )
 		{
-			g_printerr (_("No files with name pattern '%s' are found in directory."),
-					"$Ixxxxxx.*");
+			g_printerr (_("No files with name pattern '%s' "
+				"are found in directory."), "$Ixxxxxx.*");
 			g_printerr ("\n");
 			return R2_ERR_OPEN_FILE;
 		}
@@ -730,7 +732,7 @@ check_file_args (const char  *path,
 		*list = g_slist_prepend ( *list, g_strdup (path) );
 	else
 	{
-		g_printerr (!is_info2 ?
+		g_printerr ( (type == RECYCLE_BIN_TYPE_DIR) ?
 			_("'%s' is not a normal file or directory.") :
 			_("'%s' is not a normal file."), path);
 		g_printerr ("\n");
@@ -895,32 +897,22 @@ print_record_cb (rbin_struct *record)
 	char             *out_fname, *index, *size = NULL;
 	char             *outstr = NULL, *deltime = NULL;
 	GString          *t;
-	gboolean          is_info2;
 	struct tm         del_tm;
 
 	extern gboolean   use_localtime;
-	extern char      *legacy_encoding;
 	extern int        output_format;
 	extern char      *delim;
 	extern FILE      *out_fh;
 
 	g_return_if_fail (record != NULL);
 
-	is_info2 = (record->meta->type == RECYCLE_BIN_TYPE_FILE);
-
-	index = is_info2 ? g_strdup_printf ("%u", record->index_n) :
-	                   g_strdup (record->index_s);
+	index = (record->meta->type == RECYCLE_BIN_TYPE_FILE) ?
+		g_strdup_printf ("%u", record->index_n) :
+		g_strdup (record->index_s);
 
 	/*
-	 * According to localtime() in MSDN: If the TZ environment variable is set,
-	 * the C run-time library assumes rules appropriate to the United States for
-	 * implementing the calculation of daylight-saving time (DST).
-	 *
-	 * This means DST start/stop time would be wrong for other parts of the world,
-	 * and there is no way to indicate places whether DST is not +1 hour based on
-	 * standard time. So providing facility for user adjustable TZ would be useless
-	 * for non-US users. However, unsetting here still can't prevent user setting
-	 * $TZ in command line. Throw my hands up and just document the problem.
+	 * Used to check TZ environment variable here, but no more.
+	 * Problems with that approach is now documented elsewhere.
 	 */
 
 	/*
@@ -938,12 +930,12 @@ print_record_cb (rbin_struct *record)
 	else
 		gmtime_r    (&(record->deltime), &del_tm);
 
-	if (legacy_encoding)	/* user requested, or no unicode path */
-		out_fname = g_strdup (record->legacy_filename);
+	if ( record->legacy_path != NULL )
+		out_fname = g_strdup (record->legacy_path);
 	else
 	{
-		out_fname = record->uni_filename ?
-			g_strdup (record->uni_filename) :
+		out_fname = record->uni_path ?
+			g_strdup (record->uni_path) :
 			g_strdup (_("(File name not representable in UTF-8 encoding)"));
 	}
 
@@ -1061,7 +1053,7 @@ free_record_cb (rbin_struct *record)
 {
 	if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
 		g_free (record->index_s);
-	g_free (record->uni_filename);
-	g_free (record->legacy_filename);
+	g_free (record->uni_path);
+	g_free (record->legacy_path);
 	g_free (record);
 }

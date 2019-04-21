@@ -45,19 +45,19 @@
 #include "rifiuti.h"
 
 
-       FILE      *out_fh               = NULL;
-       char      *delim                = NULL;
-static char     **fileargs             = NULL;
-static char      *outfilename          = NULL;
-       char      *legacy_encoding      = NULL;
-       int        output_format        = OUTPUT_CSV;
-static gboolean   no_heading           = FALSE;
-static gboolean   xml_output           = FALSE;
-       gboolean   always_utf8          = FALSE;
-       gboolean   use_localtime        = FALSE;
-static gboolean   do_print_version     = FALSE;
-static r2status   exit_status          = EXIT_SUCCESS;
-static metarecord meta;
+       FILE        *out_fh               = NULL;
+       char        *delim                = NULL;
+static char       **fileargs             = NULL;
+static char        *outfilename          = NULL;
+       char        *legacy_encoding      = NULL;
+       int          output_format        = OUTPUT_CSV;
+static gboolean     no_heading           = FALSE;
+static gboolean     xml_output           = FALSE;
+       gboolean     always_utf8          = FALSE;
+       gboolean     use_localtime        = FALSE;
+static gboolean     do_print_version     = FALSE;
+static r2status     exit_status          = EXIT_SUCCESS;
+static metarecord   meta;
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char   driveletters[28] =
@@ -170,7 +170,7 @@ validate_index_file (const char  *filename,
 	/* Turns out version is not reliable indicator. Use size instead */
 	switch (size)
 	{
-	  case LEGACY_RECORD_SIZE:
+	case LEGACY_RECORD_SIZE:
 
 		meta.has_unicode_path = FALSE;
 
@@ -207,17 +207,14 @@ validate_index_file (const char  *filename,
 
 		switch (ver)
 		{
-		  case VERSION_WIN95:
-			meta.os_guess = OS_GUESS_95; break;
-		  case VERSION_WIN98:
-			meta.os_guess = OS_GUESS_98; break;
-		  case VERSION_ME_03:
-			meta.os_guess = OS_GUESS_ME; break;
+			case VERSION_WIN95: meta.os_guess = OS_GUESS_95; break;
+			case VERSION_WIN98: meta.os_guess = OS_GUESS_98; break;
+			case VERSION_ME_03: meta.os_guess = OS_GUESS_ME; break;
 		}
 
 		break;
 
-	  case UNICODE_RECORD_SIZE:
+	case UNICODE_RECORD_SIZE:
 
 		meta.has_unicode_path = TRUE;
 		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
@@ -231,7 +228,7 @@ validate_index_file (const char  *filename,
 		meta.os_guess = (ver == VERSION_NT4) ? OS_GUESS_NT4 : OS_GUESS_2K_03;
 		break;
 
-	  default:
+	default:
 		status = R2_ERR_BROKEN_FILE;
 		goto validation_broken;
 	}
@@ -243,7 +240,8 @@ validate_index_file (const char  *filename,
 
 	return EXIT_SUCCESS;
 
-  validation_broken:
+validation_broken:
+
 	fclose (fp);
 	return status;
 }
@@ -307,13 +305,13 @@ populate_record_data (void *buf)
 	 */
 	if (legacy_encoding)
 	{
-		record->legacy_filename = conv_path_to_utf8_with_tmpl (
+		record->legacy_path = conv_path_to_utf8_with_tmpl (
 			legacy_fname, legacy_encoding, "<\\%02X>", &read, &exit_status);
 
-		if (record->legacy_filename == NULL) {
+		if (record->legacy_path == NULL) {
 			g_warning (_("(Record %u) Error converting legacy path to UTF-8."),
 				record->index_n);
-			record->legacy_filename = "";
+			record->legacy_path = "";
 		}
 	}
 
@@ -326,14 +324,14 @@ populate_record_data (void *buf)
 	 * Part below deals with unicode path only *
 	 *******************************************/
 
-	record->uni_filename = conv_path_to_utf8_with_tmpl (
+	record->uni_path = conv_path_to_utf8_with_tmpl (
 		(char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
 		"<\\u%04X>", &read, &exit_status);
 
-	if (record->uni_filename == NULL) {
+	if (record->uni_path == NULL) {
 		g_warning (_("(Record %u) Error converting unicode path to UTF-8."),
 			record->index_n);
-		record->uni_filename = "";
+		record->uni_path = "";
 	}
 
 	/*
@@ -506,12 +504,13 @@ main (int    argc,
 
 	rifiuti_init (argv[0]);
 
-	context = g_option_context_new ("INFO2");
-	g_option_context_set_summary
-		(context, _("Parse INFO2 file and dump recycle bin data."));
+	/* TRANSLATOR: appears in help text short summary */
+	context = g_option_context_new (N_("INFO2"));
+	g_option_context_set_summary (context, N_(
+		"Parse INFO2 file and dump recycle bin data."));
 	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
 	exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
-	if ( EXIT_SUCCESS != exit_status )
+	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
 	if (do_print_version)
@@ -524,14 +523,14 @@ main (int    argc,
 	{
 		g_printerr (_("Must specify exactly one INFO2 file as argument."));
 		g_printerr ("\n");
-		g_printerr (_("Run program with '-h' option for more info."));
+		g_printerr (_("Run program without any option for more info."));
 		g_printerr ("\n");
 		exit_status = R2_ERR_ARG;
 		goto cleanup;
 	}
 
-    if (always_utf8) {
-        g_printerr (_("'-8' option is deprecated and ignored."));
+	if (always_utf8) {
+		g_printerr (_("'-8' option is deprecated and ignored."));
 		g_printerr ("\n");
 	}
 
@@ -563,7 +562,7 @@ main (int    argc,
 		}
 	}
 
-	exit_status = check_file_args (fileargs[0], &filelist, TRUE);
+	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_FILE);
 	if ( EXIT_SUCCESS != exit_status )
 		goto cleanup;
 
@@ -615,6 +614,7 @@ main (int    argc,
 
 	if (out_fh != NULL)
 		fclose (out_fh);
+
 #ifdef G_OS_WIN32
 	close_wincon_handle();
 #endif
@@ -622,9 +622,11 @@ main (int    argc,
 	/* file descriptor should have been closed at this point */
 	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
 	{
+		int e = errno;
+
 		/* TRANSLATOR COMMENT: argument is system error message */
 		g_printerr (_("Error moving output data to desinated file: %s"),
-			strerror(errno));
+			g_strerror(e));
 		g_printerr ("\n");
 
 		/* TRANSLATOR COMMENT: argument is temp file location, which
@@ -635,7 +637,8 @@ main (int    argc,
 		exit_status = R2_ERR_WRITE_FILE;
 	}
 
-  cleanup:
+	cleanup:
+
 	/* Last minute error messages for accumulated non-fatal errors */
 	switch (exit_status)
 	{

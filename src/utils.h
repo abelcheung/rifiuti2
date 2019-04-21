@@ -108,7 +108,7 @@ enum
 };
 
 /* Metadata for recycle bin */
-struct _rbin_meta
+typedef struct _rbin_meta
 {
 	rbin_type       type;
 	const char     *filename;
@@ -120,31 +120,31 @@ struct _rbin_meta
 	gboolean        has_unicode_path;    /* NT4, 2000 or above */
 	gboolean        fill_junk;  /* Between 98-2000, path names are padded
 	                               with junk to satisfy PATH_MAX size */
-};
+} metarecord;
 
-typedef struct _rbin_meta metarecord;
-
-struct _rbin_struct
+typedef struct _rbin_struct
 {
 	/* For $Recycle.bin, version of each index file is kept here,
 	 * while meta.version keeps the global status of whole dir */
-	uint64_t        version;           /* $Recycle.bin only */
+	uint64_t          version;         /* $Recycle.bin only */
 	const metarecord *meta;
-	union
-	{	/* number for INFO2, file name for $Recycle.bin */
-		uint32_t        index_n;
-		char           *index_s;
-	};
-	time_t          deltime;
-	uint64_t        filesize;
-	/* despite var names, all filenames are converted to UTF-8 upon parsing */
-	char           *uni_filename;
-	char           *legacy_filename;   /* INFO2 only */
-	gboolean        emptied;           /* INFO2 only */
-	unsigned char   drive;             /* INFO2 only */
-};
 
-typedef struct _rbin_struct rbin_struct;
+	/* number for INFO2, file name for $Recycle.bin */
+	union
+	{
+		uint32_t      index_n;
+		char         *index_s;
+	};
+	time_t            deltime;
+	uint64_t          filesize;
+
+	/* despite var names, all filenames are converted to UTF-8 upon parsing */
+	char             *uni_path;
+	char             *legacy_path; /* INFO2 only */
+
+	gboolean          emptied;         /* INFO2 only */
+	unsigned char     drive;           /* INFO2 only */
+} rbin_struct;
 
 /* convenience macro */
 #define copy_field(field, off1, off2) memcpy((field), \
@@ -156,55 +156,57 @@ typedef struct _rbin_struct rbin_struct;
 /*
  * Most versions of recycle bin use full PATH_MAX (260 char) to store file paths,
  * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
+ * However we don't want to use PATH_MAX directly since on Linux/Unix it's
+ * another thing.
  */
-#define WIN_PATH_MAX 0x104
+#define WIN_PATH_MAX 260
 
 /* shared functions */
-void       rifiuti_init             (const char          *progpath        );
+void    rifiuti_init                (const char       *progpath);
 
-void       rifiuti_setup_opt_ctx    (GOptionContext     **context         ,
-                                     GOptionEntry         opt_main[]      ,
-                                     GOptionEntry         opt_add[]       );
+void    rifiuti_setup_opt_ctx       (GOptionContext  **context,
+                                     GOptionEntry      opt_main[],
+                                     GOptionEntry      opt_add[] );
 
-int        rifiuti_parse_opt_ctx    (GOptionContext     **context         ,
-                                     int                 *argc            ,
-                                     char              ***argv            );
+int     rifiuti_parse_opt_ctx       (GOptionContext  **context,
+                                     int              *argc,
+                                     char           ***argv);
 
-time_t     win_filetime_to_epoch    (uint64_t             win_filetime    );
+time_t  win_filetime_to_epoch       (uint64_t          win_filetime);
 
-char *     utf16le_to_utf8          (const gunichar2     *str             ,
-                                     glong                len             ,
-                                     glong               *items_read      ,
-                                     glong               *items_written   ,
-                                     GError             **error           );
+char *  utf16le_to_utf8             (const gunichar2  *str,
+                                     glong             len,
+                                     glong            *items_read,
+                                     glong            *items_written,
+                                     GError          **error);
 
-char *     filter_escapes           (const char          *str             );
+char *  filter_escapes              (const char       *str);
 
-int        check_file_args          (const char          *path            ,
-                                     GSList             **list            ,
-                                     gboolean             is_info2        );
+int     check_file_args             (const char       *path,
+                                     GSList          **list,
+                                     rbin_type         type);
 
-void       print_header             (metarecord           meta            );
+void    print_header                (metarecord        meta);
 
-void       print_record_cb          (rbin_struct         *record          );
+void    print_record_cb             (rbin_struct      *record);
 
-void       print_footer             (void);
+void    print_footer                (void);
 
-void       print_version            (void);
+void    print_version               (void);
 
-void       free_record_cb           (rbin_struct         *record          );
+void    free_record_cb              (rbin_struct      *record);
 
-void       my_debug_handler         (const char          *log_domain      ,
-                                     GLogLevelFlags       log_level       ,
-                                     const char          *message         ,
-                                     gpointer             data            );
+void    my_debug_handler            (const char       *log_domain,
+                                     GLogLevelFlags    log_level,
+                                     const char       *message,
+                                     gpointer          data);
 
-int        get_tempfile             (FILE               **fh              ,
-                                     char               **tmppath         );
+int     get_tempfile                (FILE            **fh,
+                                     char            **tmppath);
 
-char *     conv_path_to_utf8_with_tmpl (const char       *str             ,
-                                        const char       *from_enc        ,
-                                        const char       *tmpl            ,
-                                        size_t           *read            ,
-                                        r2status         *st              );
+char *  conv_path_to_utf8_with_tmpl (const char      *str,
+                                     const char      *from_enc,
+                                     const char      *tmpl,
+                                     size_t          *read,
+                                     r2status        *st);
 #endif

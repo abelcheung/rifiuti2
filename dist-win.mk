@@ -9,7 +9,9 @@ include Makefile
 ZIPNAME ?= $(distdir)-win-$(build_cpu)
 
 dist-win: win-pkg-data win-pkg-bin
-	cd win-pkg && 7z a -bd -o$(abs_top_builddir) $(ZIPNAME).zip .
+	cd win-pkg && \
+	rm -f $(ZIPNAME).zip && \
+	7z a -bd -o$(abs_top_builddir) $(ZIPNAME).zip .
 
 win-pkg-data: win-pkg/$(LOCALEDIR_PORTABLE) win-pkg/README.html
 

@@ -43,19 +43,18 @@
 
 #include "rifiuti-vista.h"
 
-       FILE      *out_fh               = NULL;
-       char      *delim                = NULL;
-static char     **fileargs             = NULL;
-static char      *outfilename          = NULL;
-       char      *legacy_encoding      = NULL;
-       int        output_format        = OUTPUT_CSV;
-static gboolean   no_heading           = FALSE;
-static gboolean   xml_output           = FALSE;
-       gboolean   always_utf8          = FALSE;
-       gboolean   use_localtime        = FALSE;
-static gboolean   do_print_version     = FALSE;
-static r2status   exit_status          = EXIT_SUCCESS;
-static metarecord meta;
+       FILE        *out_fh               = NULL;
+       char        *delim                = NULL;
+static char       **fileargs             = NULL;
+static char        *outfilename          = NULL;
+       int          output_format        = OUTPUT_CSV;
+static gboolean     no_heading           = FALSE;
+static gboolean     xml_output           = FALSE;
+       gboolean     always_utf8          = FALSE;
+       gboolean     use_localtime        = FALSE;
+static gboolean     do_print_version     = FALSE;
+static r2status     exit_status          = EXIT_SUCCESS;
+static metarecord   meta;
 
 static GOptionEntry mainoptions[] =
 {
@@ -114,7 +113,7 @@ validate_index_file (const char  *filename,
 	if ( !g_file_get_contents (filename, &buf, bufsize, &err) )
 	{
 		g_critical (_("%s(): failed to retrieve file content for '%s': %s"),
-		            __func__, filename, err->message);
+			__func__, filename, err->message);
 		g_clear_error (&err);
 		status = R2_ERR_OPEN_FILE;
 		goto validation_error;
@@ -125,7 +124,7 @@ validate_index_file (const char  *filename,
 	if (*bufsize <= VERSION1_FILENAME_OFFSET)
 	{
 		g_debug ("File size expected to be more than %" G_GSIZE_FORMAT,
-		         (gsize) VERSION1_FILENAME_OFFSET);
+			(gsize) VERSION1_FILENAME_OFFSET);
 		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file."));
 		g_printerr ("\n");
 		status = R2_ERR_BROKEN_FILE;
@@ -138,50 +137,51 @@ validate_index_file (const char  *filename,
 
 	switch (*ver)
 	{
-	  case VERSION_VISTA:
+		case VERSION_VISTA:
 
-		expected = VERSION1_FILE_SIZE;
-		/* see populate_record_data() for reason */
-		if ( (*bufsize != expected) && (*bufsize != expected - 1) )
-		{
-			g_debug ("File size expected to be %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT,
-			         expected, expected - 1);
-			g_printerr (_("Index file expected size and real size do not match."));
+			expected = VERSION1_FILE_SIZE;
+			/* see populate_record_data() for reason */
+			if ( (*bufsize != expected) && (*bufsize != expected - 1) )
+			{
+				g_debug ("File size expected to be %" G_GSIZE_FORMAT
+					" or %" G_GSIZE_FORMAT, expected, expected - 1);
+				g_printerr (_("Index file expected size and real size do not match."));
+				g_printerr ("\n");
+				status = R2_ERR_BROKEN_FILE;
+				goto validation_error;
+			}
+			*pathlen = WIN_PATH_MAX;
+			break;
+
+		case VERSION_WIN10:
+
+			copy_field (pathlen, VERSION1_FILENAME, VERSION2_FILENAME);
+			*pathlen = GUINT32_FROM_LE (*pathlen);
+
+			/* Header length + file name length in UTF-16 encoding */
+			expected = VERSION2_FILENAME_OFFSET + (*pathlen) * 2;
+			if (*bufsize != expected)
+			{
+				g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
+				g_printerr (_("Index file expected size and real size do not match."));
+				g_printerr ("\n");
+				status = R2_ERR_BROKEN_FILE;
+				goto validation_error;
+			}
+			break;
+
+		default:
+			g_printerr (_("Unsupported file version, or probably not a $Recycle.bin index file."));
 			g_printerr ("\n");
 			status = R2_ERR_BROKEN_FILE;
 			goto validation_error;
-		}
-		*pathlen = WIN_PATH_MAX;
-		break;
-
-	  case VERSION_WIN10:
-
-		copy_field (pathlen, VERSION1_FILENAME, VERSION2_FILENAME);
-		*pathlen = GUINT32_FROM_LE (*pathlen);
-
-		/* Header length + file name length in UTF-16 encoding */
-		expected = VERSION2_FILENAME_OFFSET + (*pathlen) * 2;
-		if (*bufsize != expected)
-		{
-			g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
-			g_printerr (_("Index file expected size and real size do not match."));
-			g_printerr ("\n");
-			status = R2_ERR_BROKEN_FILE;
-			goto validation_error;
-		}
-		break;
-
-	  default:
-		g_printerr (_("Unsupported file version, or probably not a $Recycle.bin index file."));
-		g_printerr ("\n");
-		status = R2_ERR_BROKEN_FILE;
-		goto validation_error;
 	}
 
 	*filebuf = buf;
 	return EXIT_SUCCESS;
 
-  validation_error:
+validation_error:
+
 	*filebuf = NULL;
 	return status;
 }
@@ -233,13 +233,13 @@ populate_record_data (void *buf,
 	switch (version)
 	{
 		case VERSION_VISTA:
-			record->uni_filename = conv_path_to_utf8_with_tmpl (
+			record->uni_path = conv_path_to_utf8_with_tmpl (
 				(const char *) (buf - erraneous + VERSION1_FILENAME_OFFSET),
 				NULL, "<\\u%04X>", &read, &exit_status);
 			break;
 
 		case VERSION_WIN10:
-			record->uni_filename = conv_path_to_utf8_with_tmpl (
+			record->uni_path = conv_path_to_utf8_with_tmpl (
 				(const char *) (buf + VERSION2_FILENAME_OFFSET),
 				NULL, "<\\u%04X>", &read, &exit_status);
 			break;
@@ -248,10 +248,10 @@ populate_record_data (void *buf,
 			g_assert_not_reached ();
 	}
 
-	if (record->uni_filename == NULL) {
+	if (record->uni_path == NULL) {
 		g_warning (_("(Record %s) Error converting unicode path to UTF-8."),
 			record->index_s);
-		record->uni_filename = "";
+		record->uni_path = "";
 	}
 
 	return record;
@@ -335,13 +335,14 @@ main (int    argc,
 
 	rifiuti_init (argv[0]);
 
+	/* TRANSLATOR: appears in help text short summary */
 	context = g_option_context_new (N_("DIR_OR_FILE"));
 	g_option_context_set_summary (context, N_(
 		"Parse index files in C:\\$Recycle.bin style folder "
 		"and dump recycle bin data.  Can also dump a single index file."));
 	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
 	exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
-	if ( EXIT_SUCCESS != exit_status )
+	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
 	if (do_print_version)
@@ -356,22 +357,22 @@ main (int    argc,
 		              "$Recycle.bin index files, or one such index file "
 		              "as argument."));
 		g_printerr ("\n");
-		g_printerr (_("Run program with '-h' option for more info."));
+		g_printerr (_("Run program without any option for more info."));
 		g_printerr ("\n");
 		exit_status = R2_ERR_ARG;
 		goto cleanup;
 	}
 
-    if (always_utf8)
-    {
-        g_printerr (_("'-8' option is deprecated and ignored."));
+	if (always_utf8)
+	{
+		g_printerr (_("'-8' option is deprecated and ignored."));
 		g_printerr ("\n");
-    }
+	}
 
 	if (xml_output)
 	{
 		output_format = OUTPUT_XML;
-		if (no_heading || (NULL != delim))
+		if (no_heading || (delim != NULL))
 		{
 			g_printerr (_("Plain text format options can not be used in XML mode."));
 			g_printerr ("\n");
@@ -380,7 +381,7 @@ main (int    argc,
 		}
 	}
 
-	if (NULL == delim)
+	if (delim == NULL)
 		delim = g_strndup ("\t", 2);
 	else
 	{
@@ -392,18 +393,18 @@ main (int    argc,
 		}
 	}
 
-	exit_status = check_file_args (fileargs[0], &filelist, FALSE);
+	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
 	if ( EXIT_SUCCESS != exit_status )
 		goto cleanup;
 
 	g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
 
 	/* Fill in recycle bin metadata */
-	meta.type = RECYCLE_BIN_TYPE_DIR;
-	meta.filename = fileargs[0];
+	meta.type               = RECYCLE_BIN_TYPE_DIR;
+	meta.filename           = fileargs[0];
 	meta.keep_deleted_entry = FALSE;
-	meta.is_empty = (filelist == NULL);
-	meta.has_unicode_path = TRUE;
+	meta.is_empty           = (filelist == NULL);
+	meta.has_unicode_path   = TRUE;
 
 	/* NULL filelist at this point means a valid empty $Recycle.bin */
 	if ( !meta.is_empty && (recordlist == NULL) )
@@ -451,12 +452,9 @@ main (int    argc,
 	 */
 	switch (meta.version)
 	{
-	  case VERSION_VISTA:
-		meta.os_guess = OS_GUESS_VISTA; break;
-	  case VERSION_WIN10:
-		meta.os_guess = OS_GUESS_10; break;
-	  default:
-		meta.os_guess = OS_GUESS_UNKNOWN;
+		case VERSION_VISTA: meta.os_guess = OS_GUESS_VISTA; break;
+		case VERSION_WIN10: meta.os_guess = OS_GUESS_10;    break;
+		default:            meta.os_guess = OS_GUESS_UNKNOWN;
 	}
 
 	if (outfilename)
@@ -474,10 +472,7 @@ main (int    argc,
 			out_fh = stdout;
 	}
 
-	/*
-	 * TODO: Store errors accumulated when parsing each file, then print a summary
-	 * of errors after normal result, instead of dumping all errors on the spot
-	 */
+	/* Print everything */
 	if (!no_heading)
 		print_header (meta);
 	g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
@@ -485,15 +480,19 @@ main (int    argc,
 
 	if (out_fh != NULL)
 		fclose (out_fh);
+
 #ifdef G_OS_WIN32
 	close_wincon_handle();
 #endif
 
+	/* file descriptor should have been closed at this point */
 	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
 	{
+		int e = errno;
+
 		/* TRANSLATOR COMMENT: argument is system error message */
 		g_printerr (_("Error moving output data to desinated file: %s"),
-			strerror(errno));
+			g_strerror(e));
 		g_printerr ("\n");
 
 		/* TRANSLATOR COMMENT: argument is temp file location, which
@@ -505,6 +504,7 @@ main (int    argc,
 	}
 
 	cleanup:
+
 	/* Last minute error messages for accumulated non-fatal errors */
 	switch (exit_status)
 	{
