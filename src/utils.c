@@ -44,6 +44,10 @@
 #  include "utils-win.h"
 #endif
 
+/* These aren't intended for public */
+static DECL_OPT_CALLBACK(option_deprecated);
+static DECL_OPT_CALLBACK(process_delim);
+
 /* WARNING: MUST match order of _os_guess enum */
 static char *os_strings[] = {
 	"Windows 95",
@@ -55,6 +59,30 @@ static char *os_strings[] = {
 	"Windows 2000 / XP / 2003",
 	"Windows Vista - 8.1",
 	"Windows 10"
+};
+
+char        *delim              = NULL;
+gboolean     no_heading         = FALSE;
+char        *legacy_encoding    = NULL;
+int          output_format      = OUTPUT_CSV;
+
+const GOptionEntry textoptions[] = {
+	{
+		"delimiter", 't', 0,
+		G_OPTION_ARG_CALLBACK, process_delim,
+		N_("String to use as delimiter (TAB by default)"), N_("STRING")
+	},
+	{
+		"no-heading", 'n', 0,
+		G_OPTION_ARG_NONE, &no_heading,
+		N_("Don't show column header and metadata"), NULL
+	},
+	{
+		"always-utf8", '8', G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, option_deprecated,
+		N_("(This option is deprecated)"), NULL
+	},
+	{NULL}
 };
 
 
@@ -403,8 +431,8 @@ rifiuti_init (const char *progpath)
 
 void
 rifiuti_setup_opt_ctx (GOptionContext **context,
-                       GOptionEntry     opt_main[],
-                       GOptionEntry     opt_add[])
+                       const GOptionEntry opt_main[],
+                       const GOptionEntry opt_add [])
 {
 	char *bug_report_str;
 	GOptionGroup *optgroup_text;
@@ -428,13 +456,99 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 	g_option_context_set_help_enabled (*context, TRUE);
 }
 
-int
+gboolean
+check_legacy_encoding (const gchar *opt_name,
+                       const gchar *enc,
+                       gpointer     data,
+                       GError     **err)
+{
+	char        *s;
+	gint         e;
+	gboolean     ret = FALSE;
+	GError      *conv_err = NULL;
+
+	if ( (enc == NULL) || (*enc == '\0') )
+		return FALSE;
+
+	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
+
+	if (conv_err == NULL)
+	{
+		if (strcmp ("C:\\", s) != 0) /* e.g. EBCDIC based code pages */
+		{
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' can't possibly be a code page or compatible "
+				"encoding used by localized Windows."), enc);
+		} else {
+			legacy_encoding = g_strdup (enc);
+			ret = TRUE;
+		}
+		goto done_check_encoding;
+	}
+
+	e = conv_err->code;
+	g_clear_error (&conv_err);
+
+	switch (e)
+	{
+		case G_CONVERT_ERROR_NO_CONVERSION:
+
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' encoding is not supported by glib library "
+				"on this system.  If iconv program is present on "
+				"system, use 'iconv -l' for a list of possible "
+				"alternatives; otherwise check out following site for "
+				"a list of probable encodings to use:\n\n\t%s"), enc,
+#ifdef G_OS_WIN32
+				"https://github.com/win-iconv/win-iconv/blob/master/win_iconv.c"
+#else
+				"https://www.gnu.org/software/libiconv/"
+#endif
+			);
+			break;
+
+		/* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
+		case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
+		case G_CONVERT_ERROR_PARTIAL_INPUT:
+
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' can't possibly be a code page or compatible "
+				"encoding used by localized Windows."), enc);
+			break;
+
+		default:
+			g_assert_not_reached ();
+	}
+
+done_check_encoding:
+
+	g_free (s);
+	return ret;
+}
+
+
+static gboolean
+option_deprecated (const gchar *opt_name,
+                   const gchar *unused,
+                   gpointer     data,
+                   GError     **err)
+{
+	g_printerr (_("NOTE: Option '%s' is deprecated and ignored."), opt_name);
+	g_printerr ("\n");
+	return TRUE;
+}
+
+
+r2status
 rifiuti_parse_opt_ctx (GOptionContext **context,
                        int             *argc,
                        char          ***argv)
 {
 	GError   *err = NULL;
 	gboolean  ret;
+
+	/* FIXME probably should do GUI help after option parsing is done,
+	   g_set_prgname() is called there */
 
 	/* Must be done before parsing arguments since argc will be modified later */
 	if (*argc <= 1)
@@ -525,13 +639,13 @@ utf16le_to_utf8 (const gunichar2   *str,
  * quoted / unquoted when parsing arguments. We need to
  * interpret \r, \n etc separately
  */
-char *
-filter_escapes (const char *str)
+static char *
+_filter_escapes (const char *str)
 {
 	GString *result, *debug_str;
 	char *i = (char *) str;
 
-	if ( !str || (!*str) ) return NULL;
+	g_return_val_if_fail ( (str != NULL) && (*str != '\0'), NULL);
 
 	result = g_string_new (NULL);
 	do
@@ -572,6 +686,19 @@ filter_escapes (const char *str)
 	g_string_free (debug_str, TRUE);
 	return g_string_free (result, FALSE);
 }
+
+
+static gboolean
+process_delim (const gchar *opt_name,
+               const gchar *value,
+               gpointer     data,
+               GError     **err)
+{
+	delim = (*value) ? _filter_escapes (value) : g_strdup ("");
+
+	return TRUE;
+}
+
 
 void
 my_debug_handler (const char     *log_domain,
@@ -793,12 +920,13 @@ print_header (metarecord  meta)
 {
 	char             *rbin_path, *ver_string;
 	const char       *tz_name, *tz_numeric;
-	extern int        output_format;
 	extern char      *delim;
 	time_t            t;
 	struct tm        *tm;
 	extern gboolean   use_localtime;
 	extern FILE      *out_fh;
+
+	if (no_heading) return;
 
 	g_return_if_fail (meta.filename != NULL);
 
@@ -896,7 +1024,6 @@ print_record_cb (rbin_struct *record)
 	struct tm         del_tm;
 
 	extern gboolean   use_localtime;
-	extern int        output_format;
 	extern char      *delim;
 	extern FILE      *out_fh;
 
@@ -1013,8 +1140,6 @@ print_record_cb (rbin_struct *record)
 void
 print_footer (void)
 {
-	extern int output_format;
-
 	switch (output_format)
 	{
 		case OUTPUT_CSV:
@@ -1032,15 +1157,17 @@ print_footer (void)
 
 
 void
-print_version ()
+print_version_and_exit (void)
 {
 	fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
 	/* TRANSLATOR COMMENT: %s is software name */
 	fprintf (stdout, _("%s is distributed under the "
-				"BSD 3-Clause License.\n"), PACKAGE);
+		"BSD 3-Clause License.\n"), PACKAGE);
 	/* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
 	fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
-			PACKAGE, PACKAGE_URL);
+		PACKAGE, PACKAGE_URL);
+
+	exit (EXIT_SUCCESS);
 }
 
 

@@ -164,11 +164,11 @@ typedef struct _rbin_struct
 /* shared functions */
 void    rifiuti_init                (const char       *progpath);
 
-void    rifiuti_setup_opt_ctx       (GOptionContext  **context,
-                                     GOptionEntry      opt_main[],
-                                     GOptionEntry      opt_add[] );
+void    rifiuti_setup_opt_ctx       (GOptionContext    **context,
+                                     const GOptionEntry  opt_main[],
+                                     const GOptionEntry  opt_add []);
 
-int     rifiuti_parse_opt_ctx       (GOptionContext  **context,
+r2status rifiuti_parse_opt_ctx      (GOptionContext  **context,
                                      int              *argc,
                                      char           ***argv);
 
@@ -178,9 +178,8 @@ char *  utf16le_to_utf8             (const gunichar2  *str,
                                      glong             len,
                                      glong            *items_read,
                                      glong            *items_written,
-                                     GError          **error);
-
-char *  filter_escapes              (const char       *str);
+                                     GError          **error)
+                                     G_GNUC_UNUSED;
 
 int     check_file_args             (const char       *path,
                                      GSList          **list,
@@ -192,7 +191,7 @@ void    print_record_cb             (rbin_struct      *record);
 
 void    print_footer                (void);
 
-void    print_version               (void);
+void    print_version_and_exit      (void) G_GNUC_NORETURN;
 
 void    free_record_cb              (rbin_struct      *record);
 
@@ -209,4 +208,14 @@ char *  conv_path_to_utf8_with_tmpl (const char      *str,
                                      const char      *tmpl,
                                      size_t          *read,
                                      r2status        *st);
+
+/* TODO hide this inside utils.c */
+#define DECL_OPT_CALLBACK(func)          \
+gboolean func (const gchar   *opt_name,  \
+               const gchar   *value,     \
+               gpointer       data,      \
+               GError       **err)
+
+DECL_OPT_CALLBACK(check_legacy_encoding);
+
 #endif

@@ -29,28 +29,14 @@ AT_CLEANUP
 
 AT_SETUP([Legacy path encoding - illegal (1)])
 AT_KEYWORDS([info2 encoding])
-
-AT_DATA([experr-win],[dnl
-.* is not a valid encoding on this system\.
-Please visit following web page .*
+AX_AT_CHECK_PATTERN([
+	cd $sample
+	$progf -l xxx INFO2-sample1
+], 1,, [dnl
+.* encoding is not supported by glib library on this system\..*
 
 	https://.*
 ])
-
-AT_DATA([experr-unix],[dnl
-.* is not a valid encoding on this system\.
-Run 'iconv -l' for list of supported encodings\.
-])
-
-AX_AT_CHECK_PATTERN([
-	if $is_mingw ; then
-		$as_ln_s experr-win experr
-	else
-		$as_ln_s experr-unix experr
-	fi
-	cd $sample
-	$progf -l xxx INFO2-sample1
-], 1,, [experr])
 AT_CLEANUP
 
 dnl

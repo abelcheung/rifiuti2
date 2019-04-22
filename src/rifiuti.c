@@ -46,16 +46,11 @@
 
 
        FILE        *out_fh               = NULL;
-       char        *delim                = NULL;
 static char       **fileargs             = NULL;
 static char        *outfilename          = NULL;
-       char        *legacy_encoding      = NULL;
-       int          output_format        = OUTPUT_CSV;
-static gboolean     no_heading           = FALSE;
+extern char        *legacy_encoding;
 static gboolean     xml_output           = FALSE;
-       gboolean     always_utf8          = FALSE;
        gboolean     use_localtime        = FALSE;
-static gboolean     do_print_version     = FALSE;
 static r2status     exit_status          = EXIT_SUCCESS;
 static metarecord   meta;
 
@@ -68,37 +63,42 @@ unsigned char   driveletters[28] =
 	'V', 'W', 'X', 'Y', 'Z', '\\', '?'
 };
 
-static GOptionEntry mainoptions[] =
+static const GOptionEntry mainoptions[] =
 {
-	{"output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
-	 N_("Write output to FILE"),
-	 N_("FILE")},
-	{"xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-	 N_("Output in XML format instead of tab-delimited values"), NULL},
-	{"legacy-filename", 'l', 0, G_OPTION_ARG_STRING, &legacy_encoding,
-	 N_("Show legacy (8.3) filename if available and specify its CODEPAGE"),
-	 N_("CODEPAGE")},
-	{"localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
-	 N_("Present deletion time in time zone of local system (default is UTC)"),
-	 NULL},
-	{"version", 'v', 0, G_OPTION_ARG_NONE, &do_print_version,
-	 N_("Print version information and exit"), NULL},
-	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
-	 N_("INFO2 file name"), NULL},
+	{
+		"output", 'o', 0,
+		G_OPTION_ARG_FILENAME, &outfilename,
+		N_("Write output to FILE"), N_("FILE")
+	},
+	{
+		"xml", 'x', 0,
+		G_OPTION_ARG_NONE, &xml_output,
+		N_("Output in XML format instead of tab-delimited values"), NULL
+	},
+	{
+		"legacy-filename", 'l', 0,
+		G_OPTION_ARG_CALLBACK, check_legacy_encoding,
+		N_("Show legacy (8.3) path if available and specify its CODEPAGE"),
+		N_("CODEPAGE")
+	},
+	{
+		"localtime", 'z', 0,
+		G_OPTION_ARG_NONE, &use_localtime,
+		N_("Present deletion time in time zone of local system (default is UTC)"),
+		NULL
+	},
+	{
+		"version", 'v', G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, (GOptionArgFunc) print_version_and_exit,
+		N_("Print version information and exit"), NULL
+	},
+	{
+		G_OPTION_REMAINING, 0, 0,
+		G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
+		N_("INFO2 file name"), NULL
+	},
 	{NULL}
 };
-
-static GOptionEntry textoptions[] =
-{
-	{"delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
-	 N_("String to use as delimiter (TAB by default)"), N_("STRING")},
-	{"no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-	 N_("Don't show header info"), NULL},
-	{"always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-	 N_("(This option is deprecated)"), NULL},
-	{NULL}
-};
-
 
 /*
  * Check if index file has sufficient amount of data for reading
@@ -195,11 +195,7 @@ validate_index_file (const char  *filename,
 			g_printerr (_("For example, if recycle bin is expected to come from West "
 			              "European versions of Windows, use '-l CP1252' option; "
 			              "or in case of Japanese Windows, use '-l CP932'."));
-			g_printerr ("\n\n");
-#ifdef G_OS_UNIX
-			g_printerr (_("Code pages supported by 'iconv' can be used."));
 			g_printerr ("\n");
-#endif
 
 			status = R2_ERR_ARG;
 			goto validation_broken;
@@ -429,78 +425,19 @@ parse_record_cb (char    *index_file,
 	fclose (infile);
 }
 
-static r2status
-_check_legacy_encoding (const char *enc)
-{
-	char     *s;
-	GError   *err = NULL;
-	r2status  st  = EXIT_SUCCESS;
-
-	if (enc == NULL)
-		return EXIT_SUCCESS;
-
-	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &err);
-
-	if (err != NULL)
-	{
-		int e = err->code;
-		g_clear_error (&err);
-
-		switch (e)
-		{
-			case G_CONVERT_ERROR_NO_CONVERSION:
-
-				st = R2_ERR_ARG;
-
-				g_printerr (_("'%s' is not a valid encoding on this system."), enc);
-				g_printerr ("\n");
-#ifdef G_OS_WIN32
-				/* TRANSLATOR COMMENT: argument is software name, 'rifiuti2' */
-				g_printerr (_("Please visit following web page for a list "
-					"closely resembling encodings supported by %s:"), PACKAGE);
-
-				g_printerr ("\n\n\t%s\n", "https://www.gnu.org/software/libiconv/");
-#endif
-#ifdef G_OS_UNIX
-				g_printerr (_("Run 'iconv -l' for list of supported encodings."));
-				g_printerr ("\n");
-#endif
-				break;
-
-			/* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
-			case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
-			case G_CONVERT_ERROR_PARTIAL_INPUT:
-
-				st = R2_ERR_ARG;
-
-				g_printerr (_("'%s' can't possibly be a code page or compatible encoding "
-					"used by localized Windows."), enc);
-				g_printerr ("\n");
-
-				break;
-
-			default:
-				g_assert_not_reached ();
-		}
-	} else if (strcmp ("C:\\", s) != 0) {	/* Can happen for EBCDIC based code pages */
-		st = R2_ERR_ARG;
-		g_printerr (_("'%s' can't possibly be a code page or compatible encoding "
-			"used by localized Windows."), enc);
-		g_printerr ("\n");
-	}
-
-	g_free (s);
-	return st;
-}
-
 int
 main (int    argc,
       char **argv)
 {
-	GSList         *filelist   = NULL;
-	GSList         *recordlist = NULL;
-	char           *tmppath    = NULL;
-	GOptionContext *context;
+	GSList             *filelist   = NULL;
+	GSList             *recordlist = NULL;
+	char               *tmppath    = NULL;
+	GOptionContext     *context;
+	extern GOptionEntry textoptions[];
+	extern gboolean     no_heading;
+	extern char        *delim;
+	extern int          output_format;
+
 
 	rifiuti_init (argv[0]);
 
@@ -513,12 +450,6 @@ main (int    argc,
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
-	if (do_print_version)
-	{
-		print_version();
-		goto cleanup;
-	}
-
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
 		g_printerr (_("Must specify exactly one INFO2 file as argument."));
@@ -527,11 +458,6 @@ main (int    argc,
 		g_printerr ("\n");
 		exit_status = R2_ERR_ARG;
 		goto cleanup;
-	}
-
-	if (always_utf8) {
-		g_printerr (_("'-8' option is deprecated and ignored."));
-		g_printerr ("\n");
 	}
 
 	if (xml_output)
@@ -546,21 +472,8 @@ main (int    argc,
 		}
 	}
 
-	exit_status = _check_legacy_encoding (legacy_encoding);
-	if (exit_status != EXIT_SUCCESS)
-		goto cleanup;
-
-	if (NULL == delim)
-		delim = g_strndup ("\t", 2);
-	else
-	{
-		char *d = filter_escapes (delim);
-		if (d != NULL)
-		{
-			g_free (delim);
-			delim = d;
-		}
-	}
+	if (delim == NULL)
+		delim = g_strdup ("\t");
 
 	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_FILE);
 	if ( EXIT_SUCCESS != exit_status )
@@ -607,8 +520,7 @@ main (int    argc,
 	}
 
 	/* Print everything */
-	if (!no_heading)
-		print_header (meta);
+	print_header (meta);
 	g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
 	print_footer ();
 

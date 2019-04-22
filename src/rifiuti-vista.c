@@ -44,42 +44,41 @@
 #include "rifiuti-vista.h"
 
        FILE        *out_fh               = NULL;
-       char        *delim                = NULL;
 static char       **fileargs             = NULL;
 static char        *outfilename          = NULL;
-       int          output_format        = OUTPUT_CSV;
-static gboolean     no_heading           = FALSE;
 static gboolean     xml_output           = FALSE;
-       gboolean     always_utf8          = FALSE;
        gboolean     use_localtime        = FALSE;
-static gboolean     do_print_version     = FALSE;
 static r2status     exit_status          = EXIT_SUCCESS;
 static metarecord   meta;
 
-static GOptionEntry mainoptions[] =
+static const GOptionEntry mainoptions[] =
 {
-	{"output", 'o', 0, G_OPTION_ARG_FILENAME, &outfilename,
-	 N_("Write output to FILE"), N_("FILE")},
-	{"xml", 'x', 0, G_OPTION_ARG_NONE, &xml_output,
-	 N_("Output in XML format instead of tab-delimited values"), NULL},
-	{"localtime", 'z', 0, G_OPTION_ARG_NONE, &use_localtime,
-	 N_("Present deletion time in time zone of local system (default is UTC)"),
-	 NULL},
-	{"version", 'v', 0, G_OPTION_ARG_NONE, &do_print_version,
-	 N_("Print version information and exit"), NULL},
-	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
-	 N_("$Recycle.bin folder or file name"), NULL},
-	{NULL}
-};
-
-static GOptionEntry textoptions[] =
-{
-	{"delimiter", 't', 0, G_OPTION_ARG_STRING, &delim,
-	 N_("String to use as delimiter (TAB by default)"), N_("STRING")},
-	{"no-heading", 'n', 0, G_OPTION_ARG_NONE, &no_heading,
-	 N_("Don't show header info"), NULL},
-	{"always-utf8", '8', 0, G_OPTION_ARG_NONE, &always_utf8,
-	 N_("(This option is deprecated)"), NULL},
+	{
+		"output", 'o', 0,
+		G_OPTION_ARG_FILENAME, &outfilename,
+		N_("Write output to FILE"), N_("FILE")
+	},
+	{
+		"xml", 'x', 0,
+		G_OPTION_ARG_NONE, &xml_output,
+		N_("Output in XML format instead of tab-delimited values"), NULL
+	},
+	{
+		"localtime", 'z', 0,
+		G_OPTION_ARG_NONE, &use_localtime,
+		N_("Present deletion time in time zone of local system (default is UTC)"),
+		NULL
+	},
+	{
+		"version", 'v', G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, (GOptionArgFunc) print_version_and_exit,
+		N_("Print version information and exit"), NULL
+	},
+	{
+		G_OPTION_REMAINING, 0, 0,
+		G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
+		N_("$Recycle.bin folder or file name"), NULL
+	},
 	{NULL}
 };
 
@@ -328,10 +327,14 @@ int
 main (int    argc,
       char **argv)
 {
-	GSList         *filelist   = NULL;
-	GSList         *recordlist = NULL;
-	char           *tmppath    = NULL;
-	GOptionContext *context;
+	GSList             *filelist   = NULL;
+	GSList             *recordlist = NULL;
+	char               *tmppath    = NULL;
+	GOptionContext     *context;
+	extern GOptionEntry textoptions[];
+	extern gboolean     no_heading;
+	extern char        *delim;
+	extern int          output_format;
 
 	rifiuti_init (argv[0]);
 
@@ -345,12 +348,6 @@ main (int    argc,
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
-	if (do_print_version)
-	{
-		print_version();
-		goto cleanup;
-	}
-
 	if (!fileargs || g_strv_length (fileargs) > 1)
 	{
 		g_printerr (_("Must specify exactly one directory containing "
@@ -361,12 +358,6 @@ main (int    argc,
 		g_printerr ("\n");
 		exit_status = R2_ERR_ARG;
 		goto cleanup;
-	}
-
-	if (always_utf8)
-	{
-		g_printerr (_("'-8' option is deprecated and ignored."));
-		g_printerr ("\n");
 	}
 
 	if (xml_output)
@@ -382,16 +373,7 @@ main (int    argc,
 	}
 
 	if (delim == NULL)
-		delim = g_strndup ("\t", 2);
-	else
-	{
-		char *d = filter_escapes (delim);
-		if (d != NULL)
-		{
-			g_free (delim);
-			delim = d;
-		}
-	}
+		delim = g_strdup ("\t");
 
 	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
 	if ( EXIT_SUCCESS != exit_status )
@@ -473,8 +455,7 @@ main (int    argc,
 	}
 
 	/* Print everything */
-	if (!no_heading)
-		print_header (meta);
+	print_header (meta);
 	g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
 	print_footer ();
 
