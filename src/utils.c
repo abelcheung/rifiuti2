@@ -65,6 +65,7 @@ char        *delim              = NULL;
 gboolean     no_heading         = FALSE;
 char        *legacy_encoding    = NULL;
 int          output_format      = OUTPUT_CSV;
+char        *output_loc       = NULL;
 
 const GOptionEntry textoptions[] = {
 	{
@@ -462,13 +463,26 @@ check_legacy_encoding (const gchar *opt_name,
                        gpointer     data,
                        GError     **err)
 {
-	char        *s;
-	gint         e;
-	gboolean     ret = FALSE;
-	GError      *conv_err = NULL;
+	char           *s;
+	gint            e;
+	gboolean        ret      = FALSE;
+	static gboolean seen     = FALSE;
+	GError         *conv_err = NULL;
 
-	if ( (enc == NULL) || (*enc == '\0') )
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple encoding options disallowed."));
 		return FALSE;
+	}
+	seen = TRUE;
+
+	if ( *enc == '\0' )
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Empty encoding option disallowed."));
+		return FALSE;
+	}
 
 	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
 
@@ -526,6 +540,39 @@ done_check_encoding:
 	return ret;
 }
 
+
+gboolean
+set_output_path (const gchar *opt_name,
+                 const gchar *value,
+                 gpointer     data,
+                 GError     **err)
+{
+	static gboolean seen     = FALSE;
+
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple output destinations disallowed."));
+		return FALSE;
+	}
+	seen = TRUE;
+
+	if ( *value == '\0' )
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Empty output filename disallowed."));
+		return FALSE;
+	}
+
+	if (g_file_test (value, G_FILE_TEST_EXISTS)) {
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Output destinations already exists."));
+		return FALSE;
+	}
+
+	output_loc = g_strdup (value);
+	return TRUE;
+}
 
 static gboolean
 option_deprecated (const gchar *opt_name,
@@ -694,6 +741,16 @@ process_delim (const gchar *opt_name,
                gpointer     data,
                GError     **err)
 {
+	static gboolean seen = FALSE;
+
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple delimiter options disallowed."));
+		return FALSE;
+	}
+	seen = TRUE;
+
 	delim = (*value) ? _filter_escapes (value) : g_strdup ("");
 
 	return TRUE;

@@ -45,7 +45,6 @@
 
        FILE        *out_fh               = NULL;
 static char       **fileargs             = NULL;
-static char        *outfilename          = NULL;
 static gboolean     xml_output           = FALSE;
        gboolean     use_localtime        = FALSE;
 static r2status     exit_status          = EXIT_SUCCESS;
@@ -55,7 +54,7 @@ static const GOptionEntry mainoptions[] =
 {
 	{
 		"output", 'o', 0,
-		G_OPTION_ARG_FILENAME, &outfilename,
+		G_OPTION_ARG_CALLBACK, set_output_path,
 		N_("Write output to FILE"), N_("FILE")
 	},
 	{
@@ -335,6 +334,7 @@ main (int    argc,
 	extern gboolean     no_heading;
 	extern char        *delim;
 	extern int          output_format;
+	extern char        *output_loc;
 
 	rifiuti_init (argv[0]);
 
@@ -439,7 +439,7 @@ main (int    argc,
 		default:            meta.os_guess = OS_GUESS_UNKNOWN;
 	}
 
-	if (outfilename)
+	if (output_loc)
 	{
 		exit_status = get_tempfile (&out_fh, &tmppath);
 
@@ -467,7 +467,7 @@ main (int    argc,
 #endif
 
 	/* file descriptor should have been closed at this point */
-	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, outfilename) ) )
+	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, output_loc) ) )
 	{
 		int e = errno;
 
@@ -506,7 +506,7 @@ main (int    argc,
 	g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
 
 	g_strfreev (fileargs);
-	g_free (outfilename);
+	g_free (output_loc);
 	g_free (delim);
 	g_free (tmppath);
 

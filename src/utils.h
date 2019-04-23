@@ -217,5 +217,6 @@ gboolean func (const gchar   *opt_name,  \
                GError       **err)
 
 DECL_OPT_CALLBACK(check_legacy_encoding);
+DECL_OPT_CALLBACK(set_output_path);
 
 #endif
