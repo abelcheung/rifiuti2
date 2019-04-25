@@ -162,61 +162,55 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-void    rifiuti_init                (const char       *progpath);
+void          rifiuti_init                (const char       *progpath);
 
-void    rifiuti_setup_opt_ctx       (GOptionContext    **context,
-                                     const GOptionEntry  opt_main[],
-                                     const GOptionEntry  opt_add []);
+void          rifiuti_setup_opt_ctx       (GOptionContext    **context,
+                                           rbin_type         type);
 
-r2status rifiuti_parse_opt_ctx      (GOptionContext  **context,
-                                     int              *argc,
-                                     char           ***argv);
+r2status      rifiuti_parse_opt_ctx      (GOptionContext  **context,
+                                           int              *argc,
+                                           char           ***argv);
 
-time_t  win_filetime_to_epoch       (uint64_t          win_filetime);
+time_t        win_filetime_to_epoch       (uint64_t          win_filetime);
 
-char *  utf16le_to_utf8             (const gunichar2  *str,
-                                     glong             len,
-                                     glong            *items_read,
-                                     glong            *items_written,
-                                     GError          **error)
-                                     G_GNUC_UNUSED;
+char *        utf16le_to_utf8             (const gunichar2  *str,
+                                           glong             len,
+                                           glong            *items_read,
+                                           glong            *items_written,
+                                           GError          **error)
+                                           G_GNUC_UNUSED;
 
-int     check_file_args             (const char       *path,
-                                     GSList          **list,
-                                     rbin_type         type);
+int           check_file_args             (const char       *path,
+                                           GSList          **list,
+                                           rbin_type         type);
 
-void    print_header                (metarecord        meta);
+r2status      prepare_output_handle       (void);
 
-void    print_record_cb             (rbin_struct      *record);
+void          close_output_handle         (void);
 
-void    print_footer                (void);
+void          print_header                (metarecord        meta);
 
-void    print_version_and_exit      (void) G_GNUC_NORETURN;
+void          print_record_cb             (rbin_struct      *record);
 
-void    free_record_cb              (rbin_struct      *record);
+void          print_footer                (void);
 
-void    my_debug_handler            (const char       *log_domain,
-                                     GLogLevelFlags    log_level,
-                                     const char       *message,
-                                     gpointer          data);
+r2status      move_temp_file              (void);
 
-int     get_tempfile                (FILE            **fh,
-                                     char            **tmppath);
+void          print_version_and_exit      (void) G_GNUC_NORETURN;
 
-char *  conv_path_to_utf8_with_tmpl (const char      *str,
-                                     const char      *from_enc,
-                                     const char      *tmpl,
-                                     size_t          *read,
-                                     r2status        *st);
+void          free_record_cb              (rbin_struct      *record);
 
-/* TODO hide this inside utils.c */
-#define DECL_OPT_CALLBACK(func)          \
-gboolean func (const gchar   *opt_name,  \
-               const gchar   *value,     \
-               gpointer       data,      \
-               GError       **err)
+void          my_debug_handler            (const char       *log_domain,
+                                           GLogLevelFlags    log_level,
+                                           const char       *message,
+                                           gpointer          data);
 
-DECL_OPT_CALLBACK(check_legacy_encoding);
-DECL_OPT_CALLBACK(set_output_path);
+char *        conv_path_to_utf8_with_tmpl (const char      *str,
+                                           const char      *from_enc,
+                                           const char      *tmpl,
+                                           size_t          *read,
+                                           r2status        *st);
+
+void          free_vars                   (void);
 
 #endif

@@ -38,6 +38,7 @@
 #endif
 #include "utils.h"
 #include <glib/gi18n.h>
+#include <glib/gstdio.h>
 
 #ifdef G_OS_WIN32
 #  include <sys/timeb.h>
@@ -45,6 +46,14 @@
 #endif
 
 /* These aren't intended for public */
+#define DECL_OPT_CALLBACK(func)          \
+gboolean func (const gchar   *opt_name,  \
+               const gchar   *value,     \
+               gpointer       data,      \
+               GError       **err)
+
+static DECL_OPT_CALLBACK(check_legacy_encoding);
+static DECL_OPT_CALLBACK(set_output_path);
 static DECL_OPT_CALLBACK(option_deprecated);
 static DECL_OPT_CALLBACK(process_delim);
 
@@ -61,13 +70,18 @@ static char *os_strings[] = {
 	"Windows 10"
 };
 
-char        *delim              = NULL;
-gboolean     no_heading         = FALSE;
-char        *legacy_encoding    = NULL;
-int          output_format      = OUTPUT_CSV;
-char        *output_loc       = NULL;
+static int          output_format      = OUTPUT_CSV;
+static gboolean     no_heading         = FALSE;
+static gboolean     use_localtime      = FALSE;
+static gboolean     xml_output         = FALSE;
+       char        *delim              = NULL;
+       char        *legacy_encoding    = NULL; /** INFO2 only, or upon request */
+       char        *output_loc         = NULL;
+       char        *tmppath            = NULL; /** used iff output_loc is defined */
+       char       **fileargs           = NULL;
+       FILE        *out_fh             = NULL; /** unused for Windows console */
 
-const GOptionEntry textoptions[] = {
+static const GOptionEntry text_options[] = {
 	{
 		"delimiter", 't', 0,
 		G_OPTION_ARG_CALLBACK, process_delim,
@@ -86,6 +100,45 @@ const GOptionEntry textoptions[] = {
 	{NULL}
 };
 
+static const GOptionEntry main_options[] = {
+	{
+		"output", 'o', 0,
+		G_OPTION_ARG_CALLBACK, set_output_path,
+		N_("Write output to FILE"), N_("FILE")
+	},
+	{
+		"xml", 'x', 0,
+		G_OPTION_ARG_NONE, &xml_output,
+		N_("Output in XML format instead of tab-delimited values"), NULL
+	},
+	{
+		"localtime", 'z', 0,
+		G_OPTION_ARG_NONE, &use_localtime,
+		N_("Present deletion time in time zone of local system (default is UTC)"),
+		NULL
+	},
+	{
+		"version", 'v', G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, (GOptionArgFunc) print_version_and_exit,
+		N_("Print version information and exit"), NULL
+	},
+	{
+		G_OPTION_REMAINING, 0, 0,
+		G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
+		N_("INFO2 file name"), NULL
+	},
+	{NULL}
+};
+
+const GOptionEntry rbinfile_options[] = {
+	{
+		"legacy-filename", 'l', 0,
+		G_OPTION_ARG_CALLBACK, check_legacy_encoding,
+		N_("Show legacy (8.3) path if available and specify its CODEPAGE"),
+		N_("CODEPAGE")
+	},
+	{NULL}
+};
 
 size_t
 ucs2_strnlen (const gunichar2 *str, size_t max_sz)
@@ -371,7 +424,6 @@ static GString *
 get_iso8601_datetime_str (struct tm *tm)
 {
 	GString         *output;
-	extern gboolean  use_localtime;
 
 	if ( ( output = get_datetime_str (tm) ) == NULL )
 		return NULL;
@@ -432,27 +484,43 @@ rifiuti_init (const char *progpath)
 
 void
 rifiuti_setup_opt_ctx (GOptionContext **context,
-                       const GOptionEntry opt_main[],
-                       const GOptionEntry opt_add [])
+                       rbin_type        type)
 {
-	char *bug_report_str;
-	GOptionGroup *optgroup_text;
+	char         *bug_report_str;
+	GOptionGroup *group;
 
 	g_option_context_set_translation_domain (*context, PACKAGE);
 
-	bug_report_str =
-		g_strdup_printf (_("Report bugs to %s"), PACKAGE_BUGREPORT);
+	bug_report_str = g_strdup_printf (
+		/* TRANSLATOR COMMENT: argument is bug report webpage */
+		_("Report bugs to %s"), PACKAGE_BUGREPORT);
 	g_option_context_set_description (*context, bug_report_str);
 	g_free (bug_report_str);
 
-	g_option_context_add_main_entries (*context, opt_main, PACKAGE);
+	/* main group */
+	group = g_option_group_new (NULL, NULL, NULL, NULL, NULL);
 
-	optgroup_text =
-		g_option_group_new ("text", N_("Plain text output options:"),
-		                    N_("Show plain text output options"), NULL, NULL);
-	g_option_group_add_entries (optgroup_text, opt_add);
-	g_option_group_set_translation_domain (optgroup_text, PACKAGE);
-	g_option_context_add_group (*context, optgroup_text);
+	g_option_group_add_entries (group, main_options);
+	switch (type)
+	{
+		case RECYCLE_BIN_TYPE_FILE:
+			g_option_group_add_entries (group, rbinfile_options);
+			break;
+		default: break;
+		/* There will be option for recycle bin dir later */
+	}
+
+	g_option_group_set_translation_domain (group, PACKAGE);
+	g_option_context_set_main_group (*context, group);
+
+	/* text group */
+	group = g_option_group_new ("text",
+		N_("Plain text output options:"),
+		N_("Show plain text output options"), NULL, NULL);
+
+	g_option_group_add_entries (group, text_options);
+	g_option_group_set_translation_domain (group, PACKAGE);
+	g_option_context_add_group (*context, group);
 
 	g_option_context_set_help_enabled (*context, TRUE);
 }
@@ -636,6 +704,22 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 		g_error_free (err);
 		return R2_ERR_ARG;
 	}
+
+	/* Some fallback values after successful option parsing... */
+	if (xml_output)
+	{
+		output_format = OUTPUT_XML;
+		if (no_heading || (delim != NULL))
+		{
+			g_printerr (_("Plain text format options can not be used in XML mode."));
+			g_printerr ("\n");
+			return R2_ERR_ARG;
+		}
+	}
+
+	if (delim == NULL)
+		delim = g_strdup ("\t");
+
 	return EXIT_SUCCESS;
 }
 
@@ -766,36 +850,36 @@ my_debug_handler (const char     *log_domain,
 	g_printerr ("DEBUG: %s\n", message);
 }
 
-int
-get_tempfile (FILE   **fh,
-              char   **tmppath)
+static r2status
+_get_tempfile (void)
 {
-	int         fd;
-	FILE       *h;
-	char       *t;
-
-	t = g_strdup ("rifiuti-XXXXXX");
+	int     fd, e = 0;
+	FILE   *h;
+	char   *t;
 
 	/* segfaults if string is pre-allocated in stack */
-	fd = g_mkstemp (t);
-	if (fd == -1)
-		goto tempfile_fail;
+	t = g_strdup ("rifiuti-XXXXXX");
 
-	h = fdopen (fd, "wb");
-	if (h == NULL) {
-		int e = errno;
-		close (fd);
-		errno = e;
+	if ( -1 == ( fd = g_mkstemp (t) ) ) {
+		e = errno;
 		goto tempfile_fail;
 	}
 
-	*fh      = h;
-	*tmppath = t;
+	h = fdopen (fd, "wb");
+	if (h == NULL) {
+		e = errno;
+		close (fd);
+		goto tempfile_fail;
+	}
+
+	out_fh   = h;
+	tmppath  = t;
 	return EXIT_SUCCESS;
 
-	tempfile_fail:
+  tempfile_fail:
+
 	g_printerr (_("Error opening temp file for writing: %s"),
-		strerror (errno));
+		g_strerror (e));
 	g_printerr ("\n");
 	return R2_ERR_OPEN_FILE;
 }
@@ -927,7 +1011,6 @@ _local_printf (const char *format, ...)
 {
 	va_list        args;
 	char          *str;
-	extern FILE   *out_fh;
 
 	g_return_val_if_fail (format != NULL, FALSE);
 
@@ -972,16 +1055,30 @@ _local_printf (const char *format, ...)
 }
 
 
+r2status
+prepare_output_handle (void)
+{
+	r2status s = EXIT_SUCCESS;
+
+	if (output_loc)
+		s = _get_tempfile ();
+	else
+	{
+#ifdef G_OS_WIN32
+		if (!init_wincon_handle())
+#endif
+			out_fh = stdout;
+	}
+	return s;
+}
+
 void
 print_header (metarecord  meta)
 {
 	char             *rbin_path, *ver_string;
 	const char       *tz_name, *tz_numeric;
-	extern char      *delim;
 	time_t            t;
 	struct tm        *tm;
-	extern gboolean   use_localtime;
-	extern FILE      *out_fh;
 
 	if (no_heading) return;
 
@@ -1079,10 +1176,6 @@ print_record_cb (rbin_struct *record)
 	char             *outstr = NULL, *deltime = NULL;
 	GString          *t;
 	struct tm         del_tm;
-
-	extern gboolean   use_localtime;
-	extern char      *delim;
-	extern FILE      *out_fh;
 
 	g_return_if_fail (record != NULL);
 
@@ -1212,6 +1305,41 @@ print_footer (void)
 	}
 }
 
+void
+close_output_handle (void)
+{
+	if (out_fh != NULL)
+		fclose (out_fh);
+
+#ifdef G_OS_WIN32
+	close_wincon_handle();
+#endif
+}
+
+r2status
+move_temp_file (void)
+{
+	int e;
+
+	if ( !tmppath || !output_loc )
+		return EXIT_SUCCESS;
+
+	if ( 0 == g_rename (tmppath, output_loc) )
+		return EXIT_SUCCESS;
+
+	e = errno;
+
+	/* TRANSLATOR COMMENT: argument is system error message */
+	g_printerr (_("Error moving output data to desinated file: %s"),
+		g_strerror(e));
+	g_printerr ("\n");
+
+	/* TRANSLATOR COMMENT: argument is temp file location */
+	g_printerr (_("Output content is left in '%s'."), tmppath);
+	g_printerr ("\n");
+
+	return R2_ERR_WRITE_FILE;
+}
 
 void
 print_version_and_exit (void)
@@ -1236,4 +1364,15 @@ free_record_cb (rbin_struct *record)
 	g_free (record->uni_path);
 	g_free (record->legacy_path);
 	g_free (record);
+}
+
+
+void
+free_vars (void)
+{
+	g_strfreev (fileargs);
+	g_free (output_loc);
+	g_free (legacy_encoding);
+	g_free (delim);
+	g_free (tmppath);
 }

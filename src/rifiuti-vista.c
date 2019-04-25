@@ -43,43 +43,8 @@
 
 #include "rifiuti-vista.h"
 
-       FILE        *out_fh               = NULL;
-static char       **fileargs             = NULL;
-static gboolean     xml_output           = FALSE;
-       gboolean     use_localtime        = FALSE;
 static r2status     exit_status          = EXIT_SUCCESS;
 static metarecord   meta;
-
-static const GOptionEntry mainoptions[] =
-{
-	{
-		"output", 'o', 0,
-		G_OPTION_ARG_CALLBACK, set_output_path,
-		N_("Write output to FILE"), N_("FILE")
-	},
-	{
-		"xml", 'x', 0,
-		G_OPTION_ARG_NONE, &xml_output,
-		N_("Output in XML format instead of tab-delimited values"), NULL
-	},
-	{
-		"localtime", 'z', 0,
-		G_OPTION_ARG_NONE, &use_localtime,
-		N_("Present deletion time in time zone of local system (default is UTC)"),
-		NULL
-	},
-	{
-		"version", 'v', G_OPTION_FLAG_NO_ARG,
-		G_OPTION_ARG_CALLBACK, (GOptionArgFunc) print_version_and_exit,
-		N_("Print version information and exit"), NULL
-	},
-	{
-		G_OPTION_REMAINING, 0, 0,
-		G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
-		N_("$Recycle.bin folder or file name"), NULL
-	},
-	{NULL}
-};
 
 
 /*
@@ -328,13 +293,9 @@ main (int    argc,
 {
 	GSList             *filelist   = NULL;
 	GSList             *recordlist = NULL;
-	char               *tmppath    = NULL;
 	GOptionContext     *context;
-	extern GOptionEntry textoptions[];
-	extern gboolean     no_heading;
-	extern char        *delim;
-	extern int          output_format;
-	extern char        *output_loc;
+
+	extern char       **fileargs;
 
 	rifiuti_init (argv[0]);
 
@@ -343,7 +304,7 @@ main (int    argc,
 	g_option_context_set_summary (context, N_(
 		"Parse index files in C:\\$Recycle.bin style folder "
 		"and dump recycle bin data.  Can also dump a single index file."));
-	rifiuti_setup_opt_ctx (&context, mainoptions, textoptions);
+	rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR);
 	exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
@@ -360,23 +321,8 @@ main (int    argc,
 		goto cleanup;
 	}
 
-	if (xml_output)
-	{
-		output_format = OUTPUT_XML;
-		if (no_heading || (delim != NULL))
-		{
-			g_printerr (_("Plain text format options can not be used in XML mode."));
-			g_printerr ("\n");
-			exit_status = R2_ERR_ARG;
-			goto cleanup;
-		}
-	}
-
-	if (delim == NULL)
-		delim = g_strdup ("\t");
-
 	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
-	if ( EXIT_SUCCESS != exit_status )
+	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
 	g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
@@ -439,49 +385,26 @@ main (int    argc,
 		default:            meta.os_guess = OS_GUESS_UNKNOWN;
 	}
 
-	if (output_loc)
-	{
-		exit_status = get_tempfile (&out_fh, &tmppath);
-
-		if (exit_status != EXIT_SUCCESS)
-			goto cleanup;
-	}
-	else
-	{
-#ifdef G_OS_WIN32
-		if (!init_wincon_handle())
-#endif
-			out_fh = stdout;
-	}
-
 	/* Print everything */
+	{
+		r2status s = prepare_output_handle ();
+		if (s != EXIT_SUCCESS) {
+			exit_status = s;
+			goto cleanup;
+		}
+	}
+
 	print_header (meta);
 	g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
 	print_footer ();
 
-	if (out_fh != NULL)
-		fclose (out_fh);
-
-#ifdef G_OS_WIN32
-	close_wincon_handle();
-#endif
+	close_output_handle ();
 
 	/* file descriptor should have been closed at this point */
-	if ( ( tmppath != NULL ) && ( -1 == g_rename (tmppath, output_loc) ) )
 	{
-		int e = errno;
-
-		/* TRANSLATOR COMMENT: argument is system error message */
-		g_printerr (_("Error moving output data to desinated file: %s"),
-			g_strerror(e));
-		g_printerr ("\n");
-
-		/* TRANSLATOR COMMENT: argument is temp file location, which
-		 * failed to be moved to proper location */
-		g_printerr (_("Output content is left in '%s'."), tmppath);
-		g_printerr ("\n");
-
-		exit_status = R2_ERR_WRITE_FILE;
+		r2status s = move_temp_file ();
+		if ( s != EXIT_SUCCESS )
+			exit_status = s;
 	}
 
 	cleanup:
@@ -504,11 +427,7 @@ main (int    argc,
 
 	g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
 	g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
-
-	g_strfreev (fileargs);
-	g_free (output_loc);
-	g_free (delim);
-	g_free (tmppath);
+	free_vars ();
 
 	return exit_status;
 }
