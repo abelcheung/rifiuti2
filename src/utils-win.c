@@ -72,7 +72,7 @@ gui_message (const char *message)
 	g_free (body);
 }
 
-/*
+/*!
  * A copy of latter part of g_win32_getlocale()
  */
 #ifndef SUBLANG_SERBIAN_LATIN_BA
@@ -112,8 +112,8 @@ get_win32_locale_script (int primary,
 	return NULL;
 }
 
-/*
- * We can't use g_win32_getlocale() directly.
+/*!
+ * We can't use [`g_win32_getlocale()`][1] directly.
  *
  * There are 4 possible source for language UI settings:
  * - GetThreadLocale()  (used by g_win32_getlocale)
@@ -132,6 +132,8 @@ get_win32_locale_script (int primary,
  * Here we attempt to use User default first, followed by GetThreadLocale
  * locale; and do the dirty work in a manner almost identical to
  * g_win32_getlocale().
+ *
+ * [1]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-getlocale
  */
 char *
 get_win32_locale (void)
@@ -168,14 +170,13 @@ get_win32_locale (void)
 	return g_strconcat (iso639, "_", iso3166, script, NULL);
 }
 
-/*
- * Following functions originates from example of GetEffectiveRightsFromAcl(),
- * which is not about the function itself but a _replacement_ of it (shrug).
- * https://msdn.microsoft.com/en-us/library/windows/desktop/aa446637(v=vs.85).aspx
- */
-
-/*
+/*!
  * Retrieve current user name and convert it to SID
+ *
+ * Following functions originates from [example of `GetEffectiveRightsFromAcl()`][1],
+ * which is not about the function itself but a _replacement_ of it (shrug).
+ *
+ * [1]: https://msdn.microsoft.com/en-us/library/windows/desktop/aa446637(v=vs.85).aspx
  */
 static PSID
 get_user_sid (void)
@@ -228,7 +229,7 @@ get_user_sid (void)
 	return NULL;
 }
 
-/*
+/*!
  * Fetch ACL access mask using Authz API
  */
 gboolean
@@ -323,6 +324,12 @@ can_list_win32_folder (const char *path)
 	return ret;
 }
 
+/*!
+ * Initialize console handle under Windows
+ *
+ * Used only when output is Windows native console. For all other cases
+ * unix-style file stream is used.
+ */
 gboolean
 init_wincon_handle (void)
 {

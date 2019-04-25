@@ -47,7 +47,7 @@ static r2status     exit_status          = EXIT_SUCCESS;
 static metarecord   meta;
 
 
-/*
+/*!
  * Check if index file has sufficient amount of data for reading.
  * If successful, its file content will be stored in buf.
  * Return 0 if successful, non-zero on error

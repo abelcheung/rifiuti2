@@ -122,25 +122,34 @@ typedef struct _rbin_meta
 	                               with junk to satisfy PATH_MAX size */
 } metarecord;
 
+/*! \struct _rbin_struct
+ *  \brief Struct for single recycle bin item
+ */
 typedef struct _rbin_struct
 {
-	/* For $Recycle.bin, version of each index file is kept here,
+	/*! For $Recycle.bin, version of each index file is kept here,
 	 * while meta.version keeps the global status of whole dir */
-	uint64_t          version;         /* $Recycle.bin only */
+	uint64_t          version;          /* $Recycle.bin only */
+
+	/*! Each record links to metadata for more convenient access */
 	const metarecord *meta;
 
-	/* number for INFO2, file name for $Recycle.bin */
+	/*! \brief Number is for INFO2, file name for $Recycle.bin */
 	union
 	{
-		uint32_t      index_n;
-		char         *index_s;
+		uint32_t      index_n;          /* INFO2 only */
+		char         *index_s;          /* $Recycle.bin only */
 	};
+
+	/*! Item delection time */
 	time_t            deltime;
+
+	/*! Can mean cluster size or actual file/folder size */
 	uint64_t          filesize;
 
 	/* despite var names, all filenames are converted to UTF-8 upon parsing */
 	char             *uni_path;
-	char             *legacy_path; /* INFO2 only */
+	char             *legacy_path;     /* INFO2 only */
 
 	gboolean          emptied;         /* INFO2 only */
 	unsigned char     drive;           /* INFO2 only */
@@ -150,7 +159,7 @@ typedef struct _rbin_struct
 #define copy_field(field, off1, off2) memcpy((field), \
 		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
 
-/* All Windows include this GUID in recycle bin desktop.ini */
+/*! Every Windows use this GUID in recycle bin desktop.ini */
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
 
 /*

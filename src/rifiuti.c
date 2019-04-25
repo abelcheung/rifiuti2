@@ -58,7 +58,7 @@ unsigned char   driveletters[28] =
 	'V', 'W', 'X', 'Y', 'Z', '\\', '?'
 };
 
-/*
+/*!
  * Check if index file has sufficient amount of data for reading
  * 0 = success, all other return status = error
  * If success, infile will be set to file pointer and other args

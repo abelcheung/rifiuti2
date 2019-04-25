@@ -75,12 +75,13 @@ static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
 static gboolean     xml_output         = FALSE;
        char        *delim              = NULL;
-       char        *legacy_encoding    = NULL; /** INFO2 only, or upon request */
+       char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
        char        *output_loc         = NULL;
-       char        *tmppath            = NULL; /** used iff output_loc is defined */
+       char        *tmppath            = NULL; /*!< used iff output_loc is defined */
        char       **fileargs           = NULL;
-       FILE        *out_fh             = NULL; /** unused for Windows console */
+       FILE        *out_fh             = NULL; /*!< unused for Windows console */
 
+/*! These options are only effective for tab delimited mode output */
 static const GOptionEntry text_options[] = {
 	{
 		"delimiter", 't', 0,
@@ -130,6 +131,7 @@ static const GOptionEntry main_options[] = {
 	{NULL}
 };
 
+/*! Appended to main option group if program is INFO2 reader */
 const GOptionEntry rbinfile_options[] = {
 	{
 		"legacy-filename", 'l', 0,
@@ -201,7 +203,7 @@ _advance_char (size_t       sz,
 	return;
 }
 
-/* Last argument is there to avoid recomputing */
+/*! Last argument is there to avoid recomputing */
 static char *
 _filter_printable_char (const char *str,
                         const char *tmpl,
@@ -233,7 +235,7 @@ _filter_printable_char (const char *str,
 	return g_string_free (s, FALSE);
 }
 
-/*
+/*!
  * Converts a Windows path in specified legacy encoding or unicode
  * path into UTF-8 encoded version. When encoding error arises,
  * it attempts to be robust and substitute concerned bytes or
@@ -383,7 +385,7 @@ get_timezone_name (struct tm *tm)
 	return (const char *) (&buf);
 }
 
-/* Return ISO8601 numeric timezone, like "+0400" */
+/*! Return ISO8601 numeric timezone, like "+0400" */
 static const char *
 get_timezone_numeric (struct tm *tm)
 {
@@ -419,7 +421,7 @@ get_timezone_numeric (struct tm *tm)
 	return (const char *) (&buf);
 }
 
-/* Return ISO 8601 formatted time with timezone */
+/*! Return ISO 8601 formatted time with timezone */
 static GString *
 get_iso8601_datetime_str (struct tm *tm)
 {
@@ -738,7 +740,7 @@ win_filetime_to_epoch (uint64_t win_filetime)
 	return (time_t) (epoch & 0xFFFFFFFF);
 }
 
-/*
+/*!
  * Wrapper of g_utf16_to_utf8 for big endian system.
  * Always assume string is nul-terminated. (Unused now?)
  */
@@ -765,10 +767,10 @@ utf16le_to_utf8 (const gunichar2   *str,
 #endif
 }
 
-/*
+/*!
  * single/double quotes and backslashes have already been
  * quoted / unquoted when parsing arguments. We need to
- * interpret \r, \n etc separately
+ * interpret \\r, \\n etc separately
  */
 static char *
 _filter_escapes (const char *str)
@@ -884,7 +886,7 @@ _get_tempfile (void)
 	return R2_ERR_OPEN_FILE;
 }
 
-/* Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
+/*! Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static gboolean
 _populate_index_file_list (GSList     **list,
                           const char  *path)
@@ -933,7 +935,7 @@ _populate_index_file_list (GSList     **list,
 }
 
 
-/* Search for desktop.ini in folder for hint of recycle bin */
+/*! Search for desktop.ini in folder for hint of recycle bin */
 static gboolean
 found_desktop_ini (const char *path)
 {
@@ -959,7 +961,7 @@ found_desktop_ini (const char *path)
 }
 
 
-/* Add potentially valid file(s) to list */
+/*! Add potentially valid file(s) to list */
 int
 check_file_args (const char  *path,
                  GSList     **list,

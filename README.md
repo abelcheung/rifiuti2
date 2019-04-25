@@ -71,20 +71,23 @@ More compatibility fix for other architectures welcome.
 Windows binaries are officially provided
 [on Github release page][6].
 
-Note that 0.6.1 version is the last version suporting Windows XP and 2003;
-upcoming versions would require Vista or above.
+Note that 0.6.1 version is the last version that can run on
+Windows XP and 2003; upcoming versions would require Vista or above.
 
 ### Linux
 * DEB packages available officially on [Debian][7] and [Ubuntu][8],
-  so available on any derivative distribution as well (such as
-  Kali Linux and BackBox Linux).
-* RPM packages from [Linux Forensics Tools Repository (LiFTeR)][9]
-  can be used on CentOS, RHEL and Fedora.
-* [ArchStrike (formerly ArchAssault)][10], a penetration testing
+hence also available on most (if not all) derivatives focusing on
+security and forensics, such as (this is incomplete list):
+  * [Kali Linux][9]
+  * [Deft X Virtual Appliance][10]
+  * BackBox Linux
+* RPM packages from [Linux Forensics Tools Repository (LiFTeR)][11]
+  can be used on Fedora, and very likely CentOS and RHEL.
+* [ArchStrike (formerly ArchAssault)][12], a penetration testing
   derivative of Arch Linux, has `rifiuti2` packaged since late 2014.
 
 ### FreeBSD
-Official [FreeBSD port][11] is available since 8.4.
+Official [FreeBSD port][13] is available since 8.4.
 
 ### Others
 For OS where `rifiuti2` is not readily available,
@@ -99,6 +102,8 @@ program from source.
 [6]: https://github.com/abelcheung/rifiuti2/releases
 [7]: https://packages.debian.org/search?keywords=rifiuti2
 [8]: http://packages.ubuntu.com/search?keywords=rifiuti2
-[9]: https://forensics.cert.org/ByPackage/rifiuti2.html
-[10]: https://archstrike.org/packages/rifiuti2
-[11]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
+[9]: https://pkg.kali.org/pkg/rifiuti2
+[10]: http://www.deftlinux.net/package-list/deft-x-va/
+[11]: https://forensics.cert.org/ByPackage/rifiuti2.html
+[12]: https://archstrike.org/packages/rifiuti2
+[13]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
