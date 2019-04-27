@@ -465,21 +465,23 @@ rifiuti_init (const char *progpath)
 	}
 #endif
 
-	if (g_file_test (LOCALEDIR, G_FILE_TEST_IS_DIR))
-		bindtextdomain (PACKAGE, LOCALEDIR);
-	else
 	{
 		/* searching current dir is more useful on Windows */
 		char *d = g_path_get_dirname (progpath);
 		char *p = g_build_filename (d, LOCALEDIR_PORTABLE, NULL);
+
 		if (g_file_test (p, G_FILE_TEST_IS_DIR))
 		{
 			g_debug ("Portable LOCALEDIR = %s", p);
 			bindtextdomain (PACKAGE, p);
 		}
+		else
+			bindtextdomain (PACKAGE, LOCALEDIR);
+
 		g_free (p);
 		g_free (d);
 	}
+
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	textdomain (PACKAGE);
 }
