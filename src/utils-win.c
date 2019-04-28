@@ -115,25 +115,26 @@ get_win32_locale_script (int primary,
 /*!
  * We can't use [`g_win32_getlocale()`][1] directly.
  *
- * There are 4 possible source for language UI settings:
- * - GetThreadLocale()  (used by g_win32_getlocale)
- * - Installed language group
+ * There are 3 possible source for language UI settings:
+ * - [`GetThreadLocale()`][2]  (used by g_win32_getlocale)
  * - User default language
  * - System default language
  *
- * First one is no good because rifiuti2 is a CLI program, where
- * the caller is a console, so this 'language' is merely determined
- * by console code page, which is not always equivalent to user
- * preferred language. For example, CP850 can be used by multiple
- * european languages but GetLocaleInfo() always treat it as en_US.
- * Language group is not an indicator too because it can imply
- * several similar languages.
+ * For GUI applications, thread locale is good enough; this is the
+ * default for gettext and glib on Windows. But rifiuti2 is a CLI
+ * program, where the caller is a console. In such case thread locale
+ * is solely determined by console code page, not always equal to user
+ * preferred language.
  *
- * Here we attempt to use User default first, followed by GetThreadLocale
+ * For example, multiple West European Windows use console codepage 850,
+ * which GetLocaleInfo() returns en_US, not any West European languages.
+ *
+ * Here we attempt to pick up user default first, followed by thread
  * locale; and do the dirty work in a manner almost identical to
  * g_win32_getlocale().
  *
  * [1]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-getlocale
+ * [2]: https://docs.microsoft.com/en-us/windows/desktop/api/winnls/nf-winnls-getthreadlocale
  */
 char *
 get_win32_locale (void)

@@ -449,10 +449,14 @@ rifiuti_init (const char *progpath)
 #ifdef G_OS_WIN32
 	{
 		/*
-		 * FIXME: can gettext recognise Windows locale settings
-		 * without resorting to env variable? Wish I knew how
-		 * GETTEXT_MUI works.
+		 * Setting GETTEXT_MUI is not enough. Though it successfully
+		 * pick up user default locale under Windows, glib internally
+		 * only considers g_win32_getlocale() for decision making,
+		 * which in turn only considers thread locale.
+		 * So we need to override g_win32_getlocale() result. And
+		 * overriding that with LC_* would render GETTEXT_MUI useless.
 		 */
+		/* _putenv_s ("GETTEXT_MUI", "1"); */
 		char *loc = get_win32_locale();
 
 		if (0 == _putenv_s ("LC_MESSAGES", loc)) {
