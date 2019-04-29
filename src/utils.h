@@ -103,6 +103,7 @@ typedef enum
 
 enum
 {
+	OUTPUT_NONE,
 	OUTPUT_CSV,
 	OUTPUT_XML
 };

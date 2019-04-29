@@ -55,7 +55,9 @@ gboolean func (const gchar   *opt_name,  \
 static DECL_OPT_CALLBACK(check_legacy_encoding);
 static DECL_OPT_CALLBACK(set_output_path);
 static DECL_OPT_CALLBACK(option_deprecated);
-static DECL_OPT_CALLBACK(process_delim);
+static DECL_OPT_CALLBACK(set_opt_delim);
+static DECL_OPT_CALLBACK(set_opt_noheading);
+static DECL_OPT_CALLBACK(set_output_xml);
 
 /* WARNING: MUST match order of _os_guess enum */
 static char *os_strings[] = {
@@ -70,10 +72,9 @@ static char *os_strings[] = {
 	"Windows 10"
 };
 
-static int          output_format      = OUTPUT_CSV;
+static int          output_mode        = OUTPUT_NONE;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
-static gboolean     xml_output         = FALSE;
        char        *delim              = NULL;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
        char        *output_loc         = NULL;
@@ -85,12 +86,12 @@ static gboolean     xml_output         = FALSE;
 static const GOptionEntry text_options[] = {
 	{
 		"delimiter", 't', 0,
-		G_OPTION_ARG_CALLBACK, process_delim,
+		G_OPTION_ARG_CALLBACK, set_opt_delim,
 		N_("String to use as delimiter (TAB by default)"), N_("STRING")
 	},
 	{
-		"no-heading", 'n', 0,
-		G_OPTION_ARG_NONE, &no_heading,
+		"no-heading", 'n', G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, set_opt_noheading,
 		N_("Don't show column header and metadata"), NULL
 	},
 	{
@@ -108,8 +109,8 @@ static const GOptionEntry main_options[] = {
 		N_("Write output to FILE"), N_("FILE")
 	},
 	{
-		"xml", 'x', 0,
-		G_OPTION_ARG_NONE, &xml_output,
+		"xml", 'x', G_OPTION_FLAG_NO_ARG,
+		G_OPTION_ARG_CALLBACK, set_output_xml,
 		N_("Output in XML format instead of tab-delimited values"), NULL
 	},
 	{
@@ -141,6 +142,43 @@ const GOptionEntry rbinfile_options[] = {
 	},
 	{NULL}
 };
+
+static gboolean
+set_output_mode (int       mode,
+                 GError  **err)
+{
+	if (output_mode == mode)
+		return TRUE;
+
+	if (output_mode == OUTPUT_NONE) {
+		output_mode = mode;
+		return TRUE;
+	}
+
+	g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+		_("Plain text format options can not be used in XML mode."));
+	return FALSE;
+}
+
+static gboolean
+set_output_xml (const gchar *opt_name,
+                const gchar *value,
+                gpointer     data,
+                GError     **err)
+{
+	return set_output_mode (OUTPUT_XML, err);
+}
+
+static gboolean
+set_opt_noheading (const gchar *opt_name,
+                   const gchar *value,
+                   gpointer     data,
+                   GError     **err)
+{
+	no_heading = TRUE;
+
+	return set_output_mode (OUTPUT_CSV, err);
+}
 
 size_t
 ucs2_strnlen (const gunichar2 *str, size_t max_sz)
@@ -714,19 +752,11 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	}
 
 	/* Some fallback values after successful option parsing... */
-	if (xml_output)
-	{
-		output_format = OUTPUT_XML;
-		if (no_heading || (delim != NULL))
-		{
-			g_printerr (_("Plain text format options can not be used in XML mode."));
-			g_printerr ("\n");
-			return R2_ERR_ARG;
-		}
-	}
-
 	if (delim == NULL)
 		delim = g_strdup ("\t");
+
+	if (output_mode == OUTPUT_NONE)
+		output_mode = OUTPUT_CSV;
 
 	return EXIT_SUCCESS;
 }
@@ -828,7 +858,7 @@ _filter_escapes (const char *str)
 
 
 static gboolean
-process_delim (const gchar *opt_name,
+set_opt_delim (const gchar *opt_name,
                const gchar *value,
                gpointer     data,
                GError     **err)
@@ -845,7 +875,7 @@ process_delim (const gchar *opt_name,
 
 	delim = (*value) ? _filter_escapes (value) : g_strdup ("");
 
-	return TRUE;
+	return set_output_mode (OUTPUT_CSV, err);
 }
 
 
@@ -1096,7 +1126,7 @@ print_header (metarecord  meta)
 
 	rbin_path = g_filename_display_name (meta.filename);
 
-	switch (output_format)
+	switch (output_mode)
 	{
 		case OUTPUT_CSV:
 		{
@@ -1220,7 +1250,7 @@ print_record_cb (rbin_struct *record)
 			g_strdup (_("(File name not representable in UTF-8 encoding)"));
 	}
 
-	switch (output_format)
+	switch (output_mode)
 	{
 		case OUTPUT_CSV:
 
@@ -1298,7 +1328,7 @@ print_record_cb (rbin_struct *record)
 void
 print_footer (void)
 {
-	switch (output_format)
+	switch (output_mode)
 	{
 		case OUTPUT_CSV:
 			/* do nothing */
