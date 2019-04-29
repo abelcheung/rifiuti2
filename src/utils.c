@@ -52,12 +52,12 @@ gboolean func (const gchar   *opt_name,  \
                gpointer       data,      \
                GError       **err)
 
-static DECL_OPT_CALLBACK(check_legacy_encoding);
-static DECL_OPT_CALLBACK(set_output_path);
-static DECL_OPT_CALLBACK(option_deprecated);
-static DECL_OPT_CALLBACK(set_opt_delim);
-static DECL_OPT_CALLBACK(set_opt_noheading);
-static DECL_OPT_CALLBACK(set_output_xml);
+static DECL_OPT_CALLBACK(_check_legacy_encoding);
+static DECL_OPT_CALLBACK(_set_output_path);
+static DECL_OPT_CALLBACK(_option_deprecated);
+static DECL_OPT_CALLBACK(_set_opt_delim);
+static DECL_OPT_CALLBACK(_set_opt_noheading);
+static DECL_OPT_CALLBACK(_set_output_xml);
 
 /* WARNING: MUST match order of _os_guess enum */
 static char *os_strings[] = {
@@ -86,17 +86,17 @@ static gboolean     use_localtime      = FALSE;
 static const GOptionEntry text_options[] = {
 	{
 		"delimiter", 't', 0,
-		G_OPTION_ARG_CALLBACK, set_opt_delim,
+		G_OPTION_ARG_CALLBACK, _set_opt_delim,
 		N_("String to use as delimiter (TAB by default)"), N_("STRING")
 	},
 	{
 		"no-heading", 'n', G_OPTION_FLAG_NO_ARG,
-		G_OPTION_ARG_CALLBACK, set_opt_noheading,
+		G_OPTION_ARG_CALLBACK, _set_opt_noheading,
 		N_("Don't show column header and metadata"), NULL
 	},
 	{
 		"always-utf8", '8', G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_NO_ARG,
-		G_OPTION_ARG_CALLBACK, option_deprecated,
+		G_OPTION_ARG_CALLBACK, _option_deprecated,
 		N_("(This option is deprecated)"), NULL
 	},
 	{NULL}
@@ -105,12 +105,12 @@ static const GOptionEntry text_options[] = {
 static const GOptionEntry main_options[] = {
 	{
 		"output", 'o', 0,
-		G_OPTION_ARG_CALLBACK, set_output_path,
+		G_OPTION_ARG_CALLBACK, _set_output_path,
 		N_("Write output to FILE"), N_("FILE")
 	},
 	{
 		"xml", 'x', G_OPTION_FLAG_NO_ARG,
-		G_OPTION_ARG_CALLBACK, set_output_xml,
+		G_OPTION_ARG_CALLBACK, _set_output_xml,
 		N_("Output in XML format instead of tab-delimited values"), NULL
 	},
 	{
@@ -136,16 +136,20 @@ static const GOptionEntry main_options[] = {
 const GOptionEntry rbinfile_options[] = {
 	{
 		"legacy-filename", 'l', 0,
-		G_OPTION_ARG_CALLBACK, check_legacy_encoding,
+		G_OPTION_ARG_CALLBACK, _check_legacy_encoding,
 		N_("Show legacy (8.3) path if available and specify its CODEPAGE"),
 		N_("CODEPAGE")
 	},
 	{NULL}
 };
 
+/*
+ * Option handling related routines
+ */
+
 static gboolean
-set_output_mode (int       mode,
-                 GError  **err)
+_set_output_mode (int       mode,
+                  GError  **err)
 {
 	if (output_mode == mode)
 		return TRUE;
@@ -161,24 +165,229 @@ set_output_mode (int       mode,
 }
 
 static gboolean
-set_output_xml (const gchar *opt_name,
-                const gchar *value,
-                gpointer     data,
-                GError     **err)
+_set_output_xml (const gchar *opt_name,
+                 const gchar *value,
+                 gpointer     data,
+                 GError     **err)
 {
-	return set_output_mode (OUTPUT_XML, err);
+	return _set_output_mode (OUTPUT_XML, err);
 }
 
 static gboolean
-set_opt_noheading (const gchar *opt_name,
-                   const gchar *value,
-                   gpointer     data,
-                   GError     **err)
+_set_opt_noheading (const gchar *opt_name,
+                    const gchar *value,
+                    gpointer     data,
+                    GError     **err)
 {
 	no_heading = TRUE;
 
-	return set_output_mode (OUTPUT_CSV, err);
+	return _set_output_mode (OUTPUT_CSV, err);
 }
+
+/*!
+ * single/double quotes and backslashes have already been
+ * quoted / unquoted when parsing arguments. We need to
+ * interpret \\r, \\n etc separately
+ */
+static char *
+_filter_escapes (const char *str)
+{
+	GString *result, *debug_str;
+	char *i = (char *) str;
+
+	g_return_val_if_fail ( (str != NULL) && (*str != '\0'), NULL);
+
+	result = g_string_new (NULL);
+	do
+	{
+		if ( *i != '\\' )
+		{
+			result = g_string_append_c (result, *i);
+			continue;
+		}
+
+		switch ( *(++i) )
+		{
+		  case 'r':
+			result = g_string_append_c (result, '\r'); break;
+		  case 'n':
+			result = g_string_append_c (result, '\n'); break;
+		  case 't':
+			result = g_string_append_c (result, '\t'); break;
+		  case 'e':
+			result = g_string_append_c (result, '\x1B'); break;
+		  default:
+			result = g_string_append_c (result, '\\'); i--;
+		}
+	}
+	while ( *(++i) );
+
+	debug_str = g_string_new ("filtered delimiter = ");
+	i = result->str;
+	do
+	{
+		if ( *i >= 0x20 && *i <= 0x7E )  /* problem during linking with g_ascii_isprint */
+			debug_str = g_string_append_c (debug_str, *i);
+		else
+			g_string_append_printf (debug_str, "\\x%02X", *(unsigned char *) i);
+	}
+	while ( *(++i) );
+	g_debug ("%s", debug_str->str);
+	g_string_free (debug_str, TRUE);
+	return g_string_free (result, FALSE);
+}
+
+static gboolean
+_set_opt_delim (const gchar *opt_name,
+               const gchar *value,
+               gpointer     data,
+               GError     **err)
+{
+	static gboolean seen = FALSE;
+
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple delimiter options disallowed."));
+		return FALSE;
+	}
+	seen = TRUE;
+
+	delim = (*value) ? _filter_escapes (value) : g_strdup ("");
+
+	return _set_output_mode (OUTPUT_CSV, err);
+}
+
+static gboolean
+_set_output_path (const gchar *opt_name,
+                  const gchar *value,
+                  gpointer     data,
+                  GError     **err)
+{
+	static gboolean seen     = FALSE;
+
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple output destinations disallowed."));
+		return FALSE;
+	}
+	seen = TRUE;
+
+	if ( *value == '\0' )
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Empty output filename disallowed."));
+		return FALSE;
+	}
+
+	if (g_file_test (value, G_FILE_TEST_EXISTS)) {
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Output destinations already exists."));
+		return FALSE;
+	}
+
+	output_loc = g_strdup (value);
+	return TRUE;
+}
+
+static gboolean
+_option_deprecated (const gchar *opt_name,
+                    const gchar *unused,
+                    gpointer     data,
+                    GError     **err)
+{
+	g_printerr (_("NOTE: Option '%s' is deprecated and ignored."), opt_name);
+	g_printerr ("\n");
+	return TRUE;
+}
+
+static gboolean
+_check_legacy_encoding (const gchar *opt_name,
+                        const gchar *enc,
+                        gpointer     data,
+                        GError     **err)
+{
+	char           *s;
+	gint            e;
+	gboolean        ret      = FALSE;
+	static gboolean seen     = FALSE;
+	GError         *conv_err = NULL;
+
+	if (seen)
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Multiple encoding options disallowed."));
+		return FALSE;
+	}
+	seen = TRUE;
+
+	if ( *enc == '\0' )
+	{
+		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+			_("Empty encoding option disallowed."));
+		return FALSE;
+	}
+
+	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
+
+	if (conv_err == NULL)
+	{
+		if (strcmp ("C:\\", s) != 0) /* e.g. EBCDIC based code pages */
+		{
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' can't possibly be a code page or compatible "
+				"encoding used by localized Windows."), enc);
+		} else {
+			legacy_encoding = g_strdup (enc);
+			ret = TRUE;
+		}
+		goto done_check_encoding;
+	}
+
+	e = conv_err->code;
+	g_clear_error (&conv_err);
+
+	switch (e)
+	{
+		case G_CONVERT_ERROR_NO_CONVERSION:
+
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' encoding is not supported by glib library "
+				"on this system.  If iconv program is present on "
+				"system, use 'iconv -l' for a list of possible "
+				"alternatives; otherwise check out following site for "
+				"a list of probable encodings to use:\n\n\t%s"), enc,
+#ifdef G_OS_WIN32
+				"https://github.com/win-iconv/win-iconv/blob/master/win_iconv.c"
+#else
+				"https://www.gnu.org/software/libiconv/"
+#endif
+			);
+			break;
+
+		/* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
+		case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
+		case G_CONVERT_ERROR_PARTIAL_INPUT:
+
+			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+				_("'%s' can't possibly be a code page or compatible "
+				"encoding used by localized Windows."), enc);
+			break;
+
+		default:
+			g_assert_not_reached ();
+	}
+
+done_check_encoding:
+
+	g_free (s);
+	return ret;
+}
+
+/*
+ * Charset conversion routines
+ */
 
 size_t
 ucs2_strnlen (const gunichar2 *str, size_t max_sz)
@@ -392,6 +601,9 @@ conv_path_to_utf8_with_tmpl (const char *path,
 	return result;
 }
 
+/*
+ * Date / Time handling routines
+ */
 
 static GString *
 get_datetime_str (struct tm *tm)
@@ -473,6 +685,20 @@ get_iso8601_datetime_str (struct tm *tm)
 		return g_string_append_c (output, 'Z');
 
 	return g_string_append (output, get_timezone_numeric(tm));
+}
+
+time_t
+win_filetime_to_epoch (uint64_t win_filetime)
+{
+	uint64_t epoch;
+
+	g_debug ("%s(): FileTime = %" G_GUINT64_FORMAT, __func__, win_filetime);
+
+	/* Let's assume we don't need millisecond resolution time for now */
+	epoch = (win_filetime - 116444736000000000LL) / 10000000;
+
+	/* Let's assume this program won't survive till 22th century */
+	return (time_t) (epoch & 0xFFFFFFFF);
 }
 
 void
@@ -571,135 +797,6 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 	g_option_context_set_help_enabled (*context, TRUE);
 }
 
-gboolean
-check_legacy_encoding (const gchar *opt_name,
-                       const gchar *enc,
-                       gpointer     data,
-                       GError     **err)
-{
-	char           *s;
-	gint            e;
-	gboolean        ret      = FALSE;
-	static gboolean seen     = FALSE;
-	GError         *conv_err = NULL;
-
-	if (seen)
-	{
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Multiple encoding options disallowed."));
-		return FALSE;
-	}
-	seen = TRUE;
-
-	if ( *enc == '\0' )
-	{
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Empty encoding option disallowed."));
-		return FALSE;
-	}
-
-	s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
-
-	if (conv_err == NULL)
-	{
-		if (strcmp ("C:\\", s) != 0) /* e.g. EBCDIC based code pages */
-		{
-			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-				_("'%s' can't possibly be a code page or compatible "
-				"encoding used by localized Windows."), enc);
-		} else {
-			legacy_encoding = g_strdup (enc);
-			ret = TRUE;
-		}
-		goto done_check_encoding;
-	}
-
-	e = conv_err->code;
-	g_clear_error (&conv_err);
-
-	switch (e)
-	{
-		case G_CONVERT_ERROR_NO_CONVERSION:
-
-			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-				_("'%s' encoding is not supported by glib library "
-				"on this system.  If iconv program is present on "
-				"system, use 'iconv -l' for a list of possible "
-				"alternatives; otherwise check out following site for "
-				"a list of probable encodings to use:\n\n\t%s"), enc,
-#ifdef G_OS_WIN32
-				"https://github.com/win-iconv/win-iconv/blob/master/win_iconv.c"
-#else
-				"https://www.gnu.org/software/libiconv/"
-#endif
-			);
-			break;
-
-		/* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
-		case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
-		case G_CONVERT_ERROR_PARTIAL_INPUT:
-
-			g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-				_("'%s' can't possibly be a code page or compatible "
-				"encoding used by localized Windows."), enc);
-			break;
-
-		default:
-			g_assert_not_reached ();
-	}
-
-done_check_encoding:
-
-	g_free (s);
-	return ret;
-}
-
-
-gboolean
-set_output_path (const gchar *opt_name,
-                 const gchar *value,
-                 gpointer     data,
-                 GError     **err)
-{
-	static gboolean seen     = FALSE;
-
-	if (seen)
-	{
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Multiple output destinations disallowed."));
-		return FALSE;
-	}
-	seen = TRUE;
-
-	if ( *value == '\0' )
-	{
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Empty output filename disallowed."));
-		return FALSE;
-	}
-
-	if (g_file_test (value, G_FILE_TEST_EXISTS)) {
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Output destinations already exists."));
-		return FALSE;
-	}
-
-	output_loc = g_strdup (value);
-	return TRUE;
-}
-
-static gboolean
-option_deprecated (const gchar *opt_name,
-                   const gchar *unused,
-                   gpointer     data,
-                   GError     **err)
-{
-	g_printerr (_("NOTE: Option '%s' is deprecated and ignored."), opt_name);
-	g_printerr ("\n");
-	return TRUE;
-}
-
-
 r2status
 rifiuti_parse_opt_ctx (GOptionContext **context,
                        int             *argc,
@@ -762,20 +859,6 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 }
 
 
-time_t
-win_filetime_to_epoch (uint64_t win_filetime)
-{
-	uint64_t epoch;
-
-	g_debug ("%s(): FileTime = %" G_GUINT64_FORMAT, __func__, win_filetime);
-
-	/* Let's assume we don't need millisecond resolution time for now */
-	epoch = (win_filetime - 116444736000000000LL) / 10000000;
-
-	/* Let's assume this program won't survive till 22th century */
-	return (time_t) (epoch & 0xFFFFFFFF);
-}
-
 /*!
  * Wrapper of g_utf16_to_utf8 for big endian system.
  * Always assume string is nul-terminated. (Unused now?)
@@ -801,81 +884,6 @@ utf16le_to_utf8 (const gunichar2   *str,
 	g_free (buf);
 	return ret;
 #endif
-}
-
-/*!
- * single/double quotes and backslashes have already been
- * quoted / unquoted when parsing arguments. We need to
- * interpret \\r, \\n etc separately
- */
-static char *
-_filter_escapes (const char *str)
-{
-	GString *result, *debug_str;
-	char *i = (char *) str;
-
-	g_return_val_if_fail ( (str != NULL) && (*str != '\0'), NULL);
-
-	result = g_string_new (NULL);
-	do
-	{
-		if ( *i != '\\' )
-		{
-			result = g_string_append_c (result, *i);
-			continue;
-		}
-
-		switch ( *(++i) )
-		{
-		  case 'r':
-			result = g_string_append_c (result, '\r'); break;
-		  case 'n':
-			result = g_string_append_c (result, '\n'); break;
-		  case 't':
-			result = g_string_append_c (result, '\t'); break;
-		  case 'e':
-			result = g_string_append_c (result, '\x1B'); break;
-		  default:
-			result = g_string_append_c (result, '\\'); i--;
-		}
-	}
-	while ( *(++i) );
-
-	debug_str = g_string_new ("filtered delimiter = ");
-	i = result->str;
-	do
-	{
-		if ( *i >= 0x20 && *i <= 0x7E )  /* problem during linking with g_ascii_isprint */
-			debug_str = g_string_append_c (debug_str, *i);
-		else
-			g_string_append_printf (debug_str, "\\x%02X", *(unsigned char *) i);
-	}
-	while ( *(++i) );
-	g_debug ("%s", debug_str->str);
-	g_string_free (debug_str, TRUE);
-	return g_string_free (result, FALSE);
-}
-
-
-static gboolean
-set_opt_delim (const gchar *opt_name,
-               const gchar *value,
-               gpointer     data,
-               GError     **err)
-{
-	static gboolean seen = FALSE;
-
-	if (seen)
-	{
-		g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-			_("Multiple delimiter options disallowed."));
-		return FALSE;
-	}
-	seen = TRUE;
-
-	delim = (*value) ? _filter_escapes (value) : g_strdup ("");
-
-	return set_output_mode (OUTPUT_CSV, err);
 }
 
 
