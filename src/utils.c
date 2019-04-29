@@ -786,8 +786,10 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 	g_option_context_set_main_group (*context, group);
 
 	/* text group */
+	/* FIXME For unknown reason, short description of option
+	 * groups are not translated at all if using N_() */
 	group = g_option_group_new ("text",
-		N_("Plain text output options:"),
+		_("Plain text output options:"),
 		N_("Show plain text output options"), NULL, NULL);
 
 	g_option_group_add_entries (group, text_options);
@@ -803,24 +805,12 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
                        char          ***argv)
 {
 	GError   *err = NULL;
-	gboolean  ret;
+	char     *help_msg;
+	gboolean  ret, do_print_help = FALSE;
 
-	/* FIXME probably should do GUI help after option parsing is done,
-	   g_set_prgname() is called there */
-
-	/* Must be done before parsing arguments since argc will be modified later */
+	/* Must be done before parsing, since argc might be modified later */
 	if (*argc <= 1)
-	{
-#ifdef G_OS_WIN32
-		g_set_print_handler (gui_message);
-#endif
-		char *help_msg = g_option_context_get_help (*context, FALSE, NULL);
-		g_print ("%s", help_msg);
-		g_free (help_msg);
-
-		g_option_context_free (*context);
-		exit (EXIT_SUCCESS);
-	}
+		do_print_help = TRUE;
 
 #if GLIB_CHECK_VERSION (2, 40, 0)
 	{
@@ -838,7 +828,22 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 	ret = g_option_context_parse (*context, argc, argv, &err);
 #endif
 
+	help_msg = g_option_context_get_help (*context, FALSE, NULL);
+
 	g_option_context_free (*context);
+
+	if (do_print_help)
+	{
+#ifdef G_OS_WIN32
+		g_set_print_handler (gui_message);
+#endif
+		g_print ("%s", help_msg);
+		g_free (help_msg);
+
+		exit (EXIT_SUCCESS);
+	}
+
+	g_free (help_msg);
 
 	if ( !ret )
 	{
