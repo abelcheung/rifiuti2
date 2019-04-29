@@ -23,8 +23,9 @@ AT_CHECK([
 AT_CLEANUP
 
 AT_SETUP([Legacy path encoding - correct])
+AT_SKIP_IF([test -z "${gbk_name}"])
 AT_KEYWORDS([info2 encoding])
-_r2_basic_compare([$progf -l $gbk_enc_name INFO2-sample1], [INFO2-sample1-alt.txt])
+_r2_basic_compare([$progf -l "${gbk_name}" INFO2-sample1], [INFO2-sample1-alt.txt])
 AT_CLEANUP
 
 AT_SETUP([Legacy path encoding - illegal (1)])
@@ -40,15 +41,14 @@ AX_AT_CHECK_PATTERN([
 AT_CLEANUP
 
 dnl
-dnl Despite IBM037 encoding being supported in Freebsd iconv
-dnl (and usable in cmdline), glib can't make use of it
+dnl Demands ASCII-compatible encoding, EBCDIC not one of those
 dnl
 AT_SETUP([Legacy path encoding - illegal (2)])
 AT_KEYWORDS([info2 encoding])
-AT_XFAIL_IF([$os_freebsd])
+AT_SKIP_IF([test -z "${ebcdic_latin1_name}"])
 AX_AT_CHECK_PATTERN([
 	cd $sample
-	$progf -l $ebcdic_enc_name INFO2-sample1
+	$progf -l "${ebcdic_latin1_name}" INFO2-sample1
 ], 1,, [dnl
 .* can't possibly be a code page or compatible encoding .*
 ])
@@ -60,10 +60,11 @@ dnl to treat it as Shift-JIS, and got hex escapes as result
 dnl
 AT_SETUP([Legacy path encoding - wrong])
 AT_KEYWORDS([encoding])
+AT_SKIP_IF([test -z "${sjis_name}"])
 AT_CHECK([
 	$as_ln_s $sample/INFO2-sample2-wrong-enc.txt expout
 	cd $sample
-	$progf -l CP932 INFO2-sample2
+	$progf -l "${sjis_name}" INFO2-sample2
 ], 5, [expout], [ignore])
 AT_CLEANUP
 

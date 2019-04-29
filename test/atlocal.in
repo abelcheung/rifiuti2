@@ -13,19 +13,42 @@ awk="@AWK@"
 # detect & set env
 is_mingw="test x@is_mingw@ != x"
 is_cygwin="test x@is_cygwin@ != x"
-os_solaris="test x@os_solaris@ != x"
-os_freebsd="test x@os_freebsd@ != x"
 
 # abbrev
 progf="$abs_top_builddir/src/rifiuti"
 progd="$abs_top_builddir/src/rifiuti-vista"
 sample="$abs_srcdir/samples"
 
-# platform specific stuff
-if $os_solaris; then
-    gbk_enc_name=GBK
-	ebcdic_enc_name=IBM-037
-else
-    gbk_enc_name=CP936
-	ebcdic_enc_name=IBM037
-fi
+#
+# For some systems, glib may or may not be using system iconv
+# (e.g. Solaris and FreeBSD), therefore simply finding out
+# supported encoding from iconv program is not enough.
+#
+# In general, there is no cross platform way of specifying
+# encoding names. To rub salt into wounds, even glib itself
+# appears to append different encoding aliases on different
+# OSes... (such as using win_iconv on Windows)
+#
+# Have to give up specifying charset names according to OS, and
+# resort to checking runtime behavior instead.
+#
+for i in IBM-037 IBM037 CP037; do
+	if ./test_glib_iconv "$i"; then
+		ebcdic_latin1_name="$i"
+		break
+	fi
+done
+
+for i in CP936 MS936 Windows-936 GBK csGBK; do
+	if ./test_glib_iconv "$i"; then
+		gbk_name="$i"
+		break
+	fi
+done
+
+for i in CP932 Windows-932 IBM-943 SJIS JIS_X0208 SHIFT_JIS SHIFT-JIS; do
+	if ./test_glib_iconv "$i"; then
+		sjis_name="$i"
+		break
+	fi
+done

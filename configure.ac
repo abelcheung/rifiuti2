@@ -17,12 +17,9 @@ dnl Platform check.
 AS_CASE([$host],
         [*-*-msys* | *-*-mingw*], [is_mingw=y  ],
         [*-*-cygwin*           ], [is_cygwin=y ],
-        [*-*-solaris*          ], [os_solaris=y],
-        [*-*-freebsd*          ], [os_freebsd=y])
+        [*-*-solaris*          ], [os_solaris=y])
 AC_SUBST(is_mingw)
 AC_SUBST(is_cygwin)
-AC_SUBST(os_solaris)
-AC_SUBST(os_freebsd)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 
 dnl I18N

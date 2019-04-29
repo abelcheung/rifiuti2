@@ -10,7 +10,8 @@ AT_CLEANUP
 
 AT_SETUP([INFO2 Sample 1 - 95])
 AT_KEYWORDS([info2])
-_r2_basic_compare([$progf -l CP932 INFO-95-ja-1], [INFO-95-ja-1.txt])
+AT_SKIP_IF([test -z "${sjis_name}"])
+_r2_basic_compare([$progf -l "${sjis_name}" INFO-95-ja-1], [INFO-95-ja-1.txt])
 AT_CLEANUP
 
 AT_SETUP([INFO2 Sample 2 - NT4])

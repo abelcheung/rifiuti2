@@ -40,6 +40,11 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	echo 'm4_define([AT_PACKAGE_URL],  [$(PACKAGE_URL)])'; \
 	} > $@
 
+noinst_PROGRAMS = test_glib_iconv
+
+test_glib_iconv_LDADD = $(GLIB_LIBS)
+test_glib_iconv_CFLAGS = $(GLIB_CFLAGS)
+
 TESTSUITE = $(srcdir)/testsuite
 
 INC_AT_FILES = \
