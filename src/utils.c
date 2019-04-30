@@ -385,6 +385,28 @@ done_check_encoding:
 	return ret;
 }
 
+static gboolean
+_count_fileargs (GOptionContext *context,
+                 GOptionGroup   *group,
+                 gpointer        data,
+                 GError        **err)
+{
+	if (fileargs && g_strv_length (fileargs) == 1)
+		return TRUE;
+
+	/* FIXME unable to pull user data, so only print generic mesg */
+	g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+		_("Must specify exactly one file or folder argument."));
+
+/*
+		_("Must specify exactly one INFO2 file as argument."));
+		(_("Must specify exactly one directory containing "
+			"$Recycle.bin index files, or one such index file "
+			"as argument.")); */
+	return FALSE;
+}
+
+
 /*
  * Charset conversion routines
  */
@@ -782,6 +804,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 		/* There will be option for recycle bin dir later */
 	}
 
+	g_option_group_set_parse_hooks (group, NULL, _count_fileargs);
 	g_option_group_set_translation_domain (group, PACKAGE);
 	g_option_context_set_main_group (*context, group);
 

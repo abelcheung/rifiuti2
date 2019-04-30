@@ -309,18 +309,6 @@ main (int    argc,
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
 
-	if (!fileargs || g_strv_length (fileargs) > 1)
-	{
-		g_printerr (_("Must specify exactly one directory containing "
-		              "$Recycle.bin index files, or one such index file "
-		              "as argument."));
-		g_printerr ("\n");
-		g_printerr (_("Run program without any option for more info."));
-		g_printerr ("\n");
-		exit_status = R2_ERR_ARG;
-		goto cleanup;
-	}
-
 	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
