@@ -1166,25 +1166,19 @@ print_header (metarecord  meta)
 	{
 		case OUTPUT_CSV:
 		{
-			GString *s = g_string_new (NULL);
+			GString *s = g_string_sized_new (512);
 			char *outstr;
 
 			g_string_printf (s, _("Recycle bin path: '%s'"), rbin_path);
 			s = g_string_append_c (s, '\n');
 
-			switch (meta.version)
-			{
-			  case VERSION_NOT_FOUND:
-				/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
+			if (meta.version == VERSION_NOT_FOUND) {
+				/* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
 				ver_string = g_strdup (_("??? (empty folder)"));
-				break;
-			  case VERSION_INCONSISTENT:
-				/* TRANSLATOR COMMENT: Error when trying to determine recycle bin version */
-				ver_string = g_strdup (_("??? (version inconsistent)"));
-				break;
-			default:
+			} else {
 				ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 			}
+
 			g_string_append_printf (s, _("Version: %s"), ver_string);
 			g_free (ver_string);
 			s = g_string_append_c (s, '\n');
@@ -1209,13 +1203,32 @@ print_header (metarecord  meta)
 			s = g_string_append_c (s, '\n');
 			s = g_string_append_c (s, '\n');
 
-			if (meta.keep_deleted_entry)
-				/* TRANSLATOR COMMENT: "Gone" means file is permanently deleted */
-				g_string_append_printf (s, _("Index%sDeleted Time%sGone?%sSize%sPath"),
-						delim, delim, delim, delim);
-			else
-				g_string_append_printf (s, _("Index%sDeleted Time%sSize%sPath"),
-						delim, delim, delim);
+			{
+				GArray   *a;
+				char    **c, *headerline;
+				char     *colhead[] = {
+					/* TRANSLATOR COMMENT: appears in column header */
+					N_("Index"), N_("Deleted Time"), N_("Size"), N_("Path"), NULL
+				};
+
+				a = g_array_sized_new (TRUE, TRUE, sizeof (gpointer), 5);
+				c = colhead;
+				while (*c != NULL) {
+					const char *t = gettext (*c++);
+					g_array_append_val (a, t);
+				}
+				if (meta.keep_deleted_entry) {
+					/* TRANSLATOR COMMENT: appears in column header, means file is restored or purged */
+					char *t = _("Gone?");
+					g_array_insert_val (a, 2, t);
+				}
+
+				headerline = g_strjoinv (delim, (char **) a->data);
+				s = g_string_append (s, headerline);
+
+				g_free (headerline);
+				g_array_free (a, TRUE);
+			}
 			s = g_string_append_c (s, '\n');
 
 			outstr = g_string_free (s, FALSE);
