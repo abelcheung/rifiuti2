@@ -1149,10 +1149,7 @@ prepare_output_handle (void)
 void
 print_header (metarecord  meta)
 {
-	char             *rbin_path, *ver_string;
-	const char       *tz_name, *tz_numeric;
-	time_t            t;
-	struct tm        *tm;
+	char *rbin_path;
 
 	if (no_heading) return;
 
@@ -1165,43 +1162,50 @@ print_header (metarecord  meta)
 	switch (output_mode)
 	{
 		case OUTPUT_CSV:
-		{
-			GString *s = g_string_sized_new (512);
-			char *outstr;
 
-			g_string_printf (s, _("Recycle bin path: '%s'"), rbin_path);
-			s = g_string_append_c (s, '\n');
+			_local_printf (_("Recycle bin path: '%s'"), rbin_path);
+			_local_printf ("\n");
 
-			if (meta.version == VERSION_NOT_FOUND) {
-				/* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
-				ver_string = g_strdup (_("??? (empty folder)"));
-			} else {
-				ver_string = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
+			{
+				char *ver;
+				if (meta.version == VERSION_NOT_FOUND) {
+					/* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
+					ver = g_strdup (_("??? (empty folder)"));
+				} else
+					ver = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
+
+				_local_printf (_("Version: %s"), ver);
+				_local_printf ("\n");
+				g_free (ver);
 			}
-
-			g_string_append_printf (s, _("Version: %s"), ver_string);
-			g_free (ver_string);
-			s = g_string_append_c (s, '\n');
 
 			if (meta.os_guess == OS_GUESS_UNKNOWN)
-				s = g_string_append (s, _("OS detection failed"));
+				_local_printf (_("OS detection failed"));
 			else
-				g_string_append_printf (s, _("OS Guess: %s"), os_strings[meta.os_guess]);
-			s = g_string_append_c (s, '\n');
+				_local_printf (_("OS Guess: %s"), os_strings[meta.os_guess]);
 
-			/* avoid too many localtime() calls by doing it here */
-			if (use_localtime)
+			_local_printf ("\n");
+
 			{
-				t = time (NULL);
-				tm = localtime (&t);
+				const char *tz_name, *tz_numeric;
+				time_t      t;
+				struct tm  *_tm;
+
+				if (use_localtime)
+				{
+					t   = time (NULL);
+					_tm = localtime (&t);
+				}
+				else
+					_tm = NULL;
+
+				tz_name    = get_timezone_name    (_tm);
+				tz_numeric = get_timezone_numeric (_tm);
+				_local_printf (_("Time zone: %s [%s]"), tz_name, tz_numeric);
+				_local_printf ("\n");
 			}
-			else
-				tm = NULL;
-			tz_name    = get_timezone_name (tm);
-			tz_numeric = get_timezone_numeric (tm);
-			g_string_append_printf (s, _("Time zone: %s [%s]"), tz_name, tz_numeric);
-			s = g_string_append_c (s, '\n');
-			s = g_string_append_c (s, '\n');
+
+			_local_printf ("\n");
 
 			{
 				GArray   *a;
@@ -1224,18 +1228,14 @@ print_header (metarecord  meta)
 				}
 
 				headerline = g_strjoinv (delim, (char **) a->data);
-				s = g_string_append (s, headerline);
+				_local_printf ("%s", headerline);
+				_local_printf ("\n");
 
 				g_free (headerline);
 				g_array_free (a, TRUE);
 			}
-			s = g_string_append_c (s, '\n');
 
-			outstr = g_string_free (s, FALSE);
-			_local_printf ("%s", outstr);
-			g_free (outstr);
-		}
-		break;
+			break;
 
 		case OUTPUT_XML:
 			/* No proper way to report wrong version info yet */
