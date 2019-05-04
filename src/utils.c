@@ -645,16 +645,46 @@ get_datetime_str (struct tm *tm)
 }
 
 /* Return full name of current timezone */
-static const char *
+static char *
 get_timezone_name (struct tm *tm)
 {
-	static char buf[100];   /* Don't know theorectical max size, so be generous */
+#ifdef G_OS_WIN32
+	/*
+	 * struct _TIME_ZONE_INFORMATION has following members:
+	 * WCHAR    StandardName[32];
+	 * WCHAR    DaylightName[32];
+	 * I believe that even localized timezone names wouldn't use
+	 * any character beyond BMP, so 32*3 bytes should have been
+	 * enough for UTF-8 char buffer; 128 bytes is for safety.
+	 */
+	wchar_t  buf[33];
 
 	if (tm == NULL)
-		return _("Coordinated Universal Time (UTC)");
-	if ( 0 == strftime (buf, sizeof(buf), "%Z", tm) )
-		return _("(Failed to retrieve timezone name)");
-	return (const char *) (&buf);
+		return g_strdup (_("Coordinated Universal Time (UTC)"));
+
+	/*
+	 * strftime() on Windows can return tzname in arbitrary encoding, not
+	 * the default encoding used in current locale. For example, the result
+	 * is in GBK encoding for zh-HK.
+	 */
+	if ( 0 == wcsftime (buf, sizeof (buf) - 1, L"%Z", tm) )
+		return g_strdup (_("(Failed to retrieve timezone name)"));
+
+	return g_utf16_to_utf8 ( (const gunichar2 *) buf, -1, NULL, NULL, NULL);
+
+#else /* ! G_OS_WIN32 */
+
+	char  buf[33];
+
+	if (tm == NULL)
+		return g_strdup (_("Coordinated Universal Time (UTC)"));
+
+	if ( 0 == strftime (buf, sizeof (buf) - 1, "%Z", tm) )
+		return g_strdup (_("(Failed to retrieve timezone name)"));
+
+	return g_strdup (buf);
+
+#endif
 }
 
 /*! Return ISO8601 numeric timezone, like "+0400" */
@@ -1187,22 +1217,28 @@ print_header (metarecord  meta)
 			_local_printf ("\n");
 
 			{
-				const char *tz_name, *tz_numeric;
-				time_t      t;
-				struct tm  *_tm;
+				char       *tz_name;
+				const char *tz_numeric;
 
 				if (use_localtime)
 				{
-					t   = time (NULL);
-					_tm = localtime (&t);
+					struct tm  _tm;
+					time_t     t = time (NULL);
+
+					localtime_r (&t, &_tm);
+					tz_name    = get_timezone_name    (&_tm);
+					tz_numeric = get_timezone_numeric (&_tm);
 				}
 				else
-					_tm = NULL;
+				{
+					tz_name    = get_timezone_name    (NULL);
+					tz_numeric = get_timezone_numeric (NULL);
+				}
 
-				tz_name    = get_timezone_name    (_tm);
-				tz_numeric = get_timezone_numeric (_tm);
 				_local_printf (_("Time zone: %s [%s]"), tz_name, tz_numeric);
 				_local_printf ("\n");
+
+				g_free (tz_name);
 			}
 
 			_local_printf ("\n");
