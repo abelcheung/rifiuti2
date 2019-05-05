@@ -52,3 +52,10 @@ for i in CP932 Windows-932 IBM-943 SJIS JIS_X0208 SHIFT_JIS SHIFT-JIS; do
 		break
 	fi
 done
+
+for i in CP950 Windows-950 Big5 BIG5; do
+	if ./test_glib_iconv "$i"; then
+		big5_name="$i"
+		break
+	fi
+done

@@ -38,3 +38,18 @@ AT_SETUP([INFO2 Sample 6 - XP/03])
 AT_KEYWORDS([info2])
 _r2_basic_compare([$progf INFO2-sample1], [INFO2-sample1.txt])
 AT_CLEANUP
+
+AT_SETUP([INFO2 - UNC legacy path 1])
+AT_KEYWORDS([info2 unc])
+_r2_basic_compare([$progf -l ASCII INFO2-me-en-uncpath], [INFO2-me-en-uncpath.txt])
+AT_CLEANUP
+
+AT_SETUP([INFO2 - UNC legacy path 2])
+AT_KEYWORDS([info2 unc])
+_r2_basic_compare([$progf -l ${big5_name} INFO2-2k-tw-uncpath], [INFO2-2k-tw-uncpath.txt])
+AT_CLEANUP
+
+AT_SETUP([INFO2 - UNC unicode path])
+AT_KEYWORDS([info2 unc])
+_r2_basic_compare([$progf INFO2-03-tw-uncpath], [INFO2-03-tw-uncpath.txt])
+AT_CLEANUP

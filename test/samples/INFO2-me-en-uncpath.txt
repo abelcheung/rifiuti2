@@ -1,0 +1,9 @@
+Recycle bin path: 'INFO2-me-en-uncpath'
+Version: 5
+OS Guess: Windows Me
+Time zone: Coordinated Universal Time (UTC) [+0000]
+
+Index	Deleted Time	Gone?	Size	Path
+1	2019-05-02 16:31:45	No	420864	\\Vm-me\temp\Documents\langastas.xpi
+2	2019-05-02 16:38:56	No	4773888	\\Vm-me\temp\Documents\3DPacmanSetupTrial.exe
+3	2019-05-02 16:43:15	Yes	4608	\\Vm-me\temp\Documents\fgabida.lst

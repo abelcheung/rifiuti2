@@ -1,6 +1,8 @@
 ## 0.7.0 (to be released)
 #### Feature Addition
 * Support recycle bin from jurassic Windows: 95, NT4, ME
+* Verified to work for recycle bin on network shared folder using
+  UNC path (such thing is rare but does exist)
 * Display timezone in tab-delimited output header
 * Guess Windows version based on recycle bin artifacts
 * Distributed Windows binaries:
