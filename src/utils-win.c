@@ -172,6 +172,55 @@ get_win32_locale (void)
 }
 
 /*!
+ * `strftime()` on Windows can show garbage timezone name, because its
+ * encoding does not match console codepage. For example, strftime %Z result
+ * is in CP936 encoding for zh-HK, while console codepage is CP950.
+ *
+ * OTOH, `wcsftime() %Z` would not return anything if console codepage is
+ * set to any non-default codepage for current system.
+ *
+ * `GetTimeZoneInformation()` returns sensible result regardless of
+ * console codepage setting.
+ */
+char *
+get_win_timezone_name (void)
+{
+	TIME_ZONE_INFORMATION tzinfo;
+	wchar_t  *name;
+	DWORD     id;
+	char     *ret;
+	GError   *err = NULL;
+
+	id = GetTimeZoneInformation (&tzinfo);
+
+	switch (id)
+	{
+		case TIME_ZONE_ID_UNKNOWN:
+		case TIME_ZONE_ID_STANDARD:
+			name = tzinfo.StandardName;
+			break;
+		case TIME_ZONE_ID_DAYLIGHT:
+			name = tzinfo.DaylightName;
+			break;
+		default:
+			ret = g_win32_error_message (GetLastError ());
+			g_critical ("%s", ret);
+			g_free (ret);
+			return g_strdup (_("(Failed to retrieve timezone name)"));
+			break;
+	}
+
+	ret = g_utf16_to_utf8 ( (const gunichar2 *) name, -1, NULL, NULL, &err);
+	if (err == NULL)
+		return ret;
+
+	g_warning ("%s", err->message);
+	g_error_free (err);
+	return g_strdup (_("(Failed to retrieve timezone name)"));
+}
+
+
+/*!
  * Retrieve current user name and convert it to SID
  *
  * Following functions originates from [example of `GetEffectiveRightsFromAcl()`][1],
