@@ -94,6 +94,14 @@ For OS where `rifiuti2` is not readily available,
 [instructions are provided](docs/Compile.md) on how to compile this
 program from source.
 
+## Compile from source
+
+`rifiuti2` follows the usual `autotools` based procedure:
+```sh
+./configure && make check && make install
+```
+Please [refer to wiki page][14] for more detail.
+
 ## License
 
 `rifiuti2` is released under BSD license. Please refer to
@@ -107,3 +115,4 @@ program from source.
 [11]: https://forensics.cert.org/ByPackage/rifiuti2.html
 [12]: https://archstrike.org/packages/rifiuti2
 [13]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
+[14]: https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source
