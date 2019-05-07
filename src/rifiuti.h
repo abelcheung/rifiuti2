@@ -35,7 +35,11 @@
 #include "utils.h"
 
 /* These offsets are relative to file start */
+#define VERSION_OFFSET           0
+#define KEPT_ENTRY_OFFSET        4
+#define TOTAL_ENTRY_OFFSET       8
 #define RECORD_SIZE_OFFSET      12
+#define FILESIZE_SUM_OFFSET     16
 #define RECORD_START_OFFSET     20
 
 /* Following offsets are relative to start of each record */

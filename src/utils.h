@@ -108,19 +108,22 @@ enum
 	OUTPUT_XML
 };
 
-/* Metadata for recycle bin */
+/*! \struct _rbin_meta
+ *  \brief Metadata for recycle bin
+ */
 typedef struct _rbin_meta
 {
 	rbin_type       type;
 	const char     *filename;
 	_os_guess       os_guess;
 	int64_t         version;
-	uint32_t        recordsize;          /* INFO2 only */
-	gboolean        keep_deleted_entry;  /* affects output column */
+	uint32_t        recordsize;          /*!< INFO2 only */
+	uint32_t        total_entry;         /*!< 95/NT4 only */
+	gboolean        keep_deleted_entry;  /*!< 98-03 only, add extra output column */
 	gboolean        is_empty;
-	gboolean        has_unicode_path;    /* NT4, 2000 or above */
-	gboolean        fill_junk;  /* Between 98-2000, path names are padded
-	                               with junk to satisfy PATH_MAX size */
+	gboolean        has_unicode_path;
+	gboolean        fill_junk;  /*!< TRUE for 98/ME/2000 only, some fields padded
+	                                 with junk data instaed of zeroed */
 } metarecord;
 
 /*! \struct _rbin_struct

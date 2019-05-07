@@ -1195,6 +1195,12 @@ print_header (metarecord  meta)
 				g_free (ver);
 			}
 
+			if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && ( ! meta.keep_deleted_entry ))
+			{
+				_local_printf (_("Total entries ever existed: %d"), meta.total_entry);
+				_local_printf ("\n");
+			}
+
 			if (meta.os_guess == OS_GUESS_UNKNOWN)
 				_local_printf (_("OS detection failed"));
 			else

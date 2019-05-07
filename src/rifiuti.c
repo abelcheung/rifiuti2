@@ -68,77 +68,64 @@ static r2status
 validate_index_file (const char  *filename,
                      FILE       **infile)
 {
-	size_t          status;
-	GStatBuf        st;
+	void           *buf;
 	FILE           *fp = NULL;
-	uint32_t        ver, size;
+	uint32_t        ver;
+	int             e, ret;
 
 	g_debug ("Start file validation...");
 
-	g_return_val_if_fail ( (infile != NULL), R2_ERR_INTERNAL );
+	g_return_val_if_fail ( infile != NULL, R2_ERR_INTERNAL );
 	*infile = NULL;
-
-	if (0 != g_stat (filename, &st))
-	{
-		g_printerr (_("Error getting metadata of file '%s': %s"),
-			filename, strerror (errno));
-		g_printerr ("\n");
-		return R2_ERR_OPEN_FILE;
-	}
-
-	if (st.st_size < RECORD_START_OFFSET)  /* empty INFO2 file has 20 bytes */
-	{
-		g_debug ("file size = %d, expect at least %d\n", (int) st.st_size,
-		         RECORD_START_OFFSET);
-		return R2_ERR_BROKEN_FILE;
-	}
 
 	if ( !(fp = g_fopen (filename, "rb")) )
 	{
+		e = errno;
 		g_printerr (_("Error opening file '%s' for reading: %s"),
-			filename, strerror (errno));
+			filename, g_strerror (e));
 		g_printerr ("\n");
 		return R2_ERR_OPEN_FILE;
 	}
 
-	/* with file size check already done, fread fail -> serious problem */
-	status = fread (&ver, sizeof (ver), 1, fp);
-	if (status < 1)
+	buf = g_malloc (RECORD_START_OFFSET);
+
+	if ( 1 > fread (buf, RECORD_START_OFFSET, 1, fp) )
 	{
-		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading version info from '%s'"),
-		            __func__, filename);
-		status = R2_ERR_OPEN_FILE;
+		/* TRANSLATOR COMMENT: file size must be at least 20 bytes */
+		g_critical (_("File size less than minimum allowed (%d bytes)"), RECORD_START_OFFSET);
+		ret = R2_ERR_BROKEN_FILE;
 		goto validation_broken;
 	}
+
+	copy_field (&ver, VERSION, KEPT_ENTRY);
 	ver = GUINT32_FROM_LE (ver);
 
-	fseek (fp, RECORD_SIZE_OFFSET, SEEK_SET);
-	status = fread (&size, sizeof (size), 1, fp);
-	if (status < 1)
-	{
-		/* TRANSLATOR COMMENT: the variable is function name */
-		g_critical (_("%s(): fread() failed when reading recordsize from '%s'"),
-		            __func__, filename);
-		status = R2_ERR_OPEN_FILE;
-		goto validation_broken;
+	/* total_entry only meaningful for 95 and NT4, on other versions
+	 * it's junk memory data, don't bother copying */
+	if ( ( ver == VERSION_NT4 ) || ( ver == VERSION_WIN95 ) ) {
+		copy_field (&meta.total_entry, TOTAL_ENTRY, RECORD_SIZE);
+		meta.total_entry = GUINT32_FROM_LE (meta.total_entry);
 	}
-	size = GUINT32_FROM_LE (size);
+
+	copy_field (&meta.recordsize, RECORD_SIZE, FILESIZE_SUM);
+	meta.recordsize = GUINT32_FROM_LE (meta.recordsize);
+
+	g_free (buf);
 
 	/* Turns out version is not reliable indicator. Use size instead */
-	switch (size)
+	switch (meta.recordsize)
 	{
-	case LEGACY_RECORD_SIZE:
+	  case LEGACY_RECORD_SIZE:
 
 		meta.has_unicode_path = FALSE;
 
-		if ( ( ver != VERSION_ME_03 ) &&
+		if ( ( ver != VERSION_ME_03 ) &&  /* ME still use 280 byte record */
 		     ( ver != VERSION_WIN98 ) &&
-		     ( ver != VERSION_WIN95 ) )  /* Windows ME still use 280 byte record */
+		     ( ver != VERSION_WIN95 ) )
 		{
 			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
-			status = R2_ERR_BROKEN_FILE;
+			ret = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
 
@@ -155,7 +142,7 @@ validate_index_file (const char  *filename,
 			              "or in case of Japanese Windows, use '-l CP932'."));
 			g_printerr ("\n");
 
-			status = R2_ERR_ARG;
+			ret = R2_ERR_ARG;
 			goto validation_broken;
 		}
 
@@ -168,36 +155,35 @@ validate_index_file (const char  *filename,
 
 		break;
 
-	case UNICODE_RECORD_SIZE:
+	  case UNICODE_RECORD_SIZE:
 
 		meta.has_unicode_path = TRUE;
 		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
 		{
 			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
-			status = R2_ERR_BROKEN_FILE;
+			ret = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
 		/* guess is not complete yet for latter case, see populate_record_data */
 		meta.os_guess = (ver == VERSION_NT4) ? OS_GUESS_NT4 : OS_GUESS_2K_03;
 		break;
 
-	default:
-		status = R2_ERR_BROKEN_FILE;
+	  default:
+		ret = R2_ERR_BROKEN_FILE;
 		goto validation_broken;
 	}
 
 	rewind (fp);
 	*infile = fp;
 	meta.version = (int64_t) ver;
-	meta.recordsize = size;
 
 	return EXIT_SUCCESS;
 
-validation_broken:
+  validation_broken:
 
 	fclose (fp);
-	return status;
+	return ret;
 }
 
 
@@ -353,7 +339,7 @@ parse_record_cb (char    *index_file,
 
 	fseek (infile, RECORD_START_OFFSET, SEEK_SET);
 
-	meta.is_empty = TRUE;  /* no feof; EOF flag cleared by fseek */
+	meta.is_empty = TRUE;
 	while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
 	{
 		record = populate_record_data (buf);
@@ -365,7 +351,7 @@ parse_record_cb (char    *index_file,
 	g_free (buf);
 
 	/* do this only when all entries are scanned */
-	if ((!meta.is_empty) && (meta.os_guess == OS_GUESS_2K_03))
+	if ( ! meta.is_empty && ( meta.os_guess == OS_GUESS_2K_03 ) )
 		meta.os_guess = meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
 
 	if ( ferror (infile) )

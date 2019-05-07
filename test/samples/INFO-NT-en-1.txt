@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO-NT-en-1'
 Version: 2
+Total entries ever existed: 18
 OS Guess: Windows NT 4.0
 Time zone: Coordinated Universal Time (UTC) [+0000]
 

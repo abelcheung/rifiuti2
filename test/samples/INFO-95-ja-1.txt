@@ -1,5 +1,6 @@
 Recycle bin path: 'INFO-95-ja-1'
 Version: 0
+Total entries ever existed: 16
 OS Guess: Windows 95
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
