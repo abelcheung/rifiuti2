@@ -1,6 +1,6 @@
 Recycle bin path: 'INFO2-empty'
 Version: 5
-OS Guess: Windows 2000 / XP / 2003
+OS Guess: Windows 2000, XP or 2003
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path

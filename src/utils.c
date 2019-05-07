@@ -61,15 +61,15 @@ static DECL_OPT_CALLBACK(_set_output_xml);
 
 /* WARNING: MUST match order of _os_guess enum */
 static char *os_strings[] = {
-	"Windows 95",
-	"Windows NT 4.0",
-	"Windows 98 / 98 SE",
-	"Windows Me",
-	"Windows 2000",
-	"Windows XP / 2003",
-	"Windows 2000 / XP / 2003",
-	"Windows Vista - 8.1",
-	"Windows 10"
+	N_("Windows 95"),
+	N_("Windows NT 4.0"),
+	N_("Windows 98"),
+	N_("Windows ME"),
+	N_("Windows 2000"),
+	N_("Windows XP or 2003"),
+	N_("Windows 2000, XP or 2003"),
+	N_("Windows Vista - 8.1"),
+	N_("Windows 10 or above")
 };
 
 static int          output_mode        = OUTPUT_NONE;
@@ -1204,7 +1204,7 @@ print_header (metarecord  meta)
 			if (meta.os_guess == OS_GUESS_UNKNOWN)
 				_local_printf (_("OS detection failed"));
 			else
-				_local_printf (_("OS Guess: %s"), os_strings[meta.os_guess]);
+				_local_printf (_("OS Guess: %s"), gettext (os_strings[meta.os_guess]) );
 
 			_local_printf ("\n");
 

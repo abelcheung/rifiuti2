@@ -1,6 +1,6 @@
 Recycle bin path: 'INFO2-03-tw-uncpath'
 Version: 5
-OS Guess: Windows XP / 2003
+OS Guess: Windows XP or 2003
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Gone?	Size	Path

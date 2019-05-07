@@ -1,6 +1,6 @@
 Recycle bin path: 'dir-win10-01'
 Version: 2
-OS Guess: Windows 10
+OS Guess: Windows 10 or above
 Time zone: Coordinated Universal Time (UTC) [+0000]
 
 Index	Deleted Time	Size	Path
