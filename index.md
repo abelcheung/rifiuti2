@@ -13,19 +13,22 @@ It is a [rewrite of `rifiuti`][1], which is [originally written][2]
 by FoundStone folks for identical purpose. Then it was extended to
 cover more functionalities, such as:
 
-* Handles recycle bin up to Windows 10
-  * Different recycle bin format since Vista
+* Handles oldest (Win95) to newest (Win10/2016) recycle bin format
+  * Windows 95 &ndash; 2003 uses a single index file
+  * Vista or above uses one index file for each deleted item
   * 64-bit file size support
-* Handles ancient Windows like 95, NT4 and ME since 0.7.0
 * Supports all localized versions of Windows &mdash; both Unicode-based
   ones and legacy ones (using ANSI code page)
 * Supports output in XML format as well as original tab-delimited text
 
-Latest features and bug fixes [are listed here][3].
+Latest features and bug fixes [are listed inside NEWS file][3]; you're
+also welcome to [check out blog news][4] for more insight
+(and some grumbles &#x263A;).
 
 [1]: history.html
 [2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
-[3]: {{ site.repo_url }}/blob/master/README.md
+[3]: {{ site.repo_url }}/blob/master/NEWS.md
+[4]: news.html
 
 # Download and Usage
 
@@ -40,7 +43,6 @@ Please consult manpage (Unix) or README.html (bundled with Windows binaries)
 for complete options and detailed usage description. There are some
 usage samples [on Github page][3] as well.
 
-[4]: {{ site.repo_url }}
 
 ![Tab-separated list sample]({{ site.baseurl }}/images/screenshot-tsv.png)
 

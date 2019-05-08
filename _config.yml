@@ -46,7 +46,7 @@ defaults:
       path: ""
       type: "posts"
     values:
-      comments: true
+      comments: false
       is_post: true
 
 gems:
