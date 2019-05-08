@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rifiuti2 0.7.0\n"
 "Report-Msgid-Bugs-To: https://github.com/abelcheung/rifiuti2/issues\n"
-"POT-Creation-Date: 2019-04-30 15:07+0800\n"
+"POT-Creation-Date: 2019-05-09 06:35+0800\n"
 "PO-Revision-Date: 2019-05-01 20:44+0800\n"
 "Last-Translator: Abel Cheung <abelcheung@gmail.com>\n"
 "Language-Team: Chinese (Hong Kong)\n"
@@ -38,7 +38,7 @@ msgstr "檔案版本不支援，又或者根本不是 $Recycle.bin 索引檔。"
 msgid "(Record %s) Error converting unicode path to UTF-8."
 msgstr "(紀錄 %s) 無法將路徑轉換為 UTF-8 編碼。"
 
-#: src/rifiuti-vista.c:241 src/rifiuti.c:339
+#: src/rifiuti-vista.c:241 src/rifiuti.c:325
 #, c-format
 msgid "File '%s' fails validation."
 msgstr "檔案 ‘%s’ 不通過檢驗。"
@@ -66,40 +66,29 @@ msgid ""
 "independently."
 msgstr "索引檔來自多個不同的 Windows 版本。請每個檔案獨立進行檢測。"
 
-#: src/rifiuti-vista.c:404 src/rifiuti.c:470
+#: src/rifiuti-vista.c:404 src/rifiuti.c:456
 msgid ""
 "Some entries could not be presented as correct unicode path.  The concerned "
 "characters are displayed in escaped unicode sequences."
 msgstr ""
 "某些項目無法顯示為正常的 unicode 路徑。有關字元會使用 unicode 碼點顯示。"
 
-#: src/rifiuti.c:83
-#, c-format
-msgid "Error getting metadata of file '%s': %s"
-msgstr "無法獲取 ‘%s’ 檔案的相關資料：%s"
-
-#: src/rifiuti.c:98
+#: src/rifiuti.c:84
 #, c-format
 msgid "Error opening file '%s' for reading: %s"
 msgstr "無法開啟檔案 ‘%s’ 讀取內容：%s"
 
-#. TRANSLATOR COMMENT: the variable is function name
-#: src/rifiuti.c:109
+#. TRANSLATOR COMMENT: file size must be at least 20 bytes
+#: src/rifiuti.c:95
 #, c-format
-msgid "%s(): fread() failed when reading version info from '%s'"
-msgstr "%s(): 從 ‘%s’ 讀取版本資料時，fread() 發生錯誤"
+msgid "File size less than minimum allowed (%d bytes)"
+msgstr "檔案大小小於下限 (%d 位元組)"
 
-#. TRANSLATOR COMMENT: the variable is function name
-#: src/rifiuti.c:121
-#, c-format
-msgid "%s(): fread() failed when reading recordsize from '%s'"
-msgstr "%s(): 從 ‘%s’ 讀取 recordsize 時，fread() 發生錯誤"
-
-#: src/rifiuti.c:139 src/rifiuti.c:176
+#: src/rifiuti.c:126 src/rifiuti.c:163
 msgid "Unsupported file version, or probably not an INFO2 file at all."
 msgstr "檔案版本不支援，又或者根本不是 INFO2 檔案。"
 
-#: src/rifiuti.c:147
+#: src/rifiuti.c:134
 msgid ""
 "This INFO2 file was produced on a legacy system without Unicode file name "
 "(Windows ME or earlier). Please specify codepage of concerned system with '-"
@@ -109,7 +98,7 @@ msgstr ""
 "或 ‘--legacy-filename’ 選項指定原本的系統的編碼。"
 
 #. TRANSLATOR COMMENT: can choose example from YOUR language & code page
-#: src/rifiuti.c:153
+#: src/rifiuti.c:140
 msgid ""
 "For example, if recycle bin is expected to come from West European versions "
 "of Windows, use '-l CP1252' option; or in case of Japanese Windows, use '-l "
@@ -118,45 +107,45 @@ msgstr ""
 "舉個例子，如果預期回收筒來自繁體中文 Windows，請使用 ‘-l CP950’ 選項；如果是"
 "簡體的，則用 ‘-l CP936’。"
 
-#: src/rifiuti.c:230
+#: src/rifiuti.c:216
 #, c-format
 msgid "Invalid drive number (0x%X) for record %u."
 msgstr "第 %2$u 項紀錄中的磁碟號碼 (0x%1$X) 不合法。"
 
-#: src/rifiuti.c:266
+#: src/rifiuti.c:252
 #, c-format
 msgid "(Record %u) Error converting legacy path to UTF-8."
 msgstr "(紀錄 %u) 無法將舊式路徑轉換為 UTF-8 編碼。"
 
-#: src/rifiuti.c:286
+#: src/rifiuti.c:272
 #, c-format
 msgid "(Record %u) Error converting unicode path to UTF-8."
 msgstr "(紀錄 %u) 無法將 unicode 路徑轉換為 UTF-8 編碼。"
 
-#: src/rifiuti.c:373
+#: src/rifiuti.c:359
 #, c-format
 msgid "Failed to read record at position %li: %s"
 msgstr "無法在位置 %li 讀取紀錄：%s"
 
-#: src/rifiuti.c:379
+#: src/rifiuti.c:365
 #, c-format
 msgid "Premature end of file, last record (%zu bytes) discarded"
 msgstr "檔案被截短了，最後一筆紀錄 (%zu 位元組) 被無視"
 
 #. TRANSLATOR: appears in help text short summary
-#: src/rifiuti.c:399
+#: src/rifiuti.c:385
 msgid "INFO2"
 msgstr "INFO2"
 
-#: src/rifiuti.c:401
+#: src/rifiuti.c:387
 msgid "Parse INFO2 file and dump recycle bin data."
 msgstr "分析 INFO2 檔案並顯示資源回收筒的內容。"
 
-#: src/rifiuti.c:431
+#: src/rifiuti.c:417
 msgid "Recycle bin file has no valid record.\n"
 msgstr "回收筒中沒有任何刪檔紀錄。\n"
 
-#: src/rifiuti.c:465
+#: src/rifiuti.c:451
 #, c-format
 msgid ""
 "Some entries could not be interpreted in %s encoding.  The concerned "
@@ -165,6 +154,42 @@ msgid ""
 msgstr ""
 "某些項目無法用 %s 編碼表示；受影響的字元會改用 16 進制數值顯示。很有可能產生"
 "該回收筒檔案的 (本地化) Windows 並不是使用那個編碼。"
+
+#: src/utils.c:64
+msgid "Windows 95"
+msgstr "Windows 95"
+
+#: src/utils.c:65
+msgid "Windows NT 4.0"
+msgstr "Windows NT 4.0"
+
+#: src/utils.c:66
+msgid "Windows 98"
+msgstr "Windows 98"
+
+#: src/utils.c:67
+msgid "Windows ME"
+msgstr "Windows ME"
+
+#: src/utils.c:68
+msgid "Windows 2000"
+msgstr "Windows 2000"
+
+#: src/utils.c:69
+msgid "Windows XP or 2003"
+msgstr "Windows XP 或 2003"
+
+#: src/utils.c:70
+msgid "Windows 2000, XP or 2003"
+msgstr "Windows 2000、XP 或 2003"
+
+#: src/utils.c:71
+msgid "Windows Vista - 8.1"
+msgstr "Windows Vista 至 8.1"
+
+#: src/utils.c:72
+msgid "Windows 10 or above"
+msgstr "Windows 10 或以上"
 
 #: src/utils.c:90
 msgid "String to use as delimiter (TAB by default)"
@@ -277,163 +302,165 @@ msgstr "必須指定剛好一個檔案或目錄作為參數。"
 msgid "Converted path failed UTF-8 validation"
 msgstr "轉換後的路徑不通過 UTF-8 檢驗"
 
-#: src/utils.c:654
+#: src/utils.c:657 src/utils.c:666
 msgid "Coordinated Universal Time (UTC)"
 msgstr "協調世界時 (UTC)"
 
-#: src/utils.c:656
+#: src/utils.c:669 src/utils-win.c:209 src/utils-win.c:219
 msgid "(Failed to retrieve timezone name)"
 msgstr "(無法獲取時區名稱)"
 
 #. TRANSLATOR COMMENT: argument is bug report webpage
-#: src/utils.c:790
+#: src/utils.c:806
 #, c-format
 msgid "Report bugs to %s"
 msgstr "如程式有問題，請在 %s 報告"
 
-#: src/utils.c:815
+#: src/utils.c:831
 msgid "Plain text output options:"
 msgstr "文字模式輸出選項："
 
-#: src/utils.c:816
+#: src/utils.c:832
 msgid "Show plain text output options"
 msgstr "顯示和文字模式輸出有關的選項"
 
-#: src/utils.c:873
+#: src/utils.c:889
 #, c-format
 msgid "Error parsing options: %s"
 msgstr "無法解析選項：%s"
 
-#: src/utils.c:955
+#: src/utils.c:971
 #, c-format
 msgid "Error opening temp file for writing: %s"
 msgstr "無法開啟暫存檔來寫入資料：%s"
 
-#: src/utils.c:983
+#: src/utils.c:999
 #, c-format
 msgid "Error opening directory '%s': %s"
 msgstr "無法開啟 ‘%s’ 目錄：%s"
 
-#: src/utils.c:1048
+#: src/utils.c:1064
 #, c-format
 msgid "'%s' does not exist."
 msgstr "‘%s’ 不存在。"
 
-#: src/utils.c:1063
+#: src/utils.c:1079
 #, c-format
 msgid "No files with name pattern '%s' are found in directory."
 msgstr "目錄中沒有名稱像 ‘%s’ 的檔案。"
 
-#: src/utils.c:1074
+#: src/utils.c:1090
 #, c-format
 msgid "'%s' is not a normal file or directory."
 msgstr "‘%s’ 不是一般檔案或目錄。"
 
-#: src/utils.c:1075
+#: src/utils.c:1091
 #, c-format
 msgid "'%s' is not a normal file."
 msgstr "‘%s’ 不是一般檔案。"
 
-#: src/utils.c:1096
+#: src/utils.c:1112
 msgid "Supplied format or arguments not in UTF-8 encoding"
 msgstr "所提供的格式或參數並非使用 UTF-8 編碼"
 
-#: src/utils.c:1114
+#: src/utils.c:1130
 #, c-format
 msgid "Error converting output from UTF-8 to UTF-16: %s"
 msgstr "無法將輸出內容從 UTF-8 轉換為 UTF-16：%s"
 
-#: src/utils.c:1172
+#: src/utils.c:1182
 #, c-format
 msgid "Recycle bin path: '%s'"
 msgstr "資源回收筒路徑：‘%s’"
 
 #. TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis
-#: src/utils.c:1177
+#: src/utils.c:1189
 msgid "??? (empty folder)"
 msgstr "??? (空白目錄)"
 
-#: src/utils.c:1182
+#: src/utils.c:1193
 #, c-format
 msgid "Version: %s"
 msgstr "版本：%s"
 
-#: src/utils.c:1187
+#: src/utils.c:1200
+#, c-format
+msgid "Total entries ever existed: %d"
+msgstr "曾經回收的項目總數：%d"
+
+#: src/utils.c:1205
 msgid "OS detection failed"
 msgstr "操作系統無法估計"
 
-#: src/utils.c:1189
+#: src/utils.c:1207
 #, c-format
 msgid "OS Guess: %s"
 msgstr "估計操作系統為：%s"
 
-#: src/utils.c:1202
+#: src/utils.c:1230
 #, c-format
 msgid "Time zone: %s [%s]"
 msgstr "時區：%s [%s]"
 
-#. TRANSLATOR COMMENT: appear as tab-delimited output column header
-#: src/utils.c:1211
+#. TRANSLATOR COMMENT: appears in column header
+#: src/utils.c:1243
 msgid "Index"
 msgstr "索引"
 
-#. TRANSLATOR COMMENT: appear as tab-delimited output column header
-#: src/utils.c:1213
+#: src/utils.c:1243
 msgid "Deleted Time"
 msgstr "回收時間"
 
-#. TRANSLATOR COMMENT: appear as tab-delimited output column header
-#: src/utils.c:1215
+#: src/utils.c:1243
 msgid "Size"
 msgstr "大小"
 
-#. TRANSLATOR COMMENT: appear as tab-delimited output column header
-#: src/utils.c:1217
+#: src/utils.c:1243
 msgid "Path"
 msgstr "路徑"
 
-#. TRANSLATOR COMMENT: column header, means file is restored or purged
-#: src/utils.c:1229
+#. TRANSLATOR COMMENT: appears in column header, means file is restored or purged
+#: src/utils.c:1254
 msgid "Gone?"
 msgstr "已刪?"
 
-#: src/utils.c:1306
+#: src/utils.c:1327
 msgid "(File name not representable in UTF-8 encoding)"
 msgstr "(檔案名稱無法用 UTF-8 編碼顯示)"
 
-#: src/utils.c:1317 src/utils.c:1347
+#: src/utils.c:1338 src/utils.c:1368
 #, c-format
 msgid "Error formatting file deletion time for record index %s."
 msgstr "無法將紀錄 %s 的檔案刪除時間顯示出來。"
 
-#: src/utils.c:1329
+#: src/utils.c:1350
 msgid "Yes"
 msgstr "是"
 
-#: src/utils.c:1329
+#: src/utils.c:1350
 msgid "No"
 msgstr "否"
 
 #. TRANSLATOR COMMENT: argument is system error message
-#: src/utils.c:1427
+#: src/utils.c:1448
 #, c-format
 msgid "Error moving output data to desinated file: %s"
 msgstr "無法將輸出檔案移動到指定位置：%s"
 
 #. TRANSLATOR COMMENT: argument is temp file location
-#: src/utils.c:1432
+#: src/utils.c:1453
 #, c-format
 msgid "Output content is left in '%s'."
 msgstr "輸出內容留在 ‘%s’。"
 
 #. TRANSLATOR COMMENT: %s is software name
-#: src/utils.c:1443
+#: src/utils.c:1464
 #, c-format
 msgid "%s is distributed under the BSD 3-Clause License.\n"
 msgstr "%s 根據 3-clause BSD 使用條款發行。\n"
 
 #. TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL
-#: src/utils.c:1446
+#: src/utils.c:1467
 #, c-format
 msgid ""
 "Information about %s can be found on\n"
@@ -448,39 +475,48 @@ msgstr ""
 msgid "This is a command line application"
 msgstr "這個是命令提示字元模式下的應用程式"
 
-#: src/utils-win.c:195
+#: src/utils-win.c:244
 #, c-format
 msgid "Failed to get current user name: %s"
 msgstr "無法獲取目前使用者的名稱：%s"
 
-#: src/utils-win.c:208 src/utils-win.c:225
+#: src/utils-win.c:257 src/utils-win.c:274
 #, c-format
 msgid "LookupAccountName() failed: %s"
 msgstr "LookupAccountName() 失敗：%s"
 
-#: src/utils-win.c:262
+#: src/utils-win.c:311
 #, c-format
 msgid "AuthzInitializeResourceManager() failed: %s"
 msgstr "AuthzInitializeResourceManager() 失敗：%s"
 
-#: src/utils-win.c:273
+#: src/utils-win.c:322
 #, c-format
 msgid "Failed to retrieve Discretionary ACL info for '%s': %s"
 msgstr "無法獲取檔案 ‘%s’ 的 Discretionary ACL 內容：%s"
 
-#: src/utils-win.c:282
+#: src/utils-win.c:331
 #, c-format
 msgid "AuthzInitializeContextFromSid() failed: %s"
 msgstr "AuthzInitializeContextFromSid() 失敗：%s"
 
-#: src/utils-win.c:292
+#: src/utils-win.c:341
 #, c-format
 msgid "AuthzAccessCheck() failed: %s"
 msgstr "AuthzAccessCheck() 失敗：%s"
 
-#: src/utils-win.c:307
+#: src/utils-win.c:356
 msgid "Error listing directory: Insufficient permission."
 msgstr "無法列出目錄：權限不足。"
+
+#~ msgid "Error getting metadata of file '%s': %s"
+#~ msgstr "無法獲取 ‘%s’ 檔案的相關資料：%s"
+
+#~ msgid "%s(): fread() failed when reading version info from '%s'"
+#~ msgstr "%s(): 從 ‘%s’ 讀取版本資料時，fread() 發生錯誤"
+
+#~ msgid "%s(): fread() failed when reading recordsize from '%s'"
+#~ msgstr "%s(): 從 ‘%s’ 讀取 recordsize 時，fread() 發生錯誤"
 
 #~ msgid "??? (version inconsistent)"
 #~ msgstr "??? (版本不一致)"

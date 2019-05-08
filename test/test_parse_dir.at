@@ -28,5 +28,5 @@ AT_CLEANUP
 
 AT_SETUP([$Recycle.bin UNC path])
 AT_KEYWORDS([recycledir unc])
-_r2_basic_compare([$progd dir-2016-uncpath], [dir-2016-uncpath.txt])
+_r2_basic_compare([$progd dir-2019-uncpath], [dir-2019-uncpath.txt])
 AT_CLEANUP

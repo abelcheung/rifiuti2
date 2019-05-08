@@ -4,7 +4,7 @@ dnl Copyright (C) 2007-2019 Abel Cheung.
 dnl All rights reserved.
 
 AC_PREREQ([2.69])
-AC_INIT([rifiuti2], [0.6.90],
+AC_INIT([rifiuti2], [0.7.0],
         [https://github.com/abelcheung/rifiuti2/issues], [],
         [https://abelcheung.github.io/rifiuti2/])
 AC_CONFIG_SRCDIR([src/rifiuti-vista.c])

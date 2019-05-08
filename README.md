@@ -16,7 +16,7 @@ Latest features and changes can be found in [NEWS file](NEWS.md).
 
 [1]: https://abelcheung.github.io/rifiuti2
 
-## Special note for 0.7.0 (to be released)
+## Special note for 0.7.0
 * Windows binaries will be automatically built from
   [Appveyor](https://www.appveyor.com/) and published to Github.
 * **Systems supporting UTF-8 encoding is mandatory, except on Windows console
@@ -89,12 +89,9 @@ security and forensics, such as (this is incomplete list):
 ### FreeBSD
 Official [FreeBSD port][13] is available since 8.4.
 
-### Others
-For OS where `rifiuti2` is not readily available,
-[instructions are provided](docs/Compile.md) on how to compile this
-program from source.
-
-## Compile from source
+### Others (Compile from source)
+For OS where `rifiuti2` is not readily available, it is always
+possible to compile from source.
 
 `rifiuti2` follows the usual `autotools` based procedure:
 ```sh

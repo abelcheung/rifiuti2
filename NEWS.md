@@ -1,6 +1,6 @@
-## 0.7.0 (to be released)
+## 0.7.0
 #### Feature Addition
-* Support recycle bin from jurassic Windows: 95, NT4, ME
+* Support recycle bin from jurassic Windows: 95, NT4, ME (Issue #9)
 * Verified to work for recycle bin on network shared folder using
   UNC path (such thing is rare but does exist)
 * Display timezone in tab-delimited output header
@@ -25,8 +25,9 @@
 * `INFO2` version:
   * Restricts the choice of legacy path character encoding; generally,
     all encodings not ASCII compatible are disallowed
-* Remove GNUism for part of build toolchain (`make`, `awk`)
-* Requires GNU gettext
+* Building requirement changes
+  * Remove GNUism for part of build toolchain (`make`, `awk`)
+  * Use external GNU gettext instead of obsolete `glib-gettextize`
 
 #### Bug fix
 * Fix unicode display on Windows console (Issue #12)

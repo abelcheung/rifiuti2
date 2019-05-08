@@ -16,8 +16,7 @@ addons:
 before_script:
     - autoreconf -f -i -v
 script:
-    - ./configure && make check TESTSUITEFLAGS='-v'
-    - make distcheck
+    - ./configure && make distcheck
 deploy:
     provider: releases
     api_key:
