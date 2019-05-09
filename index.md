@@ -13,13 +13,15 @@ It is a [rewrite of `rifiuti`][1], which is [originally written][2]
 by FoundStone folks for identical purpose. Then it was extended to
 cover more functionalities, such as:
 
-* Handles oldest (Win95) to newest (Win10/2016) recycle bin format
-  * Windows 95 &ndash; 2003 uses a single index file
+* Handles oldest (Win95) to newest (Win 10 and Server 2019) recycle bin format
+  * Windows 95 &ndash; 2003 uses a single index file named `INFO` or `INFO2`
   * Vista or above uses one index file for each deleted item
-  * 64-bit file size support
+* 64-bit file size support
 * Supports all localized versions of Windows &mdash; both Unicode-based
   ones and legacy ones (using ANSI code page)
 * Supports output in XML format as well as original tab-delimited text
+* Obscure features such as recycle bin on network share
+  (`\\server\share_name`)
 
 Latest features and bug fixes [are listed inside NEWS file][3]; you're
 also welcome to [check out blog news][4] for more insight
@@ -46,5 +48,7 @@ usage samples [on Github page][3] as well.
 
 ![Tab-separated list sample]({{ site.baseurl }}/images/screenshot-tsv.png)
 
-![XML sample]({{ site.baseurl }}/images/screenshot-xml.png)
+![XML sample]({{ site.baseurl }}/images/screenshot3.png)
+
+![Localized path sample]({{ site.baseurl }}/images/screenshot4.png)
 
