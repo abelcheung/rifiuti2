@@ -451,7 +451,7 @@ _advance_char (size_t       sz,
 
 		case 2:
 		{
-			gunichar2 c = *(gunichar2 *) (*in_str);
+			guint16 c = GUINT16_FROM_LE (*(guint16 *) (*in_str));
 			repl = g_strdup_printf (tmpl, c);
 		}
 			break;
