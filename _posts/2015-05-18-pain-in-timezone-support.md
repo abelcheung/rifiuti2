@@ -1,7 +1,7 @@
 ---
 title: "Pain in timezone support"
 date:  2015-05-18 09:05:29
-category: development
+tags: [development]
 ---
 
 Haven&apos;t anticipated the addition of timezone info has caused so much

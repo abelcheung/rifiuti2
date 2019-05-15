@@ -1,15 +1,15 @@
 ---
 title:  "Version 0.7.0 released"
 date:   2019-05-08 21:02:22
-category: release
+tags: [release]
 ---
 
 Another prolonged &ldquo;hiatus&rdquo; passed before this update.
-Quite a lot was done for this update; right now I don't think there's
+Quite a lot was done recently; right now there aren't
 many features left before its completion in my opinion. And given
-current technology trend, such tools may not be very relevant now &hellip;
-(actually it was already the case for about 10 years ago, where the
-emphasis lies on web services and mobile communication)
+current technology trend, similar artifact carving tools may not be very
+relevant now &#x2639; (actually it was already the case for like 10 years
+ago, when people started relying on web services and mobile communication).
 
 Perhaps the most time spent on this release is handling various character
 sets, and have them display correctly; it was always a headache battling
@@ -48,4 +48,7 @@ binaries:
 XP compatibility by using Vista-only API somewhere during 2.43 version.
 * File output is always in UTF-8 encoding now (without Byte Order Mark).
 Users are expected to open it with UTF-8 capable text editors.
+* 32 and 64 bit binaries are bundled as separated zip files. On the
+surface it means less bloat, though this change actually arised from
+need of compromise for Windows building platform (Appveyor).
 

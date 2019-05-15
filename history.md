@@ -1,5 +1,5 @@
 ---
-title:  "History"
+title: History
 ---
 
 Rifiuti2 is a rewrite of [rifiuti][1], a tool of identical purpose written
@@ -7,15 +7,15 @@ by Foundstone which was later [purchased by McAfee][2]. Quoting from the
 original FoundStone page:
 
 > Many computer crime investigations require the reconstruction of
-> a subject&rsquo;s recycle bin. Since this analysis technique is executed
+> a subject's recycle bin. Since this analysis technique is executed
 > regularly, we researched the structure of the data found in the Recycle
 > Bin repository files (INFO2 files). Rifiuti, the Italian word meaning
 > &ldquo;trash&rdquo;, was developed to examine the contents of the INFO2 file in
 > the Recycle Bin. &hellip; Rifiuti is built to work on multiple platforms
 > and will execute on Windows (through Cygwin), Mac OS X, Linux, and
-> *BSD platforms.
+> \*BSD platforms.
 
-However, since [the original rifiuti][3] (last updated 2004) can&rsquo;t analyze
+However, since [the original rifiuti][3] (last updated 2004) can't analyze
 recycle bin from any localized version of Windows (restricted to
 English), this rewrite effort is born to overcome the limitation. Later
 rifiuti2 was improved to add support for Vista format recycle bin, XML

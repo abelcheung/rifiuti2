@@ -1,7 +1,7 @@
 ---
 title:  "Reason for abandoning MSYS 1.0"
 date:   2015-05-15 11:26:02
-category: development
+tags: [development]
 ---
 
 There are multiple reasons for abandoning MSYS 1.0 as supported compile

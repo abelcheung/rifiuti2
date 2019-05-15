@@ -1,7 +1,7 @@
 ---
 title: "Porting effort"
 date: 2015-06-14 11:46:35
-category: development
+tags: [development]
 ---
 
 Porting `rifiuti2` to Solaris is proven to be the most problematic

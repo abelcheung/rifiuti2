@@ -1,13 +1,18 @@
 ---
+title: Rifiuti2
+subtitle: Windows Recycle Bin Analysis Tool
+use-site-title: true
 ---
 
-<img alt="Recycle Bin full icon" style="border:0; float:right" src="{{ site.baseurl }}/images/rbin.png" />
+<img alt="Recycle Bin full icon" style="border:0; float:right"
+src="{{ '/images/rbin.png' | prepend: site.baseurl }}" />
 
 `Rifiuti2` analyse recycle bin files from Windows. Analysis of
 Windows recycle bin is usually carried out during Windows computer
 forensics. Rifiuti2 can extract file deletion time, original
-path and size of deleted files and whether the deleted files have
-been moved out from the recycle bin since they are trashed.
+path and size of deleted files. For more ancient versions of Windows,
+it can also check whether deleted items were not in recycle bin anymore
+(that is, either restored or permanently purged).
 
 It is a [rewrite of `rifiuti`][1], which is [originally written][2]
 by FoundStone folks for identical purpose. Then it was extended to
@@ -27,15 +32,16 @@ Latest features and bug fixes [are listed inside NEWS file][3]; you're
 also welcome to [check out blog news][4] for more insight
 (and some grumbles &#x263A;).
 
-[1]: history.html
+[1]: {{ '/history' | prepend: site.baseurl }}
 [2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
-[3]: {{ site.repo_url }}/blob/master/NEWS.md
-[4]: news.html
+[3]: {{ '/blob/master/NEWS.md' | prepend: site.repourl }}
+[4]: {{ '/news' | prepend: site.baseurl }}
 
 # Download and Usage
 
-Please click on blue "Download on Github" link on top right corner of this
-website to download and use `rifiuti2`.
+Click "Download" link on top right corner of this website, and one will be
+redirected to Github release page, where Windows binaries and source
+tarball are available for download.
 
 `Rifiuti2` is designed to be portable, and runs on command line environment.
 Two programs `rifiuti` and `rifiuti-vista` are chosen depending on relevant
@@ -43,12 +49,18 @@ Windows recycle bin format.
 
 Please consult manpage (Unix) or README.html (bundled with Windows binaries)
 for complete options and detailed usage description. There are some
-usage samples [on Github page][3] as well.
+usage samples [on Github page][5] as well.
 
+[5]: {{ '/blob/master/README.md' | prepend: site.repourl }}
 
-![Tab-separated list sample]({{ site.baseurl }}/images/screenshot-tsv.png)
+# Screenshots
 
-![XML sample]({{ site.baseurl }}/images/screenshot3.png)
+Normal tab delimited output:  
+![Tab-separated list sample]({{ '/images/screenshot-tsv.png' | prepend: site.baseurl }})
 
-![Localized path sample]({{ site.baseurl }}/images/screenshot4.png)
+XML output with recycle bin on network share:  
+![XML sample]({{ '/images/screenshot3.png' | prepend: site.baseurl }})
+
+Deleted items containing multilingual path names:  
+![Localized path sample]({{ '/images/screenshot4.png' | prepend: site.baseurl }})
 
