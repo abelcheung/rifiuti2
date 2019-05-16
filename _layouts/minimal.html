@@ -1,0 +1,28 @@
+---
+common-css:
+  - "/css/main-minimal.css"
+  - "/css/override.css"
+common-ext-css:
+  - "https://stackpath.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"
+common-ext-js:
+  - "https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"
+  - "https://stackpath.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+  {% include head.html %}
+
+  <body>
+
+    <div role="main" class="container main-content">
+      {{ content }}
+    </div>
+
+    {% include footer-minimal.html %}
+
+    {% include footer-scripts.html %}
+
+  </body>
+</html>
