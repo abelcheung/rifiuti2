@@ -951,6 +951,48 @@ found_desktop_ini (const char *path)
 }
 
 
+static _os_guess
+guess_windows_ver (const metarecord  meta)
+{
+	if (meta.type == RECYCLE_BIN_TYPE_DIR) {
+		/*
+		* No attempt is made to distinguish difference for Vista - 8.1.
+		* The corrupt filesize artifact on Vista can't be reproduced,
+		* therefore must be very rare.
+		*/
+		switch (meta.version)
+		{
+			case VERSION_VISTA: return OS_GUESS_VISTA;
+			case VERSION_WIN10: return OS_GUESS_10;
+			default:            return OS_GUESS_UNKNOWN;
+		}
+	}
+
+	/*
+	 * INFO2 only below
+	 */
+
+	switch (meta.version)
+	{
+		case VERSION_WIN95: return OS_GUESS_95;
+		case VERSION_WIN98: return OS_GUESS_98;
+		case VERSION_NT4  : return OS_GUESS_NT4;
+		case VERSION_ME_03:
+			/* TODO use symbolic name when 2 versions are merged */
+			if (meta.recordsize == 280)
+				return OS_GUESS_ME;
+
+			if (meta.is_empty)
+				return OS_GUESS_2K_03;
+
+			return meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
+
+		/* Not using OS_GUESS_UNKNOWN, INFO2 ceased to be used so
+		   detection logic won't change in future */
+		default: g_assert_not_reached();
+	}
+}
+
 /*! Add potentially valid file(s) to list */
 int
 check_file_args (const char  *path,
@@ -1103,10 +1145,14 @@ print_header (metarecord  meta)
 				_local_printf ("\n");
 			}
 
-			if (meta.os_guess == OS_GUESS_UNKNOWN)
-				_local_printf (_("OS detection failed"));
-			else
-				_local_printf (_("OS Guess: %s"), gettext (os_strings[meta.os_guess]) );
+			{
+				_os_guess g = guess_windows_ver (meta);
+
+				if (g == OS_GUESS_UNKNOWN)
+					_local_printf (_("OS detection failed"));
+				else
+					_local_printf (_("OS Guess: %s"), gettext (os_strings[g]) );
+			}
 
 			_local_printf ("\n");
 

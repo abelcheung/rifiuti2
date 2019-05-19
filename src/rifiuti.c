@@ -146,13 +146,6 @@ validate_index_file (const char  *filename,
 			goto validation_broken;
 		}
 
-		switch (ver)
-		{
-			case VERSION_WIN95: meta.os_guess = OS_GUESS_95; break;
-			case VERSION_WIN98: meta.os_guess = OS_GUESS_98; break;
-			case VERSION_ME_03: meta.os_guess = OS_GUESS_ME; break;
-		}
-
 		break;
 
 	  case UNICODE_RECORD_SIZE:
@@ -165,8 +158,6 @@ validate_index_file (const char  *filename,
 			ret = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
 		}
-		/* guess is not complete yet for latter case, see populate_record_data */
-		meta.os_guess = (ver == VERSION_NT4) ? OS_GUESS_NT4 : OS_GUESS_2K_03;
 		break;
 
 	  default:
@@ -349,10 +340,6 @@ parse_record_cb (char    *index_file,
 	}
 	g_free (buf);
 
-	/* do this only when all entries are scanned */
-	if ( ! meta.is_empty && ( meta.os_guess == OS_GUESS_2K_03 ) )
-		meta.os_guess = meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
-
 	if ( ferror (infile) )
 	{
 		g_critical (_("Failed to read record at position %li: %s"),
@@ -392,9 +379,6 @@ main (int    argc,
 	exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_FILE);
 	if (exit_status != EXIT_SUCCESS)
 		goto cleanup;
-
-	/* To be overwritten in parse_record_cb() when appropriate */
-	meta.os_guess = OS_GUESS_UNKNOWN;
 
 	/*
 	 * TODO May be silly for single file, but would be useful in future

@@ -360,18 +360,6 @@ main (int    argc,
 		}
 	}
 
-	/*
-	 * No attempt is made to distinguish difference for Vista - 8.1.
-	 * The corrupt filesize artifact on Vista can't be reproduced,
-	 * therefore must be very rare.
-	 */
-	switch (meta.version)
-	{
-		case VERSION_VISTA: meta.os_guess = OS_GUESS_VISTA; break;
-		case VERSION_WIN10: meta.os_guess = OS_GUESS_10;    break;
-		default:            meta.os_guess = OS_GUESS_UNKNOWN;
-	}
-
 	/* Print everything */
 	{
 		r2status s = prepare_output_handle ();

@@ -115,7 +115,6 @@ typedef struct _rbin_meta
 {
 	rbin_type       type;
 	const char     *filename;
-	_os_guess       os_guess;
 	int64_t         version;
 	uint32_t        recordsize;          /*!< INFO2 only */
 	uint32_t        total_entry;         /*!< 95/NT4 only */
