@@ -1,7 +1,7 @@
 Recycle bin path: 'INFO2-2k-cht-1'
 Version: 5
 OS Guess: Windows 2000
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 1	2019-03-31 18:27:32	No	4096	C:\Documents and Settings\Nobody\桌面\ABC新增文字文件.txt

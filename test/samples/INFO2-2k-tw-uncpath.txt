@@ -1,7 +1,7 @@
 Recycle bin path: 'INFO2-2k-tw-uncpath'
 Version: 5
 OS Guess: Windows 2000
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 1	2019-05-06 00:46:50	No	16384	\\Vm-2k-tw\哈囉\DOWNLO~1\HEXTOO~1.ZIP

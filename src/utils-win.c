@@ -216,7 +216,7 @@ get_win_timezone_name (void)
 
 	g_warning ("%s", err->message);
 	g_error_free (err);
-	return g_strdup (_("(Failed to retrieve timezone name)"));
+	return NULL;
 }
 
 

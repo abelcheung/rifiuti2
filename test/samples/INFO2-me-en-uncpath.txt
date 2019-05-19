@@ -1,7 +1,7 @@
 Recycle bin path: 'INFO2-me-en-uncpath'
 Version: 5
 OS Guess: Windows ME
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 1	2019-05-02 16:31:45	No	420864	\\Vm-me\temp\Documents\langastas.xpi

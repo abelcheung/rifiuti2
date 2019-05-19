@@ -156,7 +156,6 @@ populate_record_data (void *buf,
                       uint32_t pathlen,
                       gboolean erraneous)
 {
-	uint64_t      win_filetime;
 	rbin_struct  *record;
 	size_t        read;
 
@@ -186,10 +185,10 @@ populate_record_data (void *buf,
 	}
 
 	/* File deletion time */
-	memcpy (&win_filetime, buf + FILETIME_OFFSET - (int) erraneous,
+	memcpy (&record->winfiletime, buf + FILETIME_OFFSET - (int) erraneous,
 	        VERSION1_FILENAME_OFFSET - FILETIME_OFFSET);
-	win_filetime = GUINT64_FROM_LE (win_filetime);
-	record->deltime = win_filetime_to_epoch (win_filetime);
+	record->winfiletime = GINT64_FROM_LE (record->winfiletime);
+	record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
 	/* One extra char for safety, though path should have already been null terminated */
 	g_debug ("pathlen = %d", pathlen);
@@ -281,8 +280,8 @@ sort_record_by_time (rbin_struct *a,
                      rbin_struct *b)
 {
 	/* sort primary key: deletion time; secondary key: index file name */
-	return ((a->deltime < b->deltime) ? -1 :
-	        (a->deltime > b->deltime) ?  1 :
+	return ((a->winfiletime < b->winfiletime) ? -1 :
+	        (a->winfiletime > b->winfiletime) ?  1 :
 	        strcmp (a->index_s, b->index_s));
 }
 

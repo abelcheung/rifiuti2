@@ -627,116 +627,18 @@ conv_path_to_utf8_with_tmpl (const char *path,
  * Date / Time handling routines
  */
 
-static GString *
-get_datetime_str (struct tm *tm)
+GDateTime *
+win_filetime_to_gdatetime (int64_t win_filetime)
 {
-	GString         *output;
-	size_t           len;
+	int64_t t;
 
-	output = g_string_sized_new (30);  /* enough for appending numeric timezone */
-	len = strftime (output->str, output->allocated_len, "%Y-%m-%d %H:%M:%S", tm);
-	if ( !len )
-	{
-		g_string_free (output, TRUE);
-		return NULL;
-	}
-	output->len = len;
-	return output;
-}
+	/* Let's assume we don't need subsecond time resolution */
+	t = (win_filetime - 116444736000000000LL) / 10000000;
 
-/* Return full name of current timezone */
-static char *
-get_timezone_name (struct tm *tm)
-{
-#ifdef G_OS_WIN32
+	g_debug ("FileTime -> Epoch: %" G_GINT64_FORMAT
+		" -> %" G_GINT64_FORMAT, win_filetime, t);
 
-	/* Impossible to use strftime() family on Windows,
-	 * see get_win_timezone_name() for reason */
-
-	if (tm == NULL)
-		return g_strdup (_("Coordinated Universal Time (UTC)"));
-
-	return get_win_timezone_name ();
-
-#else /* ! G_OS_WIN32 */
-
-	char  buf[128];
-
-	if (tm == NULL)
-		return g_strdup (_("Coordinated Universal Time (UTC)"));
-
-	if ( 0 == strftime (buf, sizeof (buf) - 1, "%Z", tm) )
-		return g_strdup (_("(Failed to retrieve timezone name)"));
-
-	return g_strdup (buf);
-
-#endif
-}
-
-/*! Return ISO8601 numeric timezone, like "+0400" */
-static const char *
-get_timezone_numeric (struct tm *tm)
-{
-	static char buf[10];
-
-	if (tm == NULL)
-		return "+0000";  /* ISO8601 forbids -0000 */
-
-	/*
-	 * Turns out strftime is not so cross-platform, Windows one supports far
-	 * less format strings than that defined in Single Unix Specification.
-	 * However, GDateTime is not available until 2.26, so bite the bullet.
-	 */
-#ifdef G_OS_WIN32
-	struct _timeb timeb;
-	_ftime (&timeb);
-	/*
-	 * 1. timezone value is in opposite sign of what people expect
-	 * 2. it doesn't account for DST.
-	 * 3. tm.tm_isdst is merely a flag and not indication on difference of
-	 *    hours between DST and standard time. But there is no way to
-	 *    override timezone in C library other than $TZ, and it always use
-	 *    US rule, so again, just give up and use the value
-	 */
-	int offset = MAX(tm->tm_isdst, 0) * 60 - timeb.timezone;
-	g_snprintf (buf, sizeof(buf), "%+.2i%.2i", offset / 60, abs(offset) % 60);
-
-#else /* !def G_OS_WIN32 */
-	size_t len = strftime (buf, sizeof(buf), "%z", tm);
-	if ( !len )
-		return "+????";
-#endif
-	return (const char *) (&buf);
-}
-
-/*! Return ISO 8601 formatted time with timezone */
-static GString *
-get_iso8601_datetime_str (struct tm *tm)
-{
-	GString         *output;
-
-	if ( ( output = get_datetime_str (tm) ) == NULL )
-		return NULL;
-
-	output->str[10] = 'T';
-	if ( !use_localtime )
-		return g_string_append_c (output, 'Z');
-
-	return g_string_append (output, get_timezone_numeric(tm));
-}
-
-time_t
-win_filetime_to_epoch (uint64_t win_filetime)
-{
-	uint64_t epoch;
-
-	g_debug ("%s(): FileTime = %" G_GUINT64_FORMAT, __func__, win_filetime);
-
-	/* Let's assume we don't need millisecond resolution time for now */
-	epoch = (win_filetime - 116444736000000000LL) / 10000000;
-
-	/* Let's assume this program won't survive till 22th century */
-	return (time_t) (epoch & 0xFFFFFFFF);
+	return g_date_time_new_from_unix_utc (t);
 }
 
 void
@@ -1208,29 +1110,31 @@ print_header (metarecord  meta)
 
 			_local_printf ("\n");
 
+			/* FIXME Printing timezone is probably meaningless here, because
+			 * each deleted entry might have different timezone regarding DST */
 			{
-				char       *tz_name;
-				const char *tz_numeric;
+				GDateTime *now;
+				char      *tzname = NULL, *tznumeric;
 
+				now = use_localtime ? g_date_time_new_now_local ():
+				                      g_date_time_new_now_utc   ();
+
+#ifdef G_OS_WIN32
 				if (use_localtime)
-				{
-					struct tm  _tm;
-					time_t     t = time (NULL);
+					tzname = get_win_timezone_name ();
 
-					localtime_r (&t, &_tm);
-					tz_name    = get_timezone_name    (&_tm);
-					tz_numeric = get_timezone_numeric (&_tm);
-				}
-				else
-				{
-					tz_name    = get_timezone_name    (NULL);
-					tz_numeric = get_timezone_numeric (NULL);
-				}
+				if ( tzname == NULL)
+#endif
+				tzname = g_date_time_format (now, "%Z");
 
-				_local_printf (_("Time zone: %s [%s]"), tz_name, tz_numeric);
+				tznumeric = g_date_time_format (now, "%z");
+
+				_local_printf (_("Time zone: %s [%s]"), tzname, tznumeric);
 				_local_printf ("\n");
 
-				g_free (tz_name);
+				g_date_time_unref (now);
+				g_free (tzname);
+				g_free (tznumeric);
 			}
 
 			_local_printf ("\n");
@@ -1287,10 +1191,9 @@ print_header (metarecord  meta)
 void
 print_record_cb (rbin_struct *record)
 {
-	char             *out_fname, *index, *size = NULL;
-	char             *outstr = NULL, *deltime = NULL;
-	GString          *t;
-	struct tm         del_tm;
+	char       *out_fname, *index, *size = NULL;
+	char       *outstr = NULL, *deltime = NULL;
+	GDateTime  *dt;
 
 	g_return_if_fail (record != NULL);
 
@@ -1298,25 +1201,8 @@ print_record_cb (rbin_struct *record)
 		g_strdup_printf ("%u", record->index_n) :
 		g_strdup (record->index_s);
 
-	/*
-	 * Used to check TZ environment variable here, but no more.
-	 * Problems with that approach is now documented elsewhere.
-	 */
-
-	/*
-	 * g_warning() further down below is an inline func that makes use of
-	 * localtime(), and if localtime/gmtime is used here (it used to be),
-	 * the value would be overwritten upon the g_warning call, into current
-	 * machine time. Nasty.
-	 *
-	 * But why is the behavior occuring on MinGW-w64, but not even on MSYS2
-	 * itself or any other OS; and why only manifesting now but not earlier?
-	 * -- 2019-03-19
-	 */
-	if (use_localtime)
-		localtime_r (&(record->deltime), &del_tm);
-	else
-		gmtime_r    (&(record->deltime), &del_tm);
+	dt = use_localtime ? g_date_time_to_local (record->deltime):
+	                     g_date_time_ref      (record->deltime);
 
 	if ( record->legacy_path != NULL )
 		out_fname = g_strdup (record->legacy_path);
@@ -1331,14 +1217,7 @@ print_record_cb (rbin_struct *record)
 	{
 		case OUTPUT_CSV:
 
-			if ((t = get_datetime_str (&del_tm)) != NULL)
-				deltime = g_string_free (t, FALSE);
-			else
-			{
-				g_warning (_("Error formatting file deletion time for record index %s."),
-						index);
-				deltime = g_strdup ("???");
-			}
+			deltime = g_date_time_format (dt, "%F %T");
 
 			if ( record->filesize == G_MAXUINT64 ) /* faulty */
 				size = g_strdup ("???");
@@ -1361,14 +1240,8 @@ print_record_cb (rbin_struct *record)
 		{
 			GString *s = g_string_new (NULL);
 
-			if ((t = get_iso8601_datetime_str (&del_tm)) != NULL)
-				deltime = g_string_free (t, FALSE);
-			else
-			{
-				g_warning (_("Error formatting file deletion time for record index %s."),
-						index);
-				deltime = g_strdup ("???");
-			}
+			deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z" ):
+			                          g_date_time_format (dt, "%FT%TZ");
 
 			g_string_printf (s, "  <record index=\"%s\" time=\"%s\"", index, deltime);
 
@@ -1394,6 +1267,7 @@ print_record_cb (rbin_struct *record)
 		default:
 			g_assert_not_reached();
 	}
+	g_date_time_unref (dt);
 	g_free (outstr);
 	g_free (out_fname);
 	g_free (deltime);
@@ -1476,6 +1350,7 @@ free_record_cb (rbin_struct *record)
 {
 	if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
 		g_free (record->index_s);
+	g_date_time_unref (record->deltime);
 	g_free (record->uni_path);
 	g_free (record->legacy_path);
 	g_free (record);

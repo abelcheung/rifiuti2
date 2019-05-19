@@ -191,7 +191,6 @@ static rbin_struct *
 populate_record_data (void *buf)
 {
 	rbin_struct    *record;
-	uint64_t        win_filetime;
 	uint32_t        drivenum;
 	size_t          read;
 	char           *legacy_fname;
@@ -226,9 +225,9 @@ populate_record_data (void *buf)
 	}
 
 	/* File deletion time */
-	copy_field (&win_filetime, FILETIME, FILESIZE);
-	win_filetime = GUINT64_FROM_LE (win_filetime);
-	record->deltime = win_filetime_to_epoch (win_filetime);
+	copy_field (&record->winfiletime, FILETIME, FILESIZE);
+	record->winfiletime = GINT64_FROM_LE (record->winfiletime);
+	record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
 	/* File size or occupied cluster size */
 	/* BEWARE! This is 32bit data casted to 64bit struct member */

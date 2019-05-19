@@ -1,7 +1,7 @@
 Recycle bin path: 'INFO2-sample1'
 Version: 5
 OS Guess: Windows XP or 2003
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 44	2008-10-28 15:53:42	No	4096	C:\Documents and Settings\All Users\Desktop\有道桌面词典.lnk

@@ -1,7 +1,7 @@
 Recycle bin path: 'INFO2-ME-en-1'
 Version: 5
 OS Guess: Windows ME
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
 1	2015-05-10 12:43:36	No	4096	C:\WINDOWS\Desktop\Windows Media Player.lnk

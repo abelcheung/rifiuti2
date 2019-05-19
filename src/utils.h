@@ -146,7 +146,8 @@ typedef struct _rbin_struct
 	};
 
 	/*! Item delection time */
-	time_t            deltime;
+	GDateTime        *deltime;
+	int64_t           winfiletime;     /* for internal sorting */
 
 	/*! Can mean cluster size or actual file/folder size */
 	uint64_t          filesize;
@@ -180,11 +181,11 @@ void          rifiuti_init                (const char       *progpath);
 void          rifiuti_setup_opt_ctx       (GOptionContext    **context,
                                            rbin_type         type);
 
-r2status      rifiuti_parse_opt_ctx      (GOptionContext  **context,
+r2status      rifiuti_parse_opt_ctx       (GOptionContext  **context,
                                            int              *argc,
                                            char           ***argv);
 
-time_t        win_filetime_to_epoch       (uint64_t          win_filetime);
+GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
 char *        utf16le_to_utf8             (const gunichar2  *str,
                                            glong             len,

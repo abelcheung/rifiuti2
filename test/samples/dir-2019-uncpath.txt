@@ -1,7 +1,7 @@
 Recycle bin path: 'dir-2019-uncpath'
 Version: 2
 OS Guess: Windows 10 or above
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Size	Path
 $IW0RYW0.rtf	2019-05-07 20:56:04	7	\\WIN-163RLA0PH3N\somewhere\hahaha.rtf

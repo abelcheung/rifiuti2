@@ -1,7 +1,7 @@
 Recycle bin path: 'dir-bad-uni'
 Version: 1
 OS Guess: Windows Vista - 8.1
-Time zone: Coordinated Universal Time (UTC) [+0000]
+Time zone: UTC [+0000]
 
 Index	Deleted Time	Size	Path
 $I77T7B0.ahk	2019-04-14 11:44:43	324	D:\𐂂𐌰𐎅𐠔𨋢.ahk
