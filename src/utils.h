@@ -213,11 +213,6 @@ void          print_version_and_exit      (void) G_GNUC_NORETURN;
 
 void          free_record_cb              (rbin_struct      *record);
 
-void          my_debug_handler            (const char       *log_domain,
-                                           GLogLevelFlags    log_level,
-                                           const char       *message,
-                                           gpointer          data);
-
 char *        conv_path_to_utf8_with_tmpl (const char      *str,
                                            const char      *from_enc,
                                            const char      *tmpl,

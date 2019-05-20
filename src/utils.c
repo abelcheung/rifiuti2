@@ -644,10 +644,6 @@ win_filetime_to_gdatetime (int64_t win_filetime)
 void
 rifiuti_init (const char *progpath)
 {
-	if (NULL != g_getenv ("RIFIUTI_DEBUG"))
-		g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
-			my_debug_handler, NULL);
-
 	setlocale (LC_ALL, "");
 
 #ifdef G_OS_WIN32
@@ -832,15 +828,6 @@ utf16le_to_utf8 (const gunichar2   *str,
 #endif
 }
 
-
-void
-my_debug_handler (const char     *log_domain,
-                  GLogLevelFlags  log_level,
-                  const char     *message,
-                  gpointer        data)
-{
-	g_printerr ("DEBUG: %s\n", message);
-}
 
 static r2status
 _get_tempfile (void)
