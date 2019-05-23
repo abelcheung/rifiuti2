@@ -200,6 +200,7 @@ int           check_file_args             (const char       *path,
 r2status      prepare_output_handle       (void);
 
 void          close_output_handle         (void);
+void          close_error_handle          (void);
 
 void          print_header                (metarecord        meta);
 

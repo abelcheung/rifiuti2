@@ -81,6 +81,7 @@ static gboolean     use_localtime      = FALSE;
        char        *tmppath            = NULL; /*!< used iff output_loc is defined */
        char       **fileargs           = NULL;
        FILE        *out_fh             = NULL; /*!< unused for Windows console */
+       FILE        *err_fh             = NULL; /*!< unused for Windows console */
 
 /*! These options are only effective for tab delimited mode output */
 static const GOptionEntry text_options[] = {
@@ -641,10 +642,67 @@ win_filetime_to_gdatetime (int64_t win_filetime)
 	return g_date_time_new_from_unix_utc (t);
 }
 
+static void
+_local_print (gboolean    is_stdout,
+              const char *str)
+{
+	FILE  *fh;
+
+	if ( !g_utf8_validate (str, -1, NULL)) {
+		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
+		return;
+	}
+
+	fh = is_stdout ? out_fh : err_fh;
+
+#ifdef G_OS_WIN32
+	/*
+	 * Use Windows API only if:
+	 * 1. On Windows console
+	 * 2. Output is not piped nor redirected
+	 * See init_wincon_handle().
+	 */
+	if (fh == NULL)
+	{
+		/* The only likely problem here is OOM */
+		wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, NULL);
+		puts_wincon (is_stdout, wstr);
+		g_free (wstr);
+	}
+	else
+#endif
+		fputs (str, fh);
+}
+
+static void
+_local_printout (const char *str)
+{
+	_local_print (TRUE, str);
+}
+
+static void
+_local_printerr (const char *str)
+{
+	_local_print (FALSE, str);
+}
+
+static void
+_prepare_error_handle (void)
+{
+#ifdef G_OS_WIN32
+	if ( ! init_wincon_handle (FALSE) )
+#endif
+		err_fh = stderr;
+}
+
 void
 rifiuti_init (const char *progpath)
 {
 	setlocale (LC_ALL, "");
+
+	/* Need this very early, before any debug/error is ever printed */
+	_prepare_error_handle();
+	g_set_printerr_handler (_local_printerr);
 
 #ifdef G_OS_WIN32
 	{
@@ -1026,56 +1084,6 @@ check_file_args (const char  *path,
 	return EXIT_SUCCESS;
 }
 
-
-static gboolean
-_local_printf (const char *format, ...)
-{
-	va_list        args;
-	char          *str;
-
-	g_return_val_if_fail (format != NULL, FALSE);
-
-	va_start (args, format);
-	str = g_strdup_vprintf (format, args);
-	va_end (args);
-
-	if ( !g_utf8_validate (str, -1, NULL)) {
-		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
-		g_free (str);
-		return FALSE;
-	}
-
-#ifdef G_OS_WIN32
-	/*
-	 * Use Windows API only if:
-	 * 1. On Windows console
-	 * 2. Output is not piped nor redirected
-	 * See init_wincon_handle().
-	 */
-	if (out_fh == NULL)
-	{
-		GError  *err  = NULL;
-		wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, &err);
-
-		if (err != NULL) {
-			g_critical (_("Error converting output from UTF-8 to UTF-16: %s"), err->message);
-			g_clear_error (&err);
-			wstr = g_utf8_to_utf16 ("(Original message failed to be displayed in UTF-16)",
-				-1, NULL, NULL, NULL);
-		}
-
-		puts_wincon (wstr);
-		g_free (wstr);
-	}
-	else
-#endif
-		fputs (str, out_fh);
-
-	g_free (str);
-	return TRUE;
-}
-
-
 r2status
 prepare_output_handle (void)
 {
@@ -1086,10 +1094,13 @@ prepare_output_handle (void)
 	else
 	{
 #ifdef G_OS_WIN32
-		if (!init_wincon_handle())
+		if ( ! init_wincon_handle (TRUE) )
 #endif
 			out_fh = stdout;
 	}
+
+	g_set_print_handler (_local_printout);
+
 	return s;
 }
 
@@ -1110,8 +1121,8 @@ print_header (metarecord  meta)
 	{
 		case OUTPUT_CSV:
 
-			_local_printf (_("Recycle bin path: '%s'"), rbin_path);
-			_local_printf ("\n");
+			g_print (_("Recycle bin path: '%s'"), rbin_path);
+			g_print ("\n");
 
 			{
 				char *ver;
@@ -1121,27 +1132,27 @@ print_header (metarecord  meta)
 				} else
 					ver = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
 
-				_local_printf (_("Version: %s"), ver);
-				_local_printf ("\n");
+				g_print (_("Version: %s"), ver);
+				g_print ("\n");
 				g_free (ver);
 			}
 
 			if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && ( ! meta.keep_deleted_entry ))
 			{
-				_local_printf (_("Total entries ever existed: %d"), meta.total_entry);
-				_local_printf ("\n");
+				g_print (_("Total entries ever existed: %d"), meta.total_entry);
+				g_print ("\n");
 			}
 
 			{
 				_os_guess g = guess_windows_ver (meta);
 
 				if (g == OS_GUESS_UNKNOWN)
-					_local_printf (_("OS detection failed"));
+					g_print (_("OS detection failed"));
 				else
-					_local_printf (_("OS Guess: %s"), gettext (os_strings[g]) );
+					g_print (_("OS Guess: %s"), gettext (os_strings[g]) );
 			}
 
-			_local_printf ("\n");
+			g_print ("\n");
 
 			/* FIXME Printing timezone is probably meaningless here, because
 			 * each deleted entry might have different timezone regarding DST */
@@ -1162,15 +1173,15 @@ print_header (metarecord  meta)
 
 				tznumeric = g_date_time_format (now, "%z");
 
-				_local_printf (_("Time zone: %s [%s]"), tzname, tznumeric);
-				_local_printf ("\n");
+				g_print (_("Time zone: %s [%s]"), tzname, tznumeric);
+				g_print ("\n");
 
 				g_date_time_unref (now);
 				g_free (tzname);
 				g_free (tznumeric);
 			}
 
-			_local_printf ("\n");
+			g_print ("\n");
 
 			{
 				GArray   *a;
@@ -1193,8 +1204,8 @@ print_header (metarecord  meta)
 				}
 
 				headerline = g_strjoinv (delim, (char **) a->data);
-				_local_printf ("%s", headerline);
-				_local_printf ("\n");
+				g_print ("%s", headerline);
+				g_print ("\n");
 
 				g_free (headerline);
 				g_array_free (a, TRUE);
@@ -1204,7 +1215,7 @@ print_header (metarecord  meta)
 
 		case OUTPUT_XML:
 			/* No proper way to report wrong version info yet */
-			_local_printf (
+			g_print (
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				"<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
 				"  <filename><![CDATA[%s]]></filename>\n",
@@ -1265,7 +1276,7 @@ print_record_cb (rbin_struct *record)
 			else
 				outstr = g_strjoin (delim, index, deltime, size, out_fname, NULL);
 
-			_local_printf ("%s\n", outstr);
+			g_print ("%s\n", outstr);
 
 			break;
 
@@ -1293,7 +1304,7 @@ print_record_cb (rbin_struct *record)
 				"  </record>\n", out_fname);
 
 			outstr = g_string_free (s, FALSE);
-			_local_printf ("%s", outstr);
+			g_print ("%s", outstr);
 		}
 			break;
 
@@ -1319,7 +1330,7 @@ print_footer (void)
 			break;
 
 		case OUTPUT_XML:
-			_local_printf ("%s", "</recyclebin>\n");
+			g_print ("%s", "</recyclebin>\n");
 			break;
 
 		default:
@@ -1335,6 +1346,17 @@ close_output_handle (void)
 
 #ifdef G_OS_WIN32
 	close_wincon_handle();
+#endif
+}
+
+void
+close_error_handle (void)
+{
+	if (err_fh != NULL)
+		fclose (err_fh);
+
+#ifdef G_OS_WIN32
+	close_winerr_handle();
 #endif
 }
 

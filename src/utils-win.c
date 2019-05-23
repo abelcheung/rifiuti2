@@ -41,6 +41,7 @@
 
 
 HANDLE  wincon_fh = NULL;
+HANDLE  winerr_fh = NULL;
 
 
 /* GUI message box */
@@ -381,9 +382,14 @@ can_list_win32_folder (const char *path)
  * unix-style file stream is used.
  */
 gboolean
-init_wincon_handle (void)
+init_wincon_handle (gboolean is_stdout)
 {
-	HANDLE h = GetStdHandle (STD_OUTPUT_HANDLE);
+	HANDLE h;
+
+	if (is_stdout)
+		h = GetStdHandle (STD_OUTPUT_HANDLE);
+	else
+		h = GetStdHandle (STD_ERROR_HANDLE);
 
 	/*
 	 * FILE_TYPE_CHAR only happens when output is a native Windows cmd
@@ -392,11 +398,18 @@ init_wincon_handle (void)
 	 * family outputs UTF-8 data properly. Only Windows console needs to be
 	 * dealt with using wide char API.
 	 */
-	if (GetFileType (h) == FILE_TYPE_CHAR) {
-		wincon_fh = h;
-		return TRUE;
+	if (GetFileType (h) != FILE_TYPE_CHAR)
+	{
+		g_debug ("Not native Windows console, GetFileType = %lu", GetFileType (h));
+		return FALSE;
 	}
-	return FALSE;
+
+	if (is_stdout)
+		wincon_fh = h;
+	else
+		winerr_fh = h;
+
+	return TRUE;
 }
 
 void
@@ -407,14 +420,22 @@ close_wincon_handle (void)
 	return;
 }
 
-gboolean
-puts_wincon (const wchar_t *wstr)
+void
+close_winerr_handle (void)
 {
-	g_return_val_if_fail (wstr      != NULL, FALSE);
-	g_return_val_if_fail (wincon_fh != NULL, FALSE);
+	if (winerr_fh != NULL)
+		CloseHandle (winerr_fh);
+	return;
+}
 
-	if (WriteConsoleW (wincon_fh, wstr, wcslen (wstr), NULL, NULL))
-		return TRUE;
-	else
-		return FALSE;
+void
+puts_wincon (gboolean       is_stdout,
+             const wchar_t *wstr)
+{
+	HANDLE h = is_stdout ? wincon_fh : winerr_fh;
+
+	g_return_if_fail (wstr != NULL);
+	g_return_if_fail (h    != NULL);
+
+	WriteConsoleW (h, wstr, wcslen (wstr), NULL, NULL);
 }

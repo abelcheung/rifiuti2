@@ -404,5 +404,7 @@ main (int    argc,
 	g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
 	free_vars ();
 
+	close_error_handle ();
+
 	return exit_status;
 }
