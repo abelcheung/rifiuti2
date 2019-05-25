@@ -4,6 +4,16 @@ subtitle: Windows Recycle Bin Analysis Tool
 use-site-title: true
 ---
 
+<div class="jumbotron" style="text-align:center">
+  Windows 32 bit, 64 bit, or source code
+  <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}"
+   role="button"><span style="min-width: 5em">Download Latest</span>
+  <span class="fa-stack fa-2x" aria-hidden="true">
+  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-download fa-stack-1x" style="color: #337ab7"></i>
+  </span></a></p>
+</div>
+
 <img alt="Recycle Bin full icon" style="border:0; float:right"
 src="{{ '/images/rbin.png' | prepend: site.baseurl }}" />
 
@@ -37,11 +47,7 @@ also welcome to [check out blog news][4] for more insight
 [3]: {{ '/blob/master/NEWS.md' | prepend: site.repourl }}
 [4]: {{ '/news' | prepend: site.baseurl }}
 
-# Download and Usage
-
-Click "Download" link on top right corner of this website, and one will be
-redirected to Github release page, where Windows binaries and source
-tarball are available for download.
+# Usage
 
 `Rifiuti2` is designed to be portable, and runs on command line environment.
 Two programs `rifiuti` and `rifiuti-vista` are chosen depending on relevant
@@ -55,12 +61,12 @@ usage samples [on Github page][5] as well.
 
 # Screenshots
 
-Normal tab delimited output:  
+Normal tab delimited output:
 ![Tab-separated list sample]({{ '/images/screenshot-tsv.png' | prepend: site.baseurl }})
 
-XML output with recycle bin on network share:  
+XML output with recycle bin on network share:
 ![XML sample]({{ '/images/screenshot3.png' | prepend: site.baseurl }})
 
-Deleted items containing multilingual path names:  
+Deleted items containing multilingual path names:
 ![Localized path sample]({{ '/images/screenshot4.png' | prepend: site.baseurl }})
 

@@ -18,7 +18,6 @@ navbar-links:
   News: "news"
   History: "history"
   Technical: "technical"
-  Download: "https://github.com/abelcheung/rifiuti2/releases/latest"
 
 # If you want to have an image logo in the top-left corner instead of the title text,
 # then specify the following parameter
