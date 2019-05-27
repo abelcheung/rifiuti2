@@ -1,21 +1,23 @@
 ---
+layout: page
 title: Rifiuti2
 subtitle: Windows Recycle Bin Analysis Tool
 use-site-title: true
 ---
 
+<!-- Download -->
 <div class="jumbotron" style="text-align:center">
   Windows 32 bit, 64 bit, or source code
   <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}"
    role="button"><span style="min-width: 5em">Download Latest</span>
   <span class="fa-stack fa-2x" aria-hidden="true">
-  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-square fa-stack-2x fa-inverse"></i>
   <i class="fa fa-download fa-stack-1x" style="color: #337ab7"></i>
   </span></a></p>
 </div>
 
 <img alt="Recycle Bin full icon" style="border:0; float:right"
-src="{{ '/images/rbin.png' | prepend: site.baseurl }}" />
+src="{{ '/images/rbin.png' | relative_url }}" />
 
 `Rifiuti2` analyse recycle bin files from Windows. Analysis of
 Windows recycle bin is usually carried out during Windows computer
@@ -42,10 +44,10 @@ Latest features and bug fixes [are listed inside NEWS file][3]; you're
 also welcome to [check out blog news][4] for more insight
 (and some grumbles &#x263A;).
 
-[1]: {{ '/history' | prepend: site.baseurl }}
+[1]: {{ '/history' | relative_url }}
 [2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
 [3]: {{ '/blob/master/NEWS.md' | prepend: site.repourl }}
-[4]: {{ '/news' | prepend: site.baseurl }}
+[4]: {{ '/news' | relative_url }}
 
 # Usage
 
@@ -62,11 +64,11 @@ usage samples [on Github page][5] as well.
 # Screenshots
 
 Normal tab delimited output:
-![Tab-separated list sample]({{ '/images/screenshot-tsv.png' | prepend: site.baseurl }})
+![Tab-separated list sample]({{ '/images/screenshot-tsv.png' | relative_url }})
 
 XML output with recycle bin on network share:
-![XML sample]({{ '/images/screenshot3.png' | prepend: site.baseurl }})
+![XML sample]({{ '/images/screenshot3.png' | relative_url }})
 
 Deleted items containing multilingual path names:
-![Localized path sample]({{ '/images/screenshot4.png' | prepend: site.baseurl }})
+![Localized path sample]({{ '/images/screenshot4.png' | relative_url }})
 

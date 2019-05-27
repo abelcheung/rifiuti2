@@ -5,6 +5,8 @@ url: https://abelcheung.github.io/rifiuti2
 baseurl: /rifiuti2
 repourl: https://github.com/abelcheung/rifiuti2
 
+remote_theme: abelcheung/beautiful-jekyll
+
 # Name of website
 title: Rifiuti2
 
@@ -40,9 +42,9 @@ footer-link-col: "#404040"
 # Alternatively, the navbar, footer, and page background can be set to use background images
 # instead of colour
 
-# navbar-img: "/img/bgimage.png"
-# footer-img: "/img/bgimage.png"
-# page-img: "/img/bgimage.png"
+# navbar-img: "/assets/img/bgimage.png"
+# footer-img: "/assets/img/bgimage.png"
+# page-img: "/assets/img/bgimage.png"
 
 # --- Footer options --- #
 
@@ -51,17 +53,13 @@ author:
 
 social-network-links:
   rss: true
-  #email: "someone@example.com"
-  #facebook: abel.cheung
-  #github: abelcheung
-  #twitter: abelcheung
 
 # Select which share links to show in posts
 share-links-active:
   rss: true
-  #facebook: false
-  #twitter: false
-  #github: false
+  facebook: true
+  twitter: true
+  linkedin: true
 
 # --- Web Statistics Section --- #
 
@@ -91,9 +89,8 @@ title-separator: "-"
 # Output options (more information on Jekyll's site)
 timezone: "UTC"
 markdown: kramdown
-remote_theme: daattali/beautiful-jekyll
 highlighter: rouge
-permalink: /:year-:month-:day-:title/
+permalink: pretty
 paginate: 5
 paginate_path: "/news/page:num"
 
@@ -140,10 +137,8 @@ prose:
     - _config.yml
     - staticman.yml
     - /_layouts
-    - /_includes
-    - /css
-    - /img
-    - /js
+    - /assets
+    - /images
   metadata:
     _posts:
       - name: "layout"

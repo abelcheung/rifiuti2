@@ -1,0 +1,6 @@
+---
+---
+
+footer .copyright::before {
+	content: "© "
+}
