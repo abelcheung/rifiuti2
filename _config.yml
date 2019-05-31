@@ -66,6 +66,7 @@ author:
 
 social-network-links:
   rss: true
+  github: abelcheung/rifiuti2
 
 # Select which share links to show in posts
 share-links-active:
@@ -87,7 +88,7 @@ google_analytics: "UA-62435108-1"
 # --- Comments --- #
 
 # Fill in your Disqus shortname (NOT the userid) if you want to support Disqus comments
-# disqus: ""
+disqus: "github-abelcheung"
 
 # If you want to use JustComments fill with the API Key
 #just-comments: "ABCD-EFGH-IJKL"
@@ -107,16 +108,12 @@ title-separator: "-"
 
 # --- Don't need to touch anything below here (but you can if you want) --- #
 
-# Output options (more information on Jekyll's site)
+# Output options (https://jekyllrb.com/docs/configuration/default/)
+# Only those different from default is used here
 timezone: "UTC"
-markdown: kramdown
-highlighter: rouge
 permalink: pretty
 paginate: 5
 paginate_path: "/news/page:num"
-
-kramdown:
-  input: GFM
 
 # Default YAML values (more information on Jekyll's site)
 defaults:
@@ -126,11 +123,12 @@ defaults:
       type: "posts"
     values:
       layout: "post"
-      comments: false  # add comments to all blog posts
+      comments: true  # add comments to all blog posts
       social-share: true # add social media sharing buttons to all blog posts
   -
     scope:
-      path: "" # all files
+      path: ""
+      type: "pages"
     values:
       layout: "page"
       show-avatar: false
@@ -140,22 +138,15 @@ link-tags: true
 
 # Exclude these files from production site
 exclude:
-  - _config.yml
-  - _config-*.yml
   - staticman.yml
+
+include:
+  - _static
 
 # prose.io config
 prose:
   rooturl: '_posts'
   media: 'img'
-  ignore:
-    - 404.html
-    - feed.xml
-    - _config.yml
-    - staticman.yml
-    - /_layouts
-    - /assets
-    - /images
   metadata:
     _posts:
       - name: "layout"
@@ -194,8 +185,11 @@ prose:
           label: "Publish"
           help: "Check to publish post, uncheck to hide."
 
-plugins:
-  - jekyll-remote-theme
-  - jekyll-paginate
-  - jekyll-sitemap
+# Only needed for self hosted website; GitHub pages already include them
+# Check out https://pages.github.com/versions/ for complete list
+#
+#plugins:
+#  - jekyll-remote-theme
+#  - jekyll-paginate
+#  - jekyll-sitemap
 
