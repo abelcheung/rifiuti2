@@ -1,6 +1,8 @@
 ---
 layout: page
 title: History
+meta-description: How rifiuti2 evolved from ancestor
+permalink: /history/
 ---
 
 Rifiuti2 is a rewrite of [rifiuti][1], a tool of identical purpose written

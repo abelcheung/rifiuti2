@@ -2,6 +2,7 @@
 layout: page
 title: Technical
 subtitle: In-depth knowledge about recycle bin
+permalink: /technical/
 ---
 
 Recycle Bin has 2 major formats, which can be roughly divided as
