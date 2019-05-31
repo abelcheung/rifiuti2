@@ -6,8 +6,8 @@ layout: null
   <channel>
     <title>{{ site.title | xml_escape }}</title>
     <description>{{ site.description | xml_escape }}</description>
-    <link>{{ site.url }}</link>
-    <atom:link href="{{ 'feed.xml' | prepend: site.url }}" rel="self" type="application/rss+xml" />
+    <link>{{ '' | absolute_url }}</link>
+	<atom:link href="{{ 'feed.xml' | absolute_url }}" rel="self" type="application/rss+xml" />
     {% for post in site.posts limit:20 %}
       <item>
         <title>{{ post.title | xml_escape }}</title>
@@ -15,9 +15,9 @@ layout: null
           {% if post.subtitle %}{{ post.subtitle | xml_escape }} - {% endif %}
           {{ post.content | strip_html | xml_escape | truncatewords: 50 }}
         </description>
-        <pubDate>{{ post.date | date: "%a, %d %b %Y %H:%M:%S %z" }}</pubDate>
-        <link>{{ post.url | prepend: site.url }}</link>
-        <guid isPermaLink="true">{{ post.url | prepend: site.url }}</guid>
+        <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
+        <link>{{ post.url | absolute_url }}</link>
+        <guid isPermaLink="true">{{ post.url | absolute_url }}</guid>
       </item>
     {% endfor %}
   </channel>

@@ -1,8 +1,21 @@
 # vim: set sw=2 ts=2 expandtab :
 # --- General options --- #
 
-url: https://abelcheung.github.io/rifiuti2
-baseurl: /rifiuti2
+# To spare yourself from trouble, just leave url and baseurl undefined,
+# GitHub can automatically set these properties accordingly for user
+# page and project page.
+#
+# Indeed you can still set the properties yourself, in that case don't
+# forget to change the username and projectname to YOUR username and project
+
+# url is the website URL up to host name, without trailing slash
+#url: "https://username.github.io"
+
+# For GitHub user page, baseurl is empty string. Don't set to "/".
+# For GitHub project page, set it to project name with leading slash,
+# e.g. "/myproject". However, don't add trailing slash.
+#baseurl: ""
+
 repourl: https://github.com/abelcheung/rifiuti2
 
 remote_theme: abelcheung/beautiful-jekyll
@@ -56,7 +69,6 @@ social-network-links:
 
 # Select which share links to show in posts
 share-links-active:
-  rss: true
   facebook: true
   twitter: true
   linkedin: true
@@ -73,6 +85,15 @@ google_analytics: "UA-62435108-1"
 #gtm: ""
 
 # --- Comments --- #
+
+# Fill in your Disqus shortname (NOT the userid) if you want to support Disqus comments
+# disqus: ""
+
+# If you want to use JustComments fill with the API Key
+#just-comments: "ABCD-EFGH-IJKL"
+
+# To use Facebook Comments, fill in a Facebook App ID
+# fb_comment_id: ""
 
 # --- Misc --- #
 
@@ -106,7 +127,7 @@ defaults:
     values:
       layout: "post"
       comments: false  # add comments to all blog posts
-      social-share: false # add social media sharing buttons to all blog posts
+      social-share: true # add social media sharing buttons to all blog posts
   -
     scope:
       path: "" # all files
@@ -119,10 +140,6 @@ link-tags: true
 
 # Exclude these files from production site
 exclude:
-  - Dockerfile
-  - Gemfile
-  - Gemfile.lock
-  - Vagrantfile
   - _config.yml
   - _config-*.yml
   - staticman.yml
