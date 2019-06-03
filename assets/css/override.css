@@ -1,1 +1,11 @@
 footer .copyright::before { content: "© " }
+
+.jumbotron {
+	font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.text-left td, .text-left th, .text-left > caption { text-align: left }
+.text-right td, .text-right th, .text-right > caption { text-align: right }
+.text-center td, .text-center th, .text-center > caption { text-align: center }
+
+.table > caption { caption-side: bottom }

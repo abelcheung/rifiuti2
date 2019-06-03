@@ -24,6 +24,7 @@ platform, in favor of [MSYS2][1].
 
 **Four years later:** Looks like MinGW + MSYS [has a new home][3] and moving
 again (e.g. 64-bit support) since 2018, but it's too little too late now.
+{: .box-note}
 
 [1]: https://msys2.github.io
 [2]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-get-command-line

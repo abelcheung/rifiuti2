@@ -6,16 +6,17 @@ use-site-title: true
 ---
 
 <!-- Download -->
-<div class="jumbotron" style="text-align:center">
+<div class="jumbotron text-center">
   Windows 32 bit, 64 bit, or source code
-  <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}"
-  role="button"><span style="display: inline-block" class="text-center">Download<br />Latest</span>
-  <i class="fa-3x fa-inverse fas fa-download align-middle" style="margin-left: 0.15em"
-   data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+  <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
+    <span style="display: flex; align-items: center">
+      <span style="display: inline-block; margin-right: 0.5em" class="text-center">Download<br />Latest</span>
+      <i class="fa-3x fa-inverse fas fa-download" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+    </span>
   </a></p>
 </div>
 
-<img alt="Recycle Bin full icon" style="border:0; float:right"
+<img alt="Recycle Bin full icon" class="pull-right"
 src="{{ '/images/rbin.png' | relative_url }}" />
 
 `Rifiuti2` analyse recycle bin files from Windows. Analysis of
@@ -62,12 +63,22 @@ usage samples [on Github page][5] as well.
 
 # Screenshots
 
-Normal tab delimited output:
-![Tab-separated list sample]({{ '/images/screenshot-tsv.png' | relative_url }})
+<figure class="text-center" style="margin-top: 30px">
+	<img src="{{ '/images/screenshot-tsv.png' | relative_url }}" />
+	<figcaption>Tab delimited output sample</figcaption>
+</figure>
 
-XML output with recycle bin on network share:
-![XML sample]({{ '/images/screenshot3.png' | relative_url }})
+---
 
-Deleted items containing multilingual path names:
-![Localized path sample]({{ '/images/screenshot4.png' | relative_url }})
+<figure class="text-center">
+	<img src="{{ '/images/screenshot3.png' | relative_url }}" />
+	<figcaption>XML output with recycle bin on network share</figcaption>
+</figure>
+
+---
+
+<figure class="text-center">
+	<img src="{{ '/images/screenshot4.png' | relative_url }}" />
+	<figcaption>Deleted items containing multilingual path names</figcaption>
+</figure>
 

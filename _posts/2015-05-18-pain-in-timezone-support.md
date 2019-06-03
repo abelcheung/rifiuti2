@@ -4,7 +4,11 @@ date:  2015-05-18 09:05:29
 tags: [development]
 ---
 
-Haven&apos;t anticipated the addition of timezone info has caused so much
+**Four years later:** [`GDateTime` structure][7] will be used to simplify cross
+platform handling of such date / time issue. Let's see how far it can go.
+{: .box-note}
+
+Haven't anticipated the addition of timezone info has caused so much
 grief for me, though lots of &ldquo;fun&rdquo; are uncovered during the
 process.
 <!--more-->
@@ -13,80 +17,125 @@ process.
 
 [`strftime()` on Windows][1] is less capable then the Unix ones. For
 compatibility, the date / time format would need to be expressed as
-`%Y-%m-%d %H:%M:%S` in place of just `%F %T`; nor does it print
-numerical time zones.
+`%Y-%m-%d %H:%M:%S` in place of just `%F %T` (supporting ISO C89
+standard but not C99); nor does it print numerical time zones.
 
 ### `TZ` environment variable on Windows is crap
 
-Current systems don&apos;t use `$TZ` variable for any common purpose now.
+Current systems don't use `$TZ` variable for any common purpose now.
 It [used to be][2], in Windows 3.1. Older Linux systems also use it for
-setting timezone. Nowadays, Linux / BSD make use of [zoneinfo database][3]
-which automatically handles GMT offset and DST, and `$TZ` can also be
-optionally set to location of these zoneinfo files under `/usr/share/zoneinfo`
-to override system setting. But the situation on Windows is different. 
+setting timezone. Nowadays, Linux / BSD make use of
+[Olson time zone database][3] which automatically handles GMT offset and
+<abbr title="Daylight Saving Time" class="initialism">DST</abbr>,
+and `$TZ` can also be set in well-defined manner
+to override system setting. But the situation on Windows is different.
 
-1. The TZ value is arbitrary and there is no checking. (The format for `TZ`
-   variable in Windows is [documented in `_tzset()` function][4].) I can
+1. The `TZ` variable in Windows is arbitrary and there is no checking
+   (format [documented in `_tzset()` function][4]). I can
    happily use the value `ABC123XYZ` as timezone and it would be accepted
    as a timezone having -123 hours of offset from UTC. The letters are
    junk &mdash; except that using 4 letters (like `EEST` which is a valid
    timezone in Istanbul) and the parser for `$TZ` variable immediately fails.
 
 1. Compare these 2 commands: (_hint_: drag and highlight *each line* with mouse)
-{% highlight sh %}
-set TZ=
-set TZ= 
-{% endhighlight %}
-The first line unsets TZ variable as expected, so that Windows would
-retrieve regional setting from control panel. But with an extra space
-in 2nd line, timezone is set to UTC with [Daylight Saving Time][5]
-forcefully turned on!!! It costs me days of head scratching and several
-faulty &ldquo;fixes&rdquo;. God knows what the parser is doing!
+
+   ```sh
+    set TZ=
+    set TZ= 
+   ```
+
+   The first line unsets TZ variable as expected, so that Windows would
+   retrieve regional setting from control panel. But with an extra space
+   in 2nd line, timezone is set to **UTC with [Daylight Saving Time][5]
+   forcefully turned on**!!! It costs me days of head scratching and several
+   faulty &ldquo;fixes&rdquo;. God knows what the parser is doing!
 
 ### `_timeb` structure does not respect `$TZ` variable
 
 The DST value returned from `_timeb` structure is faulty, in that it
 only respects the timezone setting from Control Panel and not `$TZ`
-variable. That&apos;s one of the bug addressed in 0.6.1 version.
-The following table shows comparison of values of `_timeb.dstflag` and
-`tm.tm_isdst`:
+variable. That's one of the bug addressed in 0.6.1 version.
+The following table shows how the values of `_timeb.dstflag` and
+`tm.tm_isdst` vary with `$TZ` and Control Panel settings (undesirable
+values <span class="bg-danger">marked in red background</span>):
 
-<table style="border:1px black; text-align:center">
-<tr>
-<td style="border: 0" colspan="2" rowspan="2"></td>
-<th colspan="2">Control Panel</th>
-</tr>
-<tr><th>Use DST</th><th>No DST</th></tr>
-<tr>
-<th rowspan="3"><code>$TZ</code></th>
-<th>(unset)</th>
-<td>1 / 1</td>
-<td>0 / 0</td>
-</tr>
-<tr>
-<th>UTC</th>
-<td style="background: #fcc">1 / 0</td>
-<td>0 / 0</td>
-</tr>
-<tr>
-<th>PST8PDT</th>
-<td>1 / 1</td>
-<td style="background: #fcc">0 / 1</td>
-</tr>
-</table>
+<div class="row">
 
-Besides, `_timeb.timezone` does not take DST into account at all,
-requiring one to perform extra steps to detect and adjust the value
-based on DST status. Only `tm.tm_isdst` is reliable enough for use in
-`rifiuti2`.
+  <div class="col-lg-6 col-md-6 col-sm-6">
+  <table class="table text-center">
+  <caption><code>_timeb.dstflag</code> value</caption>
+  <thead>
+    <tr>
+    <th colspan="2" rowspan="2">&nbsp;</th>
+    <th colspan="2">Control Panel</th>
+    </tr>
+    <tr><th>Use DST</th><th>No DST</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="3"><code>$TZ</code></th>
+      <th>(unset)</th>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>UTC</th>
+      <td class="danger">1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>PST8PDT</th>
+      <td>1</td>
+      <td class="danger">0</td>
+    </tr>
+  </tbody>
+  </table>
+  </div>
 
-### `INFO` file stores UTC time since 95
+  <div class="col-lg-6 col-md-6 col-sm-6">
+  <table class="table text-center">
+  <caption><code>tm.tm_isdst</code> value</caption>
+  <thead>
+    <tr>
+    <th colspan="2" rowspan="2">&nbsp;</th>
+    <th colspan="2">Control Panel</th>
+    </tr>
+    <tr><th>Use DST</th><th>No DST</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="3"><code>$TZ</code></th>
+      <th>(unset)</th>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>UTC</th>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>PST8PDT</th>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+  </table>
+  </div>
+
+</div>
+
+It is immediately apparent that `_timeb.timezone` ignores `$TZ` completely.
+OTOH `tm.tm_isdst` consults both settings, so is reliable enough for use
+in `rifiuti2`.
+
+### Nice stuff: `INFO` file stores UTC time since 95
 
 Enough Windows bashing. Actually, Microsoft developers are surprisingly
 forward-thinking in some aspects.
 The `INFO` file (in Win95, predates `INFO2` used in Win98) already uses
-[64-bit FileTime][6], when 32-bit systems were still not mature yet.
-And this FileTime stores UTC time, not local time which is still dominant
+[64-bit `FILETIME`][6], when 32-bit systems were still not mature yet.
+And this `FILETIME` stores UTC time, not local time which is still dominant
 in system time of current Windows. That saved lots of headache when
 constructing event timeline.
 
@@ -96,7 +145,12 @@ constructing event timeline.
 [4]: https://msdn.microsoft.com/en-us/library/90s5c885(VS.80).aspx
 [5]: https://en.wikipedia.org/wiki/Daylight_saving_time
 [6]: https://support.microsoft.com/en-us/kb/188768
+[7]: https://developer.gnome.org/glib/stable/glib-GDateTime.html
 
-----
+<hr class="small"/>
 
-2015-05-28 edit: Add description about problem in `_timeb`.
+| Date | ChangeLog |
+| --- | --- |
+| 2015-05-28 | Add description about problem in `_timeb` |
+| 2019-06-04 | Use of `GDateTime` to replace the whole mess |
+{: .table}

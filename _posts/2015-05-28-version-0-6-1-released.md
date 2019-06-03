@@ -1,5 +1,5 @@
 ---
-title: "Version 0.6.1 released"
+title: "Rifiuti2 0.6.1 released"
 date: 2015-05-28 14:08:51
 tags: [release]
 ---
