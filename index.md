@@ -9,11 +9,10 @@ use-site-title: true
 <div class="jumbotron" style="text-align:center">
   Windows 32 bit, 64 bit, or source code
   <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}"
-   role="button"><span style="min-width: 5em">Download Latest</span>
-  <span class="fa-stack fa-2x" aria-hidden="true">
-  <i class="fa fa-square fa-stack-2x fa-inverse"></i>
-  <i class="fa fa-download fa-stack-1x" style="color: #337ab7"></i>
-  </span></a></p>
+  role="button"><span style="display: inline-block" class="text-center">Download<br />Latest</span>
+  <i class="fa-3x fa-inverse fas fa-download align-middle" style="margin-left: 0.15em"
+   data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+  </a></p>
 </div>
 
 <img alt="Recycle Bin full icon" style="border:0; float:right"
