@@ -185,11 +185,8 @@ prose:
           label: "Publish"
           help: "Check to publish post, uncheck to hide."
 
-# Only needed for self hosted website; GitHub pages already include them
-# Check out https://pages.github.com/versions/ for complete list
-#
-#plugins:
-#  - jekyll-remote-theme
-#  - jekyll-paginate
-#  - jekyll-sitemap
-
+plugins:
+  - jekyll-remote-theme
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-feed
