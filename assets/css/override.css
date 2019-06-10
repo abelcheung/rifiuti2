@@ -1,10 +1,18 @@
-footer .copyright::before { content: "© " }
+footer .copyright::before { content: "\A9 " }
 
 .jumbotron {
 	background-color: #E0F0FF;
 	font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	box-shadow: 3px 3px 10px 2px rgba(0,0,0.5,0.5);
 }
 
+.btn-download { box-shadow: 1px 1px 2px 2px rgba(0,0,0.5,0.5); }
+.text-btn-download {
+	font-weight: bold;
+	text-shadow: 1px 1px 2px black;
+}
+
+/* using text align class within table */
 .text-left td, .text-left th, .text-left > caption { text-align: left }
 .text-right td, .text-right th, .text-right > caption { text-align: right }
 .text-center td, .text-center th, .text-center > caption { text-align: center }

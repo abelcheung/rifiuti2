@@ -8,9 +8,9 @@ use-site-title: true
 <!-- Download -->
 <div class="jumbotron text-center">
   Windows 32 bit, 64 bit, or source code
-  <p><a class="btn btn-primary btn-lg" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
+  <p><a class="btn btn-primary btn-lg btn-download" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
     <span style="display: flex; align-items: center">
-      <span style="display: inline-block; margin-right: 0.5em" class="text-center">Download<br />Latest</span>
+      <span style="display: inline-block; margin-right: 0.5em" class="text-center text-btn-download">Download<br />Latest</span>
       <i class="fa-3x fa-inverse fas fa-download" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
     </span>
   </a></p>
