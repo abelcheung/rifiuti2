@@ -1,6 +1,7 @@
 footer .copyright::before { content: "© " }
 
 .jumbotron {
+	background-color: #E0F0FF;
 	font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -9,3 +10,10 @@ footer .copyright::before { content: "© " }
 .text-center td, .text-center th, .text-center > caption { text-align: center }
 
 .table > caption { caption-side: bottom }
+
+/* translucent header */
+@media only screen and (min-width: 768px) {
+	.navbar-custom.top-nav-short {
+		opacity: 0.9;
+	}
+}
