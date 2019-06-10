@@ -2,11 +2,12 @@
 title:  "Rifiuti2 0.7.0 released"
 date:   2019-05-08 21:02:22
 tags: [release]
+excerpt_separator: "<!--more-->"
 ---
 
 Another prolonged &ldquo;hiatus&rdquo; passed before this update.
 Quite a lot was done recently; right now there aren't
-many features left before its completion in my opinion.[^1]
+many features left before its completion in my opinion. <!--more--> [^1]
 
 Perhaps the most time spent on this release is handling various character
 sets, and have them display correctly; it was always a headache battling

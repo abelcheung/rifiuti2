@@ -26,6 +26,6 @@ platform, in favor of [MSYS2][1].
 again (e.g. 64-bit support) since 2018, but it's too little too late now.
 {: .box-note}
 
-[1]: https://msys2.github.io
+[1]: https://www.msys2.org/
 [2]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-get-command-line
 [3]: https://osdn.net/projects/mingw/

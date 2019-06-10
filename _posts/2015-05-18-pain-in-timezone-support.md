@@ -4,14 +4,13 @@ date:  2015-05-18 09:05:29
 tags: [development]
 ---
 
-**Four years later:** [`GDateTime` structure][7] will be used to simplify cross
-platform handling of such date / time issue. Let's see how far it can go.
-{: .box-note}
-
 Haven't anticipated the addition of timezone info has caused so much
 grief for me, though lots of &ldquo;fun&rdquo; are uncovered during the
 process.
-<!--more-->
+
+**Four years later:** [`GDateTime` structure][7] will be used to simplify cross
+platform handling of such date / time issue. Let's see how far it can go.
+{: .box-note}
 
 ### `strftime()` is not very platform neutral
 
@@ -22,41 +21,37 @@ standard but not C99); nor does it print numerical time zones.
 
 ### `TZ` environment variable on Windows is crap
 
-Current systems don't use `$TZ` variable for any common purpose now.
-It [used to be][2], in Windows 3.1. Older Linux systems also use it for
-setting timezone. Nowadays, Linux / BSD make use of
-[Olson time zone database][3] which automatically handles GMT offset and
+Current systems don't use `TZ` variable for any common purpose now. [^1]
+Nowadays, Linux / BSD make use of [Olson time zone database][3] which
+automatically handles GMT offset and
 <abbr title="Daylight Saving Time" class="initialism">DST</abbr>,
-and `$TZ` can also be set in well-defined manner
-to override system setting. But the situation on Windows is different.
+while `TZ` can also be set in well-defined manner to temporarily override
+system setting. But `TZ` variable in Windows is arbitrary and there is no
+rigorous checking [^2], resulting in hilarious scenarios:
 
-1. The `TZ` variable in Windows is arbitrary and there is no checking
-   (format [documented in `_tzset()` function][4]). I can
-   happily use the value `ABC123XYZ` as timezone and it would be accepted
-   as a timezone having -123 hours of offset from UTC. The letters are
-   junk &mdash; except that using 4 letters (like `EEST` which is a valid
-   timezone in Istanbul) and the parser for `$TZ` variable immediately fails.
+1. For example, I can happily use the value `ABC123XYZ` as timezone and it
+   would be accepted as a timezone having -123 hours offset from UTC.
+   The letters are merely junk &mdash; except that using 4 letters (like
+   `EEST` which is a valid timezone in Istanbul) would cause functions
+   utilitizing `TZ` variable to fail.
 
-1. Compare these 2 commands: (_hint_: drag and highlight *each line* with mouse)
+2. Compare these 2 commands:
 
-   ```sh
-    set TZ=
-    set TZ= 
-   ```
+   <kbd>set TZ=</kbd><br /><kbd>set TZ= </kbd>
 
    The first line unsets TZ variable as expected, so that Windows would
    retrieve regional setting from control panel. But with an extra space
    in 2nd line, timezone is set to **UTC with [Daylight Saving Time][5]
    forcefully turned on**!!! It costs me days of head scratching and several
-   faulty &ldquo;fixes&rdquo;. God knows what the parser is doing!
+   faulty &ldquo;fixes&rdquo;.
 
-### `_timeb` structure does not respect `$TZ` variable
+### `_timeb` structure does not respect `TZ` variable
 
 The DST value returned from `_timeb` structure is faulty, in that it
 only respects the timezone setting from Control Panel and not `$TZ`
 variable. That's one of the bug addressed in 0.6.1 version.
 The following table shows how the values of `_timeb.dstflag` and
-`tm.tm_isdst` vary with `$TZ` and Control Panel settings (undesirable
+`tm.tm_isdst` vary with `TZ` and Control Panel settings (undesirable
 values <span class="bg-danger">marked in red background</span>):
 
 <div class="row">
@@ -73,7 +68,7 @@ values <span class="bg-danger">marked in red background</span>):
   </thead>
   <tbody>
     <tr>
-      <th rowspan="3"><code>$TZ</code></th>
+      <th rowspan="3"><code>TZ</code></th>
       <th>(unset)</th>
       <td>1</td>
       <td>0</td>
@@ -104,7 +99,7 @@ values <span class="bg-danger">marked in red background</span>):
   </thead>
   <tbody>
     <tr>
-      <th rowspan="3"><code>$TZ</code></th>
+      <th rowspan="3"><code>TZ</code></th>
       <th>(unset)</th>
       <td>1</td>
       <td>0</td>
@@ -125,7 +120,7 @@ values <span class="bg-danger">marked in red background</span>):
 
 </div>
 
-It is immediately apparent that `_timeb.timezone` ignores `$TZ` completely.
+It is immediately apparent that `_timeb.timezone` ignores `TZ` completely.
 OTOH `tm.tm_isdst` consults both settings, so is reliable enough for use
 in `rifiuti2`.
 
@@ -139,10 +134,10 @@ And this `FILETIME` stores UTC time, not local time which is still dominant
 in system time of current Windows. That saved lots of headache when
 constructing event timeline.
 
-[1]: https://msdn.microsoft.com/en-US/library/fe06s4ak(v=vs.80).aspx
+[1]: https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strftime-wcsftime-strftime-l-wcsftime-l
 [2]: http://science.ksc.nasa.gov/software/winvn/userguide/3_1_4.htm
 [3]: https://en.wikipedia.org/wiki/Tz_database
-[4]: https://msdn.microsoft.com/en-us/library/90s5c885(VS.80).aspx
+[4]: https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset
 [5]: https://en.wikipedia.org/wiki/Daylight_saving_time
 [6]: https://support.microsoft.com/en-us/kb/188768
 [7]: https://developer.gnome.org/glib/stable/glib-GDateTime.html
@@ -154,3 +149,12 @@ constructing event timeline.
 | 2015-05-28 | Add description about problem in `_timeb` |
 | 2019-06-04 | Use of `GDateTime` to replace the whole mess |
 {: .table}
+
+[^1]: `TZ` variable used to be a common mechanism to
+      [set time zone for Windows 3.1][2]. Same applies to ancient Linux
+      systems.
+
+[^2]: Format of `TZ` variable is [documented in `_tzset()` function][4].
+      *However*, it doesn't mention the behavior if supplied value does
+      not satisfy documented format. In fact virtually infinite randomly
+      invented values would be accepted.

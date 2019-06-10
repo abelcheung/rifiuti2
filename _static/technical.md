@@ -29,7 +29,7 @@ Since Windows 98, metadata about permanently purged items or
 restored items would be kept inside `INFO2`.
 
 Although researched info about this older format has been widely
-circulated, they generally covers Windows XP/2003 only, which is
+circulated [^1], they generally covers Windows XP/2003 only, which is
 a bit different from earlier Windows (95, 98, ME, etc).
 
 </div>
@@ -60,10 +60,13 @@ index file would be kept intact.
 
 </div><!-- class=row -->
 
-_Note_: `<sid>` stands for [Security Identifier][3], which is unique
+_Note_: `<sid>` stands for [Security Identifier][2], which is unique
 for each user on a system.
 {: .box-note}
 
-[1]: http://blogs.msdn.com/b/oldnewthing/archive/2006/01/31/520225.aspx
-[2]: http://www.csisite.net/INFO2.htm
-[3]: https://en.wikipedia.org/wiki/Security_Identifier
+[^1]: The URL used to be http://www.csisite.net/INFO2.htm , but it was
+      taken down by new owner, and sadly not avaialble from
+      Internet Archive, therefore permanently lost.
+
+[1]: https://blogs.msdn.microsoft.com/b/oldnewthing/archive/2006/01/31/520225.aspx
+[2]: https://en.wikipedia.org/wiki/Security_Identifier
