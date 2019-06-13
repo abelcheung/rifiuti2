@@ -25,3 +25,8 @@ footer .copyright::before { content: "\A9 " }
 		opacity: 0.9;
 	}
 }
+
+/* reduce list indent for mobile */
+@media only screen and (max-width: 768px) {
+	ul, ol { padding-inline-start: 1em }
+}
