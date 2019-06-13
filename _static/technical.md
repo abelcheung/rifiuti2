@@ -28,9 +28,11 @@ different file system][1] (using C drive as example):
 Since Windows 98, metadata about permanently purged items or
 restored items would be kept inside `INFO2`.
 
-Although researched info about this older format has been widely
-circulated [^1], they generally covers Windows XP/2003 only, which is
-a bit different from earlier Windows (95, 98, ME, etc).
+Researched info about this older format had been widely circulated [^1],
+but they generally covers Windows XP/2003 only, which is
+a bit different from earlier Windows (95, 98, ME, etc). With the
+kind permission of rifiuti author, a copy of PDF about forensic
+analysis of INFO2 format [is hosted on this website][2].
 
 </div>
 
@@ -64,9 +66,11 @@ _Note_: `<sid>` stands for [Security Identifier][2], which is unique
 for each user on a system.
 {: .box-note}
 
-[^1]: The URL used to be http://www.csisite.net/INFO2.htm , but it was
-      taken down by new owner, and sadly not avaialble from
+[^1]: One of the most widely used reference is from Cybersecurity Institute:
+          http://www.csisite.net/INFO2.htm
+      but it was taken down by new owner, and sadly not avaialble from
       Internet Archive, therefore permanently lost.
 
 [1]: https://blogs.msdn.microsoft.com/b/oldnewthing/archive/2006/01/31/520225.aspx
-[2]: https://en.wikipedia.org/wiki/Security_Identifier
+[2]: {{ 'assets/Forensics_Recycle_Bin.pdf' | relative_url }}
+[3]: https://en.wikipedia.org/wiki/Security_Identifier
