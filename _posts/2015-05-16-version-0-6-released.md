@@ -1,7 +1,8 @@
 ---
 title:  "Rifiuti2 0.6.0 released"
 date:   2015-05-16 08:03:24
-tags: [release]
+category: release
+tags: [feature]
 ---
 
 Quite a long time since previous release (6.5 years). Actually I have thought

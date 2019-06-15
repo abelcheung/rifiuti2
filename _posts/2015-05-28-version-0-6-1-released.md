@@ -1,7 +1,8 @@
 ---
 title: "Rifiuti2 0.6.1 released"
 date: 2015-05-28 14:08:51
-tags: [release]
+category: release
+tags: [bug fix,time]
 ---
 
 This is a bug fix release addressing 3 issues:
