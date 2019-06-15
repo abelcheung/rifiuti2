@@ -132,6 +132,16 @@ defaults:
     values:
       layout: "page"
       show-avatar: false
+  -
+    scope:
+      path: "assets/*.pdf"
+    values:
+      sitemap: false
+  -
+    scope:
+      path: "google*.html"
+    values:
+      sitemap: false
 
 # Use tags index page and make tags on each post clickable
 link-tags: true
