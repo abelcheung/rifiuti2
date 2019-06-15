@@ -1,6 +1,7 @@
 ---
 title:  "Rifiuti2 0.7.0 released"
-date:   2019-05-08 21:02:22
+date:   2019-05-08T21:02:22+08:00
+last_modified_at: 2019-06-04T06:25:21+08:00
 category: release
 tags: [bug fix,feature,windows]
 excerpt_separator: "<!--more-->"

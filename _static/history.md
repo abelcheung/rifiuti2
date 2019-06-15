@@ -1,6 +1,7 @@
 ---
 layout: page
 title: History
+last_modified_at: 2019-06-10T12:55:32+08:00
 meta-description: How rifiuti2 evolved from ancestor
 permalink: /history/
 ---
