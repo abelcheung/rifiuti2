@@ -31,8 +31,12 @@ description: Windows Recycle Bin Analysis Tool
 # List of links in the navigation bar
 navbar-links:
   News: "news"
-  History: "history"
   Technical: "technical"
+  Resource:
+    -
+      History: "history"
+      "Raymond.cc intro": https://www.raymond.cc/blog/what-is-info2-file-hidden-in-recycled-or-recycler-folder/
+      "Softpedia info": https://www.softpedia.com/get/Desktop-Enhancements/Other-Desktop-Enhancements/rifiuti2.shtml
 
 # If you want to have an image logo in the top-left corner instead of the title text,
 # then specify the following parameter
