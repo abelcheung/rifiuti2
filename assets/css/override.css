@@ -34,14 +34,22 @@ footer .copyright::before { content: "\A9 " }
 	ul, ol { padding-inline-start: 1em }
 }
 
-*[role="main"] a:not(.btn-download).external-link:after {
+a.link-icon:after {
+	padding-left: 0.3em;
 	font-family: "Font Awesome 5 Free";
-	font-size: 0.75em;
 	vertical-align: 1px;
 	font-weight: 900;
-	content: "\f35d";
-	padding-left: 0.3em;
 }
+
+*[role="main"] a:not(.btn-download).link-external:after {
+	font-size: 0.75em;
+	content: "\f35d";
+}
+
+a.link-pdf:after  { content: "\f1c1" }
+a.link-docx:after { content: "\f1c2" }
+a.link-xlsx:after { content: "\f1c3" }
+a.link-zip:after, a.link-xz:after { content: "\f1c6" }
 
 code {
 	padding: 2px;
