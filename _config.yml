@@ -18,7 +18,7 @@
 
 repourl: https://github.com/abelcheung/rifiuti2
 
-remote_theme: abelcheung/beautiful-jekyll
+remote_theme: abelcheung/beautiful-jekyll@requirejs
 
 # Name of website
 title: Rifiuti2
@@ -198,6 +198,10 @@ prose:
           element: "checkbox"
           label: "Publish"
           help: "Check to publish post, uncheck to hide."
+
+requirejs:
+  - beautiful-jekyll
+  - customize
 
 plugins:
   - jekyll-remote-theme
