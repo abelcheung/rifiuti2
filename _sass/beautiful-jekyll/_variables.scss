@@ -1,0 +1,24 @@
+// Color settings
+$navbar-col         : #E0F0FF;
+$navbar-text-col    : #404040;
+$navbar-children-col: #D0E8FF;
+$page-col           : #ECF6FF;
+$link-col           : #008AFF;
+$hover-col          : #0085A1;
+$footer-col         : #E0F0FF;
+$footer-text-col    : #444;
+$footer-link-col    : #47A;
+$text-col           : #404040;
+
+// Default font
+$font-family-sans-serif: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+$font-family-serif: Lora, Georgia, "Times New Roman", Times, serif;
+
+// Background images
+// Paths are relative to the main CSS file (assets/css/main.css)
+// Unfortunately liquid tag can't be used here, therefore
+// absolute link wouldn't work for Github project pages
+
+// $page-img: "../../img/bgimage.png";
+// $navbar-img: "../../img/bgimage.png";
+$footer-img: "../img/footer-hex.png";
