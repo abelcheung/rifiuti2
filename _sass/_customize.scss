@@ -1,12 +1,11 @@
----
-layout: null
----
-
-footer .copyright::before { content: "\A9 " }
+footer .copyright::before {
+	content: "\A9";
+	padding-right: 0.3em;
+}
 
 .jumbotron {
-	background-color: {{ site.navbar-col }};
-	font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	background-color: $navbar-col;
+	font-family: $font-family-sans-serif;
 	box-shadow: 2px 2px 3px 2px rgba(0,0,0,0.3);
 }
 
@@ -15,41 +14,48 @@ footer .copyright::before { content: "\A9 " }
 	text-shadow: 1px 1px 2px black;
 }
 
-/* using text align class within table */
-.text-left td, .text-left th, .text-left > caption { text-align: left }
-.text-right td, .text-right th, .text-right > caption { text-align: right }
-.text-center td, .text-center th, .text-center > caption { text-align: center }
+// apply text align class on table to align everything in table globally
+@each $dir in (left,right,center) {
+	.text-#{$dir} td,
+	.text-#{$dir} th,
+	.text-#{$dir} > caption { text-align: $dir }
+}
 
 .table > caption { caption-side: bottom }
 
 /* translucent header */
-@media only screen and (min-width: 768px) {
+@media only screen and (min-width: $screen-sm-min) {
 	.navbar-custom.top-nav-short {
 		opacity: 0.9;
 	}
 }
 
-/* reduce list indent for mobile */
-@media only screen and (max-width: 768px) {
+// reduce list indent for mobile
+@media only screen and (max-width: $screen-xs-max) {
 	ul, ol { padding-inline-start: 1em }
 }
 
-a.link-icon:after {
+a.link-icon::after {
 	padding-left: 0.3em;
 	font-family: "Font Awesome 5 Free";
 	vertical-align: 1px;
 	font-weight: 900;
 }
 
-*[role="main"] a:not(.btn-download).link-external:after {
+*[role="main"] a:not(.btn-download).link-external::after {
 	font-size: 0.75em;
 	content: "\f35d";
 }
 
-a.link-pdf:after  { content: "\f1c1" }
-a.link-docx:after { content: "\f1c2" }
-a.link-xlsx:after { content: "\f1c3" }
-a.link-zip:after, a.link-xz:after { content: "\f1c6" }
+@each $type, $char in (
+	pdf : "\f1c1",
+	docx: "\f1c2",
+	xlsx: "\f1c3",
+	zip : "\f1c6",
+	xz  : "\f1c6",
+) {
+	a.link-#{$type}::after { content: $char }
+}
 
 code {
 	padding: 2px;
@@ -57,4 +63,4 @@ code {
 	background-color: rgba(0,0,0,0.1);
 }
 
-a code { color: {{ site.link-col }} }
+a code { color: $link-col }
