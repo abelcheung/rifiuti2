@@ -1,7 +1,7 @@
 ---
 ---
 
-define ['jquery','smooth-scroll'], ($) ->
+define ['jquery','jqSmoothScroll','domReady!'], ($) ->
 
   ###
   Open external link in new tab. Discussion about rel=noopener:
