@@ -64,3 +64,12 @@ code {
 }
 
 a code { color: $link-col }
+
+.footnotes {
+	font-size: 85%;
+	width: 80%;
+	margin: 30px auto 0;
+	border-top: 4px solid $text-col;
+	p { margin: 1em 0 }
+	ul, ol { padding-inline-start: 1em }
+}
