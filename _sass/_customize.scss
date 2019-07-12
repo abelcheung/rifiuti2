@@ -6,12 +6,24 @@ footer .copyright::before {
 .jumbotron {
 	background-color: $navbar-col;
 	font-family: $font-family-sans-serif;
-	box-shadow: 2px 2px 3px 2px rgba(0,0,0,0.3);
+	box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.3);
 }
 
-.text-btn-download {
-	font-weight: bold;
-	text-shadow: 1px 1px 2px black;
+// front page buttons
+.btn-download {
+  display: flex;
+  max-width: 12em;
+  justify-content: space-around;
+  align-items: center;
+  & > span {
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+  }
+}
+@media only screen and (max-width: $screen-xs-min - 1) {
+  .btn-download {
+    flex-wrap: wrap;
+  }
 }
 
 // apply text align class on table to align everything in table globally

@@ -5,19 +5,24 @@ subtitle: Windows Recycle Bin Analysis Tool
 use-site-title: true
 ---
 
-<!-- Download -->
-<div class="jumbotron text-center">
-  Windows 32 bit, 64 bit, or source code
-  <p><a class="btn btn-primary btn-lg btn-download" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
-    <span style="display: flex; align-items: center">
-      <span style="display: inline-block; margin-right: 0.5em" class="text-center text-btn-download">Download<br />Latest</span>
+<div class="jumbotron row">
+<div class="col-xs-6 text-center">
+  <a class="btn btn-primary btn-lg btn-download center-block" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
+      <span class="text-center">Download<br />Latest</span>
       <i class="fa-3x fa-inverse fas fa-download" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
-    </span>
-  </a></p>
+  </a>
+  <p class="headline">Windows 32/64 bit binary and source code</p>
+</div>
+<div class="col-xs-6 text-center">
+  <a class="btn btn-primary btn-lg btn-download center-block" href="{{ 'news/' | relative_url }}" role="button">
+      <span class="text-center">News &amp;<br />Announce</span>
+      <i class="fa-3x fa-inverse fas fa-book-reader" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+  </a>
+  <p class="headline">Latest news and release announcement</p>
+</div>
 </div>
 
-<img alt="Recycle Bin full icon" class="pull-right"
-src="{{ '/images/rbin.png' | relative_url }}" />
+![Recycle Bin full icon]({{ '/images/rbin.png' | relative_url }}){: .pull-right }
 
 `Rifiuti2` analyse recycle bin files from Windows. Analysis of
 Windows recycle bin is usually carried out during Windows computer
