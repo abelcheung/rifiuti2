@@ -1,4 +1,3 @@
-# vim: set sw=2 ts=2 expandtab :
 # --- General options --- #
 
 repourl: https://github.com/abelcheung/rifiuti2
@@ -39,6 +38,9 @@ navbar-links:
 
 # --- Background colour/image options --- #
 # All style config are moved to _sass/beautiful-jekyll/_variables.scss
+# User style customization goes to _sass/_customize.scss
+css:
+  main: "/assets/css/main.css"
 
 # --- Footer options --- #
 
@@ -178,6 +180,7 @@ prose:
 
 requirejs:
   mods:
+    - cssrelpreload
     - beautiful-jekyll
     - customize
   libs:
@@ -196,9 +199,14 @@ requirejs:
     - name: jqSmoothScroll
       href: 'https://cdn.jsdelivr.net/npm/jquery-smooth-scroll@2.2.0/jquery.smooth-scroll.min'
       sri : 'sha384-ymcePxFhqHnKRIFPVh6sf/gPPGCGNRQ028+QOgRk0pucOhhOsoyVuX6l82Gd3+YD'
+    - name: cssrelpreload
+      href: 'https://cdn.jsdelivr.net/npm/fg-loadcss@2.1.0/dist/cssrelpreload.min'
+      sri : 'sha384-sQ0Z7imIAcp1/Z47hsy2G3MgW9DiAJJnAyLej+zjg0mJcwapL9pEzZU0DU+QYXq2'
 
 plugins:
   - jekyll-remote-theme
   - jekyll-paginate
   - jekyll-sitemap
   - jekyll-feed
+
+# vim: set sw=2 ts=2 expandtab :
