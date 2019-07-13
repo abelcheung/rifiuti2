@@ -1,7 +1,7 @@
 ---
 title:  "Reason for abandoning MSYS 1.0"
-date:   2015-05-15T11:26:02+08:00
-last_modified_at: 2019-05-31T14:02:48+08:00
+date:   2015-05-15T11:26:02+0800
+last_modified_at: 2019-05-31T14:02:48+0800
 category: development
 tags: [mingw,windows]
 ---

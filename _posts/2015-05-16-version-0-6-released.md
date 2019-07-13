@@ -1,7 +1,11 @@
 ---
 title:  "Rifiuti2 0.6.0 released"
-date:   2015-05-16 08:03:24
+date:   2015-05-16T08:03:24+0800
+last_modified_at: 2019-07-13T12:27:09+0800
 category: release
+excerpt: >
+  A release originally wouldn't have existed, if it were not receiving patch
+  from enthusiastic users fixing support for Windows 10.
 tags: [feature]
 ---
 
@@ -15,4 +19,4 @@ this anonymous user!
 Version 0.6.0 [available for download here][1], with pre-compiled Windows binary
 and several formats of source archives (tarball, zipball, tar/xz archive).
 
-[1]: https://github.com/abelcheung/rifiuti2/releases/tag/0.6.0
+[1]: {{ '/releases/tag/0.6.0' | prepend: site.repourl }}

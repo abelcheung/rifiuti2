@@ -1,15 +1,17 @@
 ---
 title:  "Rifiuti2 0.7.0 released"
 date:   2019-05-08T21:02:22+08:00
-last_modified_at: 2019-06-04T06:25:21+08:00
+last_modified_at: 2019-07-13T12:03:48+0800
 category: release
 tags: [bug fix,feature,windows]
-excerpt_separator: "<!--more-->"
+excerpt: >
+  Announcement for 0.7.0 release, some important features and changes like 95/NT
+  support, network shared recycle bin support, Windows binary requirement etc.
 ---
 
 Another prolonged &ldquo;hiatus&rdquo; passed before this update.
 Quite a lot was done recently; right now there aren't
-many features left before its completion in my opinion. <!--more--> [^1]
+many features left before its completion in my opinion. [^1]
 
 Perhaps the most time spent on this release is handling various character
 sets, and have them display correctly; it was always a headache battling

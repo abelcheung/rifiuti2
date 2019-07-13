@@ -1,8 +1,10 @@
 ---
 title: "Pain in timezone support"
 date:  2015-05-18T09:05:29+08:00
-last_modified_at: 2019-06-10T12:55:32+08:00
+last_modified_at: 2019-07-13T12:12:22+0800
 category: development
+excerpt: >
+  The bitter fight against Windows timezone support …
 tags: [bug fix,time]
 ---
 
@@ -23,19 +25,20 @@ standard but not C99); nor does it print numerical time zones.
 
 ### `TZ` environment variable on Windows is crap
 
-Current systems don't use `TZ` variable for any common purpose now. [^1]
-Nowadays, Linux / BSD make use of [Olson time zone database][3] which
+Nowadays systems don't use `TZ` variable for common purpose anymore. [^1]
+Linux / BSD make use of [Olson time zone database][3] which
 automatically handles GMT offset and
 <abbr title="Daylight Saving Time" class="initialism">DST</abbr>,
 while `TZ` can also be set in well-defined manner to temporarily override
-system setting. But `TZ` variable in Windows is arbitrary and there is no
+system setting. Windows users would be familiar with Control Panel settings
+instead. But `TZ` variable in Windows is arbitrary and there is no
 rigorous checking [^2], resulting in hilarious scenarios:
 
 1. For example, I can happily use the value `ABC123XYZ` as timezone and it
-   would be accepted as a timezone having -123 hours offset from UTC.
+   would be accepted as a timezone having *-123 hours offset from UTC*.
    The letters are merely junk &mdash; except that using 4 letters (like
    `EEST` which is a valid timezone in Istanbul) would cause functions
-   utilitizing `TZ` variable to fail.
+   utilitizing `TZ` variable to wreak havoc.
 
 2. Compare these 2 commands:
 
@@ -43,14 +46,14 @@ rigorous checking [^2], resulting in hilarious scenarios:
 
    The first line unsets TZ variable as expected, so that Windows would
    retrieve regional setting from control panel. But with an extra space
-   in 2nd line, timezone is set to **UTC with [Daylight Saving Time][5]
-   forcefully turned on**!!! It costs me days of head scratching and several
+   in 2nd line, timezone is set to ***UTC with Daylight Saving Time
+   forcefully turned on***!!! It costs me days of head scratching and several
    faulty &ldquo;fixes&rdquo;.
 
 ### `_timeb` structure does not respect `TZ` variable
 
 The DST value returned from `_timeb` structure is faulty, in that it
-only respects the timezone setting from Control Panel and not `$TZ`
+only respects the timezone setting from Control Panel and not `TZ`
 variable. That's one of the bug addressed in 0.6.1 version.
 The following table shows how the values of `_timeb.dstflag` and
 `tm.tm_isdst` vary with `TZ` and Control Panel settings (undesirable
@@ -58,7 +61,7 @@ values <span class="bg-danger">marked in red background</span>):
 
 <div class="row">
 
-  <div class="col-lg-6 col-md-6 col-sm-6">
+  <div class="col-sm-6">
   <table class="table text-center">
   <caption><code>_timeb.dstflag</code> value</caption>
   <thead>
@@ -89,7 +92,7 @@ values <span class="bg-danger">marked in red background</span>):
   </table>
   </div>
 
-  <div class="col-lg-6 col-md-6 col-sm-6">
+  <div class="col-sm-6">
   <table class="table text-center">
   <caption><code>tm.tm_isdst</code> value</caption>
   <thead>
@@ -140,7 +143,6 @@ constructing event timeline.
 [2]: http://science.ksc.nasa.gov/software/winvn/userguide/3_1_4.htm
 [3]: https://en.wikipedia.org/wiki/Tz_database
 [4]: https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset
-[5]: https://en.wikipedia.org/wiki/Daylight_saving_time
 [6]: https://support.microsoft.com/en-us/kb/188768
 [7]: https://developer.gnome.org/glib/stable/glib-GDateTime.html
 
