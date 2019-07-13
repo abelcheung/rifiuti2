@@ -3,6 +3,11 @@ footer .copyright::before {
 	padding-right: 0.3em;
 }
 
+.main-content {
+  hyphens: auto;
+  text-align: justify;
+}
+
 .jumbotron {
 	background-color: $navbar-col;
 	font-family: $font-family-sans-serif;
