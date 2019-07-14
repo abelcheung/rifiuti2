@@ -1,7 +1,5 @@
 ---
 layout: page
-title: Rifiuti2
-subtitle: Windows Recycle Bin Analysis Tool
 use-site-title: true
 ---
 
@@ -49,10 +47,10 @@ Latest features and bug fixes [are listed inside NEWS file][3]; you're
 also welcome to [check out blog news][4] for more insight
 (and some grumbles &#x263A;).
 
-[1]: {{ '/history' | relative_url }}
+[1]: {{ 'history/' | relative_url }}
 [2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
 [3]: {{ '/blob/master/NEWS.md' | prepend: site.repourl }}
-[4]: {{ '/news' | relative_url }}
+[4]: {{ 'news/' | relative_url }}
 
 # Usage
 

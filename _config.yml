@@ -46,6 +46,7 @@ css:
 
 author:
   name: Abel Cheung
+  twitter: "@abelcheung"
 
 social-network-links:
   rss: true
@@ -84,10 +85,6 @@ disqus: "github-abelcheung"
 # Excerpt Word Length
 # Truncates the excerpt to the specified number of words on the index page
 excerpt_length: 50
-
-# Character used to separate site title and description in HTML document title
-# and RSS feed title
-title-separator: "-"
 
 # --- Don't need to touch anything below here (but you can if you want) --- #
 
