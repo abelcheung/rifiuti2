@@ -13,6 +13,8 @@ Another prolonged &ldquo;hiatus&rdquo; passed before this update.
 Quite a lot was done recently; right now there aren't
 many features left before its completion in my opinion. [^1]
 
+### Character display fix
+
 Perhaps the most time spent on this release is handling various character
 sets, and have them display correctly; it was always a headache battling
 with various character conversion implementations, and there's another
@@ -20,6 +22,8 @@ hurdle with displaying characters correctly under older Windows' archaic
 console (it gets significantly better since Windows 10). Right now the
 later part is not complete yet; error messages would still be garbled
 if one changes console code page, which would (hopefully) be addressed soon.
+
+### 95 / NT support
 
 Other than the usual bug fixes,
 this release is more like one for archaeological and research purpose.
@@ -29,6 +33,8 @@ systems [using virtual machines][1]. But still, they provide an interesting
 historical insight on how the recycle bin features change over time.
 
 [1]: https://forums.virtualbox.org/viewtopic.php?t=9918
+
+### Network share support
 
 Another feature I find exciting is setting up recycle bin on network shares.
 Though there was wide claim that such thing can't be done, somebody has
@@ -47,6 +53,8 @@ Windows 98 would ask for permanent deletion of personal files in UNC path
 though.
 
 [3]: https://forums.mydigitallife.net/threads/tip-network-recycle-bin.16974/
+
+### Others
 
 Last but not least, there are a few important changes in bundled Windows
 binaries:
