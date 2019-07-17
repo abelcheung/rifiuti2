@@ -11,8 +11,10 @@ $footer-text-col    : $text-col;
 $footer-link-col    : $link-col;
 
 // Default font
-$font-family-sans-serif: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-$font-family-serif: Lora, Georgia, "Times New Roman", Times, serif;
+$font-family-ui: "Open Sans", $font-family-sans-serif;
+$font-weight-ui: 800;
+$font-family-content: Lora, $font-family-serif;
+$font-weight-content: normal;
 
 // Background images
 // Paths are relative to the main CSS file (assets/css/main.css)
