@@ -24,10 +24,12 @@ define ['jquery','jqSmoothScroll','domReady!'], ($) ->
     .addClass "link-icon link-#{e}"
 
   ###
-  Smooth scrolling, useful for footnote jumping
+  Smooth scrolling, useful for footnote jumping. Tag page excluded.
   Uses kswedberg/jquery-smooth-scroll
   ###
-  $('a[href^="#"]').not('[href="#"]').smoothScroll
+  $('a[href^="#"]')
+  .not('[href="#"]')
+  .not('.btn-tag').smoothScroll
     offset   : - $('.navbar').height() - 10
     autoFocus: true
     speed    : 'auto'

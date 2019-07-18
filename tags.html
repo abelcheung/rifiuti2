@@ -1,37 +1,58 @@
 ---
-layout: page
+layout: default
 title: 'Tag Index'
-meta-description: 'Tag Index'
+requirejs:
+  mods:
+    - tagpage
 ---
 
-{%- capture site_tags -%}
-    {%- for tag in site.tags -%}
-        {{- tag | first -}}{%- unless forloop.last -%},{%- endunless -%}
-    {%- endfor -%}
-{%- endcapture -%}
-{%- assign tags_list = site_tags | split:',' | sort -%}
+{% include header.html type="page" %}
 
-{%- for tag in tags_list -%}
-    <a href="#{{- tag -}}" class="btn btn-primary tag-btn">
-        <i class="fas fa-tag" aria-hidden="true"></i>&nbsp;{{- tag -}}&nbsp;<span class="badge">{{site.tags[tag].size}}</span>
-        <span class="sr-only">posts</span>
-    </a>
-{%- endfor -%}
+<div class="container" role="main">
+<div class="row">
+<div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-<div id="full-tags-list">
-{%- for tag in tags_list -%}
-    <h2 id="{{- tag -}}" class="linked-section">
-        <i class="fas fa-tag" aria-hidden="true"></i>&nbsp;{{- tag -}}
-    </h2>
-    <div class="post-list">
-        {%- for post in site.tags[tag] -%}
-            <div class="tag-entry">
-                <a href="{{ post.url | relative_url }}">{{- post.title -}}</a>
-                <div class="entry-date">
-                    <time datetime="{{- post.date | date_to_xmlschema -}}">{{- post.date | date: "%B %d, %Y" -}}</time>
-                </div>
-            </div>
-        {%- endfor -%}
-    </div>
+{%- assign tag_list = '' | split: '' -%}
+{%- for t in site.tags -%}
+{%- assign tag_list = tag_list | push: t.first -%}
 {%- endfor -%}
+{%- assign tag_list = tag_list | sort %}
+
+<div id="usage-hints" class="alert alert-info hidden" role="alert">
+	Please click on each tag to show posts associated with it.
 </div>
+
+{% if site.tags.size > 0 -%}
+<ul id="tag-list">
+{%- for tag in tag_list -%}
+	{%- assign tag_id = tag | slugify %}
+	<li><a href="#{{ tag_id }}" data-tag-id="{{ tag_id }}" class="btn btn-primary btn-tag" role="button">
+		<div class="btn-tag-text">{{ tag }}</div>
+		<span class="badge">{{site.tags[tag].size}}</span>
+		<span class="sr-only">posts</span>
+	</a></li>
+{% endfor -%}
+</ul>
+
+{%- for tag in tag_list -%}
+{%- assign tag_id = tag | slugify %}
+<div id="{{ tag_id }}" class="post-list">
+	<h2>{{ tag }}</h2>
+	<ul>
+	{%- for post in site.tags[tag] -%}
+		<li>
+			<a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+			<div class="post-meta">
+				<time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time>
+			</div>
+		</li>
+	{%- endfor -%}
+	</ul>
+	</div>
+{% endfor -%}
+
+{%- else -%}
+<h2>No tags available on this site.</h2>
+{%- endif -%}
+
+</div></div></div>
