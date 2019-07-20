@@ -4,8 +4,8 @@ footer .copyright::before {
 }
 
 .main-content {
-  hyphens: auto;
-  text-align: justify;
+	hyphens: auto;
+	text-align: justify;
 }
 
 pre, code, samp, kbd {
@@ -92,4 +92,12 @@ code {
 }
 
 a code { color: $link-col }
+
+$scroll-offset: $navbar-height + 10px;
+
+:target {
+	background-clip: content-box;
+	margin-top: (- $scroll-offset);
+	padding-top: $scroll-offset;
+}
 
