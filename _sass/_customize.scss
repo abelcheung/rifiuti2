@@ -8,6 +8,10 @@ footer .copyright::before {
   text-align: justify;
 }
 
+pre, code, samp, kbd {
+	hyphens: manual;
+}
+
 .jumbotron {
 	background-color: $navbar-col;
 	font-family: $font-family-ui;

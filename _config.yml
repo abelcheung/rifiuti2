@@ -181,7 +181,7 @@ requirejs:
     - name: jquery
       href: 'https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min'
       sri : 'sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ'
-    - name: jqeryui
+    - name: jqueryui
       href: 'https://cdn.jsdelivr.net/npm/jquery-ui-dist@1.12.1/jquery-ui.min'
       sri : 'sha384-PtTRqvDhycIBU6x1wwIqnbDo8adeWIWP3AHmnrvccafo35E7oIvW7HPXn2YimvWu'
     - name: bootstrap
