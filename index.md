@@ -6,17 +6,17 @@ use-site-title: true
 <div class="jumbotron row">
 <div class="col-xs-6 text-center">
   <a class="btn btn-primary btn-lg btn-download center-block" href="{{ '/releases/latest' | prepend: site.repourl }}" role="button">
-      <span class="text-center">Download<br />Latest</span>
-      <i class="fa-3x fa-inverse fas fa-download" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+    <div class="text-center">Download<br>Latest</div>
+    <i class="fa-3x fa-inverse fas fa-download"></i>
   </a>
-  <p class="headline">Windows 32/64 bit binary and source code</p>
+  <p>Windows 32/64 bit binary and source code</p>
 </div>
 <div class="col-xs-6 text-center">
   <a class="btn btn-primary btn-lg btn-download center-block" href="{{ 'news/' | relative_url }}" role="button">
-      <span class="text-center">News &amp;<br />Announce</span>
-      <i class="fa-3x fa-inverse fas fa-book-reader" data-fa-transform="shrink-6" data-fa-mask="fas fa-square"></i>
+    <div class="text-center">News &amp;<br>Announce</div>
+    <i class="fa-3x fa-inverse fas fa-book-reader"></i>
   </a>
-  <p class="headline">Latest news and release announcement</p>
+  <p>Latest news and release announcement</p>
 </div>
 </div>
 

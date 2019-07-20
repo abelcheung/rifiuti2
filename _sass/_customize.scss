@@ -16,19 +16,28 @@ footer .copyright::before {
 
 // front page buttons
 .btn-download {
-  display: flex;
-  max-width: 12em;
-  justify-content: space-around;
-  align-items: center;
-  & > span {
-    font-weight: bold;
-    text-shadow: 1px 1px 2px black;
-  }
-}
-@media only screen and (max-width: $screen-xs-min - 1) {
-  .btn-download {
-    flex-wrap: wrap;
-  }
+	display: flex;
+	max-width: 12em;
+	justify-content: space-around;
+	align-items: center;
+	@media only screen and (max-width: $screen-xs-min - 1) {
+		flex-wrap: wrap;
+	}
+	> * {
+		flex: 0;
+		display: inline-block;
+		@media only screen and (max-width: $screen-xs-min - 1) {
+			margin-top: $padding-base-vertical;
+			margin-bottom: $padding-base-vertical;
+		}
+	}
+	> div {
+		font-weight: $font-weight-ui;
+		text-shadow: 1px 1px 2px black;
+	}
+	+ p {
+		margin-bottom: unset;
+	}
 }
 
 // apply text align class on table to align everything in table globally
@@ -53,13 +62,11 @@ footer .copyright::before {
 }
 
 a.link-icon::after {
-	padding-left: 0.3em;
-	font-family: "Font Awesome 5 Free";
+	@include fas-solid(null, 0.3em);
 	vertical-align: 1px;
-	font-weight: 900;
 }
 
-*[role="main"] a:not(.btn-download).link-external::after {
+a.link-external::after {
 	font-size: 0.75em;
 	content: "\f35d";
 }
@@ -71,7 +78,7 @@ a.link-icon::after {
 	zip : "\f1c6",
 	xz  : "\f1c6",
 ) {
-	a.link-#{$type}::after { content: $char }
+	a.link-#{$type}::after { content: "#{$char}" }
 }
 
 code {
@@ -82,11 +89,3 @@ code {
 
 a code { color: $link-col }
 
-.footnotes {
-	font-size: 85%;
-	width: 80%;
-	margin: 30px auto 0;
-	border-top: 4px solid $text-col;
-	p { margin: 1em 0 }
-	ul, ol { padding-inline-start: 1em }
-}

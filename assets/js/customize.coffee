@@ -8,8 +8,9 @@ define ['jquery','jqSmoothScroll','domReady!'], ($) ->
   https://mathiasbynens.github.io/rel-noopener/
   ###
 
-  $('a').filter ->
+  $('.main-content a').filter ->
     this.hostname and ( this.hostname isnt location.hostname )
+  .not ".btn-download" # revisit later
   .addClass "link-icon link-external"
   .attr "target", "_blank"
   .attr "rel", "noopener"
