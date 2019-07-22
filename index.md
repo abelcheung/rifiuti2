@@ -66,22 +66,11 @@ usage samples [on Github page][5] as well.
 
 # Screenshots
 
-<figure class="text-center" style="margin-top: 30px">
-	<img src="{{ '/images/screenshot-tsv.png' | relative_url }}" />
-	<figcaption>Tab delimited output sample</figcaption>
-</figure>
+{% include fullwidth-figure.html src='/images/screenshot-tsv.png'
+  alt='Tab delimited output sample' %}
 
----
+{% include fullwidth-figure.html src='/images/screenshot3.png'
+  alt='XML output with recycle bin on network share' %}
 
-<figure class="text-center">
-	<img src="{{ '/images/screenshot3.png' | relative_url }}" />
-	<figcaption>XML output with recycle bin on network share</figcaption>
-</figure>
-
----
-
-<figure class="text-center">
-	<img src="{{ '/images/screenshot4.png' | relative_url }}" />
-	<figcaption>Deleted items containing multilingual path names</figcaption>
-</figure>
-
+{% include fullwidth-figure.html src='/images/screenshot4.png'
+  alt='Deleted items containing multilingual path names' %}

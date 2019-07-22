@@ -101,3 +101,10 @@ $scroll-offset: $navbar-height + 10px;
 	padding-top: $scroll-offset;
 }
 
+// figure
+
+figcaption {
+	font-family: $font-family-ui;
+	font-size: 85%;
+	text-align: center;
+}
