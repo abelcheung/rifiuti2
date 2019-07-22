@@ -18,8 +18,11 @@ requirejs:
 {%- endfor -%}
 {%- assign tag_list = tag_list | sort %}
 
-<div id="usage-hints" class="alert alert-info hidden" role="alert">
+<div id="usage-hints" class="alert alert-info alert-dismissible hidden fade in" role="alert">
 	Please click on each tag to show posts associated with it.
+	<button type="button" class="close" data-dismiss="alert" data-target="#usage-hints" aria-label="Close">
+		<span aria-hidden="true">&times;</span>
+	</button>
 </div>
 
 {% if site.tags.size > 0 -%}
