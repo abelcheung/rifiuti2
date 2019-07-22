@@ -3,7 +3,7 @@ title:  "Rifiuti2 0.7.0 released"
 date:   2019-05-08T21:02:22+08:00
 last_modified_at: 2019-07-13T12:03:48+0800
 category: release
-tags: [bug fix,feature,windows]
+tags: [bug fix,feature,charset,windows]
 excerpt: >
   Announcement for 0.7.0 release, some important features and changes like 95/NT
   support, network shared recycle bin support, Windows binary requirement etc.

@@ -5,7 +5,7 @@ last_modified_at: 2019-07-13T12:05:43+0800
 category: release
 excerpt: >
   This is a bug fix release addressing 3 issues: endianness, date time format and timezone value.
-tags: [bug fix,time]
+tags: [bug fix,timestamp]
 ---
 
 This is a bug fix release addressing 3 issues:

@@ -5,7 +5,7 @@ last_modified_at: 2019-07-13T12:12:22+0800
 category: development
 excerpt: >
   The bitter fight against Windows timezone support …
-tags: [bug fix,time]
+tags: [bug fix,info2,timestamp]
 ---
 
 Haven't anticipated the addition of timezone info has caused so much

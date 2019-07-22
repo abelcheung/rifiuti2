@@ -3,7 +3,7 @@ title:  "Site revamp and documentation"
 date: 2019-07-13T12:38:13+0800
 category: site
 excerpt: Random babbling about this site and TODOs. Feels like I'm more into web development …
-tags: [jekyll]
+tags: [info2]
 ---
 
 Visitors should have noticed the site has been undergoing a major facelift, replacing

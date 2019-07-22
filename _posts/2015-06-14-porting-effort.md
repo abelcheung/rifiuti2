@@ -5,7 +5,7 @@ last_modified_at: 2019-07-13T11:58:10+0800
 category: development
 excerpt: >
   The (painful) journal of porting rifiuti2 to Solaris...
-tags: [porting,unix]
+tags: [porting,charset,unix]
 ---
 
 Porting `rifiuti2` to Solaris is proven to be the most problematic
