@@ -16,7 +16,7 @@ use-site-title: true
     <div class="text-center">News &amp;<br>Announce</div>
     <i class="fa-3x fa-inverse fas fa-book-reader"></i>
   </a>
-  <p>Latest news and release announcement</p>
+  <p>Latest: {{ site.posts[0].title }}</p>
 </div>
 </div>
 
