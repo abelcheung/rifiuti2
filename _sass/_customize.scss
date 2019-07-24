@@ -1,24 +1,69 @@
-footer .copyright::before {
-	content: "\A9";
-	padding-right: 0.3em;
-}
+/* --- global layout customizations --- */
 
 .main-content {
 	hyphens: auto;
 	text-align: justify;
 }
 
+%small-ui-font {
+	font-family: $font-family-ui;
+	font-size: 85%;
+}
+
+caption {
+	@extend %small-ui-font;
+	color: inherit;
+}
+
+.table > caption { caption-side: bottom }
+
+figcaption {
+	@extend %small-ui-font;
+	text-align: center;
+	> p {
+		margin: 0;
+	}
+}
+
+// Screen reader attrs shouldn't affect UI
+// Light font+bg color means bad accessibility
+.text-muted {
+	color: inherit;
+}
+
 pre, code, samp, kbd {
 	hyphens: manual;
 }
 
+// hardcoded bootstrap code style not matching with theme
+code {
+	padding: 2px;
+	color: inherit;
+	background-color: rgba(black,0.03);
+}
+
+a code { color: $link-col }
+
+// reduce list indent for mobile
+@media only screen and (max-width: $screen-xs-max) {
+	ul, ol { padding-inline-start: 1em }
+}
+
+/* --- landing page widgets and buttons --- */
+
+// jumbotron style tries to match with navbar for now
 .jumbotron {
 	background-color: $navbar-col;
 	font-family: $font-family-ui;
-	box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.3);
+	box-shadow: 1px 1px 2px 2px rgba(black,0.3);
+	// flat design on mobile
+	@media only screen and (max-width: $screen-sm-min - 1) {
+		border: 1px solid scale-color($color: $navbar-col, $lightness: -5%);
+		box-shadow: none;
+		border-radius: 0;
+	}
 }
 
-// front page buttons
 .btn-download {
 	display: flex;
 	max-width: 12em;
@@ -28,7 +73,7 @@ pre, code, samp, kbd {
 		flex-wrap: wrap;
 	}
 	> * {
-		flex: 0;
+		flex: 0 1 auto;
 		display: inline-block;
 		@media only screen and (max-width: $screen-xs-min - 1) {
 			margin-top: $padding-base-vertical;
@@ -40,7 +85,7 @@ pre, code, samp, kbd {
 		text-shadow: 1px 1px 2px black;
 	}
 	+ p {
-		margin-bottom: unset;
+		margin-bottom: 0;
 	}
 }
 
@@ -51,18 +96,11 @@ pre, code, samp, kbd {
 	.text-#{$dir} > caption { text-align: $dir }
 }
 
-.table > caption { caption-side: bottom }
-
-/* translucent header */
+// translucent header
 @media only screen and (min-width: $screen-sm-min) {
 	.navbar-custom.top-nav-short {
 		opacity: 0.9;
 	}
-}
-
-// reduce list indent for mobile
-@media only screen and (max-width: $screen-xs-max) {
-	ul, ol { padding-inline-start: 1em }
 }
 
 a.link-icon::after {
@@ -85,14 +123,7 @@ a.link-external::after {
 	a.link-#{$type}::after { content: "#{$char}" }
 }
 
-code {
-	padding: 2px;
-	color: #000;
-	background-color: rgba(0,0,0,0.03);
-}
-
-a code { color: $link-col }
-
+// Note: this must match smooth scroll JS setting
 $scroll-offset: $navbar-height + 10px;
 
 :target {
@@ -101,10 +132,3 @@ $scroll-offset: $navbar-height + 10px;
 	padding-top: $scroll-offset;
 }
 
-// figure
-
-figcaption {
-	font-family: $font-family-ui;
-	font-size: 85%;
-	text-align: center;
-}
