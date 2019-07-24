@@ -8,12 +8,17 @@ define ['jquery','jqueryui','jqSmoothScroll','domReady!'], ($) ->
   https://mathiasbynens.github.io/rel-noopener/
   ###
 
-  $('.main-content a').filter ->
+  $('a').filter ->
     this.hostname and ( this.hostname isnt location.hostname )
-  .not ".btn-download" # revisit later
-  .addClass "link-icon link-external"
   .attr "target", "_blank"
   .attr "rel", "noopener"
+
+  ###
+  Add icon to main content external links
+  ###
+  $('.main-content a[target="_blank"]')
+  .not ".btn-download" # revisit later
+  .addClass "link-icon link-external"
 
   ###
   Mark links of specific file types with CSS styling
