@@ -179,8 +179,8 @@ requirejs:
     - customize
   libs:
     - name: jquery
-      href: 'https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min'
-      sri : 'sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ'
+      href: 'https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min'
+      sri : 'sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh'
     - name: jqueryui
       href: 'https://cdn.jsdelivr.net/npm/jquery-ui-dist@1.12.1/jquery-ui.min'
       sri : 'sha384-PtTRqvDhycIBU6x1wwIqnbDo8adeWIWP3AHmnrvccafo35E7oIvW7HPXn2YimvWu'
