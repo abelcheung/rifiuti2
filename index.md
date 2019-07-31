@@ -1,6 +1,16 @@
 ---
 layout: page
 use-site-title: true
+comments: false
+slide:
+  - image: /images/screenshot01.png
+    desc : Default tab delimited output
+  - image: /images/screenshot02.png
+    desc : XML output of same file
+  - image: /images/screenshot03.png
+    desc : Unicode path and 8.3 legacy path
+  - image: /images/screenshot04.png
+    desc : Japanese Windows and Win95 extra metadata
 ---
 
 <div class="jumbotron row">
@@ -66,11 +76,39 @@ usage samples [on Github page][5] as well.
 
 # Screenshots
 
-{% include fullwidth-figure.html src='/images/screenshot-tsv.png'
-  alt='Tab delimited output sample' %}
+<div id="rifiuti2-screenshot" class="carousel slide hidden" data-interval="8000">
+  {% comment %}<!-- Indicators -->{% endcomment %}
+  <ol class="carousel-indicators">
+  {%- for sl in page.slide %}
+    <li data-target="#rifiuti2-screenshot" data-slide="next"{% if forloop.first %} class="active"{% endif %}></li>
+  {%- endfor %}
+  </ol>
 
-{% include fullwidth-figure.html src='/images/screenshot3.png'
-  alt='XML output with recycle bin on network share' %}
+  {% comment %}<!-- Wrapper for slides -->{% endcomment %}
+  <div class="carousel-inner" role="listbox">
+  {%- for sl in page.slide -%}
+  {%- assign desc = sl.desc | default: "(no description)" %}
+    <div class="item{% if forloop.first %} active{% endif %}">
+      <img src="{{ sl.image | relative_url }}" alt="{{ desc }}">
+      <div class="carousel-caption">{{ desc }}</div>
+    </div>
+  {%- endfor %}
+  </div>
 
-{% include fullwidth-figure.html src='/images/screenshot4.png'
-  alt='Deleted items containing multilingual path names' %}
+  {% comment %}<!-- Controls -->{% endcomment %}
+  <a class="left carousel-control" href="#rifiuti2-screenshot" role="button" data-slide="prev">
+    <span class="icon-prev" aria-hidden="true"></span>
+    <span class="sr-only">Previous image</span>
+  </a>
+  <a class="right carousel-control" href="#rifiuti2-screenshot" role="button" data-slide="next">
+    <span class="icon-next" aria-hidden="true"></span>
+    <span class="sr-only">Next image</span>
+  </a>
+</div>
+
+<noscript>
+{%- for sl in page.slide -%}
+  {%- assign desc = sl.desc | default: "(no description)" -%}
+  {% include fullwidth-figure.html src=sl.image alt=desc %}
+{%- endfor -%}
+</noscript>

@@ -17,6 +17,11 @@ caption {
 
 .table > caption { caption-side: bottom }
 
+figure {
+	margin-top: 30px;
+	margin-bottom: 0;
+}
+
 figcaption {
 	@extend %small-ui-font;
 	text-align: center;
@@ -126,9 +131,40 @@ a.link-external::after {
 // Note: this must match smooth scroll JS setting
 $scroll-offset: $navbar-height + 10px;
 
-:target {
+:target:not(.carousel) {
 	background-clip: content-box;
 	margin-top: (- $scroll-offset);
 	padding-top: $scroll-offset;
+}
+
+.carousel-caption {
+	font-family: $font-family-ui;
+	background-color: rgba(black,60%);
+	border-radius: $border-radius-large;
+}
+
+$carousel-control-size: 50px;
+
+%carousel-control-icon {
+	width: $carousel-control-size;
+	height: $carousel-control-size;
+	font-size: $carousel-control-size;
+	top: calc(50% - #{$carousel-control-size / 2});
+	margin-top: 0;
+}
+
+.carousel-control {
+	.icon-prev {
+		@extend %carousel-control-icon;
+		&::before {
+			@include fas-solid("\f053");
+		}
+	}
+	.icon-next {
+		@extend %carousel-control-icon;
+		&::before {
+			@include fas-solid("\f054");
+		}
+	}
 }
 
