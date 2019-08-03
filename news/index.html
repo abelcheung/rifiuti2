@@ -33,7 +33,7 @@ title: News
 
 		<div class="post-entry-container">
 			<div class="post-entry">
-				{{ post.excerpt | markdownify | strip_html | strip }}
+				{{ post.excerpt | markdownify | strip }}
 				<a href="{{ post.url | relative_url }}" class="post-read-more">[Read&nbsp;More&hellip;]</a>
 			</div>
 		</div>
