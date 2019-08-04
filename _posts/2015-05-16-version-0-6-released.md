@@ -3,6 +3,7 @@ title:  "Rifiuti2 0.6.0 released"
 date:   2015-05-16T08:03:24+0800
 last_modified_at: 2019-07-13T12:27:09+0800
 category: release
+redirect_from: /release/2015/05/16/version-0-6-released.html
 excerpt: >
   A release originally wouldn't have existed, if it were not receiving patch
   from enthusiastic users fixing support for Windows 10.

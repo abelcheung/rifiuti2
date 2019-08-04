@@ -198,8 +198,8 @@ requirejs:
       sri : 'sha384-sQ0Z7imIAcp1/Z47hsy2G3MgW9DiAJJnAyLej+zjg0mJcwapL9pEzZU0DU+QYXq2'
 
 plugins:
+  - jekyll-redirect-from
   - jekyll-remote-theme
-  - jekyll-paginate
   - jekyll-sitemap
   - jekyll-feed
 

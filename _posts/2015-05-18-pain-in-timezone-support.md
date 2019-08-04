@@ -3,6 +3,7 @@ title: "Pain in timezone support"
 date:  2015-05-18T09:05:29+08:00
 last_modified_at: 2019-07-13T12:12:22+0800
 category: development
+redirect_from: /development/2015/05/18/pain-in-timezone-support.html
 excerpt: >
   The bitter fight against Windows timezone support …
 tags: [bug fix,info2,timestamp]

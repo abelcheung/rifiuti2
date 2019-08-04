@@ -3,6 +3,7 @@ title: "Porting effort"
 date: 2015-06-14T11:46:35+08:00
 last_modified_at: 2019-07-13T11:58:10+0800
 category: development
+redirect_from: /development/2015/06/14/porting-effort.html
 excerpt: >
   The (painful) journal of porting rifiuti2 to Solaris...
 tags: [porting,charset,unix]

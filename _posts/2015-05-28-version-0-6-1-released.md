@@ -3,6 +3,7 @@ title: "Rifiuti2 0.6.1 released"
 date: 2015-05-28T14:08:51+0800
 last_modified_at: 2019-07-13T12:05:43+0800
 category: release
+redirect_from: /release/2015/05/28/version-0-6-1-released.html
 excerpt: >
   This is a bug fix release addressing 3 issues: endianness, date time format and timezone value.
 tags: [bug fix,timestamp]
