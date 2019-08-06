@@ -34,6 +34,13 @@ email:
   baseURL: "mailto:"
   icon: "fas fa-envelope"
 
+line:
+  name: "Line"
+  baseURL: "https://timeline.line.me/user/"
+  shareURL: "https://social-plugins.line.me/lineit/share?url=@url@"
+  icon: "fab fa-line"
+  icon-unstacked: true
+
 linkedin:
   name: "LinkedIn"
   baseURL: "https://linkedin.com/in/"
