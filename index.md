@@ -2,6 +2,7 @@
 layout: page
 use-site-title: true
 comments: false
+shareable: false
 slide:
   - image: /images/screenshot01.png
     desc : Default tab delimited output

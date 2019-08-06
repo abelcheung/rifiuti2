@@ -2,7 +2,7 @@
 layout: page
 title: History
 last_modified_at: 2019-06-17T14:25:09+0800
-meta-description: How rifiuti2 evolved from ancestor
+shareable: true
 redirect_from: /history.html
 permalink: /history/
 ---

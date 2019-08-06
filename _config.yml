@@ -53,10 +53,12 @@ social-network-links:
   github: abelcheung/rifiuti2
 
 # Select which share links to show in posts
-share-links-active:
-  facebook: true
-  twitter: true
-  linkedin: true
+# Only those with shareURL key under data/SocialNetworks.yml are honored
+shareable-link:
+  - twitter
+  - facebook
+  - linkedin
+  - reddit
 
 # --- Web Statistics Section --- #
 
@@ -104,7 +106,7 @@ defaults:
     values:
       layout: "post"
       comments: true  # add comments to all blog posts
-      social-share: true # add social media sharing buttons to all blog posts
+      shareable: true # add social media sharing buttons to all blog posts
   -
     scope:
       path: ""
@@ -112,6 +114,7 @@ defaults:
     values:
       layout: "page"
       show-avatar: false
+      shareable: false
   -
     scope:
       path: "assets/*.pdf"

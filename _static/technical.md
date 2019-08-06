@@ -3,6 +3,7 @@ layout: page
 title: Technical
 last_modified_at: 2019-06-13T14:35:52+08:00
 subtitle: In-depth knowledge about recycle bin
+shareable: true
 redirect_from: /technical.html
 permalink: /technical/
 ---

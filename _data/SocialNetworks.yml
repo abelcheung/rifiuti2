@@ -9,6 +9,7 @@
 facebook:
   name: "Facebook"
   baseURL: "https://www.facebook.com/"
+  shareURL: "https://www.facebook.com/sharer/sharer.php?u=@url@"
   icon: "fab fa-facebook-f"
 
 github:
@@ -19,11 +20,13 @@ github:
 twitter:
   name: "Twitter"
   baseURL: "https://twitter.com/"
+  shareURL: "https://twitter.com/intent/tweet?text=@title@&url=@url@"
   icon: "fab fa-twitter"
 
 reddit:
   name: "Reddit"
   baseURL: "https://reddit.com/u/"
+  shareURL: "https://reddit.com/submit?title=@title@&url=@url@"
   icon: "fab fa-reddit"
 
 email:
@@ -34,6 +37,7 @@ email:
 linkedin:
   name: "LinkedIn"
   baseURL: "https://linkedin.com/in/"
+  shareURL: "https://www.linkedin.com/shareArticle?mini=true&url=@url@"
   icon: "fab fa-linkedin-in"
 
 xing:
