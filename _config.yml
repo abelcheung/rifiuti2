@@ -32,6 +32,10 @@ navbar-links:
       "Raymond.cc intro": https://www.raymond.cc/blog/what-is-info2-file-hidden-in-recycled-or-recycler-folder/
       "Softpedia info": https://www.softpedia.com/get/Desktop-Enhancements/Other-Desktop-Enhancements/rifiuti2.shtml
 
+# Image to show in the navigation bar - image must be a square (width = height)
+# Remove this parameter if you don't want an image in the navbar
+# avatar: "/images/rbin.png"
+
 # If you want to have an image logo in the top-left corner instead of the title text,
 # then specify the following parameter
 # title-img: /path/to/image
@@ -72,6 +76,15 @@ google_analytics: "UA-62435108-1"
 # Google Tag Manager ID
 #gtm: ""
 
+# Matomo (aka Piwik) Web statistics
+# Uncomment the following section to enable Matomo. The opt-out parameter controls
+# whether or not you want to allow users to opt out of tracking.
+
+#matomo:
+#  site_id: "9"
+#  uri: "demo.wiki.pro"
+#  opt-out: true
+
 # --- Comments --- #
 
 # Fill in your Disqus shortname (NOT the userid) if you want to support Disqus comments
@@ -83,11 +96,16 @@ google_analytics: "UA-62435108-1"
 # To use Facebook Comments, fill in a Facebook App ID
 # fb_comment_id: ""
 
-# --- Misc --- #
-
-# Excerpt Word Length
-# Truncates the excerpt to the specified number of words on the index page
-excerpt_length: 50
+# To use Staticman comments, fill in repository, branch, and endpoint
+staticman:
+  repository : # GitHub username/repository eg. "daattali/beautiful-jekyll"
+  branch     : master # If you're not using `master` branch, then you also need to update the `branch` parameter in `staticman.yml`
+  endpoint   : # URL of your own deployment, with a trailing slash (will fallback to a public GitLab instance) eg. https://<your-api>/v3/entry/github/
+  reCaptcha:
+    # reCaptcha for Staticman (OPTIONAL, but recommended for spam protection)
+    # If you use reCaptcha, you must also set these parameters in staticman.yml
+    siteKey  : # Use your own site key, you need to apply for one on Google
+    secret   : # ENCRYPT your password by going to https://staticman3.herokuapp.com/v3/encrypt/<your-site-secret>
 
 # --- Don't need to touch anything below here (but you can if you want) --- #
 
@@ -133,48 +151,6 @@ exclude:
 
 include:
   - _static
-
-# prose.io config
-prose:
-  rooturl: '_posts'
-  media: 'img'
-  metadata:
-    _posts:
-      - name: "layout"
-        field:
-          element: "hidden"
-          value: "post"
-      - name: "title"
-        field:
-          element: "text"
-          label: "Post title"
-          placeholder: "Title"
-          alterable: true
-      - name: "subtitle"
-        field:
-          element: "textarea"
-          label: "Subtitle"
-          placeholder: "A description of your post."
-          alterable: true
-      - name: "date"
-        field:
-          element: "text"
-          label: "Date"
-          help: "Enter date of post."
-          placeholder: "yyyy-mm-dd"
-          alterable: true
-      - name: "image"
-        field:
-          element: "text"
-          label: "Image"
-          help: "Add a thumbnail image to your post."
-          placeholder: "Thumbnail"
-          alterable: true
-      - name: "published"
-        field:
-          element: "checkbox"
-          label: "Publish"
-          help: "Check to publish post, uncheck to hide."
 
 requirejs:
   mods:
