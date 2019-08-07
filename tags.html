@@ -45,9 +45,7 @@ requirejs:
 	{%- for post in site.tags[tag] -%}
 		<li>
 			<a href="{{ post.url | relative_url }}">{{ post.title }}</a>
-			<div class="post-meta">
-				<time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time>
-			</div>
+			{%- include post-meta.html post=post style=timeonly -%}
 		</li>
 	{%- endfor -%}
 	</ul>

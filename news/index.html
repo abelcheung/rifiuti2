@@ -28,9 +28,7 @@ redirect_from: /news.html
 		<h3 class="post-subtitle">{{ post.subtitle }}</h3>
 		{%- endif %}
 
-		<div class="post-meta">
-			Posted on {{ post.date | date: "%B %-d, %Y" }}
-		</div>
+		{% include post-meta.html post=post style="full" %}
 
 		<div class="post-entry-container">
 			<div class="post-entry">
@@ -38,10 +36,6 @@ redirect_from: /news.html
 				<a href="{{ post.url | relative_url }}" class="post-read-more">[Read&nbsp;More&hellip;]</a>
 			</div>
 		</div>
-
-		{%- if post.tags.size > 0 %}
-		{% include tag-list.html post=post %}
-		{% endif -%}
 
 	 </article>
 	{% endfor %}
