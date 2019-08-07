@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Technical
-last_modified_at: 2019-06-13T14:35:52+08:00
+last_modified_at: 2019-08-07T23:04:00+0800
 subtitle: In-depth knowledge about recycle bin
 shareable: true
 redirect_from: /technical.html
@@ -11,9 +11,12 @@ permalink: /technical/
 Recycle Bin has 2 major formats, which can be roughly divided as
 &ldquo;before Vista&rdquo; and &ldquo;after Vista&rdquo;.
 
-<div class="row">
+_Note_: `<sid>` below stands for [Security Identifier][3], which uniquely
+associates an ID with account or group on a system.
+{: .box-note}
 
-<div class="col-lg-6 col-md-6 col-sm-6" markdown="1">
+<div class="row">
+<div class="col-sm-6" markdown="1">
 
 ### Before: `INFO2` file
 
@@ -40,7 +43,7 @@ one of the most authorative source about INFO2 file format.
 
 </div>
 
-<div class="col-lg-6 col-md-6 col-sm-6" markdown="1">
+<div class="col-sm-6" markdown="1">
 
 ### After: `$Recycle.bin` folder
 
@@ -66,17 +69,13 @@ index file would be kept intact.
 
 </div>{%- comment -%}<!--end side by side table-->{%- endcomment -%}
 
-_Note_: `<sid>` stands for [Security Identifier][3], which is unique
-for each user on a system.
-{: .box-note}
-
 [^1]: One of the most widely used reference is from Cybersecurity Institute
-      <del>(http://www.csisite.net/INFO2.htm)</del>.
+      <del>www.csisite.net/INFO2.htm</del>.
       But it was taken down by new owner, and sadly permanently lost in
-      history of internet, not even from Internet Archive. Luckily many
+      internet history, not even available from Internet Archive. Luckily many
       other references are still available, though their presentations
       (and glitches) may vary from site to site.
 
-[1]: https://blogs.msdn.microsoft.com/b/oldnewthing/archive/2006/01/31/520225.aspx
-[2]: {{ 'assets/Forensics_Recycle_Bin.pdf' | relative_url }}
+[1]: https://devblogs.microsoft.com/oldnewthing/?p=32453
+[2]: {{ '/assets/Forensics_Recycle_Bin.pdf' | relative_url }}
 [3]: https://en.wikipedia.org/wiki/Security_Identifier

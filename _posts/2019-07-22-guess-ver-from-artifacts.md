@@ -54,4 +54,4 @@ Essentially it means:
 {: .table}
 </div>
 
-[^1]: It *might* be possible to misdetect in case padding area contains no junk data, though so far no such evidence has been encountered yet. Developers *finally* cared to zero out allocated memory since Windows XP/2003.
+[^1]: It *might* be possible to misidentify as XP/2003 in case padding area contains no junk data, though so far no such evidence has been encountered yet. Developers *finally* cared to zero out allocated memory since Windows XP/2003.

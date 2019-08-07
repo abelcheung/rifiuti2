@@ -40,8 +40,8 @@ path and size of deleted files. For more ancient versions of Windows,
 it can also check whether deleted items were not in recycle bin anymore
 (that is, either restored or permanently purged).
 
-It is a [rewrite of `rifiuti`][1], which is [originally written][2]
-by FoundStone folks for identical purpose. Then it was extended to
+It is a [rewrite of `rifiuti`][1], originally written by FoundStone folks
+for identical purpose. Later `rifiuti2` was extended to
 cover more functionalities, such as:
 
 * Handles oldest (Win95) to newest (Win 10 and Server 2019) recycle bin format
@@ -52,14 +52,13 @@ cover more functionalities, such as:
   ones and legacy ones (using ANSI code page)
 * Supports output in XML format as well as original tab-delimited text
 * Obscure features such as recycle bin on network share
-  (`\\server\share_name`)
+  (`\\server\share`)
 
 Latest features and bug fixes [are listed inside NEWS file][3]; you're
-also welcome to [check out blog news][4] for more insight
-(and some grumbles &#x263A;).
+also welcome to [check out blog news][4] for more insight during
+development and documentation stages.
 
 [1]: {{ 'history/' | relative_url }}
-[2]: https://web.archive.org/web/20101121070625/http://www.foundstone.com/us/resources/proddesc/rifiuti.htm
 [3]: {{ '/blob/master/NEWS.md' | prepend: site.repourl }}
 [4]: {{ 'news/' | relative_url }}
 
@@ -77,7 +76,7 @@ usage samples [on Github page][5] as well.
 
 # Screenshots
 
-<div id="rifiuti2-screenshot" class="carousel slide hidden" data-interval="8000">
+<div id="rifiuti2-screenshot" class="carousel slide hidden" data-interval="7000">
   {% comment %}<!-- Indicators -->{% endcomment %}
   <ol class="carousel-indicators">
   {%- for sl in page.slide %}
