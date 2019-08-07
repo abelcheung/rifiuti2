@@ -7,6 +7,8 @@ redirect_from: /development/2015/05/18/pain-in-timezone-support.html
 excerpt: >
   The bitter fight against Windows timezone support …
 tags: [bug fix,info2,timestamp]
+bigimg:
+  - /images/time-zone-bg.png: "Time Zone for countries, courtesy of Wikipedia Commons"
 ---
 
 Haven't anticipated the addition of timezone info has caused so much
