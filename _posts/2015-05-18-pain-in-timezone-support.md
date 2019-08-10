@@ -17,7 +17,7 @@ process.
 
 **Four years later:** [`GDateTime` structure][7] will be used to simplify cross
 platform handling of such date / time issue. Let's see how far it can go.
-{: .box-note}
+{: .callout .callout-info}
 
 ### `strftime()` is not very platform neutral
 

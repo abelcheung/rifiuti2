@@ -42,7 +42,7 @@ of recycled items. The 3 fields correspond to:
 
 **Trivia:** the 32 bit size guarantees that recycle bin can't ever
 exceed 2GB. Not that 2GB hard drive existed during that dynasty &hellip;
-{: .box-note}
+{: .callout .callout-info}
 
 They were ignored probably because 98 / ME / 2000 filled those bytes with seemingly
 random data. Faintly recalled that those are in fact memory chunks on system, and

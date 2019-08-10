@@ -1,0 +1,28 @@
+/* --- Callout boxes --- */
+.callout {
+	// @extend .alert;
+	padding: 15px;
+	margin-bottom: 20px;
+	border-radius: $border-radius-base;
+
+	border: 1px solid rgba(black,10%);
+	border-left-width: 4px;
+	border-left-color: $text-col;
+}
+
+// Tune base bg colors for different callout boxes,
+// using alert box colors as basis. With different
+// page bg color, their relative strengths need to be tuned
+$callout-bg: (
+	"info"   : scale-color($state-info-bg, $lightness: -10%),
+	"success": $state-success-bg,
+	"warning": scale-color($state-warning-bg, $lightness: -20%),
+	"danger" : scale-color($state-danger-bg, $lightness: 10%),
+);
+
+@each $severity, $color in $callout-bg {
+	.callout-#{$severity} {
+		background-color: transparentize($color: scale-color($color, $lightness: 70%), $amount: 0.3);
+		border-left-color: scale-color($color, $saturation: 30%, $lightness: -30%);
+	}
+}

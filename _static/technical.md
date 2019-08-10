@@ -13,7 +13,7 @@ Recycle Bin has 2 major formats, which can be roughly divided as
 
 _Note_: `<sid>` below stands for [Security Identifier][3], which uniquely
 associates an ID with account or group on a system.
-{: .box-note}
+{: .callout .callout-info}
 
 <div class="row">
 <div class="col-sm-6" markdown="1">

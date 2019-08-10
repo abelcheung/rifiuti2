@@ -30,7 +30,7 @@ of SunFreeware, paying subscription service just for testing a rare
 use case (using `rifiuti2` on Solaris) does't justify the cost,
 so this is the status quo.</del>
 
-{: .box-note}
+{: .callout .callout-info}
 **4 years later**: Turns out it's just my ignorance, `iconv()` from
 Solaris is fine to use, just that the extra encodings are not installed
 by default (at least on some Solaris spin-off, say [Illumos][5]). Besides
