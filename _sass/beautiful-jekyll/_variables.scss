@@ -1,13 +1,17 @@
+// Some basic site style customization variables
+// Check out /_sass/bootstrap/_variables.scss for usable variables
+
 // Color settings
-$text-col           : #444;
-$navbar-col         : #E0F0FF;
+$text-col           : $gray-dark;
 $navbar-text-col    : $text-col;
-$navbar-children-col: #D0E8FF;
+$footer-text-col    : $text-col;
+
 $page-col           : #ECF6FF;
+$navbar-col         : #E0F0FF;
+$navbar-children-col: #D0E8FF;
 $link-col           : #3A3CB7;
 $hover-col          : scale-color($color: $link-col, $lightness: 20%);
 $footer-col         : $navbar-col;
-$footer-text-col    : $text-col;
 $footer-link-col    : $link-col;
 
 // Default font
@@ -17,10 +21,10 @@ $font-family-content: Lora, $font-family-serif;
 $font-weight-content: normal;
 
 // Background images
-// Paths are relative to the main CSS file (assets/css/main.css)
+// Paths are relative to the main CSS file (/assets/css/main.css)
 // Unfortunately liquid tag can't be used here, therefore
 // absolute link wouldn't work for Github project pages
 
-// $page-img: "../../img/bgimage.png";
-// $navbar-img: "../../img/bgimage.png";
+// $page-img: "../img/bgimage.png"; // i.e. /assets/img/bgimage.png
+// $navbar-img: "../img/bgimage.png";
 $footer-img: "../img/footer-hex.png";
