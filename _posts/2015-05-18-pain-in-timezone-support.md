@@ -37,6 +37,15 @@ system setting. Windows users would be familiar with Control Panel settings
 instead. But `TZ` variable in Windows is arbitrary and there is no
 rigorous checking [^2], resulting in hilarious scenarios:
 
+[^1]: `TZ` variable used to be a common mechanism to
+      [set time zone for Windows 3.1][2]. Same applies to ancient Linux
+      systems.
+
+[^2]: Format of `TZ` variable is [documented in `_tzset()` function][4].
+      *However*, it doesn't mention the behavior if supplied value does
+      not satisfy documented format. In fact virtually infinite randomly
+      invented values would be accepted.
+
 1. For example, I can happily use the value `ABC123XYZ` as timezone and it
    would be accepted as a timezone having *-123 hours offset from UTC*.
    The letters are merely junk &mdash; except that using 4 letters (like
@@ -149,19 +158,14 @@ constructing event timeline.
 [6]: https://support.microsoft.com/en-us/kb/188768
 [7]: https://developer.gnome.org/glib/stable/glib-GDateTime.html
 
-<hr class="small"/>
+<hr class="short" />
+
+<div class="table-responsive small" markdown="1">
 
 | Date | ChangeLog |
 | --- | --- |
-| 2015-05-28 | Add description about problem in `_timeb` |
-| 2019-06-04 | Use of `GDateTime` to replace the whole mess |
-{: .table}
+| `2015-05-28` | Add description about problem in `_timeb` |
+| `2019-06-04` | Use of `GDateTime` to replace the whole mess |
+{: .table .table-condensed}
 
-[^1]: `TZ` variable used to be a common mechanism to
-      [set time zone for Windows 3.1][2]. Same applies to ancient Linux
-      systems.
-
-[^2]: Format of `TZ` variable is [documented in `_tzset()` function][4].
-      *However*, it doesn't mention the behavior if supplied value does
-      not satisfy documented format. In fact virtually infinite randomly
-      invented values would be accepted.
+</div>
