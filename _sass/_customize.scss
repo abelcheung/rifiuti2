@@ -5,30 +5,12 @@
 	text-align: justify;
 }
 
-%small-ui-font {
-	font-family: $font-family-ui;
-	font-size: 85%;
-}
-
 caption {
 	@extend %small-ui-font;
 	color: inherit;
 }
 
 .table > caption { caption-side: bottom }
-
-figure {
-	margin-top: 30px;
-	margin-bottom: 0;
-}
-
-figcaption {
-	@extend %small-ui-font;
-	text-align: center;
-	> p {
-		margin: 0;
-	}
-}
 
 // Screen reader attrs shouldn't affect UI
 // Light font+bg color means bad accessibility

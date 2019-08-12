@@ -147,7 +147,7 @@ defaults:
 
 # Exclude these files from production site
 exclude:
-  - staticman.yml
+  - "*.yml"
 
 include:
   - _static

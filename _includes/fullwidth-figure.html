@@ -1,5 +1,0 @@
-{%- assign caption = include.caption | default: include.alt -%}
-<figure class="center-block">
-	<img src="{{ include.src | relative_url }}" alt="{{ include.alt }}" class="img-responsive img-rounded center-block" />
-	<figcaption class="text-muted">{{ caption | prepend: "Figure: " | markdownify }}</figcaption>
-</figure>
