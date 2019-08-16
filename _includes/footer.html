@@ -18,12 +18,11 @@
 	{%- endcase -%}
 	{%- endcapture %}
 	<li>
-		<a href="{{ social_url }}" title="{{ element.name }}">
+		<a href="{{ social_url }}" aria-label="{{ element.name }}" title="{{ element.name }}">
 		<span class="fa-stack fa-lg" aria-hidden="true">
 			<i class="fas fa-circle fa-stack-2x"></i>
 			<i class="{{ element.icon }} fa-stack-1x fa-inverse"></i>
 		</span>
-		<span class="sr-only">{{ element.name }}</span>
 		</a>
 	</li>
 	{% endfor %}
@@ -34,8 +33,10 @@
 <li><span>&#xA9; {{ site.author.name }}</span></li>
 <li><span>{{ site.time | date: '%Y' }}</span></li>
 <li><a href="https://creativecommons.org/licenses/by/4.0/" style="font-size: 150%"
-	title="Creative Commons Attribution 4.0 International"><i class="fab fa-creative-commons"></i>
-	<i class="fab fa-creative-commons-by"></i>
+	title="Creative Commons Attribution 4.0 International"
+	aria-label="Link to Creative Commons Attribution 4.0 International"
+	><i class="fab fa-creative-commons" aria-hidden=true></i>
+	<i class="fab fa-creative-commons-by" aria-hidden=true></i>
 </a></li>
 
 {% include trackers.html place='footer' %}
