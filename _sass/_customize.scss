@@ -5,19 +5,6 @@
 	text-align: justify;
 }
 
-caption {
-	@extend %small-ui-font;
-	color: inherit;
-}
-
-.table > caption { caption-side: bottom }
-
-// Screen reader attrs shouldn't affect UI
-// Light font+bg color means bad accessibility
-.text-muted {
-	color: inherit;
-}
-
 pre, code, samp, kbd {
 	hyphens: manual;
 }
@@ -74,13 +61,6 @@ a code { color: $link-col }
 	+ p {
 		margin-bottom: 0;
 	}
-}
-
-// apply text align class on table to align everything in table globally
-@each $dir in (left,right,center) {
-	.text-#{$dir} td,
-	.text-#{$dir} th,
-	.text-#{$dir} > caption { text-align: $dir }
 }
 
 // translucent header
