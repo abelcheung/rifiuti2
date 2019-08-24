@@ -9,20 +9,6 @@ pre, code, samp, kbd {
 	hyphens: manual;
 }
 
-// hardcoded bootstrap code style not matching with theme
-code {
-	padding: 2px;
-	color: inherit;
-	background-color: rgba(black,0.03);
-}
-
-a code { color: $link-col }
-
-// reduce list indent for mobile
-@media only screen and (max-width: $screen-xs-max) {
-	ul, ol { padding-inline-start: 1em }
-}
-
 /* --- landing page widgets and buttons --- */
 
 // jumbotron style tries to match with navbar for now
