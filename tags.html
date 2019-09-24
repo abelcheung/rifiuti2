@@ -29,9 +29,9 @@ requirejs:
 <ul id="tag-list">
 {%- for tag in tag_list -%}
 	{%- assign tag_id = tag | slugify %}
-	<li><a href="#{{ tag_id }}" data-tag-id="{{ tag_id }}" class="btn btn-primary btn-tag" role="button">
-		<div class="btn-tag-text">{{ tag }}</div>
-		<span class="badge">{{site.tags[tag].size}}</span>
+	<li><a href="#{{ tag_id }}" data-tag-id="{{ tag_id }}" class="btn btn-primary btn-tag"
+		role="button"><div class="btn-tag-text">{{ tag }}
+		</div><div class="badge">{{site.tags[tag].size}}</div>
 		<span class="sr-only">posts</span>
 	</a></li>
 {% endfor -%}

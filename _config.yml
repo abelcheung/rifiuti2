@@ -4,11 +4,23 @@ repourl: https://github.com/abelcheung/rifiuti2
 
 remote_theme: abelcheung/beautiful-jekyll
 
+# --- Site info and SEO options --- #
+# Due to usage of jekyll-seo-tag plugin, please follow this link on
+# configuration of site information
+# https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
+
 # Name of website
 title: Rifiuti2
 
 # Short description of your site
 description: Windows Recycle Bin Analysis Tool
+
+twitter:
+  username: abelcheung
+  card: summary
+
+author:
+  name: Abel Cheung
 
 # --- Local development options ---
 # If your website is hosted locally rather than on GitHub, then you need to uncomment the next two parameters to set the url and baseurl
@@ -47,10 +59,6 @@ css:
   main: "/assets/css/main.css"
 
 # --- Footer options --- #
-
-author:
-  name: Abel Cheung
-  twitter: "@abelcheung"
 
 social-network-links:
   rss: true
@@ -136,12 +144,12 @@ defaults:
       shareable: false
   -
     scope:
-      path: "assets/*.pdf"
+      path: "assets/Forensics_Recycle_Bin.pdf"
     values:
       sitemap: false
   -
     scope:
-      path: "google*.html"
+      path: "google6e29d6cc7f91b1d6.html"
     values:
       sitemap: false
 
@@ -178,9 +186,10 @@ requirejs:
       sri : 'sha384-sQ0Z7imIAcp1/Z47hsy2G3MgW9DiAJJnAyLej+zjg0mJcwapL9pEzZU0DU+QYXq2'
 
 plugins:
+  - jekyll-seo-tag
   - jekyll-redirect-from
   - jekyll-remote-theme
   - jekyll-sitemap
   - jekyll-feed
 
-# vim: set sw=2 ts=2 expandtab :
+# vim: set sw=2 ts=2 sts=-1 expandtab :
