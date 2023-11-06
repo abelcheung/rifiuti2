@@ -1,3 +1,8 @@
+## 0.8.0
+#### Breaking Change
+- Gettext support is removed, its m4 macro versioning is placing a burden on maintainers and packagers
+  - Same for the translation. No contribution so far, probably this is unneeded
+
 ## 0.7.0
 #### Feature Addition
 * Support recycle bin from jurassic Windows: 95, NT4, ME (Issue #9)
