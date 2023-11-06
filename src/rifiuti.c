@@ -123,7 +123,7 @@ validate_index_file (const char  *filename,
 		     ( ver != VERSION_WIN98 ) &&
 		     ( ver != VERSION_WIN95 ) )
 		{
-			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
+			g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
 			ret = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
@@ -131,13 +131,13 @@ validate_index_file (const char  *filename,
 
 		if (!legacy_encoding)
 		{
-			g_printerr (_("This INFO2 file was produced on a legacy system "
+			g_printerr ("%s", _("This INFO2 file was produced on a legacy system "
 			              "without Unicode file name (Windows ME or earlier). "
 			              "Please specify codepage of concerned system with "
 			              "'-l' or '--legacy-filename' option."));
 			g_printerr ("\n\n");
 			/* TRANSLATOR COMMENT: can choose example from YOUR language & code page */
-			g_printerr (_("For example, if recycle bin is expected to come from West "
+			g_printerr ("%s", _("For example, if recycle bin is expected to come from West "
 			              "European versions of Windows, use '-l CP1252' option; "
 			              "or in case of Japanese Windows, use '-l CP932'."));
 			g_printerr ("\n");
@@ -153,7 +153,7 @@ validate_index_file (const char  *filename,
 		meta.has_unicode_path = TRUE;
 		if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
 		{
-			g_printerr (_("Unsupported file version, or probably not an INFO2 file at all."));
+			g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
 			g_printerr ("\n");
 			ret = R2_ERR_BROKEN_FILE;
 			goto validation_broken;
@@ -436,7 +436,7 @@ main (int    argc,
 				"  Very likely the (localised) Windows generating the recycle bin "
 				"artifact does not use specified codepage."), legacy_encoding);
 		} else {
-			g_printerr (_("Some entries could not be presented as correct "
+			g_printerr ("%s", _("Some entries could not be presented as correct "
 				"unicode path.  The concerned characters are displayed "
 				"in escaped unicode sequences."));
 		}

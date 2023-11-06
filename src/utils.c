@@ -399,11 +399,6 @@ _count_fileargs (GOptionContext *context,
 	g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
 		_("Must specify exactly one file or folder argument."));
 
-/*
-		_("Must specify exactly one INFO2 file as argument."));
-		(_("Must specify exactly one directory containing "
-			"$Recycle.bin index files, or one such index file "
-			"as argument.")); */
 	return FALSE;
 }
 
@@ -615,7 +610,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
 	if (g_utf8_validate (u8_path, -1, NULL))
 		result = _filter_printable_char (u8_path, tmpl, out_ch_width);
 	else {
-		g_critical (_("Converted path failed UTF-8 validation"));
+		g_critical ("%s", _("Converted path failed UTF-8 validation"));
 		*st = R2_ERR_INTERNAL;
 	}
 
@@ -649,7 +644,7 @@ _local_print (gboolean    is_stdout,
 	FILE  *fh;
 
 	if ( !g_utf8_validate (str, -1, NULL)) {
-		g_critical (_("Supplied format or arguments not in UTF-8 encoding"));
+		g_critical ("%s", _("Supplied format or arguments not in UTF-8 encoding"));
 		return;
 	}
 
@@ -703,49 +698,6 @@ rifiuti_init (const char *progpath)
 	/* Need this very early, before any debug/error is ever printed */
 	_prepare_error_handle();
 	g_set_printerr_handler (_local_printerr);
-
-#ifdef G_OS_WIN32
-	{
-		/*
-		 * Setting GETTEXT_MUI is not enough. Though it successfully
-		 * pick up user default locale under Windows, glib internally
-		 * only considers g_win32_getlocale() for decision making,
-		 * which in turn only considers thread locale.
-		 * So we need to override g_win32_getlocale() result. And
-		 * overriding that with LC_* would render GETTEXT_MUI useless.
-		 */
-		/* _putenv_s ("GETTEXT_MUI", "1"); */
-		char *loc = get_win32_locale();
-
-		if (0 == _putenv_s ("LC_MESSAGES", loc)) {
-			g_debug ("(Windows) Use LC_MESSAGES = %s", loc);
-		} else {
-			g_warning ("Failed setting LC_MESSAGES variable, "
-				"move on as if no translation is used.");
-		}
-		g_free (loc);
-	}
-#endif
-
-	{
-		/* searching current dir is more useful on Windows */
-		char *d = g_path_get_dirname (progpath);
-		char *p = g_build_filename (d, LOCALEDIR_PORTABLE, NULL);
-
-		if (g_file_test (p, G_FILE_TEST_IS_DIR))
-		{
-			g_debug ("Portable LOCALEDIR = %s", p);
-			bindtextdomain (PACKAGE, p);
-		}
-		else
-			bindtextdomain (PACKAGE, LOCALEDIR);
-
-		g_free (p);
-		g_free (d);
-	}
-
-	bind_textdomain_codeset (PACKAGE, "UTF-8");
-	textdomain (PACKAGE);
 }
 
 void
@@ -754,8 +706,6 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 {
 	char         *bug_report_str;
 	GOptionGroup *group;
-
-	g_option_context_set_translation_domain (*context, PACKAGE);
 
 	bug_report_str = g_strdup_printf (
 		/* TRANSLATOR COMMENT: argument is bug report webpage */
@@ -777,18 +727,14 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 	}
 
 	g_option_group_set_parse_hooks (group, NULL, _count_fileargs);
-	g_option_group_set_translation_domain (group, PACKAGE);
 	g_option_context_set_main_group (*context, group);
 
 	/* text group */
-	/* FIXME For unknown reason, short description of option
-	 * groups are not translated at all if using N_() */
 	group = g_option_group_new ("text",
 		_("Plain text output options:"),
 		N_("Show plain text output options"), NULL, NULL);
 
 	g_option_group_add_entries (group, text_options);
-	g_option_group_set_translation_domain (group, PACKAGE);
 	g_option_context_add_group (*context, group);
 
 	g_option_context_set_help_enabled (*context, TRUE);
@@ -1147,7 +1093,7 @@ print_header (metarecord  meta)
 				_os_guess g = guess_windows_ver (meta);
 
 				if (g == OS_GUESS_UNKNOWN)
-					g_print (_("OS detection failed"));
+					g_print ("%s", _("OS detection failed"));
 				else
 					g_print (_("OS Guess: %s"), gettext (os_strings[g]) );
 			}

@@ -13,7 +13,7 @@ dist-win: win-pkg-data win-pkg-bin
 	rm -f $(ZIPNAME).zip && \
 	7z a -bd -o$(abs_top_builddir) $(ZIPNAME).zip .
 
-win-pkg-data: win-pkg/$(LOCALEDIR_PORTABLE) win-pkg/README.html
+win-pkg-data: win-pkg/README.html
 
 win-pkg-bin: \
 	win-pkg/rifiuti.exe \
@@ -30,10 +30,6 @@ win-pkg/README.html: $(top_srcdir)/src/rifiuti.1
 	( sed -e '/^####CHANGELOG####/,$$d' $$tmpfile1; cat $$tmpfile2; \
 		sed -e '0,/^####CHANGELOG####/d' $$tmpfile1 ) > $@ ;\
 	rm -f $$tmpfile1 $$tmpfile2
-
-win-pkg/$(LOCALEDIR_PORTABLE): $(top_srcdir)/po/$(PACKAGE).pot
-	cd po && $(MAKE) install localedir=$(abs_top_builddir)/$@
-	cp $< $(abs_top_builddir)/$@/
 
 win-pkg/rifiuti.exe: $(top_builddir)/src/rifiuti.exe
 	$(MKDIR_P) win-pkg

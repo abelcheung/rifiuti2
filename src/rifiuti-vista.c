@@ -88,7 +88,7 @@ validate_index_file (const char  *filename,
 	{
 		g_debug ("File size expected to be more than %" G_GSIZE_FORMAT,
 			(gsize) VERSION1_FILENAME_OFFSET);
-		g_printerr (_("File is truncated, or probably not a $Recycle.bin index file."));
+		g_printerr ("%s", _("File is truncated, or probably not a $Recycle.bin index file."));
 		g_printerr ("\n");
 		status = R2_ERR_BROKEN_FILE;
 		goto validation_error;
@@ -108,7 +108,7 @@ validate_index_file (const char  *filename,
 			{
 				g_debug ("File size expected to be %" G_GSIZE_FORMAT
 					" or %" G_GSIZE_FORMAT, expected, expected - 1);
-				g_printerr (_("Index file expected size and real size do not match."));
+				g_printerr ("%s", _("Index file expected size and real size do not match."));
 				g_printerr ("\n");
 				status = R2_ERR_BROKEN_FILE;
 				goto validation_error;
@@ -126,7 +126,7 @@ validate_index_file (const char  *filename,
 			if (*bufsize != expected)
 			{
 				g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
-				g_printerr (_("Index file expected size and real size do not match."));
+				g_printerr ("%s", _("Index file expected size and real size do not match."));
 				g_printerr ("\n");
 				status = R2_ERR_BROKEN_FILE;
 				goto validation_error;
@@ -134,7 +134,7 @@ validate_index_file (const char  *filename,
 			break;
 
 		default:
-			g_printerr (_("Unsupported file version, or probably not a $Recycle.bin index file."));
+			g_printerr ("%s", _("Unsupported file version, or probably not a $Recycle.bin index file."));
 			g_printerr ("\n");
 			status = R2_ERR_BROKEN_FILE;
 			goto validation_error;
@@ -324,7 +324,7 @@ main (int    argc,
 	/* NULL filelist at this point means a valid empty $Recycle.bin */
 	if ( !meta.is_empty && (recordlist == NULL) )
 	{
-		g_printerr (_("No valid recycle bin index file found."));
+		g_printerr ("%s", _("No valid recycle bin index file found."));
 		g_printerr ("\n");
 		exit_status = R2_ERR_BROKEN_FILE;
 		goto cleanup;
@@ -351,7 +351,7 @@ main (int    argc,
 
 			if (meta.version == VERSION_INCONSISTENT)
 			{
-				g_printerr (_("Index files come from multiple versions of Windows."
+				g_printerr ("%s", _("Index files come from multiple versions of Windows."
 					"  Please check each file independently."));
 				g_printerr ("\n");
 				exit_status = R2_ERR_BROKEN_FILE;
@@ -388,7 +388,7 @@ main (int    argc,
 	switch (exit_status)
 	{
 		case R2_ERR_USER_ENCODING:
-			g_printerr (_("Some entries could not be presented as correct "
+			g_printerr ("%s", _("Some entries could not be presented as correct "
 				"unicode path.  The concerned characters are displayed "
 				"in escaped unicode sequences."));
 			g_printerr ("\n");

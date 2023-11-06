@@ -34,7 +34,6 @@
 #include <glib.h>
 
 void       gui_message              (const char     *message );
-char *     get_win32_locale         (void);
 char *     get_win_timezone_name    (void);
 gboolean   can_list_win32_folder    (const char     *dir     );
 gboolean   init_wincon_handle       (gboolean        is_stdout);
