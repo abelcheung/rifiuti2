@@ -22,12 +22,6 @@ AC_SUBST(is_mingw)
 AC_SUBST(is_cygwin)
 AM_CONDITIONAL([OS_WINDOWS], [test "x$is_mingw" != x])
 
-dnl I18N
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19])
-LOCALEDIR_PORTABLE="${PACKAGE}-l10n"
-AC_SUBST([LOCALEDIR_PORTABLE])
-
 dnl Compiler and devel toolchain checks.
 AS_BOX([Compiler and toolchain])
 AC_PROG_CC
@@ -142,7 +136,6 @@ AC_CHECK_FUNCS([setlocale strerror fseek fread memcpy])
 
 AC_CONFIG_FILES([
 Makefile
-po/Makefile.in
 src/Makefile
 test/Makefile
 test/atlocal

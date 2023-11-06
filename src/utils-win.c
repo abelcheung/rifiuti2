@@ -73,104 +73,6 @@ gui_message (const char *message)
 	g_free (body);
 }
 
-/*!
- * A copy of latter part of g_win32_getlocale()
- */
-#ifndef SUBLANG_SERBIAN_LATIN_BA
-#define SUBLANG_SERBIAN_LATIN_BA 0x06
-#endif
-
-static const char *
-get_win32_locale_script (int primary,
-                         int sub)
-{
-	switch (primary)
-	{
-	  case LANG_AZERI:
-		switch (sub)
-		{
-		  case SUBLANG_AZERI_LATIN:    return "@Latn";
-		  case SUBLANG_AZERI_CYRILLIC: return "@Cyrl";
-		}
-		break;
-
-	  case LANG_SERBIAN:		/* LANG_CROATIAN == LANG_SERBIAN */
-		switch (sub)
-		{
-		  case SUBLANG_SERBIAN_LATIN:
-		  case SUBLANG_SERBIAN_LATIN_BA: /* Serbian (Latin) - Bosnia and Herzegovina */
-			return "@Latn";
-		}
-		break;
-	  case LANG_UZBEK:
-		switch (sub)
-		{
-		  case SUBLANG_UZBEK_LATIN:    return "@Latn";
-		  case SUBLANG_UZBEK_CYRILLIC: return "@Cyrl";
-		}
-		break;
-	}
-	return NULL;
-}
-
-/*!
- * We can't use [`g_win32_getlocale()`][1] directly.
- *
- * There are 3 possible source for language UI settings:
- * - [`GetThreadLocale()`][2]  (used by g_win32_getlocale)
- * - User default language
- * - System default language
- *
- * For GUI applications, thread locale is good enough; this is the
- * default for gettext and glib on Windows. But rifiuti2 is a CLI
- * program, where the caller is a console. In such case thread locale
- * is solely determined by console code page, not always equal to user
- * preferred language.
- *
- * For example, multiple West European Windows use console codepage 850,
- * which GetLocaleInfo() returns en_US, not any West European languages.
- *
- * Here we attempt to pick up user default first, followed by thread
- * locale; and do the dirty work in a manner almost identical to
- * g_win32_getlocale().
- *
- * [1]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-getlocale
- * [2]: https://docs.microsoft.com/en-us/windows/desktop/api/winnls/nf-winnls-getthreadlocale
- */
-char *
-get_win32_locale (void)
-{
-	LCID lcid;
-	LANGID langid;
-	char *ev;
-	char iso639[10];
-	char iso3166[10];
-	const char *script;
-
-	/* Allow user overriding locale env */
-	if (((ev = getenv ("LC_ALL"))      != NULL && ev[0] != '\0') ||
-	    ((ev = getenv ("LC_MESSAGES")) != NULL && ev[0] != '\0') ||
-	    ((ev = getenv ("LANG"))        != NULL && ev[0] != '\0'))
-	return g_strdup (ev);
-
-	lcid = LOCALE_USER_DEFAULT;
-	if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME , iso639 , sizeof (iso639)) ||
-	    !GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
-	{
-		lcid = GetThreadLocale();
-		if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME , iso639 , sizeof (iso639)) ||
-			!GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
-		return g_strdup ("C");
-	}
-
-	/* Strip off the sorting rules, keep only the language part.  */
-	langid = LANGIDFROMLCID (lcid);
-
-	/* Get script based on language and territory */
-	script = get_win32_locale_script (PRIMARYLANGID (langid), SUBLANGID (langid));
-
-	return g_strconcat (iso639, "_", iso3166, script, NULL);
-}
 
 /*!
  * `strftime()` on Windows can show garbage timezone name, because its
@@ -354,7 +256,7 @@ can_list_win32_folder (const char *path)
 				(mask & FILE_READ_EA) == FILE_READ_EA )
 			ret = TRUE;
 		else {
-			g_printerr (_("Error listing directory: Insufficient permission."));
+			g_printerr ("%s", _("Error listing directory: Insufficient permission."));
 			g_printerr ("\n");
 		}
 

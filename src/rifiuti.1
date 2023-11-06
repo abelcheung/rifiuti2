@@ -25,34 +25,6 @@ application, and no installation is required. Extract zip file onto
 any folder of your choice and programs are ready for use.
 Read sections below on how to use them.
 
-.SS Translation
-By default output messages of rifiuti2 are in English.
-The program shall be able to pick up translation automatically
-if user has correct Region / Language setting.  This setting
-is under "Formats" tab of "Region and Language" (name may vary
-for different versions of Windows).
-
-Optionally one may use \fCLANGUAGE\fP environment variable to
-force using certain translation.  Supported language codes are
-the same as existing subdirectory names under
-.nh
-\fCrifiuti2\-l10n\fP
-.hy
-folder.  For example, assuming folder
-.nh
-\fCrifiuti2\-l10n\\fr\\\fP
-.hy
-exists, running following in Windows console would enable French
-translation:
-.RS
-\fCset LANGUAGE=fr\fP
-.RE
-The file \fCrifiuti.pot\fP in archive contains translation template
-for rifiuti2.  Rifiuti2 makes use of \f[CB]gettext\fP for handling
-translation. There are lots of tutorial on internet on how to work
-with gettext translations; any completed translation can be submitted
-to main author for inclusion in next release.
-
 .SH LATEST CHANGE
 
 ####CHANGELOG####
@@ -269,21 +241,10 @@ without header and metadata
 The following environment variables affect execution of program:
 
 .TP
-\fBLANG\fP / \fBLC_MESSAGES\fP / \fBLC_ALL\fP / \fBLANGUAGE\fP
-.RS
-Listed in order of increasing importance, these variables determine
-the translation to use. They belong to the group of locale
-environment variables. In general, these variables are already
-properly set up on Unix-like systems, while unused on Windows.
-Please consult relevant document of user's operating
-system for more detail.
-.RE
-.TP
 \fBLANG\fP / \fBLC_CTYPE\fP / \fBLC_ALL\fP
 .RS
 If recycle bin path contains non-ASCII character, these variables
-affect how they are displayed, in a manner similar to translation
-related variables described above. However it is not recommended
+affect how they are displayed. However it is not recommended
 to modify them, as since 0.7.0 version rifiuti2 no more
 expects any environment using non UTF-8 encoding.
 .RE

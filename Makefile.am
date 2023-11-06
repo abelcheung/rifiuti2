@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = foreign dist-xz dist-zip
 
-SUBDIRS = src po test
+SUBDIRS = src test
 
 EXTRA_DIST = \
 	docs      \
