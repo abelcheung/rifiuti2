@@ -8,18 +8,20 @@ include Makefile
 
 ZIPNAME ?= $(distdir)-win-$(build_cpu)
 
-dist-win: win-pkg-data win-pkg-bin
+dist-win: win-pkg-data win-pkg-bin win-pkg/docs/README.html
 	cd win-pkg && \
 	rm -f $(ZIPNAME).zip && \
 	7z a -bd -o$(abs_top_builddir) $(ZIPNAME).zip .
 
-win-pkg-data: win-pkg/README.html
+win-pkg-data:
+	$(MKDIR_P) win-pkg
+	cp -r $(top_srcdir)/docs win-pkg/
 
 win-pkg-bin: \
 	win-pkg/rifiuti.exe \
 	win-pkg/rifiuti-vista.exe
 
-win-pkg/README.html: $(top_srcdir)/src/rifiuti.1
+win-pkg/docs/README.html: $(top_srcdir)/src/rifiuti.1
 	set -e ;\
 	tmpfile1=$$(mktemp) ;\
 	tmpfile2=$$(mktemp) ;\
@@ -32,11 +34,9 @@ win-pkg/README.html: $(top_srcdir)/src/rifiuti.1
 	rm -f $$tmpfile1 $$tmpfile2
 
 win-pkg/rifiuti.exe: $(top_builddir)/src/rifiuti.exe
-	$(MKDIR_P) win-pkg
 	strip --strip-unneeded -o $@ $<
 
 win-pkg/rifiuti-vista.exe: $(top_builddir)/src/rifiuti-vista.exe
-	$(MKDIR_P) win-pkg
 	strip --strip-unneeded -o $@ $<
 
 .PHONY: win-pkg-data win-pkg-bin dist-win
