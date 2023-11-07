@@ -1,7 +1,9 @@
 dnl vim: set sw=2 ts=2 expandtab :
 dnl
-dnl Copyright (C) 2007-2019 Abel Cheung.
-dnl All rights reserved.
+dnl Copyright (C) 2007-2023, Abel Cheung
+dnl This package is released under Revised BSD License.
+dnl Please see docs/LICENSE.txt for more info.
+
 
 AC_PREREQ([2.69])
 AC_INIT([rifiuti2], [0.7.0],

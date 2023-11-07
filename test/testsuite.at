@@ -6,8 +6,9 @@ dnl Test suite for rifiuti2
 AT_INIT
 
 AT_COPYRIGHT([
-Copyright (c) 2015-2019, Abel Cheung
-All rights reserved.
+Copyright (c) 2015-2023, Abel Cheung.
+This package is released under Revised BSD License.
+Please see docs/LICENSE.txt for more info.
 
 Makes use of macros from pyrediff project, which carries following notice:
 
