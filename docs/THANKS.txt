@@ -1,14 +1,22 @@
-Obviously, all credits must go to Keith Jones and all the folks at
-Foundstone. Without their analysis on Windows Recycle Bin it is much
-more difficult to fully dissect it. Their elaborate white paper and
-original version of rifiuti are available from ODESSA project:
+Original version of rifiuti:
+Copyright (C) 2003, Keith J. Jones
 
-	http://odessa.sourceforge.net/
+Major credits should go to Keith Jones and all the folks at Foundstone
+(which was acquired by McAfee in 2004). Without their analysis on
+Windows Recycle Bin it would be much more difficult to fully dissect
+the file format. Their elaborate white paper and original version of
+rifiuti are available from ODESSA project:
 
-There are more people to say thanks:
+    http://odessa.sourceforge.net/
 
-Hilda Chan (Providing Chinese Vista Recycle Bin sample data)
-Anthony Wong <ypwong@gmail.com> (Providing manpage & original Debian packaging)
+----
+
+There are more people to thank to:
+
+Anthony Wong <ypwong@gmail.com> (manpage & original Debian packaging)
+Hilda Chan (abnormal Vista recycle bin sample)
+
+----
 
 Finally, rifiuti2 won't have extensive testing without several OSS projects
 and software archives:
@@ -26,4 +34,3 @@ and software archives:
 
    - Folks at browser.evolt.org who mirrored many ancient IE versions
    - Mirror for all NT service packs in sdfox7.com/winntsp.htm
-   - There can be other website I forgot to mention
