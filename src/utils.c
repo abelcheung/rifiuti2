@@ -876,9 +876,15 @@ _populate_index_file_list (GSList     **list,
 
     while ((direntry = g_dir_read_name (dir)) != NULL)
     {
+#if GLIB_CHECK_VERSION (2, 70, 0)
+        if (!g_pattern_spec_match_string (pattern1, direntry) &&
+            !g_pattern_spec_match_string (pattern2, direntry))
+            continue;
+#else /* glib < 2.70 */
         if (!g_pattern_match_string (pattern1, direntry) &&
             !g_pattern_match_string (pattern2, direntry))
             continue;
+#endif
         fname = g_build_filename (path, direntry, NULL);
         *list = g_slist_prepend (*list, fname);
     }
