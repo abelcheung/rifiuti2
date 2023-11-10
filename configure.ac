@@ -1,5 +1,3 @@
-dnl vim: set sw=2 ts=2 expandtab :
-dnl
 dnl Copyright (C) 2007-2023, Abel Cheung
 dnl This package is released under Revised BSD License.
 dnl Please see docs/LICENSE.txt for more info.
@@ -30,7 +28,7 @@ AC_PROG_CC
 AC_PROG_CC_STDC
 
 if test "x$ac_cv_prog_cc_c99" = "xno"; then
-	AC_MSG_ERROR([Could not find a C99 compatible compiler])
+    AC_MSG_ERROR([Could not find a C99 compatible compiler])
 fi
 
 dnl Always use -Wall for gcc
@@ -66,10 +64,10 @@ AS_BOX([Libraries])
 dnl g_slist_free_full() requires 2.28.0, and
 dnl g_win32_get_command_line() needs 2.40.0
 AS_VAR_SET_IF([is_mingw],
-	[glib_req="glib-2.0 >= 2.40.0"],
-	[glib_req="glib-2.0 >= 2.28.0"])
+    [glib_req="glib-2.0 >= 2.40.0"],
+    [glib_req="glib-2.0 >= 2.28.0"])
 PKG_CHECK_MODULES([GLIB], [$glib_req],,
-	[AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
+    [AC_MSG_ERROR([*** GLib not found. Error is: $GLIB_PKG_ERRORS])])
 
 dnl
 dnl See if glib is linked to Solaris implementation of iconv
@@ -91,13 +89,13 @@ LDFLAGS="$LDFLAGS $GLIB_LIBS $GLIB_RPATH"
 AC_LANG_ASSERT([C])
 AC_MSG_CHECKING([iconv implementation used by glib2])
 AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
-	[return (g_iconv_open("UTF-8","CP950") == (GIConv) -1);])],
-	[AC_MSG_RESULT([native/libiconv])],
-	[AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
-		[return (g_iconv_open("UTF-8","646") == (GIConv) -1);])],
-		[AC_MSG_RESULT([solaris])],
-		[AC_MSG_RESULT([unknown])
-		 AC_MSG_ERROR([dnl
+    [return (g_iconv_open("UTF-8","CP950") == (GIConv) -1);])],
+    [AC_MSG_RESULT([native/libiconv])],
+    [AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <glib.h>],
+        [return (g_iconv_open("UTF-8","646") == (GIConv) -1);])],
+        [AC_MSG_RESULT([solaris])],
+        [AC_MSG_RESULT([unknown])
+         AC_MSG_ERROR([dnl
 iconv() implementation used by glib2 is not recognized, which
 would encumber functionality of rifiuti2. Please contact maintainer
 if you think this is a bug.])])])
@@ -113,12 +111,12 @@ AC_ARG_ENABLE(static,
 dnl Need to pull in libiconv manually for mingw static build
 dnl And this undocumented GLIB_STATIC_COMPILATION thing... dang
 AS_VAR_IF([enable_static], [yes], [dnl
-	AS_VAR_SET_IF([is_mingw],
-		[pcfiles="glib-2.0 iconv"],
-		[pcfiles="glib-2.0"])
-	GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
-	GLIB_LIBS="`$PKG_CONFIG --libs --static $pcfiles` $GLIB_RPATH"
-	])
+    AS_VAR_SET_IF([is_mingw],
+        [pcfiles="glib-2.0 iconv"],
+        [pcfiles="glib-2.0"])
+    GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_STATIC_COMPILATION"
+    GLIB_LIBS="`$PKG_CONFIG --libs --static $pcfiles` $GLIB_RPATH"
+    ])
 AM_CONDITIONAL([STATIC_BUILD], [test "x$enable_static" = "xyes"])
 
 AC_SUBST(GLIB_CFLAGS)
@@ -130,7 +128,7 @@ AC_CHECK_HEADERS([errno.h inttypes.h stdio.h time.h])
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UINT64_T
 if test "x$ac_cv_c_uint64_t" = "xno" || test "x$ac_cv_c_uint64_t" = "x"; then
-	AC_MSG_ERROR([This system does not support 64 bit integers.])
+    AC_MSG_ERROR([This system does not support 64 bit integers.])
 fi
 
 dnl Checks for library functions.

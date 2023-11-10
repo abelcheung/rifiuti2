@@ -1,4 +1,3 @@
-/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007-2023, Abel Cheung.
  * This package is released under Revised BSD License.
@@ -25,37 +24,37 @@
 /* Error and exit status */
 typedef enum
 {
-	R2_OK = 0, /* as synonym of EXIT_SUCCESS */
-	R2_ERR_ARG,
-	R2_ERR_OPEN_FILE,
-	R2_ERR_BROKEN_FILE,  /* file format validation failure */
-	R2_ERR_WRITE_FILE,
-	R2_ERR_USER_ENCODING,
-	R2_ERR_INTERNAL = 64
+    R2_OK = 0, /* as synonym of EXIT_SUCCESS */
+    R2_ERR_ARG,
+    R2_ERR_OPEN_FILE,
+    R2_ERR_BROKEN_FILE,  /* file format validation failure */
+    R2_ERR_WRITE_FILE,
+    R2_ERR_USER_ENCODING,
+    R2_ERR_INTERNAL = 64
 } r2status;
 
 typedef enum
 {
-	RECYCLE_BIN_TYPE_FILE,
-	RECYCLE_BIN_TYPE_DIR,
+    RECYCLE_BIN_TYPE_FILE,
+    RECYCLE_BIN_TYPE_DIR,
 } rbin_type;
 
 /* The first 4 or 8 bytes of recycle bin index files */
 enum
 {
-	/* negative number means error when retrieving version info */
-	VERSION_INCONSISTENT = -2,
-	VERSION_NOT_FOUND,
+    /* negative number means error when retrieving version info */
+    VERSION_INCONSISTENT = -2,
+    VERSION_NOT_FOUND,
 
-	/* $Recycle.bin */
-	VERSION_VISTA = 1,
-	VERSION_WIN10,
+    /* $Recycle.bin */
+    VERSION_VISTA = 1,
+    VERSION_WIN10,
 
-	/* INFO / INFO2 */
-	VERSION_WIN95 = 0,
-	VERSION_NT4   = 2,
-	VERSION_WIN98 = 4,
-	VERSION_ME_03,
+    /* INFO / INFO2 */
+    VERSION_WIN95 = 0,
+    VERSION_NT4   = 2,
+    VERSION_WIN98 = 4,
+    VERSION_ME_03,
 };
 
 /*
@@ -66,23 +65,23 @@ enum
  */
 typedef enum
 {
-	OS_GUESS_UNKNOWN = -1,
-	OS_GUESS_95,
-	OS_GUESS_NT4,
-	OS_GUESS_98,
-	OS_GUESS_ME,
-	OS_GUESS_2K,
-	OS_GUESS_XP_03,
-	OS_GUESS_2K_03,   /* Empty recycle bin, full detection impossible */
-	OS_GUESS_VISTA,   /* includes everything up to 8.1 */
-	OS_GUESS_10
+    OS_GUESS_UNKNOWN = -1,
+    OS_GUESS_95,
+    OS_GUESS_NT4,
+    OS_GUESS_98,
+    OS_GUESS_ME,
+    OS_GUESS_2K,
+    OS_GUESS_XP_03,
+    OS_GUESS_2K_03,   /* Empty recycle bin, full detection impossible */
+    OS_GUESS_VISTA,   /* includes everything up to 8.1 */
+    OS_GUESS_10
 } _os_guess;
 
 enum
 {
-	OUTPUT_NONE,
-	OUTPUT_CSV,
-	OUTPUT_XML
+    OUTPUT_NONE,
+    OUTPUT_CSV,
+    OUTPUT_XML
 };
 
 /*! \struct _rbin_meta
@@ -90,16 +89,16 @@ enum
  */
 typedef struct _rbin_meta
 {
-	rbin_type       type;
-	const char     *filename;
-	int64_t         version;
-	uint32_t        recordsize;          /*!< INFO2 only */
-	uint32_t        total_entry;         /*!< 95/NT4 only */
-	gboolean        keep_deleted_entry;  /*!< 98-03 only, add extra output column */
-	gboolean        is_empty;
-	gboolean        has_unicode_path;
-	gboolean        fill_junk;  /*!< TRUE for 98/ME/2000 only, some fields padded
-	                                 with junk data instaed of zeroed */
+    rbin_type       type;
+    const char     *filename;
+    int64_t         version;
+    uint32_t        recordsize;          /*!< INFO2 only */
+    uint32_t        total_entry;         /*!< 95/NT4 only */
+    gboolean        keep_deleted_entry;  /*!< 98-03 only, add extra output column */
+    gboolean        is_empty;
+    gboolean        has_unicode_path;
+    gboolean        fill_junk;  /*!< TRUE for 98/ME/2000 only, some fields padded
+                                     with junk data instaed of zeroed */
 } metarecord;
 
 /*! \struct _rbin_struct
@@ -107,38 +106,38 @@ typedef struct _rbin_meta
  */
 typedef struct _rbin_struct
 {
-	/*! For $Recycle.bin, version of each index file is kept here,
-	 * while meta.version keeps the global status of whole dir */
-	uint64_t          version;          /* $Recycle.bin only */
+    /*! For $Recycle.bin, version of each index file is kept here,
+     * while meta.version keeps the global status of whole dir */
+    uint64_t          version;          /* $Recycle.bin only */
 
-	/*! Each record links to metadata for more convenient access */
-	const metarecord *meta;
+    /*! Each record links to metadata for more convenient access */
+    const metarecord *meta;
 
-	/*! \brief Number is for INFO2, file name for $Recycle.bin */
-	union
-	{
-		uint32_t      index_n;          /* INFO2 only */
-		char         *index_s;          /* $Recycle.bin only */
-	};
+    /*! \brief Number is for INFO2, file name for $Recycle.bin */
+    union
+    {
+        uint32_t      index_n;          /* INFO2 only */
+        char         *index_s;          /* $Recycle.bin only */
+    };
 
-	/*! Item delection time */
-	GDateTime        *deltime;
-	int64_t           winfiletime;     /* for internal sorting */
+    /*! Item delection time */
+    GDateTime        *deltime;
+    int64_t           winfiletime;     /* for internal sorting */
 
-	/*! Can mean cluster size or actual file/folder size */
-	uint64_t          filesize;
+    /*! Can mean cluster size or actual file/folder size */
+    uint64_t          filesize;
 
-	/* despite var names, all filenames are converted to UTF-8 upon parsing */
-	char             *uni_path;
-	char             *legacy_path;     /* INFO2 only */
+    /* despite var names, all filenames are converted to UTF-8 upon parsing */
+    char             *uni_path;
+    char             *legacy_path;     /* INFO2 only */
 
-	gboolean          emptied;         /* INFO2 only */
-	unsigned char     drive;           /* INFO2 only */
+    gboolean          emptied;         /* INFO2 only */
+    unsigned char     drive;           /* INFO2 only */
 } rbin_struct;
 
 /* convenience macro */
 #define copy_field(field, off1, off2) memcpy((field), \
-		buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
+        buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
 
 /*! Every Windows use this GUID in recycle bin desktop.ini */
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"

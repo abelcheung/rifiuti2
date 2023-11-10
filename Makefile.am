@@ -1,5 +1,3 @@
-# vim: set sw=4 ts=4 noexpandtab :
-
 AUTOMAKE_OPTIONS = foreign dist-xz dist-zip
 
 SUBDIRS = src test

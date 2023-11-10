@@ -1,5 +1,3 @@
-# vim: set sw=4 ts=4 noexpandtab :
-
 AM_CPPFLAGS = \
 	-I$(srcdir)                     \
 	$(GLIB_CFLAGS)                  \

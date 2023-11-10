@@ -6,10 +6,13 @@ insert_final_newline = true
 charset = utf-8
 indent_style = space
 
-[*.{c,h}]
+[*.{c,h,txt}]
 indent_size = 4
 
-[*.md]
+[configure.ac]
+indent_size = 4
+
+[*.{md,yml}]
 indent_size = 2
 
 [{Makefile.am,*.mk}]

@@ -1,5 +1,3 @@
-# -*- shell-script -*-
-# vim: set filetype=sh sw=4 ts=4 noexpandtab :
 # @configure_input@
 # Configurable variable values for Autoconf test suite.
 

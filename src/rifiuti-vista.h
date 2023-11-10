@@ -1,4 +1,3 @@
-/* vim: set sw=4 ts=4 noexpandtab : */
 /*
  * Copyright (C) 2007-2023, Abel Cheung
  * This package is released under Revised BSD License.
