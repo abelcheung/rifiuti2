@@ -1,0 +1,16 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+
+[*.{c,h}]
+indent_size = 4
+
+[*.md]
+indent_size = 2
+
+[{Makefile.am,*.mk}]
+indent_style = tab

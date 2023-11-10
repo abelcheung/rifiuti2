@@ -4,6 +4,7 @@
 **/Makefile
 **/Makefile.in
 /.dirstamp
+/.vscode
 /ABOUT-NLS
 /aclocal.m4
 /autom4te.cache
@@ -44,3 +45,4 @@
 /test/testsuite
 /test/testsuite.dir
 /test/testsuite.log
+/test/test_glib_iconv
