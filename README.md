@@ -1,7 +1,3 @@
-| Appveyor | Travis |
-|----------|--------|
-| [![Appveyor status](https://ci.appveyor.com/api/projects/status/github/abelcheung/rifiuti2?svg=true&branch=master)](https://ci.appveyor.com/project/abelcheung/rifiuti2) | [![Travis status](https://travis-ci.org/abelcheung/rifiuti2.svg?branch=master)](https://travis-ci.org/abelcheung/rifiuti2) |
-
 ## Introduction
 
 `Rifiuti2` is a for analyzing Windows Recycle Bin INFO2 file. Analysis of

@@ -1,0 +1,102 @@
+name: Push and PR
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+      - '.*'
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+      - '.*'
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            shell: bash
+          - os: macos-12
+            shell: bash
+          - os: windows-2022
+            msystem: 'MINGW32'
+            shell: msys2
+          - os: windows-2022
+            msystem: 'UCRT64'
+            shell: msys2
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }} {0}
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: haya14busa/action-cond@v1
+      id: static_flag
+      with:
+        cond: ${{ matrix.os == 'windows-2022' }}
+        if_true: '--enable-static'
+        if_false: '--disable-static'
+
+    - name: Install dependencies
+      if: matrix.os == 'windows-2022'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.msystem }}
+        update: true
+        install: >-
+          markdown
+          groff
+        pacboy: >-
+          autotools:p
+          gcc:p
+          libxml2:p
+          iconv:p
+          glib2:p
+          7zip:p
+
+    - name: Install dependencies
+      if: matrix.os == 'ubuntu-22.04'
+      run: >
+        sudo apt-get install -y
+        build-essential
+        automake
+        libglib2.0-dev
+        libxml2-utils
+
+    - name: Install dependencies
+      if: matrix.os == 'macos-12'
+      run: |
+        brew install automake
+
+    # env only useful for MSYS2
+    - name: Pre-build
+      env:
+        WANT_AUTOCONF: latest
+        WANT_AUTOMAKE: latest
+      run: >-
+        autoreconf -f -i -v
+        && ./configure ${{ steps.static_flag.outputs.value }}
+
+    - name: Build
+      run: make all
+
+    - name: Test suite
+      run: make check
+
+    - name: Source dist check
+      if: matrix.os == 'ubuntu-22.04'
+      run: make distcheck
+
+    - name: Windows binary dist check
+      if: matrix.os == 'windows-2022'
+      run: make -f dist-win.mk dist-win
+

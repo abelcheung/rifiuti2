@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 0.*
+    - 1.*
+
+jobs:
+  binary:
+    strategy:
+      fail-fast: false
+      matrix:
+        msystem:
+        - 'MINGW32'
+        - 'UCRT64'
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.msystem }}
+        update: true
+        install: >-
+          markdown
+          groff
+        pacboy: >-
+          autotools:p
+          gcc:p
+          libxml2:p
+          iconv:p
+          glib2:p
+          7zip:p
+
+    - name: Pre-build
+      env:
+        WANT_AUTOCONF: latest
+        WANT_AUTOMAKE: latest
+      run: >-
+        autoreconf -f -i -v
+        && ./configure --enable-static
+
+    - name: Build
+      run: make all
+
+    - name: Test suite
+      run: make check
+
+    - name: Create artifact
+      run: make -f dist-win.mk dist-win
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: binary
+        path: 'win-pkg/*.zip'
+        if-no-files-found: error
+
+  source:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: >
+        sudo apt-get install -y
+        build-essential
+        automake
+        libglib2.0-dev
+        libxml2-utils
+
+    - name: Pre-build
+      run: >-
+        autoreconf -f -i -v
+        && ./configure
+
+    - name: Build
+      run: make distcheck
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: source
+        path: '*.xz'
+        if-no-files-found: error
+
+  release:
+    needs:
+    - binary
+    - source
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    environment: release
+    steps:
+      - name: Get source artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: source
+
+      - name: Get binary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: binary
+
+      # BUG: No arg with space can be passed into 'args' below,
+      # quotes would mess up the command line passed into docker
+      - uses: thomasdesr/minisign-action@v1
+        with:
+          args: -S -m *.xz *.zip
+          minisign_key: ${{ secrets.MINISIGN_SECKEY }}
+          password: ${{ secrets.MINISIGN_PASS }}
+
+      - name: Create release notes fragment
+        run: |
+          mkdir notes
+          echo ${{ vars.RELEASE_NOTES }} | base64 -d - > notes/notes.md
+
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: '*.*'
+          artifactErrorsFailBuild: true
+          draft: true
+          bodyFile: 'notes/notes.md'
+
