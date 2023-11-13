@@ -39,9 +39,11 @@ Command Prompt. File output in Windows is also in UTF-8.
 `rifiuti2` is designed to be portable (just download and use without
 need for installation), and runs on command line environment.
 Although utilities provide `-h` option for brief help message,
-it is suggested to [consult Wiki page](wiki/Usage-and-Examples) for
+it is suggested to [consult Wiki page][wiki1] for
 full detail on all of the options; following are a few examples
 on how to use them:
+
+[wiki1]: https://github.com/abelcheung/rifiuti2/wiki/Usage-and-Examples
 
 - `rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`
 > Scan for index files under `\case\S-1-2-3\`, adjust all deletion time
@@ -62,7 +64,9 @@ More compatibility fix for other architectures welcome.
 
 ### Windows
 Windows binaries are officially provided
-[on Github release page](./releases).
+[on Github release page][rel].
+
+[rel]: https://github.com/abelcheung/rifiuti2/releases/
 
 For various technical reasons, users of very ancient Windows
 platforms may not be able to use latest `rifiuti2` on their OS.
@@ -71,9 +75,13 @@ version instead of latest one:
 
 Windows        |  Latest supported version
 :------------------- | :--------------------------
-XP or Server 2003    | [0.6.1](./releases/tag/0.6.1)
-Vista or Server 2008 | [0.7.0](./releases/tag/0.7.0)
-7 or above           | [all](./releases/latest)
+XP or Server 2003    | [0.6.1][rel_061]
+Vista or Server 2008 | [0.7.0][rel_070]
+7 or above           | [all][rel_latest]
+
+[rel_061]: https://github.com/abelcheung/rifiuti2/releases/tag/0.6.1
+[rel_070]: https://github.com/abelcheung/rifiuti2/releases/tag/0.7.0
+[rel_latest]: https://github.com/abelcheung/rifiuti2/releases/latest
 
 ### Linux (DEB)
 
@@ -82,6 +90,10 @@ hence also available on derivatives focusing on information security:
 
   - [Kali Linux][kali]
   - BackBox Linux
+
+[deb]: https://packages.debian.org/search?keywords=rifiuti2
+[ub]: http://packages.ubuntu.com/search?keywords=rifiuti2
+[kali]: https://pkg.kali.org/pkg/rifiuti2
 
 ### Linux (RPM)
 
@@ -96,6 +108,10 @@ now-defunct CentOS.
 On non-Redhat lineage, ALT Linux also provides `rifiuti2`
 [since version 10][alt].
 
+[lifter]: https://forensics.cert.org/ByPackage/rifiuti2.html
+[fedora]: https://packages.fedoraproject.org/pkgs/rifiuti2/rifiuti2/
+[alt]: https://altlinux.pkgs.org/p10/autoimports-x86_64/rifiuti2-0.7.0-alt2_5.x86_64.rpm.html
+
 ### Linux (Other)
 
 - [ArchStrike (formerly ArchAssault)][strike], a penetration testing
@@ -107,20 +123,18 @@ On non-Redhat lineage, ALT Linux also provides `rifiuti2`
 
 There can be other distro missing mentions.
 
+[strike]: https://archstrike.org/packages/rifiuti2
+[blarch]: https://www.blackarch.org/forensic.html
+[aur]: https://aur.archlinux.org/packages/rifiuti2
+
 ### FreeBSD
+
 Official [FreeBSD port][fbsd] is available since 8.4.
+
+[fbsd]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
 
 ### Others
 For OS where `rifiuti2` is not readily available, it is always
-possible to [compile from source](wiki/Compile-From-Source).
+possible to [compile from source][wiki2].
 
-[deb]: https://packages.debian.org/search?keywords=rifiuti2
-[ub]: http://packages.ubuntu.com/search?keywords=rifiuti2
-[kali]: https://pkg.kali.org/pkg/rifiuti2
-[lifter]: https://forensics.cert.org/ByPackage/rifiuti2.html
-[strike]: https://archstrike.org/packages/rifiuti2
-[fbsd]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
-[fedora]: https://packages.fedoraproject.org/pkgs/rifiuti2/rifiuti2/
-[alt]: https://altlinux.pkgs.org/p10/autoimports-x86_64/rifiuti2-0.7.0-alt2_5.x86_64.rpm.html
-[blarch]: https://www.blackarch.org/forensic.html
-[aur]: https://aur.archlinux.org/packages/rifiuti2
+[wiki2]: https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source
