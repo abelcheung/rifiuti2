@@ -12,100 +12,115 @@ Latest features and changes can be found in [NEWS file](NEWS.md).
 
 [1]: https://abelcheung.github.io/rifiuti2
 
-## Special note for 0.7.0
-* Windows binaries will be automatically built from
-  [Appveyor](https://www.appveyor.com/) and published to Github.
-* **Systems supporting UTF-8 encoding is mandatory, except on Windows console
-  (file output is also in UTF-8).** This shouldn't be problematic though,
-  as UTF-8 locale is pretty much standard for Linux and macOS these years.
-  On Windows front, there are already many featureful text editors
+## Special notes
+
+### (Upcoming) 0.8.0
+
+- Windows binaries will be published via MSYS2 GitHub workflow.
+- Package maintainers would need to rewrite their package files,
+  in light of undergoing document restructure
+  [#22](https://github.com/abelcheung/rifiuti2/issues/22)
+  and CMake migration
+  [#21](https://github.com/abelcheung/rifiuti2/issues/21).
+
+### 0.7.0
+
+Systems supporting UTF-8 encoding is mandatory, except on Windows
+Command Prompt. File output in Windows is also in UTF-8.
+
+- UTF-8 locale is pretty much standard for Linux and macOS these years.
+- On Windows front, there are already many featureful text editors
   capable of opening UTF-8 unicode text files.
-* As a result, `-8` option is obsolete and no more affects output in any way.
+- As a result, `-8` option is obsolete and no more affects output in any way.
 
 
 ## Usage
 
-`rifiuti2` is designed to be portable, and runs on command line environment.
-Depending on relevant Windows recycle bin format, there are 2 binaries to
-choose from (most users would want first one):
+`rifiuti2` is designed to be portable (just download and use without
+need for installation), and runs on command line environment.
+Although utilities provide `-h` option for brief help message,
+it is suggested to [consult Wiki page](wiki/Usage-and-Examples) for
+full detail on all of the options; following are a few examples
+on how to use them:
 
-Program        | Recycle bin from OS | Purpose
----------------|---------------------|--------
-`rifiuti-vista`|Vista &ndash; Win10  | Scans `\$Recycle.bin` style folder
-`rifiuti`      |Win95 &ndash; XP/2003| Reads `INFO` or `INFO2` file in `\RECYCLED` or `\RECYCLER` folder
-
-Run programs without any option for more detail. Here are some more
-frequently used options:
-
- Option    | Purpose
-:----------|:--------
-`-o <FILE>`| Output to file
-`-x`       | Output XML instead of tab-separated fields
-`-l <CP>`  | Display legacy (8.3) filenames and specify its codepage
-
-Please consult manpage (Unix) or README.html (bundled with Windows binaries)
-for complete options and detailed usage description.
-
-### Examples
-
-* `rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`
+- `rifiuti-vista.exe -x -z -o result.xml \case\S-1-2-3\`
 > Scan for index files under `\case\S-1-2-3\`, adjust all deletion time
 > for local time zone, and write XML output to `result.xml`
-* `rifiuti -l CP932 -t "\n" INFO2`
+- `rifiuti -l CP932 -t "\n" INFO2`
 > Assume INFO2 file is generated from Japanese Windows (codepage 932),
 > and display each field line by line, instead of separated by tab
 
-## Supported platform
-
-It has been tested on Linux, Windows 7 and FreeBSD.
-Some testing on big endian platforms are done with Qemu emulator.
-More compatibility fix for other architectures welcome.
 
 ## Download
 
+### Supported platforms
+
+`rifiuti2` is guaranteed usable on Windows, Linux and FreeBSD,
+with success reports for MacOS (using `brew`). Some testing on
+big endian platforms are done with Qemu emulator.
+More compatibility fix for other architectures welcome.
+
 ### Windows
 Windows binaries are officially provided
-[on Github release page][6].
+[on Github release page](./releases).
 
-Note that 0.6.1 version is the last version that can run on
-Windows XP and 2003; upcoming versions would require Vista or above.
+For various technical reasons, users of very ancient Windows
+platforms may not be able to use latest `rifiuti2` on their OS.
+For following versions, get their corresponding `rifiuti2`
+version instead of latest one:
 
-### Linux
-* DEB packages available officially on [Debian][7] and [Ubuntu][8],
-hence also available on most (if not all) derivatives focusing on
-security and forensics, such as (this is incomplete list):
-  * [Kali Linux][9]
-  * [Deft X Virtual Appliance][10]
-  * BackBox Linux
-* RPM packages from [Linux Forensics Tools Repository (LiFTeR)][11]
-  can be used on Fedora, and very likely CentOS and RHEL.
-* [ArchStrike (formerly ArchAssault)][12], a penetration testing
-  derivative of Arch Linux, has `rifiuti2` packaged since late 2014.
+Windows        |  Latest supported version
+:------------------- | :--------------------------
+XP or Server 2003    | [0.6.1](./releases/tag/0.6.1)
+Vista or Server 2008 | [0.7.0](./releases/tag/0.7.0)
+7 or above           | [all](./releases/latest)
+
+### Linux (DEB)
+
+DEB packages available officially on [Debian][deb] and [Ubuntu][ub],
+hence also available on derivatives focusing on information security:
+
+  - [Kali Linux][kali]
+  - BackBox Linux
+
+### Linux (RPM)
+
+[Linux Forensics Tools Repository (LiFTeR)][lifter] is the earliest
+to provide 3rd party RPM package, which can be used on Fedora
+and Red Hat Enterprise Linux. Later Fedora incorporated `rifiuti2`
+[since Fedora 29][fedora], and the same goes for Extra Package
+Repository for Enterprise (`epel8`). These packages can be used on
+corresponding derivative distro as well, such as Rocky Linux and
+now-defunct CentOS.
+
+On non-Redhat lineage, ALT Linux also provides `rifiuti2`
+[since version 10][alt].
+
+### Linux (Other)
+
+- [ArchStrike (formerly ArchAssault)][strike], a penetration testing
+  derivative, has it packaged since late 2014
+- [AUR (Arch User Repository)][aur] incorporated this utility on 2019,
+  thus should be available to all other Arch derivatives
+- [BlackArchLinux][blarch], another pen test distro, includes `rifiuti2`
+  into default distribution
+
+There can be other distro missing mentions.
 
 ### FreeBSD
-Official [FreeBSD port][13] is available since 8.4.
+Official [FreeBSD port][fbsd] is available since 8.4.
 
-### Others (Compile from source)
+### Others
 For OS where `rifiuti2` is not readily available, it is always
-possible to compile from source.
+possible to [compile from source](wiki/Compile-From-Source).
 
-`rifiuti2` follows the usual `autotools` based procedure:
-```sh
-./configure && make check && make install
-```
-Please [refer to wiki page][14] for more detail.
-
-## License
-
-`rifiuti2` is released under BSD license. Please refer to
-[license file](docs/LICENSE.md) for more detail.
-
-[6]: https://github.com/abelcheung/rifiuti2/releases
-[7]: https://packages.debian.org/search?keywords=rifiuti2
-[8]: http://packages.ubuntu.com/search?keywords=rifiuti2
-[9]: https://pkg.kali.org/pkg/rifiuti2
-[10]: http://www.deftlinux.net/package-list/deft-x-va/
-[11]: https://forensics.cert.org/ByPackage/rifiuti2.html
-[12]: https://archstrike.org/packages/rifiuti2
-[13]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
-[14]: https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source
+[deb]: https://packages.debian.org/search?keywords=rifiuti2
+[ub]: http://packages.ubuntu.com/search?keywords=rifiuti2
+[kali]: https://pkg.kali.org/pkg/rifiuti2
+[lifter]: https://forensics.cert.org/ByPackage/rifiuti2.html
+[strike]: https://archstrike.org/packages/rifiuti2
+[fbsd]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
+[fedora]: https://packages.fedoraproject.org/pkgs/rifiuti2/rifiuti2/
+[alt]: https://altlinux.pkgs.org/p10/autoimports-x86_64/rifiuti2-0.7.0-alt2_5.x86_64.rpm.html
+[blarch]: https://www.blackarch.org/forensic.html
+[aur]: https://aur.archlinux.org/packages/rifiuti2
