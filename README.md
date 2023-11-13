@@ -18,10 +18,10 @@ Latest features and changes can be found in [NEWS file](NEWS.md).
 
 - Windows binaries will be published via MSYS2 GitHub workflow.
 - Package maintainers would need to rewrite their package files,
-  in light of undergoing document restructure
-  [#22](https://github.com/abelcheung/rifiuti2/issues/22)
-  and CMake migration
-  [#21](https://github.com/abelcheung/rifiuti2/issues/21).
+  in light of multiple renovation:
+  - document restructuring [#22](https://github.com/abelcheung/rifiuti2/issues/22)
+  - CMake migration, retiring autotools [#21](https://github.com/abelcheung/rifiuti2/issues/21).
+  - Gettext removal [#18](https://github.com/abelcheung/rifiuti2/issues/18)
 
 ### 0.7.0
 
@@ -83,55 +83,12 @@ Vista or Server 2008 | [0.7.0][rel_070]
 [rel_070]: https://github.com/abelcheung/rifiuti2/releases/tag/0.7.0
 [rel_latest]: https://github.com/abelcheung/rifiuti2/releases/latest
 
-### Linux (DEB)
+### Unix packages
 
-DEB packages available officially on [Debian][deb] and [Ubuntu][ub],
-hence also available on derivatives focusing on information security:
+Most Linux and FreeBSD users can use pre-packaged software for
+convenience. Check out [the status here][unx_pkg].
 
-  - [Kali Linux][kali]
-  - BackBox Linux
-
-[deb]: https://packages.debian.org/search?keywords=rifiuti2
-[ub]: http://packages.ubuntu.com/search?keywords=rifiuti2
-[kali]: https://pkg.kali.org/pkg/rifiuti2
-
-### Linux (RPM)
-
-[Linux Forensics Tools Repository (LiFTeR)][lifter] is the earliest
-to provide 3rd party RPM package, which can be used on Fedora
-and Red Hat Enterprise Linux. Later Fedora incorporated `rifiuti2`
-[since Fedora 29][fedora], and the same goes for Extra Package
-Repository for Enterprise (`epel8`). These packages can be used on
-corresponding derivative distro as well, such as Rocky Linux and
-now-defunct CentOS.
-
-On non-Redhat lineage, ALT Linux also provides `rifiuti2`
-[since version 10][alt].
-
-[lifter]: https://forensics.cert.org/ByPackage/rifiuti2.html
-[fedora]: https://packages.fedoraproject.org/pkgs/rifiuti2/rifiuti2/
-[alt]: https://altlinux.pkgs.org/p10/autoimports-x86_64/rifiuti2-0.7.0-alt2_5.x86_64.rpm.html
-
-### Linux (Other)
-
-- [ArchStrike (formerly ArchAssault)][strike], a penetration testing
-  derivative, has it packaged since late 2014
-- [AUR (Arch User Repository)][aur] incorporated this utility on 2019,
-  thus should be available to all other Arch derivatives
-- [BlackArchLinux][blarch], another pen test distro, includes `rifiuti2`
-  into default distribution
-
-There can be other distro missing mentions.
-
-[strike]: https://archstrike.org/packages/rifiuti2
-[blarch]: https://www.blackarch.org/forensic.html
-[aur]: https://aur.archlinux.org/packages/rifiuti2
-
-### FreeBSD
-
-Official [FreeBSD port][fbsd] is available since 8.4.
-
-[fbsd]: https://www.freebsd.org/cgi/ports.cgi?query=rifiuti2
+[unx_pkg]: https://github.com/abelcheung/rifiuti2/wiki/Unix-Packages
 
 ### Others
 For OS where `rifiuti2` is not readily available, it is always
