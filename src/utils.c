@@ -384,7 +384,7 @@ _count_fileargs (GOptionContext *context,
  */
 
 size_t
-ucs2_strnlen (const gunichar2 *str, size_t max_sz)
+ucs2_strnlen (const char *str, size_t max_sz)
 {
 #ifdef G_OS_WIN32
 
@@ -392,13 +392,14 @@ ucs2_strnlen (const gunichar2 *str, size_t max_sz)
 
 #else
 
-    size_t i;
-
     if (str == NULL)
         return 0;
 
-    for (i=0; (i<max_sz) && str[i]; i++) {}
-    return i;
+    for (size_t i = 0; i < max_sz; i++) {
+        if (*(str + i*2) == '\0' && *(str + i*2 + 1) == '\0')
+            return i;
+    }
+    return max_sz;
 
 #endif
 }
@@ -520,7 +521,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
         len = strnlen (path, WIN_PATH_MAX);
     } else {
         in_ch_width = sizeof (gunichar2);
-        len = ucs2_strnlen ((const gunichar2 *)path, WIN_PATH_MAX);
+        len = ucs2_strnlen (path, WIN_PATH_MAX);
     }
 
     if (! len)
