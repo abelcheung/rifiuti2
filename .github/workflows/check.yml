@@ -46,57 +46,39 @@ jobs:
         if_true: '--enable-static'
         if_false: '--disable-static'
 
-    - name: Install dependencies
+    # cmake pulls ninja by default
+    - name: Install dependencies (MSYS)
       if: matrix.os == 'windows-2022'
       uses: msys2/setup-msys2@v2
       with:
         msystem: ${{ matrix.msystem }}
         update: true
         install: >-
-          markdown
-          groff
+          git
         pacboy: >-
-          autotools:p
-          gcc:p
-          libxml2:p
-          iconv:p
+          toolchain:p
           glib2:p
-          7zip:p
+          cmake:p
 
-    - name: Install dependencies
+    - name: Install dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-22.04'
       run: >
         sudo apt-get install -y
         build-essential
-        automake
+        cmake
+        ninja-build
         libglib2.0-dev
-        libxml2-utils
 
-    - name: Install dependencies
+    - name: Install dependencies (MacOS)
       if: matrix.os == 'macos-12'
       run: |
-        brew install automake
+        brew install cmake ninja
 
-    # env only useful for MSYS2
     - name: Pre-build
-      env:
-        WANT_AUTOCONF: latest
-        WANT_AUTOMAKE: latest
-      run: >-
-        autoreconf -f -i -v
-        && ./configure ${{ steps.static_flag.outputs.value }}
+      run: |
+        mkdir build
+        cmake -Wdev -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
-      run: make all
-
-    - name: Test suite
-      run: make check
-
-    - name: Source dist check
-      if: matrix.os == 'ubuntu-22.04'
-      run: make distcheck
-
-    - name: Windows binary dist check
-      if: matrix.os == 'windows-2022'
-      run: make -f dist-win.mk dist-win
-
+      run: |
+        ninja -C build

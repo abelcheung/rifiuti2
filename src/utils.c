@@ -9,9 +9,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#if HAVE_SETLOCALE
 #include <locale.h>
-#endif
 #include "utils.h"
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
@@ -685,7 +683,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 
     bug_report_str = g_strdup_printf (
         /* TRANSLATOR COMMENT: argument is bug report webpage */
-        _("Report bugs to %s"), PACKAGE_BUGREPORT);
+        _("Report bugs to %s"), PROJECT_HOMEPAGE_URL);
     g_option_context_set_description (*context, bug_report_str);
     g_free (bug_report_str);
 
@@ -1316,13 +1314,13 @@ move_temp_file (void)
 void
 print_version_and_exit (void)
 {
-    fprintf (stdout, "%s %s\n", PACKAGE, VERSION);
+    fprintf (stdout, "%s %s\n", PROJECT_NAME, PROJECT_VERSION);
     /* TRANSLATOR COMMENT: %s is software name */
     fprintf (stdout, _("%s is distributed under the "
-        "BSD 3-Clause License.\n"), PACKAGE);
+        "BSD 3-Clause License.\n"), PROJECT_NAME);
     /* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
     fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
-        PACKAGE, PACKAGE_URL);
+        PROJECT_NAME, PROJECT_HOMEPAGE_URL);
 
     exit (EXIT_SUCCESS);
 }
