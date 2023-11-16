@@ -11,6 +11,7 @@
 #include <windows.h>
 #include <aclapi.h>
 #include <authz.h>
+#include <sddl.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -156,6 +157,59 @@ get_user_sid (void)
   getsid_fail:
     g_free (errmsg);
     return NULL;
+}
+
+/*
+ * Probe for logical drives on Windows and return their
+ * corresponding recycle bin paths for current user
+ */
+GSList *
+enumerate_drive_bins (void)
+{
+    DWORD         drive_bitmap;
+    PSID          sid = NULL;
+    char         *errmsg = NULL, *sid_str = NULL;
+    static char   drive_root[4] = "A:\\";
+    GSList       *result = NULL;
+
+    if (! (drive_bitmap = GetLogicalDrives())) {
+        errmsg = g_win32_error_message (GetLastError());
+        g_critical (_("Failed to enumerate drives in system: %s"), errmsg);
+        goto enumerate_cleanup;
+    }
+
+    if (NULL == (sid = get_user_sid())) {
+        g_critical (_("Failed to get SID of current user"));
+        goto enumerate_cleanup;
+    }
+    if (! ConvertSidToStringSidA(sid, &sid_str)) {
+        errmsg = g_win32_error_message (GetLastError());
+        g_critical (_("Failed to convert SID to string: %s"), errmsg);
+        goto enumerate_cleanup;
+    }
+
+    for (int i = 0; i < sizeof(DWORD) * CHAR_BIT; i++) {
+        if (! (drive_bitmap & (1 << i)))
+            continue;
+        drive_root[0] = 'A' + i;
+        UINT type = GetDriveTypeA(drive_root);
+        if (   (type == DRIVE_NO_ROOT_DIR)
+            || (type == DRIVE_UNKNOWN    )
+            || (type == DRIVE_CDROM      )) {
+            g_debug ("%s is not a logical drive we want, skipped", drive_root);
+            continue;
+        }
+        char *path = g_strdup_printf ("%s$Recycle.Bin\\%s",
+            drive_root, sid_str);
+
+        g_slist_append (result, path);
+    }
+
+    enumerate_cleanup:
+    // sid_str owned by system
+    g_free (sid);
+    g_free (errmsg);
+    return result;
 }
 
 /*!
