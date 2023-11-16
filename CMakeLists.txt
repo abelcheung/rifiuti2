@@ -1,59 +1,82 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR) # install(PROGRAM TYPE)
 
 project(rifiuti2
     VERSION 0.7.0
     HOMEPAGE_URL https://github.com/abelcheung/rifiuti2/
     LANGUAGES C)
 
+include(GNUInstallDirs)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 find_package(PkgConfig REQUIRED)
-if(WIN32)  # g_win32_get_command_line()
-    pkg_check_modules(GLIB REQUIRED "glib-2.0 >= 2.40.0")
+if(WIN32)
+    set(glib_min_ver 2.40.0)  # g_win32_get_command_line()
 else()
-    pkg_check_modules(GLIB REQUIRED "glib-2.0 >= 2.28.0")
+    set(glib_min_ver 2.28.0)
 endif()
+pkg_check_modules(GLIB REQUIRED "glib-2.0 >= ${glib_min_ver}")
 
 configure_file(config.h.in config.h)
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-include_directories(${GLIB_INCLUDE_DIRS})
+include_directories(PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+include_directories(PRIVATE ${GLIB_INCLUDE_DIRS})
 link_directories(${GLIB_LIBRARY_DIRS})
 link_libraries(${GLIB_LIBRARIES})
-
-add_executable(
-    rifiuti
-    src/rifiuti.c
-    src/rifiuti.h
-    src/utils.c
-    src/utils.h
-)
-add_executable(
-    rifiuti-vista
-    src/rifiuti-vista.c
-    src/rifiuti-vista.h
-    src/utils.c
-    src/utils.h
-)
-
-add_compile_options(
-    PRIVATE
-        ${GLIB_CFLAGS_OTHER}
-)
-
-if (WIN32)
-    target_sources(
-        rifiuti
-        PRIVATE
-            src/utils-win.c
-            src/utils-win.h
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
+ 
+foreach(bin rifiuti rifiuti-vista)
+    add_executable(
+        ${bin}
+        src/${bin}.c
+        src/${bin}.h
     )
     target_sources(
-        rifiuti-vista
+        ${bin}
         PRIVATE
-            src/utils-win.c
-            src/utils-win.h
+            src/utils.c
+            src/utils.h
     )
-    target_link_libraries(rifiuti authz)
-    target_link_libraries(rifiuti-vista authz)
-endif()
+    if (WIN32)
+        target_sources(
+            ${bin}
+            PRIVATE
+                src/utils-win.c
+                src/utils-win.h
+        )
+        target_link_libraries(${bin} authz)
+    endif()
+    target_compile_options(
+        ${bin}
+        PRIVATE
+            ${GLIB_CFLAGS_OTHER}
+    )
+
+    add_custom_command(
+        TARGET ${bin}
+        POST_BUILD
+        DEPENDS ${bin}
+        COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+        ARGS --strip-unneeded ${bin}
+    )
+
+endforeach()
+
+install(
+    PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/rifiuti
+        ${CMAKE_CURRENT_BINARY_DIR}/rifiuti-vista
+    TYPE BIN
+)
+install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/rifiuti.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+)
+install(
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+        ${CMAKE_CURRENT_SOURCE_DIR}/NEWS.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/docs/THANKS.txt
+    TYPE DOC
+)
