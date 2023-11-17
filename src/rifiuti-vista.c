@@ -283,9 +283,26 @@ main (int    argc,
     if (exit_status != EXIT_SUCCESS)
         goto cleanup;
 
-    exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
-    if (exit_status != EXIT_SUCCESS)
-        goto cleanup;
+#ifdef G_OS_WIN32
+    extern gboolean live_mode;
+
+    if (live_mode) {
+        GSList *bindirs = enumerate_drive_bins();
+        GSList *ptr = bindirs;
+        while (ptr) {
+            check_file_args (ptr->data, &filelist, RECYCLE_BIN_TYPE_DIR);
+            ptr = ptr->next;
+        }
+        ptr = NULL;
+        g_slist_free_full (bindirs, g_free);
+    }
+    else
+#endif
+    {
+        exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
+        if (exit_status != EXIT_SUCCESS)
+            goto cleanup;
+    }
 
     g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
 

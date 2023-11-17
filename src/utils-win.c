@@ -195,6 +195,7 @@ enumerate_drive_bins (void)
         UINT type = GetDriveTypeA(drive_root);
         if (   (type == DRIVE_NO_ROOT_DIR)
             || (type == DRIVE_UNKNOWN    )
+            || (type == DRIVE_REMOTE     )
             || (type == DRIVE_CDROM      )) {
             g_debug ("%s is not a logical drive we want, skipped", drive_root);
             continue;
@@ -202,7 +203,7 @@ enumerate_drive_bins (void)
         char *path = g_strdup_printf ("%s$Recycle.Bin\\%s",
             drive_root, sid_str);
 
-        g_slist_append (result, path);
+        result = g_slist_append (result, path);
     }
 
     enumerate_cleanup:
