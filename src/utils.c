@@ -51,6 +51,7 @@ static char *os_strings[] = {
 static int          output_mode        = OUTPUT_NONE;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
+       gboolean     live_mode          = FALSE;
        char        *delim              = NULL;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
        char        *output_loc         = NULL;
@@ -116,6 +117,16 @@ const GOptionEntry rbinfile_options[] = {
         G_OPTION_ARG_CALLBACK, _check_legacy_encoding,
         N_("Show legacy (8.3) path if available and specify its CODEPAGE"),
         N_("CODEPAGE")
+    },
+    {NULL}
+};
+
+/* Append to main option group if program is $Recycle.bin reader */
+const GOptionEntry live_options[] = {
+    {
+        "live", 0, 0,
+        G_OPTION_ARG_NONE, &live_mode,
+        N_("Inspect live system"), NULL
     },
     {NULL}
 };
@@ -699,8 +710,12 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
         case RECYCLE_BIN_TYPE_FILE:
             g_option_group_add_entries (group, rbinfile_options);
             break;
+        case RECYCLE_BIN_TYPE_DIR:
+#ifdef G_OS_WIN32
+            g_option_group_add_entries (group, live_options);
+#endif
+            break;
         default: break;
-        /* There will be option for recycle bin dir later */
     }
 
     g_option_group_set_parse_hooks (group, NULL, _count_fileargs);
@@ -777,6 +792,17 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 
     if (output_mode == OUTPUT_NONE)
         output_mode = OUTPUT_CSV;
+
+    if (live_mode) {
+        // TODO Add support for XML output
+        if (output_mode == OUTPUT_XML) {
+            g_printerr ("%s", _("XML output is not supported yet for "
+                "live system probation; switch to CSV mode."));
+            g_printerr ("\n");
+            output_mode = OUTPUT_CSV;
+        }
+        no_heading = TRUE;
+    }
 
     return EXIT_SUCCESS;
 }
