@@ -70,7 +70,7 @@ validate_index_file (const char  *filename,
         goto validation_error;
     }
 
-    copy_field (ver, VERSION, FILESIZE);
+    copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
     *ver = GUINT64_FROM_LE (*ver);
     g_debug ("version = %" G_GUINT64_FORMAT, *ver);
 
@@ -94,7 +94,7 @@ validate_index_file (const char  *filename,
 
         case VERSION_WIN10:
 
-            copy_field (pathlen, VERSION1_FILENAME, VERSION2_FILENAME);
+            copy_field (pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
             *pathlen = GUINT32_FROM_LE (*pathlen);
 
             /* Header length + file name length in UTF-16 encoding */
@@ -281,7 +281,7 @@ main (int    argc,
         "and dump recycle bin data.  Can also dump a single index file."));
     rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR);
     exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
-    if (exit_status != EXIT_SUCCESS)
+    if (exit_status != R2_OK)
         goto cleanup;
 
 #ifdef G_OS_WIN32

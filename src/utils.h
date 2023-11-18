@@ -140,8 +140,8 @@ typedef struct _rbin_struct
 } rbin_struct;
 
 /* convenience macro */
-#define copy_field(field, off1, off2) memcpy((field), \
-        buf + off1 ## _OFFSET, off2 ## _OFFSET - off1 ## _OFFSET)
+#define copy_field(field, off1, off2) \
+    memcpy((field), buf + (off1), (off2) - (off1))
 
 /*! Every Windows use this GUID in recycle bin desktop.ini */
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
