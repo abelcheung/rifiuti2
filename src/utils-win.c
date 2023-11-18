@@ -213,6 +213,45 @@ enumerate_drive_bins (void)
     return result;
 }
 
+/*
+ * Get Windows product name via registry
+ */
+gunichar2 *
+windows_product_name (void)
+{
+    LSTATUS    status;
+    DWORD      str_size;
+    gunichar2 *product_name;
+    gunichar2 *subkey = L"software\\microsoft\\windows nt\\currentversion";
+    gunichar2 *keyvalue  = L"ProductName";
+
+    status = RegGetValueW(
+        HKEY_LOCAL_MACHINE,
+        subkey,
+        keyvalue,
+        RRF_RT_REG_SZ,
+        NULL,
+        NULL,
+        &str_size
+    );
+
+    if ((status != ERROR_SUCCESS) || (str_size > G_MAXSIZE))
+        return NULL;
+
+    product_name = g_malloc ((gsize) str_size);
+    status = RegGetValueW(
+        HKEY_LOCAL_MACHINE,
+        subkey,
+        keyvalue,
+        RRF_RT_REG_SZ,
+        NULL,
+        product_name,
+        &str_size
+    );
+
+    return (status == ERROR_SUCCESS) ? product_name : NULL;
+}
+
 /*!
  * Fetch ACL access mask using Authz API
  */
