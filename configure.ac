@@ -1,6 +1,6 @@
 dnl Copyright (C) 2007-2023, Abel Cheung
-dnl This package is released under Revised BSD License.
-dnl Please see docs/LICENSE.txt for more info.
+dnl rifiuti2 is released under Revised BSD License.
+dnl Please see LICENSE file for more info.
 
 
 AC_PREREQ([2.69])

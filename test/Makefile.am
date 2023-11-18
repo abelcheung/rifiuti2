@@ -1,6 +1,6 @@
 # Copyright (C) 2015-2023, Abel Cheung
-# This package is released under Revised BSD License.
-# Please see docs/LICENSE.txt for more info.
+# rifiuti2 is released under Revised BSD License.
+# Please see LICENSE file for more info.
 
 # The `:;' works around a Bash 3.2 bug when the output is not writable.
 

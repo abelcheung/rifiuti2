@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2007-2023, Abel Cheung.
- * This package is released under Revised BSD License.
- * Please see docs/LICENSE.txt for more info.
+ * rifiuti2 is released under Revised BSD License.
+ * Please see LICENSE file for more info.
  */
 
 #ifndef _RIFIUTI_UTILS_WIN_H
