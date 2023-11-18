@@ -272,7 +272,7 @@ main (int    argc,
     extern char       **fileargs;
     extern gboolean     live_mode;
 
-    rifiuti_init (argv[0]);
+    rifiuti_init ();
 
     /* TRANSLATOR: appears in help text short summary */
     context = g_option_context_new (N_("DIR_OR_FILE"));

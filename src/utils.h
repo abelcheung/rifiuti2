@@ -21,6 +21,9 @@
 #include <stdio.h>
 #include <glib.h>
 
+// https://stackoverflow.com/a/3599170
+#define UNUSED(x) (void)(x)
+
 /* Error and exit status */
 typedef enum
 {
@@ -151,7 +154,7 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-void          rifiuti_init                (const char       *progpath);
+void          rifiuti_init                (void);
 
 void          rifiuti_setup_opt_ctx       (GOptionContext    **context,
                                            rbin_type         type);
@@ -163,7 +166,6 @@ r2status      rifiuti_parse_opt_ctx       (GOptionContext  **context,
 GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
 char *        utf16le_to_utf8             (const gunichar2  *str,
-                                           glong             len,
                                            glong            *items_read,
                                            glong            *items_written,
                                            GError          **error)
@@ -180,7 +182,8 @@ void          close_error_handle          (void);
 
 void          print_header                (metarecord        meta);
 
-void          print_record_cb             (rbin_struct      *record);
+void          print_record_cb             (rbin_struct      *record,
+                                           void             *data);
 
 void          print_footer                (void);
 

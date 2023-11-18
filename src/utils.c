@@ -147,7 +147,7 @@ _set_output_mode (int       mode,
         return TRUE;
     }
 
-    g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+    g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
         _("Plain text format options can not be used in XML mode."));
     return FALSE;
 }
@@ -158,6 +158,10 @@ _set_output_xml (const gchar *opt_name,
                  gpointer     data,
                  GError     **err)
 {
+    UNUSED(opt_name);
+    UNUSED(value);
+    UNUSED(data);
+
     return _set_output_mode (OUTPUT_XML, err);
 }
 
@@ -167,6 +171,10 @@ _set_opt_noheading (const gchar *opt_name,
                     gpointer     data,
                     GError     **err)
 {
+    UNUSED(opt_name);
+    UNUSED(value);
+    UNUSED(data);
+
     no_heading = TRUE;
 
     return _set_output_mode (OUTPUT_CSV, err);
@@ -231,11 +239,14 @@ _set_opt_delim (const gchar *opt_name,
                gpointer     data,
                GError     **err)
 {
+    UNUSED(opt_name);
+    UNUSED(data);
+
     static gboolean seen = FALSE;
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Multiple delimiter options disallowed."));
         return FALSE;
     }
@@ -252,11 +263,14 @@ _set_output_path (const gchar *opt_name,
                   gpointer     data,
                   GError     **err)
 {
+    UNUSED(opt_name);
+    UNUSED(data);
+
     static gboolean seen     = FALSE;
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Multiple output destinations disallowed."));
         return FALSE;
     }
@@ -264,13 +278,13 @@ _set_output_path (const gchar *opt_name,
 
     if ( *value == '\0' )
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Empty output filename disallowed."));
         return FALSE;
     }
 
     if (g_file_test (value, G_FILE_TEST_EXISTS)) {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Output destinations already exists."));
         return FALSE;
     }
@@ -285,8 +299,10 @@ _option_deprecated (const gchar *opt_name,
                     gpointer     data,
                     GError     **err)
 {
-    g_printerr (_("NOTE: Option '%s' is deprecated and ignored."), opt_name);
-    g_printerr ("\n");
+    UNUSED(unused);
+    UNUSED(data);
+    UNUSED(err);
+    g_warning(_("Option '%s' is deprecated and ignored."), opt_name);
     return TRUE;
 }
 
@@ -296,6 +312,9 @@ _check_legacy_encoding (const gchar *opt_name,
                         gpointer     data,
                         GError     **err)
 {
+    UNUSED(opt_name);
+    UNUSED(data);
+
     char           *s;
     gint            e;
     gboolean        ret      = FALSE;
@@ -304,7 +323,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Multiple encoding options disallowed."));
         return FALSE;
     }
@@ -312,7 +331,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if ( *enc == '\0' )
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
             _("Empty encoding option disallowed."));
         return FALSE;
     }
@@ -379,9 +398,13 @@ _count_fileargs (GOptionContext *context,
                  gpointer        data,
                  GError        **err)
 {
+    UNUSED (context);
+    UNUSED (group);
+    UNUSED (data);
+
     if (live_mode) {
         if (fileargs && g_strv_length (fileargs)) {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
                 _("Live system probation must not be used together "
                   "with file arguments."));
             return FALSE;
@@ -390,7 +413,7 @@ _count_fileargs (GOptionContext *context,
     else
     {
         if (! fileargs || (g_strv_length (fileargs) != 1)) {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
                 _("Must specify exactly one file or folder argument."));
             return FALSE;
         }
@@ -469,8 +492,7 @@ _advance_char (size_t       sz,
 /*! Last argument is there to avoid recomputing */
 static char *
 _filter_printable_char (const char *str,
-                        const char *tmpl,
-                        size_t      out_ch_width)
+                        const char *tmpl)
 {
     char     *p, *np;
     gunichar  c;
@@ -606,7 +628,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
 
     /* Pass 2: Convert all ctrl characters (and some more) to hex */
     if (g_utf8_validate (u8_path, -1, NULL))
-        result = _filter_printable_char (u8_path, tmpl, out_ch_width);
+        result = _filter_printable_char (u8_path, tmpl);
     else {
         g_critical ("%s", _("Converted path failed UTF-8 validation"));
         *st = R2_ERR_INTERNAL;
@@ -689,7 +711,7 @@ _prepare_error_handle (void)
 }
 
 void
-rifiuti_init (const char *progpath)
+rifiuti_init (void)
 {
     setlocale (LC_ALL, "");
 
@@ -813,7 +835,6 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
  */
 char *
 utf16le_to_utf8 (const gunichar2   *str,
-                 glong              len,
                  glong             *items_read,
                  glong             *items_written,
                  GError           **error)
@@ -826,7 +847,7 @@ utf16le_to_utf8 (const gunichar2   *str,
     char *ret;
 
     /* should be guaranteed to succeed */
-    buf = (gunichar2 *) g_convert ((const char *) str, len * 2, "UTF-16BE",
+    buf = (gunichar2 *) g_convert ((const char *) str, -1, "UTF-16BE",
                                    "UTF-16LE", NULL, NULL, NULL);
     ret = g_utf16_to_utf8 (buf, -1, items_read, items_written, error);
     g_free (buf);
@@ -1209,8 +1230,11 @@ print_header (metarecord  meta)
 
 
 void
-print_record_cb (rbin_struct *record)
+print_record_cb (rbin_struct *record,
+                 void        *data)
 {
+    UNUSED(data);
+
     char       *out_fname, *index, *size = NULL;
     char       *outstr = NULL, *deltime = NULL;
     GDateTime  *dt;
