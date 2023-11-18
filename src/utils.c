@@ -422,6 +422,26 @@ _count_fileargs (GOptionContext *context,
     return TRUE;
 }
 
+static gboolean
+_text_default_options (GOptionContext *context,
+                       GOptionGroup   *group,
+                       gpointer        data,
+                       GError        **err)
+{
+    UNUSED (context);
+    UNUSED (group);
+    UNUSED (data);
+    UNUSED (err);
+
+    /* Fallback values after successful option parsing */
+    if (delim == NULL)
+        delim = g_strdup ("\t");
+
+    if (output_mode == OUTPUT_NONE)
+        output_mode = OUTPUT_CSV;
+
+    return TRUE;
+}
 
 /*
  * Charset conversion routines
@@ -725,7 +745,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
                        rbin_type        type)
 {
     char         *bug_report_str;
-    GOptionGroup *group;
+    GOptionGroup *group, *txt_group;
 
     bug_report_str = g_strdup_printf (
         /* TRANSLATOR COMMENT: argument is bug report webpage */
@@ -754,12 +774,14 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
     g_option_context_set_main_group (*context, group);
 
     /* text group */
-    group = g_option_group_new ("text",
+    txt_group = g_option_group_new ("text",
         _("Plain text output options:"),
         N_("Show plain text output options"), NULL, NULL);
 
-    g_option_group_add_entries (group, text_options);
-    g_option_context_add_group (*context, group);
+    g_option_group_add_entries (txt_group, text_options);
+    g_option_group_set_parse_hooks (
+        txt_group, NULL, _text_default_options);
+    g_option_context_add_group (*context, txt_group);
 
     g_option_context_set_help_enabled (*context, TRUE);
 }
@@ -770,62 +792,40 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
                        char          ***argv)
 {
     GError   *err = NULL;
-    char     *help_msg;
-    gboolean  ret, do_print_help = FALSE;
+    gboolean  parse_ok;
 
     /* Must be done before parsing, since argc might be modified later */
-    if (*argc <= 1)
-        do_print_help = TRUE;
-
-#if GLIB_CHECK_VERSION (2, 40, 0)
-    {
-        char **args;
-
-#  ifdef G_OS_WIN32
-        args = g_win32_get_command_line ();
-#  else
-        args = g_strdupv (*argv);
-#  endif
-        ret = g_option_context_parse_strv (*context, &args, &err);
-        g_strfreev (args);
-    }
-#else /* glib < 2.40 */
-    ret = g_option_context_parse (*context, argc, argv, &err);
-#endif
-
-    help_msg = g_option_context_get_help (*context, FALSE, NULL);
-
-    g_option_context_free (*context);
-
-    if (do_print_help)
-    {
+    if (*argc <= 1) {
 #ifdef G_OS_WIN32
         g_set_print_handler (gui_message);
 #endif
+        char *help_msg = g_option_context_get_help (
+            *context, FALSE, NULL);
         g_print ("%s", help_msg);
         g_free (help_msg);
+        g_option_context_free (*context);
 
-        exit (EXIT_SUCCESS);
+        return (R2_ERR_GUI_HELP);
     }
 
-    g_free (help_msg);
-
-    if ( !ret )
     {
-        g_printerr (_("Error parsing options: %s"), err->message);
-        g_printerr ("\n");
-        g_error_free (err);
-        return R2_ERR_ARG;
+#ifdef G_OS_WIN32
+        char **args = g_win32_get_command_line ();
+#else
+        char **args = g_strdupv (*argv);
+#endif
+        parse_ok = g_option_context_parse_strv (*context, &args, &err);
+        g_option_context_free (*context);
+        g_strfreev (args);
     }
 
-    /* Some fallback values after successful option parsing... */
-    if (delim == NULL)
-        delim = g_strdup ("\t");
+    if (parse_ok)
+        return R2_OK;
 
-    if (output_mode == OUTPUT_NONE)
-        output_mode = OUTPUT_CSV;
-
-    return EXIT_SUCCESS;
+    g_printerr (_("Error parsing options: %s"), err->message);
+    g_printerr ("\n");
+    g_clear_error (&err);
+    return R2_ERR_ARG;
 }
 
 

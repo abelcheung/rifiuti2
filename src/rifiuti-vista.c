@@ -390,6 +390,10 @@ main (int    argc,
             g_printerr ("\n");
             break;
 
+        case R2_ERR_GUI_HELP:
+            exit_status = R2_OK;
+            break;
+
         default:
             break;
     }
