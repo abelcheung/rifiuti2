@@ -111,47 +111,43 @@ get_win_timezone_name (void)
 static PSID
 _get_user_sid (void)
 {
-    gboolean       status;
-    char           username[UNLEN + 1], *errmsg;
+    gboolean       ok;
+    gunichar2      username[UNLEN + 1], *domainname;
+    char           *errmsg;
     DWORD          err = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
     PSID           sid;
-    LPTSTR         domainname;
     SID_NAME_USE   sidtype;
 
-    if ( !GetUserName (username, &bufsize) )
+    if ( !GetUserNameW (username, &bufsize) )
     {
         errmsg = g_win32_error_message (GetLastError());
         g_critical (_("Failed to get current user name: %s"), errmsg);
         goto getsid_fail;
     }
 
-    status = LookupAccountName (NULL, username, NULL, &sidsize,
+    ok = LookupAccountNameW (NULL, username, NULL, &sidsize,
             NULL, &domainsize, &sidtype);
-    if ( !status )
+    if (!ok) {
         err = GetLastError();
-    g_debug ("1st LookupAccountName(): status = %d", (int) status);
-
-    if ( err != ERROR_INSUFFICIENT_BUFFER )
-    {
-        errmsg = g_win32_error_message (err);
-        g_critical (_("LookupAccountName() failed: %s"), errmsg);
-        goto getsid_fail;
+        if ( err != ERROR_INSUFFICIENT_BUFFER )
+        {
+            errmsg = g_win32_error_message (err);
+            g_critical (_("1st LookupAccountName() failed: %s"), errmsg);
+            goto getsid_fail;
+        }
     }
 
-    sid = (PSID) g_malloc (sidsize);
-    domainname = (LPTSTR) g_malloc (domainsize);
+    sid = g_malloc (sidsize);
+    domainname = g_malloc (domainsize * sizeof(gunichar2));
 
-    status = LookupAccountName (NULL, username, sid, &sidsize,
+    ok = LookupAccountNameW (NULL, username, sid, &sidsize,
             domainname, &domainsize, &sidtype);
-    err = status ? 0 : GetLastError();
-    g_debug ("2nd LookupAccountName(): status = %d", (int) status);
-    g_free (domainname);  /* unused */
+    g_free (domainname);  // unused
+    if (ok)
+        return sid;
 
-    if ( status != 0 )
-        return sid;    /* success */
-
-    errmsg = g_win32_error_message (err);
-    g_critical (_("LookupAccountName() failed: %s"), errmsg);
+    errmsg = g_win32_error_message (GetLastError());
+    g_critical (_("2nd LookupAccountName() failed: %s"), errmsg);
     g_free (sid);
 
   getsid_fail:
