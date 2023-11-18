@@ -24,7 +24,7 @@ AT_CHECK([
 	icacls.exe dir1 /grant:r "Users:(OI)(CI)(S,REA)" > /dev/null
 	$progd dir1
 ],
-	[2],, [Error listing directory: Insufficient permission.
+	[2],, [Error listing dir 'dir1': disallowed under Windows ACL.
 ],
 	[MSYS2_ARG_CONV_EXCL="/reset" icacls.exe dir1 /reset > /dev/null],
 	[MSYS2_ARG_CONV_EXCL="/reset" icacls.exe dir1 /reset > /dev/null])

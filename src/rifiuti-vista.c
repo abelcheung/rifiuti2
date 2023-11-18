@@ -268,7 +268,7 @@ main (int    argc,
     GSList             *filelist   = NULL;
     GSList             *recordlist = NULL;
     GOptionContext     *context;
-
+    GError             *error = NULL;
     extern char       **fileargs;
     extern gboolean     live_mode;
 
@@ -291,7 +291,9 @@ main (int    argc,
         GSList *bindirs = enumerate_drive_bins();
         GSList *ptr = bindirs;
         while (ptr) {
-            check_file_args (ptr->data, &filelist, RECYCLE_BIN_TYPE_DIR);
+            // Ignore errors, pretty common that *some* folders don't
+            // exist or is empty.
+            check_file_args (ptr->data, &filelist, RECYCLE_BIN_TYPE_DIR, NULL);
             ptr = ptr->next;
         }
         ptr = NULL;
@@ -300,7 +302,8 @@ main (int    argc,
     else
 #endif
     {
-        exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
+        exit_status = check_file_args (fileargs[0], &filelist,
+            RECYCLE_BIN_TYPE_DIR, &error);
         if (exit_status != R2_OK)
             goto cleanup;
     }
@@ -395,6 +398,9 @@ main (int    argc,
             break;
 
         default:
+            if (error) {
+                g_printerr ("%s\n", error->message);
+            }
             break;
     }
 

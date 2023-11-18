@@ -174,7 +174,8 @@ char *        utf16le_to_utf8             (const gunichar2  *str,
 
 int           check_file_args             (const char       *path,
                                            GSList          **list,
-                                           rbin_type         type);
+                                           rbin_type         type,
+                                           GError          **error);
 
 r2status      prepare_output_handle       (void);
 

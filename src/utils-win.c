@@ -252,7 +252,8 @@ windows_product_name (void)
  * Fetch ACL access mask using Authz API
  */
 gboolean
-can_list_win32_folder (const char *path)
+can_list_win32_folder (const char   *path,
+                       GError      **error)
 {
     char                  *errmsg = NULL;
     gunichar2             *wpath;
@@ -322,8 +323,8 @@ can_list_win32_folder (const char *path)
                 (mask & FILE_READ_EA) == FILE_READ_EA )
             ret = TRUE;
         else {
-            g_printerr ("%s", _("Error listing directory: Insufficient permission."));
-            g_printerr ("\n");
+            g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
+                _("Error listing dir '%s': disallowed under Windows ACL."), path);
         }
 
         /* use glib type to avoid including more header */

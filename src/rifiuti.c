@@ -338,7 +338,7 @@ main (int    argc,
     GSList             *filelist   = NULL;
     GSList             *recordlist = NULL;
     GOptionContext     *context;
-
+    GError             *error = NULL;
     extern char       **fileargs;
 
     rifiuti_init ();
@@ -352,7 +352,8 @@ main (int    argc,
     if (exit_status != R2_OK)
         goto cleanup;
 
-    exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_FILE);
+    exit_status = check_file_args (fileargs[0], &filelist,
+        RECYCLE_BIN_TYPE_FILE, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 
@@ -393,7 +394,8 @@ main (int    argc,
 
     close_output_handle ();
 
-    /* file descriptor should have been closed at this point */
+    /* BEWARE: only stderr allowed at this point */
+
     {
         r2status s = move_temp_file ();
         if ( s != R2_OK )
@@ -402,7 +404,6 @@ main (int    argc,
 
     cleanup:
 
-    /* Last minute error messages for accumulated non-fatal errors */
     switch (exit_status)
     {
         case R2_ERR_USER_ENCODING:
@@ -424,6 +425,9 @@ main (int    argc,
             break;
 
         default:
+            if (error) {
+                g_printerr ("%s\n", error->message);
+            }
             break;
     }
     g_debug ("Cleaning up...");

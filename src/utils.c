@@ -893,28 +893,27 @@ _get_tempfile (void)
 /*! Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
 static gboolean
 _populate_index_file_list (GSList     **list,
-                          const char  *path)
+                           const char  *path,
+                           GError     **error)
 {
     GDir           *dir;
     const char     *direntry;
     char           *fname;
     GPatternSpec   *pattern1, *pattern2;
-    GError         *error = NULL;
 
     /*
      * g_dir_open returns cryptic error message or even succeeds on Windows,
      * when in fact the directory content is inaccessible.
      */
 #ifdef G_OS_WIN32
-    if ( !can_list_win32_folder (path) )
+    if ( !can_list_win32_folder (path, error) ) {
         return FALSE;
+    }
 #endif
 
-    if (NULL == (dir = g_dir_open (path, 0, &error)))
+    if (NULL == (dir = g_dir_open (path, 0, error)))
     {
-        g_printerr (_("Error opening directory '%s': %s"), path, error->message);
-        g_printerr ("\n");
-        g_clear_error (&error);
+        g_prefix_error (error, _("Error opening directory '%s': "), path);
         return FALSE;
     }
 
@@ -1017,22 +1016,23 @@ guess_windows_ver (const metarecord  meta)
 int
 check_file_args (const char  *path,
                  GSList     **list,
-                 rbin_type    type)
+                 rbin_type    type,
+                 GError     **error)
 {
-    g_debug ("Start basic file checking...");
+    g_debug ("Start checking path '%s'...", path);
 
     g_return_val_if_fail ( (path != NULL) && (list != NULL), R2_ERR_INTERNAL );
 
-    if ( !g_file_test (path, G_FILE_TEST_EXISTS) )
+    if (!g_file_test (path, G_FILE_TEST_EXISTS))
     {
-        g_printerr (_("'%s' does not exist."), path);
-        g_printerr ("\n");
+        g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
+            _("'%s' does not exist."), path);
         return R2_ERR_OPEN_FILE;
     }
     else if ( (type == RECYCLE_BIN_TYPE_DIR) &&
         g_file_test (path, G_FILE_TEST_IS_DIR) )
     {
-        if ( ! _populate_index_file_list (list, path) )
+        if ( ! _populate_index_file_list (list, path, error) )
             return R2_ERR_OPEN_FILE;
         /*
          * last ditch effort: search for desktop.ini. Just print empty content
@@ -1040,9 +1040,9 @@ check_file_args (const char  *path,
          */
         if ( !*list && !found_desktop_ini (path) )
         {
-            g_printerr (_("No files with name pattern '%s' "
+            g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
+                _("No files with name pattern '%s' "
                 "are found in directory."), "$Ixxxxxx.*");
-            g_printerr ("\n");
             return R2_ERR_OPEN_FILE;
         }
     }
@@ -1050,10 +1050,10 @@ check_file_args (const char  *path,
         *list = g_slist_prepend ( *list, g_strdup (path) );
     else
     {
-        g_printerr ( (type == RECYCLE_BIN_TYPE_DIR) ?
+        g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
+            (type == RECYCLE_BIN_TYPE_DIR) ?
             _("'%s' is not a normal file or directory.") :
             _("'%s' is not a normal file."), path);
-        g_printerr ("\n");
         return R2_ERR_OPEN_FILE;
     }
     return R2_OK;
