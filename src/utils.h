@@ -27,7 +27,7 @@
 /* Error and exit status */
 typedef enum
 {
-    R2_OK = 0, /* as synonym of EXIT_SUCCESS */
+    R2_OK = EXIT_SUCCESS,
     R2_ERR_ARG,
     R2_ERR_OPEN_FILE,
     R2_ERR_BROKEN_FILE,  /* file format validation failure */

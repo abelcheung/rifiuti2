@@ -19,7 +19,7 @@
 
 #include "rifiuti-vista.h"
 
-static r2status     exit_status          = EXIT_SUCCESS;
+static r2status     exit_status = R2_OK;
 static metarecord   meta;
 
 
@@ -117,7 +117,7 @@ validate_index_file (const char  *filename,
     }
 
     *filebuf = buf;
-    return EXIT_SUCCESS;
+    return R2_OK;
 
 validation_error:
 
@@ -211,7 +211,7 @@ parse_record_cb (char    *index_file,
 
     validate_st = validate_index_file (
         index_file, &buf, &bufsize, &version, &pathlen);
-    if ( validate_st != EXIT_SUCCESS )
+    if ( validate_st != R2_OK )
     {
         g_printerr (_("File '%s' fails validation."), basename);
         g_printerr ("\n");
@@ -301,7 +301,7 @@ main (int    argc,
 #endif
     {
         exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_DIR);
-        if (exit_status != EXIT_SUCCESS)
+        if (exit_status != R2_OK)
             goto cleanup;
     }
 
@@ -359,7 +359,7 @@ main (int    argc,
     /* Print everything */
     {
         r2status s = prepare_output_handle ();
-        if (s != EXIT_SUCCESS) {
+        if (s != R2_OK) {
             exit_status = s;
             goto cleanup;
         }
@@ -374,7 +374,7 @@ main (int    argc,
     /* file descriptor should have been closed at this point */
     {
         r2status s = move_temp_file ();
-        if ( s != EXIT_SUCCESS )
+        if ( s != R2_OK )
             exit_status = s;
     }
 

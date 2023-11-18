@@ -21,7 +21,7 @@
 #include "rifiuti.h"
 
 
-static r2status     exit_status          = EXIT_SUCCESS;
+static r2status     exit_status = R2_OK;
 static metarecord   meta;
 extern char        *legacy_encoding;
 
@@ -145,7 +145,7 @@ validate_index_file (const char  *filename,
     *infile = fp;
     meta.version = (int64_t) ver;
 
-    return EXIT_SUCCESS;
+    return R2_OK;
 
   validation_broken:
 
@@ -286,7 +286,7 @@ parse_record_cb (char    *index_file,
     void        *buf = NULL;
 
     exit_status = validate_index_file (index_file, &infile);
-    if ( exit_status != EXIT_SUCCESS )
+    if ( exit_status != R2_OK )
     {
         g_printerr (_("File '%s' fails validation."), index_file);
         g_printerr ("\n");
@@ -349,11 +349,11 @@ main (int    argc,
         "Parse INFO2 file and dump recycle bin data."));
     rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_FILE);
     exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
-    if (exit_status != EXIT_SUCCESS)
+    if (exit_status != R2_OK)
         goto cleanup;
 
     exit_status = check_file_args (fileargs[0], &filelist, RECYCLE_BIN_TYPE_FILE);
-    if (exit_status != EXIT_SUCCESS)
+    if (exit_status != R2_OK)
         goto cleanup;
 
     /*
@@ -381,7 +381,7 @@ main (int    argc,
     /* Print everything */
     {
         r2status s = prepare_output_handle ();
-        if (s != EXIT_SUCCESS) {
+        if (s != R2_OK) {
             exit_status = s;
             goto cleanup;
         }
@@ -396,7 +396,7 @@ main (int    argc,
     /* file descriptor should have been closed at this point */
     {
         r2status s = move_temp_file ();
-        if ( s != EXIT_SUCCESS )
+        if ( s != R2_OK )
             exit_status = s;
     }
 

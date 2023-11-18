@@ -880,7 +880,7 @@ _get_tempfile (void)
 
     out_fh   = h;
     tmppath  = t;
-    return EXIT_SUCCESS;
+    return R2_OK;
 
   tempfile_fail:
 
@@ -1056,13 +1056,13 @@ check_file_args (const char  *path,
         g_printerr ("\n");
         return R2_ERR_OPEN_FILE;
     }
-    return EXIT_SUCCESS;
+    return R2_OK;
 }
 
 r2status
 prepare_output_handle (void)
 {
-    r2status s = EXIT_SUCCESS;
+    r2status s = R2_OK;
 
     if (output_loc)
         s = _get_tempfile ();
@@ -1366,10 +1366,10 @@ move_temp_file (void)
     int e;
 
     if ( !tmppath || !output_loc )
-        return EXIT_SUCCESS;
+        return R2_OK;
 
     if ( 0 == g_rename (tmppath, output_loc) )
-        return EXIT_SUCCESS;
+        return R2_OK;
 
     e = errno;
 
@@ -1396,7 +1396,7 @@ print_version_and_exit (void)
     fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
         PACKAGE, PACKAGE_URL);
 
-    exit (EXIT_SUCCESS);
+    exit (R2_OK);
 }
 
 
