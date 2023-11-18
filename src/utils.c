@@ -52,13 +52,13 @@ static int          output_mode        = OUTPUT_NONE;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
        gboolean     live_mode          = FALSE;
-       char        *delim              = NULL;
+static char        *delim              = NULL;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
-       char        *output_loc         = NULL;
-       char        *tmppath            = NULL; /*!< used iff output_loc is defined */
+static char        *output_loc         = NULL;
+static char        *tmppath            = NULL; /*!< used iff output_loc is defined */
        char       **fileargs           = NULL;
-       FILE        *out_fh             = NULL; /*!< unused for Windows console */
-       FILE        *err_fh             = NULL; /*!< unused for Windows console */
+static FILE        *out_fh             = NULL; /*!< unused for Windows console */
+static FILE        *err_fh             = NULL; /*!< unused for Windows console */
 
 /*! These options are only effective for tab delimited mode output */
 static const GOptionEntry text_options[] = {
@@ -111,7 +111,7 @@ static const GOptionEntry main_options[] = {
 };
 
 /*! Appended to main option group if program is INFO2 reader */
-const GOptionEntry rbinfile_options[] = {
+static const GOptionEntry rbinfile_options[] = {
     {
         "legacy-filename", 'l', 0,
         G_OPTION_ARG_CALLBACK, _check_legacy_encoding,
@@ -122,7 +122,7 @@ const GOptionEntry rbinfile_options[] = {
 };
 
 /* Append to main option group if program is $Recycle.bin reader */
-const GOptionEntry live_options[] = {
+static const GOptionEntry live_options[] = {
     {
         "live", 0, 0,
         G_OPTION_ARG_NONE, &live_mode,

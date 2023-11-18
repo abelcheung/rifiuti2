@@ -17,8 +17,8 @@
 #include <glib/gi18n.h>
 
 
-HANDLE  wincon_fh = NULL;
-HANDLE  winerr_fh = NULL;
+static HANDLE wincon_fh = NULL;
+static HANDLE winerr_fh = NULL;
 
 
 /* GUI message box */
@@ -109,7 +109,7 @@ get_win_timezone_name (void)
  * [1]: https://msdn.microsoft.com/en-us/library/windows/desktop/aa446637(v=vs.85).aspx
  */
 static PSID
-get_user_sid (void)
+_get_user_sid (void)
 {
     gboolean       status;
     char           username[UNLEN + 1], *errmsg;
@@ -178,7 +178,7 @@ enumerate_drive_bins (void)
         goto enumerate_cleanup;
     }
 
-    if (NULL == (sid = get_user_sid())) {
+    if (NULL == (sid = _get_user_sid())) {
         g_critical (_("Failed to get SID of current user"));
         goto enumerate_cleanup;
     }
@@ -270,7 +270,7 @@ can_list_win32_folder (const char *path)
     AUTHZ_ACCESS_REQUEST          authz_req = { MAXIMUM_ALLOWED, NULL, NULL, 0, NULL };
     AUTHZ_ACCESS_REPLY            authz_reply;
 
-    if ( NULL == ( sid = get_user_sid() ) )
+    if ( NULL == ( sid = _get_user_sid() ) )
         return FALSE;
 
     wpath = g_utf8_to_utf16 (path, -1, NULL, NULL, NULL);
