@@ -270,6 +270,7 @@ main (int    argc,
     GOptionContext     *context;
 
     extern char       **fileargs;
+    extern gboolean     live_mode;
 
     rifiuti_init (argv[0]);
 
@@ -308,10 +309,13 @@ main (int    argc,
 
     /* Fill in recycle bin metadata */
     meta.type               = RECYCLE_BIN_TYPE_DIR;
-    meta.filename           = fileargs[0];
     meta.keep_deleted_entry = FALSE;
     meta.is_empty           = (filelist == NULL);
     meta.has_unicode_path   = TRUE;
+    if (live_mode)
+        meta.filename = "(current system)";
+    else
+        meta.filename = fileargs[0];
 
     /* NULL filelist at this point means a valid empty $Recycle.bin */
     if ( !meta.is_empty && (recordlist == NULL) )

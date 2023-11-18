@@ -379,14 +379,24 @@ _count_fileargs (GOptionContext *context,
                  gpointer        data,
                  GError        **err)
 {
-    if (fileargs && g_strv_length (fileargs) == 1)
-        return TRUE;
+    if (live_mode) {
+        if (fileargs && g_strv_length (fileargs)) {
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                _("Live system probation must not be used together "
+                  "with file arguments."));
+            return FALSE;
+        }
+    }
+    else
+    {
+        if (! fileargs || (g_strv_length (fileargs) != 1)) {
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                _("Must specify exactly one file or folder argument."));
+            return FALSE;
+        }
+    }
 
-    /* FIXME unable to pull user data, so only print generic mesg */
-    g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-        _("Must specify exactly one file or folder argument."));
-
-    return FALSE;
+    return TRUE;
 }
 
 
@@ -793,17 +803,6 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
     if (output_mode == OUTPUT_NONE)
         output_mode = OUTPUT_CSV;
 
-    if (live_mode) {
-        // TODO Add support for XML output
-        if (output_mode == OUTPUT_XML) {
-            g_printerr ("%s", _("XML output is not supported yet for "
-                "live system probation; switch to CSV mode."));
-            g_printerr ("\n");
-            output_mode = OUTPUT_CSV;
-        }
-        no_heading = TRUE;
-    }
-
     return EXIT_SUCCESS;
 }
 
@@ -1098,6 +1097,28 @@ print_header (metarecord  meta)
                 g_print ("\n");
             }
 
+#ifdef G_OS_WIN32
+            if (live_mode)
+            {
+                gunichar2 *buf = windows_product_name();
+                if (buf == NULL)
+                    g_print ("%s", _("OS detection failed"));
+                else {
+                    GError *err = NULL;
+                    char *product_name = g_utf16_to_utf8(
+                        buf, -1, NULL, NULL, &err);
+                    g_free (buf);
+                    if (err) {
+                        g_clear_error (&err);
+                        g_print ("%s", _("OS detection failed"));
+                    } else {
+                        g_print (_("OS: %s"), product_name);
+                    }
+                    g_free (product_name);
+                }
+            }
+            else
+#endif
             {
                 _os_guess g = guess_windows_ver (meta);
 
