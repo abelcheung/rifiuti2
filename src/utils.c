@@ -147,7 +147,7 @@ _set_output_mode (int       mode,
         return TRUE;
     }
 
-    g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+    g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
         _("Plain text format options can not be used in XML mode."));
     return FALSE;
 }
@@ -246,7 +246,7 @@ _set_opt_delim (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple delimiter options disallowed."));
         return FALSE;
     }
@@ -270,7 +270,7 @@ _set_output_path (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple output destinations disallowed."));
         return FALSE;
     }
@@ -278,13 +278,13 @@ _set_output_path (const gchar *opt_name,
 
     if ( *value == '\0' )
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Empty output filename disallowed."));
         return FALSE;
     }
 
     if (g_file_test (value, G_FILE_TEST_EXISTS)) {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Output destinations already exists."));
         return FALSE;
     }
@@ -323,7 +323,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple encoding options disallowed."));
         return FALSE;
     }
@@ -331,7 +331,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if ( *enc == '\0' )
     {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Empty encoding option disallowed."));
         return FALSE;
     }
@@ -342,7 +342,7 @@ _check_legacy_encoding (const gchar *opt_name,
     {
         if (strcmp ("C:\\", s) != 0) /* e.g. EBCDIC based code pages */
         {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
                 _("'%s' can't possibly be a code page or compatible "
                 "encoding used by localized Windows."), enc);
         } else {
@@ -359,7 +359,7 @@ _check_legacy_encoding (const gchar *opt_name,
     {
         case G_CONVERT_ERROR_NO_CONVERSION:
 
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
                 _("'%s' encoding is not supported by glib library "
                 "on this system.  If iconv program is present on "
                 "system, use 'iconv -l' for a list of possible "
@@ -377,7 +377,7 @@ _check_legacy_encoding (const gchar *opt_name,
         case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
         case G_CONVERT_ERROR_PARTIAL_INPUT:
 
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
                 _("'%s' can't possibly be a code page or compatible "
                 "encoding used by localized Windows."), enc);
             break;
@@ -404,7 +404,7 @@ _count_fileargs (GOptionContext *context,
 
     if (live_mode) {
         if (fileargs && g_strv_length (fileargs)) {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+            g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
                 _("Live system probation must not be used together "
                   "with file arguments."));
             return FALSE;
@@ -413,7 +413,7 @@ _count_fileargs (GOptionContext *context,
     else
     {
         if (! fileargs || (g_strv_length (fileargs) != 1)) {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "%s",
+            g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
                 _("Must specify exactly one file or folder argument."));
             return FALSE;
         }
