@@ -684,7 +684,7 @@ _local_print (gboolean    is_stdout,
     FILE  *fh;
 
     if ( !g_utf8_validate (str, -1, NULL)) {
-        g_critical ("%s", _("Supplied format or arguments not in UTF-8 encoding"));
+        g_critical (_("String not in UTF-8 encoding: %s"), str);
         return;
     }
 
@@ -1079,137 +1079,138 @@ prepare_output_handle (void)
     return s;
 }
 
-void
-print_header (metarecord  meta)
-{
-    char *rbin_path;
 
+void
+print_csv_header (metarecord meta)
+{
+    char *rbin_path = g_filename_display_name (meta.filename);
+
+    g_print (_("Recycle bin path: '%s'"), rbin_path);
+    g_print ("\n");
+
+    {
+        char *ver;
+        if (meta.version == VERSION_NOT_FOUND) {
+            /* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
+            ver = g_strdup (_("??? (empty folder)"));
+        } else
+            ver = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
+
+        g_print (_("Version: %s"), ver);
+        g_print ("\n");
+        g_free (ver);
+    }
+
+    if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && ( ! meta.keep_deleted_entry ))
+    {
+        g_print (_("Total entries ever existed: %d"), meta.total_entry);
+        g_print ("\n");
+    }
+
+#ifdef G_OS_WIN32
+    if (live_mode)
+    {
+        gunichar2 *buf = windows_product_name();
+        char *product_name = NULL;
+
+        if (buf) {
+            product_name = g_utf16_to_utf8(
+                buf, -1, NULL, NULL, NULL);
+            g_free (buf);
+        }
+
+        if (product_name) {
+            g_print (_("OS: %s"), product_name);
+            g_free (product_name);
+        } else {
+            g_print ("%s", _("OS detection failed"));
+        }
+    }
+    else
+#endif
+    {
+        _os_guess g = guess_windows_ver (meta);
+
+        if (g == OS_GUESS_UNKNOWN)
+            g_print ("%s", _("OS detection failed"));
+        else
+            g_print (_("OS Guess: %s"), gettext (os_strings[g]) );
+    }
+
+    g_print ("\n");
+
+    // Deletion time for each entry may or may not be under DST.
+    // Results have not been verified.
+    {
+        GDateTime *now;
+        char      *tzname = NULL, *tznumeric = NULL;
+
+        now = use_localtime ? g_date_time_new_now_local ():
+                              g_date_time_new_now_utc   ();
+
+#ifdef G_OS_WIN32
+        if (use_localtime)
+            tzname = get_win_timezone_name ();
+#endif
+        if (tzname == NULL)
+            tzname = g_date_time_format (now, "%Z");
+
+        tznumeric = g_date_time_format (now, "%z");
+
+        g_print (_("Time zone: %s [%s]"), tzname, tznumeric);
+        g_print ("\n");
+
+        g_date_time_unref (now);
+        g_free (tzname);
+        g_free (tznumeric);
+    }
+
+    g_print ("\n");
+
+    {
+        GArray   *col_array;
+        char     *headerline;
+        char     *fields[] = {
+            /* TRANSLATOR COMMENT: appears in column header */
+            N_("Index"), N_("Deleted Time"), N_("Size"), N_("Path"), NULL
+        };
+
+        col_array = g_array_sized_new (TRUE, TRUE, sizeof (gpointer), 5);
+        for (char **col_ptr = fields; *col_ptr != NULL; col_ptr++) {
+            // const char *t = gettext (*col_ptr++);
+            g_array_append_val (col_array, *col_ptr);
+        }
+        if (meta.keep_deleted_entry) {
+            /* TRANSLATOR COMMENT: appears in column header, means file is restored or purged */
+            char *t = _("Gone?");
+            g_array_insert_val (col_array, 2, t);
+        }
+
+        headerline = g_strjoinv (delim, (char **) col_array->data);
+        g_print ("%s\n", headerline);
+
+        g_free (headerline);
+        g_array_free (col_array, TRUE);
+    }
+}
+
+
+void
+print_header (metarecord meta)
+{
     if (no_heading) return;
 
-    g_return_if_fail (meta.filename != NULL);
-
     g_debug ("Entering %s()", __func__);
-
-    rbin_path = g_filename_display_name (meta.filename);
 
     switch (output_mode)
     {
         case OUTPUT_CSV:
-
-            g_print (_("Recycle bin path: '%s'"), rbin_path);
-            g_print ("\n");
-
-            {
-                char *ver;
-                if (meta.version == VERSION_NOT_FOUND) {
-                    /* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
-                    ver = g_strdup (_("??? (empty folder)"));
-                } else
-                    ver = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
-
-                g_print (_("Version: %s"), ver);
-                g_print ("\n");
-                g_free (ver);
-            }
-
-            if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && ( ! meta.keep_deleted_entry ))
-            {
-                g_print (_("Total entries ever existed: %d"), meta.total_entry);
-                g_print ("\n");
-            }
-
-#ifdef G_OS_WIN32
-            if (live_mode)
-            {
-                gunichar2 *buf = windows_product_name();
-                char *product_name = NULL;
-
-                if (buf) {
-                    char *product_name = g_utf16_to_utf8(
-                        buf, -1, NULL, NULL, NULL);
-                    g_free (buf);
-                }
-
-                if (product_name) {
-                    g_print (_("OS: %s"), product_name);
-                    g_free (product_name);
-                } else {
-                    g_print ("%s", _("OS detection failed"));
-                }
-            }
-            else
-#endif
-            {
-                _os_guess g = guess_windows_ver (meta);
-
-                if (g == OS_GUESS_UNKNOWN)
-                    g_print ("%s", _("OS detection failed"));
-                else
-                    g_print (_("OS Guess: %s"), gettext (os_strings[g]) );
-            }
-
-            g_print ("\n");
-
-            /* FIXME Printing timezone is probably meaningless here, because
-             * each deleted entry might have different timezone regarding DST */
-            {
-                GDateTime *now;
-                char      *tzname = NULL, *tznumeric;
-
-                now = use_localtime ? g_date_time_new_now_local ():
-                                      g_date_time_new_now_utc   ();
-
-#ifdef G_OS_WIN32
-                if (use_localtime)
-                    tzname = get_win_timezone_name ();
-
-                if ( tzname == NULL)
-#endif
-                tzname = g_date_time_format (now, "%Z");
-
-                tznumeric = g_date_time_format (now, "%z");
-
-                g_print (_("Time zone: %s [%s]"), tzname, tznumeric);
-                g_print ("\n");
-
-                g_date_time_unref (now);
-                g_free (tzname);
-                g_free (tznumeric);
-            }
-
-            g_print ("\n");
-
-            {
-                GArray   *a;
-                char    **c, *headerline;
-                char     *colhead[] = {
-                    /* TRANSLATOR COMMENT: appears in column header */
-                    N_("Index"), N_("Deleted Time"), N_("Size"), N_("Path"), NULL
-                };
-
-                a = g_array_sized_new (TRUE, TRUE, sizeof (gpointer), 5);
-                c = colhead;
-                while (*c != NULL) {
-                    const char *t = gettext (*c++);
-                    g_array_append_val (a, t);
-                }
-                if (meta.keep_deleted_entry) {
-                    /* TRANSLATOR COMMENT: appears in column header, means file is restored or purged */
-                    char *t = _("Gone?");
-                    g_array_insert_val (a, 2, t);
-                }
-
-                headerline = g_strjoinv (delim, (char **) a->data);
-                g_print ("%s", headerline);
-                g_print ("\n");
-
-                g_free (headerline);
-                g_array_free (a, TRUE);
-            }
-
+            print_csv_header (meta);
             break;
 
         case OUTPUT_XML:
+            char *rbin_path = g_filename_display_name (meta.filename);
+
             /* No proper way to report wrong version info yet */
             g_print (
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -1217,13 +1218,12 @@ print_header (metarecord  meta)
                 "  <filename><![CDATA[%s]]></filename>\n",
                 ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
                 MAX (meta.version, 0), rbin_path);
+            g_free (rbin_path);
             break;
 
         default:
             g_assert_not_reached();
     }
-    g_free (rbin_path);
-
     g_debug ("Leaving %s()", __func__);
 }
 
