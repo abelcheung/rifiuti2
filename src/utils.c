@@ -1122,20 +1122,19 @@ print_header (metarecord  meta)
             if (live_mode)
             {
                 gunichar2 *buf = windows_product_name();
-                if (buf == NULL)
-                    g_print ("%s", _("OS detection failed"));
-                else {
-                    GError *err = NULL;
+                char *product_name = NULL;
+
+                if (buf) {
                     char *product_name = g_utf16_to_utf8(
-                        buf, -1, NULL, NULL, &err);
+                        buf, -1, NULL, NULL, NULL);
                     g_free (buf);
-                    if (err) {
-                        g_clear_error (&err);
-                        g_print ("%s", _("OS detection failed"));
-                    } else {
-                        g_print (_("OS: %s"), product_name);
-                    }
+                }
+
+                if (product_name) {
+                    g_print (_("OS: %s"), product_name);
                     g_free (product_name);
+                } else {
+                    g_print ("%s", _("OS detection failed"));
                 }
             }
             else
