@@ -5,17 +5,15 @@ project(rifiuti2
     HOMEPAGE_URL https://github.com/abelcheung/rifiuti2/
     LANGUAGES C)
 
-include(GNUInstallDirs)
+if(NOT WIN32)
+    include(GNUInstallDirs)
+endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 find_package(PkgConfig REQUIRED)
-if(WIN32)
-    set(glib_min_ver 2.40.0)  # g_win32_get_command_line()
-else()
-    set(glib_min_ver 2.28.0)
-endif()
+set(glib_min_ver 2.40.0)  # g_win32_get_command_line()
 pkg_check_modules(GLIB REQUIRED "glib-2.0 >= ${glib_min_ver}")
 
 configure_file(config.h.in config.h)
@@ -23,7 +21,7 @@ include_directories(PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(PRIVATE ${GLIB_INCLUDE_DIRS})
 link_directories(${GLIB_LIBRARY_DIRS})
 link_libraries(${GLIB_LIBRARIES})
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall")
  
 foreach(bin rifiuti rifiuti-vista)
     add_executable(
@@ -51,27 +49,20 @@ foreach(bin rifiuti rifiuti-vista)
         PRIVATE
             ${GLIB_CFLAGS_OTHER}
     )
-
-    add_custom_command(
-        TARGET ${bin}
-        POST_BUILD
-        DEPENDS ${bin}
-        COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
-        ARGS --strip-unneeded ${bin}
-    )
-
 endforeach()
 
 install(
-    PROGRAMS
-        ${CMAKE_CURRENT_BINARY_DIR}/rifiuti
-        ${CMAKE_CURRENT_BINARY_DIR}/rifiuti-vista
-    TYPE BIN
+    TARGETS
+        rifiuti
+        rifiuti-vista
+    RUNTIME
 )
-install(
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/rifiuti.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
-)
+if(NOT WIN32)
+    install(
+        FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/rifiuti.1
+        DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+    )
+endif()
 install(
     FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE

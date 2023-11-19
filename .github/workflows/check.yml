@@ -77,8 +77,13 @@ jobs:
     - name: Pre-build
       run: |
         mkdir build
-        cmake -Wdev -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
+        cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: |
-        ninja -C build
+        cmake --build build -v
+
+    - name: Test prefixed install
+      run: |
+        cmake --install build --prefix inst --strip -v
+
