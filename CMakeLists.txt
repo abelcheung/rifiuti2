@@ -14,22 +14,30 @@ add_subdirectory(test)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-find_package(PkgConfig REQUIRED)
-set(glib_min_ver 2.40.0)  # g_win32_get_command_line()
-pkg_check_modules(GLIB REQUIRED "glib-2.0 >= ${glib_min_ver}")
-
-configure_file(config.h.in config.h)
-include_directories(PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-include_directories(PRIVATE ${GLIB_INCLUDE_DIRS})
-link_directories(${GLIB_LIBRARY_DIRS})
-link_libraries(${GLIB_LIBRARIES})
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall")
- 
+set(CMAKE_STATIC_LINKER_FLAGS "-static")
+configure_file(config.h.in config.h)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED "glib-2.0 >= 2.40.0")
+
+# Do static build in Windows, which require finding
+# extra libraries
+if (WIN32)
+pkg_check_modules(ICONV REQUIRED "iconv")
+list(APPEND GLIB_STATIC_CFLAGS_OTHER -DGLIB_STATIC_COMPILATION)
+endif()
+
 foreach(bin rifiuti rifiuti-vista)
     add_executable(
         ${bin}
         src/${bin}.c
         src/${bin}.h
+    )
+    target_include_directories(
+        ${bin} BEFORE
+        PRIVATE
+            ${CMAKE_CURRENT_BINARY_DIR}
     )
     target_sources(
         ${bin}
@@ -37,20 +45,23 @@ foreach(bin rifiuti rifiuti-vista)
             src/utils.c
             src/utils.h
     )
-    if (WIN32)
-        target_sources(
-            ${bin}
-            PRIVATE
-                src/utils-win.c
-                src/utils-win.h
-        )
-        target_link_libraries(${bin} authz)
+    if(WIN32)
+        target_sources(${bin} PRIVATE src/utils-win.c src/utils-win.h)
+        target_include_directories(${bin} PRIVATE
+            ${GLIB_STATIC_INCLUDE_DIRS} ${ICONV_STATIC_INCLUDE_DIRS})
+        target_compile_options    (${bin} PRIVATE
+            ${GLIB_STATIC_CFLAGS_OTHER} ${ICONV_STATIC_CFLAGS_OTHER})
+        target_link_libraries     (${bin} PRIVATE authz
+            ${GLIB_STATIC_LIBRARIES} ${ICONV_STATIC_LIBRARIES})
+        target_link_directories   (${bin} PRIVATE
+            ${GLIB_STATIC_LIBRARY_DIRS} ${ICONV_STATIC_LIBRARY_DIRS})
+        target_link_options       (${bin} BEFORE PRIVATE ${CMAKE_STATIC_LINKER_FLAGS})
+    else()
+        target_include_directories(${bin} PRIVATE ${GLIB_INCLUDE_DIRS})
+        target_compile_options    (${bin} PRIVATE ${GLIB_CFLAGS_OTHER})
+        target_link_libraries     (${bin} PRIVATE ${GLIB_LIBRARIES})
+        target_link_directories   (${bin} PRIVATE ${GLIB_LIBRARY_DIRS})
     endif()
-    target_compile_options(
-        ${bin}
-        PRIVATE
-            ${GLIB_CFLAGS_OTHER}
-    )
 endforeach()
 
 install(
