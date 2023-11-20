@@ -87,3 +87,6 @@ jobs:
       run: |
         cmake --install build --prefix inst --strip -v
 
+    - name: CTest
+      run: |
+        cd build && ctest --test-dir test --output-on-failure
