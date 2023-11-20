@@ -13,4 +13,5 @@ file(
 )
 
 include(cli-option)
+include(crafted)
 include(xml)

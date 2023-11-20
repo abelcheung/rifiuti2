@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR) # install(PROGRAM TYPE)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # cmake -E rm
 
 project(rifiuti2
     VERSION 0.7.0
