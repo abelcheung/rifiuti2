@@ -1,5 +1,3 @@
-include(CTest)
-
 set(
     CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
@@ -12,6 +10,21 @@ file(
     SYMBOLIC
 )
 
+function(add_test_using_shell name command)
+    if(WIN32)
+        add_test(
+            NAME ${name}
+            COMMAND pwsh.exe -NonInteractive -NoProfile -NoProfileLoadTime -Command "${command}"
+            ${ARGN})
+    else()
+        add_test(
+            NAME ${name}
+            COMMAND bash -c "${command}"
+            ${ARGN})
+    endif()
+endfunction()
+
 include(cli-option)
 include(crafted)
+include(read-write)
 include(xml)

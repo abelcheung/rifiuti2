@@ -9,8 +9,6 @@ if(NOT WIN32)
     include(GNUInstallDirs)
 endif()
 
-add_subdirectory(test)
-
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
@@ -84,3 +82,6 @@ install(
         ${CMAKE_CURRENT_SOURCE_DIR}/docs/THANKS.txt
     TYPE DOC
 )
+
+include(CTest)
+add_subdirectory(test)
