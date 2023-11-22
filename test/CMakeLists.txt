@@ -26,5 +26,7 @@ endfunction()
 
 include(cli-option)
 include(crafted)
+include(parse-info2)
+include(parse-rdir)
 include(read-write)
 include(xml)
