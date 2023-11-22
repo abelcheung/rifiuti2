@@ -68,6 +68,7 @@ jobs:
         cmake
         ninja-build
         libglib2.0-dev
+        libxml2-utils
 
     - name: Install dependencies (MacOS)
       if: matrix.os == 'macos-12'
@@ -88,5 +89,7 @@ jobs:
         cmake --install build --prefix inst --strip -v
 
     - name: CTest
+      env:
+        MSYS2_PATH_TYPE: inherit
       run: |
-        cd build && ctest --test-dir test --output-on-failure
+        cd build && ctest --output-on-failure

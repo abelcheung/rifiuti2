@@ -14,7 +14,7 @@ function(add_test_using_shell name command)
     if(WIN32)
         add_test(
             NAME ${name}
-            COMMAND pwsh.exe -NonInteractive -NoProfile -NoProfileLoadTime -Command "${command}"
+            COMMAND pwsh -NonInteractive -NoProfile -Command "${command}"
             ${ARGN})
     else()
         add_test(

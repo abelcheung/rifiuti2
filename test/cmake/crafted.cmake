@@ -52,7 +52,7 @@ set_tests_properties(
     d_BadPermDir
     PROPERTIES
         LABELS "recycledir;crafted"
-        PASS_REGULAR_EXPRESSION "Insufficient permission;Permission denied"
+        PASS_REGULAR_EXPRESSION "Permission denied;disallowed under Windows ACL"
 )
 
 set_tests_properties(BadPermDirCopy        PROPERTIES FIXTURES_SETUP    D_BADPERMDIR)

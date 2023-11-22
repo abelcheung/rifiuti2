@@ -32,11 +32,11 @@ endif()
 set_tests_properties(d_InputSpecialFile
     PROPERTIES
         LABELS "recycledir;read"
-        PASS_REGULAR_EXPRESSION "fails validation")
+        PASS_REGULAR_EXPRESSION "fails validation;not a normal file")
 set_tests_properties(f_InputSpecialFile
     PROPERTIES
         LABELS      "info2;read"
-        PASS_REGULAR_EXPRESSION "fails validation")
+        PASS_REGULAR_EXPRESSION "fails validation;not a normal file")
 
 # TODO Consider symbolic links support
 
