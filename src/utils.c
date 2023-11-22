@@ -1080,8 +1080,8 @@ prepare_output_handle (void)
 }
 
 
-void
-print_csv_header (metarecord meta)
+static void
+_print_csv_header (metarecord meta)
 {
     char *rbin_path = g_filename_display_name (meta.filename);
 
@@ -1194,6 +1194,21 @@ print_csv_header (metarecord meta)
     }
 }
 
+static void
+_print_xml_header (metarecord meta)
+{
+    char *rbin_path = g_filename_display_name (meta.filename);
+
+    /* No proper way to report wrong version info yet */
+    g_print (
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
+        "  <filename><![CDATA[%s]]></filename>\n",
+        ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
+        MAX (meta.version, 0), rbin_path);
+    g_free (rbin_path);
+}
+
 
 void
 print_header (metarecord meta)
@@ -1205,20 +1220,11 @@ print_header (metarecord meta)
     switch (output_mode)
     {
         case OUTPUT_CSV:
-            print_csv_header (meta);
+            _print_csv_header (meta);
             break;
 
         case OUTPUT_XML:
-            char *rbin_path = g_filename_display_name (meta.filename);
-
-            /* No proper way to report wrong version info yet */
-            g_print (
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\">\n"
-                "  <filename><![CDATA[%s]]></filename>\n",
-                ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
-                MAX (meta.version, 0), rbin_path);
-            g_free (rbin_path);
+            _print_xml_header (meta);
             break;
 
         default:
