@@ -86,3 +86,43 @@ endfunction()
 createComparisonTestSet(FileConDiffA samples/dir-sample1)
 createComparisonTestSet(FileConDiffU samples/dir-win10-01)
 
+#
+# Unicode filename / dir name should work
+#
+
+function(UniInputPathTest testid is_info2 input ref)
+
+    set_label(is_info2 "read" "encoding")
+    set_test_vars(${testid} is_info2 1 1)
+    set(out ${CMAKE_CURRENT_BINARY_DIR}/${prefix}.txt)
+    set(ref_fullpath ${sample_dir}/${ref})
+    if(is_info2)
+        add_test(
+            NAME ${prefix}_Prep
+            COMMAND rifiuti ${input} -o ${out}
+            WORKING_DIRECTORY ${sample_dir})
+    else()
+        add_test(
+            NAME ${prefix}_Prep
+            COMMAND rifiuti-vista ${input} -o ${out}
+            WORKING_DIRECTORY ${sample_dir})
+    endif()
+
+    add_test(
+        NAME ${prefix}_Clean
+        COMMAND ${CMAKE_COMMAND} -E rm ${out})
+
+    add_test(
+        NAME ${prefix}
+        COMMAND ${CMAKE_COMMAND} -E compare_files ${out} ${ref_fullpath})
+
+    set_tests_properties(${prefix}_Prep  PROPERTIES FIXTURES_SETUP    ${fixture})
+    set_tests_properties(${prefix}_Clean PROPERTIES FIXTURES_CLEANUP  ${fixture})
+    set_tests_properties(${prefix}       PROPERTIES FIXTURES_REQUIRED ${fixture})
+
+    set_tests_properties(${prefix}       PROPERTIES LABELS "${label}")
+
+endfunction()
+
+UniInputPathTest(UniFilePath 1 ./ごみ箱/INFO2-empty japanese-path-file.txt)
+UniInputPathTest(UniRDirPath 0 ./ごみ箱/dir-empty   japanese-path-dir.txt)

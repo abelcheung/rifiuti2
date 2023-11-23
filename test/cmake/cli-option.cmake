@@ -167,18 +167,54 @@ addMissingInputTest(2 -t :)
 addMissingInputTest(3 -z -o file1 -n)
 
 
-function(addSepArgTest name)
-    add_test(NAME d_SepArgTest${name} COMMAND
-        rifiuti-vista -t "${ARGV1}" samples/dir-sample1)
-    add_test(NAME f_SepArgTest${name} COMMAND
-        rifiuti       -t "${ARGV1}" samples/INFO2-sample1)
-    set_tests_properties(d_SepArgTest${name} PROPERTIES LABELS "recycledir;arg")
-    set_tests_properties(f_SepArgTest${name} PROPERTIES LABELS      "info2;arg")
+function(SepCompareTest testid is_info2 sep)
+    set_label(is_info2 "arg")
+    set_test_vars(${testid} is_info2 1 1)
+    set(out ${CMAKE_CURRENT_BINARY_DIR}/${prefix}_o.txt)
+    set(ref ${CMAKE_CURRENT_BINARY_DIR}/${prefix}_r.txt)
+    if(is_info2)
+        set(prog rifiuti)
+        set(input INFO2-sample1)
+    else()
+        set(prog rifiuti-vista)
+        set(input dir-sample1)
+    endif()
+    add_test(
+        NAME ${prefix}_Prep1
+        COMMAND ${prog} -t "${sep}" ${input} -o ${out}
+        WORKING_DIRECTORY ${sample_dir}
+    )
+    if(WIN32)
+        string(REPLACE \\ ` sep ${sep})
+        add_test_using_shell(${prefix}_Prep2
+            "(Get-Content ${input}.txt).Replace(\"`t\", \"${sep}\") | Set-Content ${ref}"
+            WORKING_DIRECTORY ${sample_dir})
+    else()
+        add_test_using_shell(${prefix}_Prep2
+            "awk '{gsub(\"\\t\",\"${sep}\");print;}' ${input}.txt > ${ref}"
+            WORKING_DIRECTORY ${sample_dir})
+    endif()
+    add_test(
+        NAME ${prefix}
+        COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${out} ${ref}
+    )
+    add_test(
+        NAME ${prefix}_Clean
+        COMMAND ${CMAKE_COMMAND} -E rm ${out} ${ref}
+    )
+
+    set_tests_properties(${prefix}_Prep1 PROPERTIES FIXTURES_SETUP    ${fixture})
+    set_tests_properties(${prefix}_Prep2 PROPERTIES FIXTURES_SETUP    ${fixture})
+    set_tests_properties(${prefix}       PROPERTIES FIXTURES_REQUIRED ${fixture})
+    set_tests_properties(${prefix}_Clean PROPERTIES FIXTURES_CLEANUP  ${fixture})
+
+    set_tests_properties(${prefix}       PROPERTIES LABELS "${label}")
 endfunction()
 
-addSepArgTest(1 ;)
-addSepArgTest(2 xyz)
-addSepArgTest(3 '\\r\\n')
-addSepArgTest(4 '\\\\')
-addSepArgTest(5 '%s')
-
+# "\\\\" converts to "\;" in cmake, can't do test on backslashes
+set(nums 1 2 3 4)
+set(seps "|" "xx" "\\n\\t" "%s")
+foreach(item IN ZIP_LISTS nums seps)
+    SepCompareTest(SepCompare${item_0} 0 "${item_1}")
+    SepCompareTest(SepCompare${item_0} 1 "${item_1}")
+endforeach()

@@ -1,3 +1,7 @@
+#
+# Mix different file versions into a single dir
+#
+
 add_test(
     NAME d_CraftedMixVer
     COMMAND rifiuti-vista samples/dir-mixed
@@ -64,3 +68,33 @@ set_tests_properties(BadPermDirClean       PROPERTIES FIXTURES_CLEANUP  D_BADPER
 set_tests_properties(BadPermDirPrepPerm    PROPERTIES DEPENDS BadPermDirCopy)
 set_tests_properties(BadPermDirClean       PROPERTIES DEPENDS BadPermDirRestorePerm)
 
+
+#
+# Simulate bad UTF-16 path entries
+#
+
+add_test(NAME d_BadUniEnc_Prep
+    COMMAND rifiuti-vista dir-bad-uni -o ${CMAKE_CURRENT_BINARY_DIR}/d_BadUniEnc.txt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples
+)
+
+add_test(
+    NAME d_BadUniEnc
+    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol d_BadUniEnc.txt samples/dir-bad-uni.txt
+)
+
+add_test(
+    NAME d_BadUniEnc_Clean
+    COMMAND ${CMAKE_COMMAND} -E rm d_BadUniEnc.txt
+)
+
+set_tests_properties(d_BadUniEnc_Prep  PROPERTIES FIXTURES_SETUP    D_BADUNIENC)
+set_tests_properties(d_BadUniEnc       PROPERTIES FIXTURES_REQUIRED D_BADUNIENC)
+set_tests_properties(d_BadUniEnc_Clean PROPERTIES FIXTURES_CLEANUP  D_BADUNIENC)
+
+set_tests_properties(d_BadUniEnc_Prep
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "displayed in escaped unicode sequences")
+set_tests_properties(d_BadUniEnc
+    PROPERTIES
+        LABELS "recycledir;encoding;crafted")

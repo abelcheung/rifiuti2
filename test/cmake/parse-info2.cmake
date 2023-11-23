@@ -32,13 +32,14 @@ endfunction()
 
 
 createInfo2TestSet(Info2Empty   INFO2-empty)
-# createInfo2TestSet(Info2Win95   INFO-95-ja-1 -l ${cp932})
 createInfo2TestSet(Info2WinNT   INFO-NT-en-1)
 createInfo2TestSet(Info2Win98   INFO2-sample2 -l CP1252)
 createInfo2TestSet(Info2WinME   INFO2-ME-en-1 -l CP1252)
 createInfo2TestSet(Info2Win2K   INFO2-2k-cht-1)
 createInfo2TestSet(Info2WinXP   INFO2-sample1)
 createInfo2TestSet(Info2UNCA1   INFO2-me-en-uncpath -l ASCII)
-# createInfo2TestSet(Info2UNCA2   INFO2-2k-tw-uncpath -l ${cp950})
 createInfo2TestSet(Info2UNCU1   INFO2-03-tw-uncpath)
 
+# In encoding.cmake now
+# createInfo2TestSet(Info2Win95   INFO-95-ja-1 -l ${cp932})
+# createInfo2TestSet(Info2UNCA2   INFO2-2k-tw-uncpath -l ${cp950})
