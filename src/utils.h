@@ -177,10 +177,11 @@ int           check_file_args             (const char       *path,
                                            rbin_type         type,
                                            GError          **error);
 
-r2status      prepare_output_handle       (void);
+FILE *        prep_tempfile_if_needed     (GError          **error);
+void          clean_tempfile_if_needed    (FILE             *fh,
+                                           GError          **error);
 
-void          close_output_handle         (void);
-void          close_error_handle          (void);
+void          close_handles               (void);
 
 void          print_header                (metarecord        meta);
 
@@ -188,8 +189,6 @@ void          print_record_cb             (rbin_struct      *record,
                                            void             *data);
 
 void          print_footer                (void);
-
-r2status      move_temp_file              (void);
 
 void          print_version_and_exit      (void) G_GNUC_NORETURN;
 

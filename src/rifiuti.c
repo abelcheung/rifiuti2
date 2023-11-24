@@ -381,25 +381,19 @@ main (int    argc,
 
     /* Print everything */
     {
-        r2status s = prepare_output_handle ();
-        if (s != R2_OK) {
-            exit_status = s;
+        FILE *fh = prep_tempfile_if_needed(&error);
+        if (error) {
+            exit_status = R2_ERR_OPEN_FILE;
             goto cleanup;
         }
-    }
-
-    print_header (meta);
-    g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
-    print_footer ();
-
-    close_output_handle ();
-
-    /* BEWARE: only stderr allowed at this point */
-
-    {
-        r2status s = move_temp_file ();
-        if ( s != R2_OK )
-            exit_status = s;
+        print_header (meta);
+        g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
+        print_footer ();
+        clean_tempfile_if_needed (fh, &error);
+        if (error) {
+            exit_status = R2_ERR_WRITE_FILE;
+            goto cleanup;
+        }
     }
 
     cleanup:
@@ -435,8 +429,7 @@ main (int    argc,
     g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
     g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
     free_vars ();
-
-    close_error_handle ();
+    close_handles ();
 
     return exit_status;
 }

@@ -675,13 +675,16 @@ win_filetime_to_gdatetime (int64_t win_filetime)
     return g_date_time_new_from_unix_utc (t);
 }
 
+// stdout / stderr handling, with special care
+// on Windows command prompt.
+
 static void
 _local_print (gboolean    is_stdout,
               const char *str)
 {
     FILE  *fh;
 
-    if ( !g_utf8_validate (str, -1, NULL)) {
+    if (!g_utf8_validate (str, -1, NULL)) {
         g_critical (_("String not in UTF-8 encoding: %s"), str);
         return;
     }
@@ -689,15 +692,9 @@ _local_print (gboolean    is_stdout,
     fh = is_stdout ? out_fh : err_fh;
 
 #ifdef G_OS_WIN32
-    /*
-     * Use Windows API only if:
-     * 1. On Windows console
-     * 2. Output is not piped nor redirected
-     * See init_wincon_handle().
-     */
+    // See init_wincon_handle() for more info
     if (fh == NULL)
     {
-        /* The only likely problem here is OOM */
         wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, NULL);
         puts_wincon (is_stdout, wstr);
         g_free (wstr);
@@ -719,23 +716,22 @@ _local_printerr (const char *str)
     _local_print (FALSE, str);
 }
 
-static void
-_prepare_error_handle (void)
-{
-#ifdef G_OS_WIN32
-    if ( ! init_wincon_handle (FALSE) )
-#endif
-        err_fh = stderr;
-}
-
 void
 rifiuti_init (void)
 {
     setlocale (LC_ALL, "");
 
-    /* Need this very early, before any debug/error is ever printed */
-    _prepare_error_handle();
+#ifdef G_OS_WIN32
+    if (! init_wincon_handle (FALSE))
+#endif
+        err_fh = stderr;
     g_set_printerr_handler (_local_printerr);
+
+#ifdef G_OS_WIN32
+    if (! init_wincon_handle (TRUE))
+#endif
+        out_fh = stdout;
+    g_set_print_handler (_local_printout);
 }
 
 void
@@ -812,6 +808,10 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 #else
         char **args = g_strdupv (*argv);
 #endif
+        char *args_str = g_strjoinv("|", args);
+        g_debug("Calling args: %s", args_str);
+        g_free(args_str);
+
         parse_ok = g_option_context_parse_strv (*context, &args, &err);
         g_option_context_free (*context);
         g_strfreev (args);
@@ -853,39 +853,38 @@ utf16le_to_utf8 (const gunichar2   *str,
 #endif
 }
 
-
-static r2status
-_get_tempfile (void)
+/**
+ * @brief Wrapper of `g_mkstemp()` that returns file handle
+ * @param error A `GError` pointer to store potential problem
+ * @return File handle of temp file, or `NULL` upon error
+ */
+static FILE *
+_get_tempfile (GError **error)
 {
     int     fd, e = 0;
-    FILE   *h;
-    char   *t;
+    FILE   *fh;
+    char   *tmpl;
 
     /* segfaults if string is pre-allocated in stack */
-    t = g_strdup ("rifiuti-XXXXXX");
+    tmpl = g_strdup ("rifiuti-XXXXXX");
 
-    if ( -1 == ( fd = g_mkstemp (t) ) ) {
+    if (-1 == (fd = g_mkstemp(tmpl))) {
         e = errno;
-        goto tempfile_fail;
+        *error = g_error_new_literal(G_FILE_ERROR,
+            g_file_error_from_errno(e), g_strerror(e));
+        return NULL;
     }
 
-    h = fdopen (fd, "wb");
-    if (h == NULL) {
+    if (NULL == (fh = fdopen (fd, "wb"))) {
         e = errno;
+        *error = g_error_new_literal(G_FILE_ERROR,
+            g_file_error_from_errno(e), g_strerror(e));
         close (fd);
-        goto tempfile_fail;
+        return NULL;
     }
 
-    out_fh   = h;
-    tmppath  = t;
-    return R2_OK;
-
-  tempfile_fail:
-
-    g_printerr (_("Error opening temp file for writing: %s"),
-        g_strerror (e));
-    g_printerr ("\n");
-    return R2_ERR_OPEN_FILE;
+    tmppath = tmpl;
+    return fh;
 }
 
 /*! Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
@@ -1057,24 +1056,80 @@ check_file_args (const char  *path,
     return R2_OK;
 }
 
-r2status
-prepare_output_handle (void)
+
+/**
+ * @brief  Prepare temp file handle if required
+ * @param  error A `GError` pointer to store potential problem
+ * @return Previous output file handle if temp file is
+ *         created successfully, otherwise `NULL`
+ * @note   This func is a noop if `output_loc` is not set via
+ *         command line argument
+ */
+FILE *
+prep_tempfile_if_needed (GError **error)
 {
-    r2status s = R2_OK;
+    FILE *new_fh = NULL, *prev_fh = NULL;
 
-    if (output_loc)
-        s = _get_tempfile ();
-    else
-    {
+    if (!output_loc)
+        return NULL;
+
+    new_fh = _get_tempfile (error);
+    if (*error)
+        return NULL;
+
+    prev_fh = out_fh;
+    out_fh  = new_fh;
+    return prev_fh;
+}
+
+
+/**
+ * @brief Perform temp file cleanup actions if necessary
+ * @param fh File handle to use, after temp file has been
+ *        closed. Usually this should be the file handle
+ *        returned by `prep_tempfile_if_needed()`. Can
+ *        be `NULL`, which means no further output is
+ *        necessary, or Windows console handle is used instead.
+ * @param error A `GError` pointer to store potential problem
+ */
+void
+clean_tempfile_if_needed (FILE *fh, GError **error)
+{
+    if (!tmppath)
+        return;
+
+    g_assert (output_loc != NULL);
+    g_assert (out_fh != NULL);
+
+    fclose (out_fh);
+    out_fh = fh;
+
+    if (0 == g_rename (tmppath, output_loc))
+        return;
+
+    int e = errno;
+
+    *error = g_error_new(
+        G_FILE_ERROR,
+        g_file_error_from_errno(e),
+        _("%s.\nTemp file can't be moved to destination '%s', "),
+        g_strerror(e),
+        output_loc);
+}
+
+
+void
+close_handles (void)
+{
+    if (out_fh != NULL)
+        fclose (out_fh);
+    if (err_fh != NULL)
+        fclose (err_fh);
+
 #ifdef G_OS_WIN32
-        if ( ! init_wincon_handle (TRUE) )
+    close_wincon_handle();
+    close_winerr_handle();
 #endif
-            out_fh = stdout;
-    }
-
-    g_set_print_handler (_local_printout);
-
-    return s;
 }
 
 
@@ -1341,52 +1396,6 @@ print_footer (void)
     }
 }
 
-void
-close_output_handle (void)
-{
-    if (out_fh != NULL)
-        fclose (out_fh);
-
-#ifdef G_OS_WIN32
-    close_wincon_handle();
-#endif
-}
-
-void
-close_error_handle (void)
-{
-    if (err_fh != NULL)
-        fclose (err_fh);
-
-#ifdef G_OS_WIN32
-    close_winerr_handle();
-#endif
-}
-
-r2status
-move_temp_file (void)
-{
-    int e;
-
-    if ( !tmppath || !output_loc )
-        return R2_OK;
-
-    if ( 0 == g_rename (tmppath, output_loc) )
-        return R2_OK;
-
-    e = errno;
-
-    /* TRANSLATOR COMMENT: argument is system error message */
-    g_printerr (_("Error moving output data to desinated file: %s"),
-        g_strerror(e));
-    g_printerr ("\n");
-
-    /* TRANSLATOR COMMENT: argument is temp file location */
-    g_printerr (_("Output content is left in '%s'."), tmppath);
-    g_printerr ("\n");
-
-    return R2_ERR_WRITE_FILE;
-}
 
 void
 print_version_and_exit (void)

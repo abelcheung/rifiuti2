@@ -354,31 +354,40 @@ gboolean
 init_wincon_handle (gboolean is_stdout)
 {
     HANDLE h;
+    DWORD console_type;
 
     if (is_stdout)
         h = GetStdHandle (STD_OUTPUT_HANDLE);
     else
         h = GetStdHandle (STD_ERROR_HANDLE);
+    console_type = GetFileType (h);
 
     /*
-     * FILE_TYPE_CHAR only happens when output is a native Windows cmd
-     * console. For Cygwin and Msys shell environments (and output redirection),
-     * GetFileType() would return FILE_TYPE_PIPE. In those cases printf
-     * family outputs UTF-8 data properly. Only Windows console needs to be
-     * dealt with using wide char API.
+     * FILE_TYPE_CHAR only happens when output is a native Windows
+     * command prompt or powershell 5.x. This is true even for latest
+     * Windows 10 / Server, despite console revamp since 1809. Those
+     * need to be dealt with using wide char API.
+     *
+     * For most 3rd party terminals and for output redirection (file
+     * or pipe), GetFileType() would return FILE_TYPE_PIPE, which
+     * handles UTF-8 properly. Powershell core also supports UTF-8 by
+     * default.
      */
-    if (GetFileType (h) != FILE_TYPE_CHAR)
-    {
-        g_debug ("Not native Windows console, GetFileType = %lu", GetFileType (h));
-        return FALSE;
+    switch (console_type) {
+        case FILE_TYPE_CHAR:
+            g_debug ("GetFileType() = %s", "FILE_TYPE_CHAR");
+            if (is_stdout)
+                wincon_fh = h;
+            else
+                winerr_fh = h;
+            return TRUE;
+        case FILE_TYPE_PIPE:
+            g_debug ("GetFileType() = %s", "FILE_TYPE_PIPE");
+            return FALSE;
+        default:
+            g_debug ("GetFileType() = %lu", console_type);
+            return FALSE;
     }
-
-    if (is_stdout)
-        wincon_fh = h;
-    else
-        winerr_fh = h;
-
-    return TRUE;
 }
 
 void
