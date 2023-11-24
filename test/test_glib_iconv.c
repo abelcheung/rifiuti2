@@ -1,23 +1,29 @@
+#include <stdbool.h>
 #include <glib.h>
+
+bool conv_established (char *enc)
+{
+    GIConv cd = g_iconv_open ("UTF-8", enc);
+
+    if (cd != (GIConv) -1) {
+        g_iconv_close (cd);
+        return true;
+    }
+    return false;
+}
 
 int main (int argc, char **argv)
 {
-	GIConv cd;
+    char *enc;
 
-	if (argc < 2 || *(argv[1]) == '\0') {
-		return 2;
-	}
-
-	/*
-	 * In rifiuti2 we only need <legacy> → UTF-8 conversion,
-	 * so we only test for this case. There are some odd OSes
-	 * where even identity conversion can be unsupported (say
-	 * CP936 → CP936), such as on Solaris.
-	 */
-	cd = g_iconv_open ("UTF-8", argv[1]);
-
-	if (cd != (GIConv) -1)
-		g_iconv_close (cd);
-
-	return (cd == (GIConv) -1);
+    for (int i = 1; i < argc; i++) {
+        enc = argv[i];
+        if (*enc == '\0')
+            continue;
+        if (conv_established (enc)) {
+            g_print("%s\n", enc);
+            return 0;
+        }
+    }
+    return 1;
 }
