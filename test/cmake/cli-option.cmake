@@ -1,3 +1,7 @@
+# Copyright (C) 2023, Abel Cheung
+# rifiuti2 is released under Revised BSD License.
+# Please see LICENSE file for more info.
+
 function(addBareOptTest name)
     add_test(NAME d_InvokeOpt${name} COMMAND rifiuti-vista ${ARGV1})
     add_test(NAME f_InvokeOpt${name} COMMAND rifiuti       ${ARGV1})

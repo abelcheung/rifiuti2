@@ -1,3 +1,8 @@
+Rifiuti2 is designed to run as portable command line
+application, and no installation is required. Extract zip
+file onto any folder of your choice and programs are ready
+for use.
+
 All documents for rifiuti2 are available online.
 
 README under GitHub repository:

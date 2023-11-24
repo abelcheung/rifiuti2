@@ -1,3 +1,7 @@
+# Copyright (C) 2023, Abel Cheung
+# rifiuti2 is released under Revised BSD License.
+# Please see LICENSE file for more info.
+
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # cmake -E rm
 
 project(rifiuti2
@@ -70,7 +74,7 @@ install(
 )
 if(NOT WIN32)
     install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/rifiuti.1
+        FILES ${CMAKE_CURRENT_SOURCE_DIR}/docs/rifiuti.1
         DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
     )
 endif()
