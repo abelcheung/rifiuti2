@@ -92,4 +92,4 @@ jobs:
       env:
         MSYS2_PATH_TYPE: inherit
       run: |
-        cd build && ctest --output-on-failure
+        cd build && ctest --output-on-failure -V

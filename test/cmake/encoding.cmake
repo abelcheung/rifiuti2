@@ -56,9 +56,14 @@ set_tests_properties(
 #
 # ASCII incompatible encoding
 #
-add_encoding_test(f_BadEncEBCDIC -DCHOICES=IBM-037|IBM037|CP037 -DINFO2=dummy)
+if(APPLE)
+    # iconv on Mac lacks many encodings
+    add_encoding_test(f_IncompatEnc -DCHOICES=UTF-32 -DINFO2=dummy)
+else()
+    add_encoding_test(f_IncompatEnc -DCHOICES=IBM-037|IBM037|CP037 -DINFO2=dummy)
+endif()
 set_tests_properties(
-    f_BadEncEBCDIC
+    f_IncompatEnc
     PROPERTIES
         LABELS "encoding;info2"
         PASS_REGULAR_EXPRESSION "possibly be a code page or compatible encoding"

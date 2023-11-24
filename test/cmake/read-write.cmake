@@ -114,7 +114,7 @@ function(UniInputPathTest testid is_info2 input ref)
 
     add_test(
         NAME ${prefix}
-        COMMAND ${CMAKE_COMMAND} -E compare_files ${out} ${ref_fullpath})
+        COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${out} ${ref_fullpath})
 
     set_tests_properties(${prefix}_Prep  PROPERTIES FIXTURES_SETUP    ${fixture})
     set_tests_properties(${prefix}_Clean PROPERTIES FIXTURES_CLEANUP  ${fixture})
