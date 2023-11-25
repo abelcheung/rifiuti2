@@ -909,10 +909,7 @@ _populate_index_file_list (GSList     **list,
 #endif
 
     if (NULL == (dir = g_dir_open (path, 0, error)))
-    {
-        g_prefix_error (error, _("Error opening directory '%s': "), path);
         return FALSE;
-    }
 
     pattern1 = g_pattern_spec_new ("$I??????.*");
     pattern2 = g_pattern_spec_new ("$I??????");
