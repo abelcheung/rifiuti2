@@ -12,7 +12,7 @@
 void       gui_message              (const char     *message );
 char *     get_win_timezone_name    (void);
 GSList *   enumerate_drive_bins     (void);
-gunichar2 *windows_product_name     (void);
+char *     windows_product_name     (void);
 gboolean   can_list_win32_folder    (const char     *path,
                                      GError        **error);
 gboolean   init_wincon_handle       (gboolean        is_stdout);

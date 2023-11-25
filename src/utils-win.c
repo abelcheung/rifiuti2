@@ -212,14 +212,15 @@ enumerate_drive_bins (void)
 /*
  * Get Windows product name via registry
  */
-gunichar2 *
+char *
 windows_product_name (void)
 {
     LSTATUS    status;
     DWORD      str_size;
-    gunichar2 *product_name;
+    gunichar2 *buf;
     gunichar2 *subkey = L"software\\microsoft\\windows nt\\currentversion";
     gunichar2 *keyvalue  = L"ProductName";
+    char      *result;
 
     status = RegGetValueW(
         HKEY_LOCAL_MACHINE,
@@ -230,22 +231,33 @@ windows_product_name (void)
         NULL,
         &str_size
     );
+
+    g_debug ("1st RegGetValueW(ProductName): status = %li, str_size = %lu", status, str_size);
 
     if ((status != ERROR_SUCCESS) || (str_size > G_MAXSIZE))
         return NULL;
 
-    product_name = g_malloc ((gsize) str_size);
+    buf = g_malloc ((gsize) str_size);
     status = RegGetValueW(
         HKEY_LOCAL_MACHINE,
         subkey,
         keyvalue,
         RRF_RT_REG_SZ,
         NULL,
-        product_name,
+        buf,
         &str_size
     );
 
-    return (status == ERROR_SUCCESS) ? product_name : NULL;
+    g_debug ("2nd RegGetValueW(ProductName): status = %li", status);
+
+    if (status != ERROR_SUCCESS) {
+        g_free (buf);
+        return NULL;
+    }
+
+    result = g_utf16_to_utf8(buf, -1, NULL, NULL, NULL);
+    g_free (buf);
+    return result;
 }
 
 /*!

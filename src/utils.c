@@ -1160,14 +1160,7 @@ _print_csv_header (metarecord meta)
 #ifdef G_OS_WIN32
     if (live_mode)
     {
-        gunichar2 *buf = windows_product_name();
-        char *product_name = NULL;
-
-        if (buf) {
-            product_name = g_utf16_to_utf8(
-                buf, -1, NULL, NULL, NULL);
-            g_free (buf);
-        }
+        char *product_name = windows_product_name();
 
         if (product_name) {
             g_print (_("OS: %s"), product_name);
