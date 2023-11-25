@@ -738,14 +738,16 @@ void
 rifiuti_setup_opt_ctx (GOptionContext **context,
                        rbin_type        type)
 {
-    char         *bug_report_str;
+    char         *desc_str;
     GOptionGroup *group, *txt_group;
 
-    bug_report_str = g_strdup_printf (
-        /* TRANSLATOR COMMENT: argument is bug report webpage */
-        _("Report bugs to %s"), PROJECT_HOMEPAGE_URL);
-    g_option_context_set_description (*context, bug_report_str);
-    g_free (bug_report_str);
+    desc_str = g_strdup_printf (
+        _("Usage help: %s\nBug report: %s\nMore info : %s"),
+        PROJECT_TOOL_USAGE_URL,
+        PROJECT_BUG_REPORT_URL,
+        PROJECT_GH_PAGE);
+    g_option_context_set_description (*context, desc_str);
+    g_free (desc_str);
 
     /* main group */
     group = g_option_group_new (NULL, NULL, NULL, NULL, NULL);
@@ -1390,13 +1392,13 @@ print_footer (void)
 void
 print_version_and_exit (void)
 {
-    fprintf (stdout, "%s %s\n", PROJECT_NAME, PROJECT_VERSION);
+    g_print ("%s %s\n", PROJECT_NAME, PROJECT_VERSION);
+    g_print ("%s\n\n", PROJECT_DESCRIPTION);
     /* TRANSLATOR COMMENT: %s is software name */
-    fprintf (stdout, _("%s is distributed under the "
-        "BSD 3-Clause License.\n"), PROJECT_NAME);
+    g_print (_("%s is released under Revised BSD License.\n"), PROJECT_NAME);
     /* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
-    fprintf (stdout, _("Information about %s can be found on\n\n\t%s\n"),
-        PROJECT_NAME, PROJECT_HOMEPAGE_URL);
+    g_print (_("More information can be found on\n\n\t%s\n"),
+        PROJECT_HOMEPAGE_URL);
 
     exit (R2_OK);
 }

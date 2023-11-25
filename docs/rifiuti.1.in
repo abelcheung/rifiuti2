@@ -4,10 +4,10 @@
 .\"
 .\" rifiuti2 is released under Revised BSD License.
 
-.TH "rifiuti2" "1" "Nov 2023" "0.7.0" "MS Windows recycle bin analysis tool"
+.TH "@PROJECT_NAME@" "1" "Nov 2023" "@PROJECT_VERSION@" "@PROJECT_DESCRIPTION@"
 
 .SH NAME
-rifiuti2 \[em] MS Windows recycle bin analysis tool
+@PROJECT_NAME@ \[em] @PROJECT_DESCRIPTION@
 
 .SH SYNOPSIS
 .na
@@ -19,9 +19,6 @@ rifiuti2 \[em] MS Windows recycle bin analysis tool
 .br
 .B "\fCrifiuti-vista\/\fP [\-x | [\-n] [\-t \fIdelim\/\fP]] [\-z]"
 .B "[\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_or_dir\/\fP"
-.br
-.B "\fCrifiuti-vista\/\fP --live [\-x | [\-n] [\-t \fIdelim\/\fP]]"
-.B "[\-z] [\-o \fIoutfile\/\fP]"
 .ad n
 
 .SH DESCRIPTION
@@ -29,12 +26,14 @@ rifiuti2 \[em] MS Windows recycle bin analysis tool
 This manpage is now obsolete. Please read REAMDE and Wiki
 from online repository for more information.
 .IP \[bu]
-https://github.com/abelcheung/rifiuti2/
+@PROJECT_HOMEPAGE_URL@
 .IP \[bu]
-https://github.com/abelcheung/rifiuti2/wiki/
+@PROJECT_HOMEPAGE_URL@wiki/
+.IP \[bu]
+@PROJECT_GH_PAGE@
 
 .SH COPYRIGHT
-rifiuti2 is released under Revised BSD license.
+@PROJECT_NAME@ is released under Revised BSD license.
 
 .SH AUTHOR
 The main author is Abel Cheung

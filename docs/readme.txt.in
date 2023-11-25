@@ -1,0 +1,17 @@
+@PROJECT_NAME@ is designed to run as portable command line
+application, and no installation is required. Extract zip
+file onto any folder of your choice and programs are ready
+for use.
+
+It is released under Revised BSD License.
+
+All documents are available online:
+
+- Detailed usage help:
+@PROJECT_TOOL_USAGE_URL@
+
+- Official GitHub repository:
+@PROJECT_HOMEPAGE_URL@
+
+- Extra news and technical info:
+@PROJECT_GH_PAGE@

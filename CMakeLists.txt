@@ -6,8 +6,13 @@ cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # cmake -E rm
 
 project(rifiuti2
     VERSION 0.7.0
-    HOMEPAGE_URL https://github.com/abelcheung/rifiuti2/
+    HOMEPAGE_URL "https://github.com/abelcheung/rifiuti2/"
+    DESCRIPTION "Windows recycle bin analysis tool"
     LANGUAGES C)
+
+set(PROJECT_BUG_REPORT_URL "${PROJECT_HOMEPAGE_URL}issues")
+set(PROJECT_TOOL_USAGE_URL "${PROJECT_HOMEPAGE_URL}wiki/Usage-and-Examples")
+set(PROJECT_GH_PAGE "https://abelcheung.github.io/rifiuti2/")
 
 if(NOT WIN32)
     include(GNUInstallDirs)
@@ -18,7 +23,10 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall")
 set(CMAKE_STATIC_LINKER_FLAGS "-static")
-configure_file(config.h.in config.h)
+
+configure_file(src/config.h.in config.h)
+configure_file(docs/rifiuti.1.in rifiuti.1)
+configure_file(docs/readme.txt.in readme.txt)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED "glib-2.0 >= 2.40.0")
@@ -74,16 +82,15 @@ install(
 )
 if(NOT WIN32)
     install(
-        FILES ${CMAKE_CURRENT_SOURCE_DIR}/docs/rifiuti.1
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/rifiuti.1
         DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
     )
 endif()
 install(
     FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-        ${CMAKE_CURRENT_SOURCE_DIR}/NEWS.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/docs/THANKS.txt
+        ${CMAKE_CURRENT_BINARY_DIR}/readme.txt
     TYPE DOC
 )
 
