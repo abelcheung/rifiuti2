@@ -403,6 +403,7 @@ main (int    argc,
 
     g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
     g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
+    g_clear_error (&error);
     free_vars ();
     close_handles ();
 

@@ -870,14 +870,14 @@ _get_tempfile (GError **error)
 
     if (-1 == (fd = g_mkstemp(tmpl))) {
         e = errno;
-        *error = g_error_new_literal(G_FILE_ERROR,
+        g_set_error_literal (error, G_FILE_ERROR,
             g_file_error_from_errno(e), g_strerror(e));
         return NULL;
     }
 
     if (NULL == (fh = fdopen (fd, "wb"))) {
         e = errno;
-        *error = g_error_new_literal(G_FILE_ERROR,
+        g_set_error_literal (error, G_FILE_ERROR,
             g_file_error_from_errno(e), g_strerror(e));
         close (fd);
         return NULL;
@@ -1109,12 +1109,9 @@ clean_tempfile_if_needed (FILE *fh, GError **error)
 
     int e = errno;
 
-    *error = g_error_new(
-        G_FILE_ERROR,
-        g_file_error_from_errno(e),
+    g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
         _("%s.\nTemp file can't be moved to destination '%s', "),
-        g_strerror(e),
-        output_loc);
+        g_strerror(e), output_loc);
 }
 
 
@@ -1138,8 +1135,8 @@ _print_csv_header (metarecord meta)
 {
     char *rbin_path = g_filename_display_name (meta.filename);
 
-    g_print (_("Recycle bin path: '%s'"), rbin_path);
-    g_print ("\n");
+    g_print (_("Recycle bin path: '%s'\n"), rbin_path);
+    g_free (rbin_path);
 
     {
         char *ver;
