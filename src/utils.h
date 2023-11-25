@@ -161,8 +161,8 @@ void          rifiuti_setup_opt_ctx       (GOptionContext    **context,
                                            rbin_type         type);
 
 r2status      rifiuti_parse_opt_ctx       (GOptionContext  **context,
-                                           int              *argc,
-                                           char           ***argv);
+                                           char           ***argv,
+                                           GError          **error);
 
 GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 

@@ -780,50 +780,53 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
     g_option_context_set_help_enabled (*context, TRUE);
 }
 
+/**
+ * @brief Process command line arguments
+ * @param context option context pointer
+ * @param argv reference to command line `argv`
+ * @param error reference of `GError` pointer to store errors
+ * @return `R2_OK` upon parse success, `R2_ERR_ARG` on failure.
+ *         `error` is set upon error as well.
+ */
 r2status
 rifiuti_parse_opt_ctx (GOptionContext **context,
-                       int             *argc,
-                       char          ***argv)
+                       char          ***argv,
+                       GError         **error)
 {
-    GError   *err = NULL;
-    gboolean  parse_ok;
+    int       argc;
+    char    **args;
+    GArray   *arg_array;  // TODO GStrvBuilder since 2.68
 
-    /* Must be done before parsing, since argc might be modified later */
-    if (*argc <= 1) {
+    argc = g_strv_length (*argv);
+
+#ifdef G_OS_WIN32
+    args = g_win32_get_command_line ();
+#else
+    args = g_strdupv (*argv);
+#endif
+
+    arg_array = g_array_new (TRUE, TRUE, sizeof(gpointer));
+    g_array_append_vals (arg_array, args, argc);
+    if (argc == 1) {
+        char *help_opt = g_strdup ("--help-all");
+        g_array_append_val (arg_array, help_opt);
 #ifdef G_OS_WIN32
         g_set_print_handler (gui_message);
 #endif
-        char *help_msg = g_option_context_get_help (
-            *context, FALSE, NULL);
-        g_print ("%s", help_msg);
-        g_free (help_msg);
-        g_option_context_free (*context);
-
-        return (R2_ERR_GUI_HELP);
     }
 
     {
-#ifdef G_OS_WIN32
-        char **args = g_win32_get_command_line ();
-#else
-        char **args = g_strdupv (*argv);
-#endif
-        char *args_str = g_strjoinv("|", args);
+        char *args_str = g_strjoinv("|", (char **) arg_array->data);
         g_debug("Calling args: %s", args_str);
         g_free(args_str);
-
-        parse_ok = g_option_context_parse_strv (*context, &args, &err);
-        g_option_context_free (*context);
-        g_strfreev (args);
     }
 
-    if (parse_ok)
-        return R2_OK;
+    g_option_context_parse_strv (*context,
+        (char ***) &(arg_array->data), error);
+    g_option_context_free (*context);
+    g_array_unref (arg_array);
 
-    g_printerr (_("Error parsing options: %s"), err->message);
-    g_printerr ("\n");
-    g_clear_error (&err);
-    return R2_ERR_ARG;
+    return (*error != NULL) ? R2_ERR_ARG : R2_OK;
 }
 
 

@@ -280,7 +280,7 @@ main (int    argc,
         "Parse index files in C:\\$Recycle.bin style folder "
         "and dump recycle bin data.  Can also dump a single index file."));
     rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR);
-    exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
+    exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 

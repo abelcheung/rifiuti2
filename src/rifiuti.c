@@ -348,7 +348,7 @@ main (int    argc,
     g_option_context_set_summary (context, N_(
         "Parse INFO2 file and dump recycle bin data."));
     rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_FILE);
-    exit_status = rifiuti_parse_opt_ctx (&context, &argc, &argv);
+    exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 
