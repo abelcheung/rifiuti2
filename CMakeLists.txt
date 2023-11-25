@@ -14,9 +14,7 @@ set(PROJECT_BUG_REPORT_URL "${PROJECT_HOMEPAGE_URL}issues")
 set(PROJECT_TOOL_USAGE_URL "${PROJECT_HOMEPAGE_URL}wiki/Usage-and-Examples")
 set(PROJECT_GH_PAGE "https://abelcheung.github.io/rifiuti2/")
 
-if(NOT WIN32)
-    include(GNUInstallDirs)
-endif()
+include(GNUInstallDirs)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -74,18 +72,23 @@ foreach(bin rifiuti rifiuti-vista)
     endif()
 endforeach()
 
+# Install: Windows use simplistic folder,
+# non-Windows follow FHS.
+if(WIN32)
+    set(CMAKE_INSTALL_BINDIR .)
+    set(CMAKE_INSTALL_DOCDIR doc)
+else()
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/rifiuti.1
+        DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+    )
+endif()
 install(
     TARGETS
         rifiuti
         rifiuti-vista
     RUNTIME
 )
-if(NOT WIN32)
-    install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/rifiuti.1
-        DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
-    )
-endif()
 install(
     FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
@@ -96,3 +99,21 @@ install(
 
 include(CTest)
 add_subdirectory(test)
+
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_SOURCE_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ")
+    set(CPACK_SOURCE_GENERATOR "TXZ")
+endif()
+set(CPACK_SOURCE_IGNORE_FILES
+    .editorconfig
+    .git/
+    .gitattribute
+    .gitignore
+    .github/
+    ${CMAKE_BINARY_DIR}/
+    ${PROJECT_BINARY_DIR}/
+)
+include(CPack)
