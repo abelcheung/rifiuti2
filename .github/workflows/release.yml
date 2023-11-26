@@ -26,37 +26,28 @@ jobs:
         msystem: ${{ matrix.msystem }}
         update: true
         install: >-
-          markdown
-          groff
+          git
         pacboy: >-
-          autotools:p
-          gcc:p
-          libxml2:p
-          iconv:p
+          toolchain:p
           glib2:p
-          7zip:p
+          cmake:p
 
     - name: Pre-build
-      env:
-        WANT_AUTOCONF: latest
-        WANT_AUTOMAKE: latest
-      run: >-
-        autoreconf -f -i -v
-        && ./configure --enable-static
+      run: |
+        cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
     - name: Build
-      run: make all
+      run: |
+        cmake --build build -v
 
-    - name: Test suite
-      run: make check
-
-    - name: Create artifact
-      run: make -f dist-win.mk dist-win
+    - name: Create binary archive
+      run: |
+        cmake --build build -v --target package
 
     - uses: actions/upload-artifact@v3
       with:
         name: binary
-        path: 'win-pkg/*.zip'
+        path: 'build/rifiuti2-*.zip'
         if-no-files-found: error
 
   source:
@@ -68,22 +59,23 @@ jobs:
       run: >
         sudo apt-get install -y
         build-essential
-        automake
+        cmake
+        ninja-build
         libglib2.0-dev
         libxml2-utils
 
     - name: Pre-build
-      run: >-
-        autoreconf -f -i -v
-        && ./configure
+      run: |
+        cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
-    - name: Build
-      run: make distcheck
+    - name: Create source archive
+      run: |
+        cmake --build build -v --target package_source
 
     - uses: actions/upload-artifact@v3
       with:
         name: source
-        path: '*.xz'
+        path: 'build/rifiuti2-*.xz'
         if-no-files-found: error
 
   release:
@@ -115,13 +107,12 @@ jobs:
 
       - name: Create release notes fragment
         run: |
-          mkdir notes
-          echo ${{ vars.RELEASE_NOTES }} | base64 -d - > notes/notes.md
+          echo ${{ vars.RELEASE_NOTES }} | base64 -d - > notes.md
 
       - uses: ncipollo/release-action@v1
         with:
           artifacts: '*.*'
           artifactErrorsFailBuild: true
           draft: true
-          bodyFile: 'notes/notes.md'
+          bodyFile: 'notes.md'
 

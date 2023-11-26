@@ -19,7 +19,7 @@ include(GNUInstallDirs)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -Wall")
 set(CMAKE_STATIC_LINKER_FLAGS "-static")
 
 configure_file(src/config.h.in config.h)

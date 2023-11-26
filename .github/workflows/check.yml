@@ -39,13 +39,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: haya14busa/action-cond@v1
-      id: static_flag
-      with:
-        cond: ${{ matrix.os == 'windows-2022' }}
-        if_true: '--enable-static'
-        if_false: '--disable-static'
-
     # cmake pulls ninja by default
     - name: Install dependencies (MSYS)
       if: matrix.os == 'windows-2022'
@@ -77,8 +70,7 @@ jobs:
 
     - name: Pre-build
       run: |
-        mkdir build
-        cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
+        cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
     - name: Build
       run: |
