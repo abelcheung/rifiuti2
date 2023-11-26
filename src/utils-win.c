@@ -66,12 +66,13 @@ char *
 get_win_timezone_name (void)
 {
     TIME_ZONE_INFORMATION tzinfo;
-    wchar_t  *name;
+    WCHAR    *name    = NULL;
     DWORD     id;
-    char     *ret;
-    GError   *err = NULL;
+    char     *result  = NULL;
+    GError   *err     = NULL;
 
     id = GetTimeZoneInformation (&tzinfo);
+    g_debug ("%s(): GetTimeZoneInformation() = %lu", __func__, id);
 
     switch (id)
     {
@@ -83,20 +84,27 @@ get_win_timezone_name (void)
             name = tzinfo.DaylightName;
             break;
         default:
-            ret = g_win32_error_message (GetLastError ());
-            g_critical ("%s", ret);
-            g_free (ret);
-            return g_strdup (_("(Failed to retrieve timezone name)"));
+            {
+                char *msg = g_win32_error_message (GetLastError ());
+                g_critical ("%s(): %s", __func__, msg);
+                g_free (msg);
+            }
             break;
     }
 
-    ret = g_utf16_to_utf8 ( (const gunichar2 *) name, -1, NULL, NULL, &err);
-    if (err == NULL)
-        return ret;
+    if (name) {
+        result = g_utf16_to_utf8 ((const gunichar2 *) name,
+            -1, NULL, NULL, &err);
+        if (err) {
+            g_critical ("%s(): %s", __func__, err->message);
+            g_clear_error (&err);
+        }
+    }
 
-    g_warning ("%s", err->message);
-    g_error_free (err);
-    return NULL;
+    if (result)
+        return result;
+    else
+        return g_strdup (_("(Failed to retrieve timezone name)"));
 }
 
 
@@ -232,7 +240,8 @@ windows_product_name (void)
         &str_size
     );
 
-    g_debug ("1st RegGetValueW(ProductName): status = %li, str_size = %lu", status, str_size);
+    g_debug ("1st RegGetValueW(ProductName): status = %li, str_size = %lu",
+        status, str_size);
 
     if ((status != ERROR_SUCCESS) || (str_size > G_MAXSIZE))
         return NULL;

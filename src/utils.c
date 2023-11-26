@@ -943,34 +943,36 @@ _populate_index_file_list (GSList     **list,
 }
 
 
-/*! Search for desktop.ini in folder for hint of recycle bin */
+/**
+ * @brief Search for desktop.ini in folder for hint of recycle bin
+ * @param path The searched path
+ * @return `TRUE` if `desktop.ini` found to contain recycle bin
+ *         identifier, `FALSE` otherwise
+ */
 static gboolean
-found_desktop_ini (const char *path)
+_found_desktop_ini (const char *path)
 {
     char *filename, *content, *found;
 
     filename = g_build_filename (path, "desktop.ini", NULL);
     if (!g_file_test (filename, G_FILE_TEST_IS_REGULAR))
-        goto desktop_ini_error;
+    {
+        g_free (filename);
+        return FALSE;
+    }
 
-    /* assume desktop.ini is ASCII and not something spurious */
-    if (!g_file_get_contents (filename, &content, NULL, NULL))
-        goto desktop_ini_error;
+    if (g_file_get_contents (filename, &content, NULL, NULL))
+        /* Don't bother parsing, we don't use the content at all */
+        found = strstr (content, RECYCLE_BIN_CLSID);
 
-    /* Don't bother parsing, we don't use the content at all */
-    found = strstr (content, RECYCLE_BIN_CLSID);
     g_free (content);
     g_free (filename);
     return (found != NULL);
-
-    desktop_ini_error:
-    g_free (filename);
-    return FALSE;
 }
 
 
 static _os_guess
-guess_windows_ver (const metarecord  meta)
+_guess_windows_ver (const metarecord meta)
 {
     if (meta.type == RECYCLE_BIN_TYPE_DIR) {
         /*
@@ -1037,7 +1039,7 @@ check_file_args (const char  *path,
          * last ditch effort: search for desktop.ini. Just print empty content
          * representing empty recycle bin if found.
          */
-        if ( !*list && !found_desktop_ini (path) )
+        if ( !*list && !_found_desktop_ini (path) )
         {
             g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
                 _("No files with name pattern '%s' "
@@ -1174,7 +1176,7 @@ _print_csv_header (metarecord meta)
     else
 #endif
     {
-        _os_guess g = guess_windows_ver (meta);
+        _os_guess g = _guess_windows_ver (meta);
 
         if (g == OS_GUESS_UNKNOWN)
             g_print ("%s", _("OS detection failed"));
