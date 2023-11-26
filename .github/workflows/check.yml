@@ -88,8 +88,18 @@ jobs:
       run: |
         cmake --install build --prefix inst --strip -v
 
-    - name: CTest
+    - name: Basic CTest
+      continue-on-error: true
+      id: basic_ctest
       env:
         MSYS2_PATH_TYPE: inherit
       run: |
-        cd build && ctest --output-on-failure -V
+        cd build && ctest
+
+    - name: Rerun failed tests
+      if: steps.basic_ctest.outcome == 'failure'
+      env:
+        MSYS2_PATH_TYPE: inherit
+      run: |
+        cd build && ctest --rerun-failed --output-on-failure -V
+
