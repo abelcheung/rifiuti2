@@ -113,6 +113,7 @@ set(CPACK_SOURCE_IGNORE_FILES
     .gitattribute
     .gitignore
     .github/
+    CTestConfig.cmake
     ${CMAKE_BINARY_DIR}/
     ${PROJECT_BINARY_DIR}/
 )
