@@ -761,6 +761,9 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
         case RECYCLE_BIN_TYPE_DIR:
 #ifdef G_OS_WIN32
             g_option_group_add_entries (group, live_options);
+#else
+            // TODO live inspection in WSL
+            UNUSED (live_options);
 #endif
             break;
         default: break;
@@ -952,7 +955,7 @@ _populate_index_file_list (GSList     **list,
 static gboolean
 _found_desktop_ini (const char *path)
 {
-    char *filename, *content, *found;
+    char *filename = NULL, *content = NULL, *found = NULL;
 
     filename = g_build_filename (path, "desktop.ini", NULL);
     if (!g_file_test (filename, G_FILE_TEST_IS_REGULAR))
