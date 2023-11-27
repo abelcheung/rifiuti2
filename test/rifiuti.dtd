@@ -9,7 +9,7 @@
 <!ATTLIST record
 	index	CDATA	#REQUIRED
 	time	CDATA	#REQUIRED
-	emptied	(Y | N)	#IMPLIED
+	gone	(true | false | unknown) #REQUIRED
 	size	NMTOKEN	#REQUIRED
 >
 <!ELEMENT path (#PCDATA)>

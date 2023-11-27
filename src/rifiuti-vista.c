@@ -199,24 +199,26 @@ static void
 parse_record_cb (char    *index_file,
                  GSList **recordlist)
 {
-    rbin_struct    *record;
-    char           *basename;
+    rbin_struct    *record = NULL;
+    char           *basename = NULL;
     uint64_t        version = 0;
     uint32_t        pathlen = 0;
     gsize           bufsize;
     void           *buf = NULL;
-    r2status        validate_st;
 
     basename = g_path_get_basename (index_file);
 
-    validate_st = validate_index_file (
-        index_file, &buf, &bufsize, &version, &pathlen);
-    if ( validate_st != R2_OK )
     {
-        g_printerr (_("File '%s' fails validation."), basename);
-        g_printerr ("\n");
-        exit_status = validate_st;
-        goto parse_record_error;
+        r2status sts = validate_index_file (
+            index_file, &buf, &bufsize, &version, &pathlen);
+        if ( sts != R2_OK )
+        {
+            g_printerr (_("File '%s' fails validation.\n"), basename);
+            exit_status = sts;
+            g_free (buf);
+            g_free (basename);
+            return;
+        }
     }
 
     g_debug ("Start populating record for '%s'...", basename);
@@ -225,7 +227,8 @@ parse_record_cb (char    *index_file,
     {
         case VERSION_VISTA:
             /* see populate_record_data() for meaning of last parameter */
-            record = populate_record_data (buf, version, pathlen, (bufsize == VERSION1_FILE_SIZE - 1));
+            record = populate_record_data (buf, version, pathlen,
+                (bufsize == VERSION1_FILE_SIZE - 1));
             break;
 
         case VERSION_WIN10:
@@ -236,6 +239,19 @@ parse_record_cb (char    *index_file,
             g_assert_not_reached();
     }
 
+    /* TODO Check corresponding $R.... file existance and set record->gone */
+    {
+        char *dirname = g_path_get_dirname (index_file);
+        char *trash_basename = g_strdup (basename);
+        trash_basename[1] = 'R';  /* $R... versus $I... */
+        char *trash_path = g_build_filename (dirname, trash_basename, NULL);
+        record->gone = g_file_test (trash_path, G_FILE_TEST_EXISTS) ?
+            FILESTATUS_EXISTS : FILESTATUS_GONE;
+        g_free (dirname);
+        g_free (trash_basename);
+        g_free (trash_path);
+    }
+
     g_debug ("Parsing done for '%s'", basename);
     record->index_s = basename;
     record->meta = &meta;
@@ -243,10 +259,6 @@ parse_record_cb (char    *index_file,
     g_free (buf);
     return;
 
-    parse_record_error:
-
-    g_free (buf);
-    g_free (basename);
 }
 
 
@@ -312,7 +324,6 @@ main (int    argc,
 
     /* Fill in recycle bin metadata */
     meta.type               = RECYCLE_BIN_TYPE_DIR;
-    meta.keep_deleted_entry = FALSE;
     meta.is_empty           = (filelist == NULL);
     meta.has_unicode_path   = TRUE;
     if (live_mode)

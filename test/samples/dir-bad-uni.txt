@@ -3,8 +3,8 @@ Version: 1
 OS Guess: Windows Vista - 8.1
 Time zone: UTC [+0000]
 
-Index	Deleted Time	Size	Path
-$I77T7B0.ahk	2019-04-14 11:44:43	324	D:\𐂂𐌰𐎅𐠔𨋢.ahk
-$I77T7B1.ahk	2019-04-14 11:44:43	324	D:\𐂂𐌰𐎅𐠔<\uD860>.<\uDEE2>.ahk
-$I77T7B2.ahk	2019-04-14 11:44:43	324	D:\<\uDC82><\uD800>𐌰𐎅𐠔𨋢.ahk
-$I77T7B3.ahk	2019-04-14 11:44:43	324	D:\𐂂𐌰<\u05FF>𐎅𐠔𨋢.ahk
+Index	Deleted Time	Gone?	Size	Path
+$I77T7B0.ahk	2019-04-14 11:44:43	TRUE	324	D:\𐂂𐌰𐎅𐠔𨋢.ahk
+$I77T7B1.ahk	2019-04-14 11:44:43	TRUE	324	D:\𐂂𐌰𐎅𐠔<\uD860>.<\uDEE2>.ahk
+$I77T7B2.ahk	2019-04-14 11:44:43	TRUE	324	D:\<\uDC82><\uD800>𐌰𐎅𐠔𨋢.ahk
+$I77T7B3.ahk	2019-04-14 11:44:43	TRUE	324	D:\𐂂𐌰<\u05FF>𐎅𐠔𨋢.ahk

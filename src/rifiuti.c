@@ -183,11 +183,11 @@ populate_record_data (void *buf)
                    drivenum, record->index_n);
     record->drive = driveletters[MIN (drivenum, sizeof (driveletters) - 1)];
 
-    record->emptied = FALSE;
+    record->gone = FILESTATUS_EXISTS;
     /* first byte will be removed from filename if file is not in recycle bin */
     if (!*legacy_fname)
     {
-        record->emptied = TRUE;
+        record->gone = FILESTATUS_GONE;
         *legacy_fname = record->drive;
     }
 
@@ -370,7 +370,7 @@ main (int    argc,
      * Note: always set this variable after parse_record_cb() because
      * meta.version is not set beforehand
      */
-    meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 );
+    /* meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 ); */
 
     if ( !meta.is_empty && (recordlist == NULL) )
     {

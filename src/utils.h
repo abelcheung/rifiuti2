@@ -34,7 +34,7 @@ typedef enum
     R2_ERR_WRITE_FILE,
     R2_ERR_USER_ENCODING,
     R2_ERR_INTERNAL = 64,
-    R2_ERR_GUI_HELP  // temporary usage in GUI help
+    R2_ERR_GUI_HELP  /* temporary usage in GUI help */
 } r2status;
 
 typedef enum
@@ -44,42 +44,25 @@ typedef enum
 } rbin_type;
 
 /* The first 4 or 8 bytes of recycle bin index files */
-enum
+typedef enum
 {
-    /* negative number means error when retrieving version info */
-    VERSION_INCONSISTENT = -2,
-    VERSION_NOT_FOUND,
+    /* negative number = error */
+
+    VERSION_INCONSISTENT = -2,  /* Mixed versions in same folder */
+    VERSION_NOT_FOUND,  /* Empty $Recycle.bin */
 
     /* $Recycle.bin */
+
     VERSION_VISTA = 1,
     VERSION_WIN10,
 
     /* INFO / INFO2 */
+
     VERSION_WIN95 = 0,
     VERSION_NT4   = 2,
     VERSION_WIN98 = 4,
     VERSION_ME_03,
-};
-
-/*
- * The following enum is different from the versions above.
- * This is more detailed breakdown, and for detection of exact
- * Windows version from various recycle bin artifacts.
- * WARNING: MUST match os_strings string array
- */
-typedef enum
-{
-    OS_GUESS_UNKNOWN = -1,
-    OS_GUESS_95,
-    OS_GUESS_NT4,
-    OS_GUESS_98,
-    OS_GUESS_ME,
-    OS_GUESS_2K,
-    OS_GUESS_XP_03,
-    OS_GUESS_2K_03,   /* Empty recycle bin, full detection impossible */
-    OS_GUESS_VISTA,   /* includes everything up to 8.1 */
-    OS_GUESS_10
-} _os_guess;
+} detected_os_ver;
 
 enum
 {
@@ -88,55 +71,138 @@ enum
     OUTPUT_XML
 };
 
-/*! \struct _rbin_meta
- *  \brief Metadata for recycle bin
+/**
+ * @brief Whether original trashed file still exists
+ */
+typedef enum
+{
+    FILESTATUS_UNKNOWN = 0,
+    FILESTATUS_EXISTS,
+    FILESTATUS_GONE
+} trash_file_status;
+
+/**
+ * @brief Metadata for recycle bin
+ * @note This is a merge of `INFO2` and `$Recycle.bin` elements.
  */
 typedef struct _rbin_meta
 {
-    rbin_type       type;
-    const char     *filename;
+    rbin_type       type;  /* `INFO2` or `$Recycle.bin` format */
+    const char     *filename;  /* File or dir name of trash can itself */
+    /**
+     * @brief The global recycle bin version
+     * @note For `INFO2`, the value is stored in certain bytes of `INFO2` index file.
+     * For `$Recycle.bin`, it is determined collectively from all index files within
+     * the folder.
+     */
     int64_t         version;
-    uint32_t        recordsize;          /*!< INFO2 only */
-    uint32_t        total_entry;         /*!< 95/NT4 only */
-    gboolean        keep_deleted_entry;  /*!< 98-03 only, add extra output column */
-    gboolean        is_empty;
+    /**
+     * @brief Size of each trash record within index file
+     * @note It is either 280 or 800 bytes, depending on Windows version
+     * @attention For `INFO2` only. `$Recycle.bin` has only one record per file.
+     */
+    uint32_t        recordsize;
+    /**
+     * @brief Total entry ever existed in `INFO2` file
+     * @note On Windows 95 and NT 4.x, `INFO2` keeps a field for counting number
+     * of trashed entries. The field is unused afterwards.
+     * @attention For `INFO2` only
+     */
+    uint32_t        total_entry;
+    gboolean        is_empty;  /* Whether trash can is completely empty */
     gboolean        has_unicode_path;
-    gboolean        fill_junk;  /*!< TRUE for 98/ME/2000 only, some fields padded
-                                     with junk data instaed of zeroed */
+    /**
+     * @brief Whether empty spaces in index file was padded with junk data
+     * @note For Windows 98, ME and 2000, paths and fields are not padded with
+     * zero filled memory, but with arbitrary random data, presumably memory
+     * segments due to sloppy programming practice.
+     * @attention For `INFO2` only
+     */
+    gboolean        fill_junk;
+
 } metarecord;
 
-/*! \struct _rbin_struct
- *  \brief Struct for single recycle bin item
+/**
+ * @brief Structure for single recycle bin item
+ * @note This is a merge of `INFO2` and `$Recycle.bin` elements.
  */
 typedef struct _rbin_struct
 {
-    /*! For $Recycle.bin, version of each index file is kept here,
-     * while meta.version keeps the global status of whole dir */
-    uint64_t          version;          /* $Recycle.bin only */
 
-    /*! Each record links to metadata for more convenient access */
+    /**
+     * @brief version of each index file
+     * @note `meta.version` keeps the global status of whole dir,
+     * while this one keeps individual version of index file.
+     * @attention For `$Recycle.bin` only
+     */
+    uint64_t          version;
+
+    /**
+     * @brief Each record links to metadata for convenient access
+     */
     const metarecord *meta;
 
-    /*! \brief Number is for INFO2, file name for $Recycle.bin */
     union
     {
-        uint32_t      index_n;          /* INFO2 only */
-        char         *index_s;          /* $Recycle.bin only */
+        /**
+         * @brief Chronological index number for INFO2
+         * @attention For `INFO2` only
+         */
+        uint32_t      index_n;
+        /**
+         * @brief Index file name
+         * @attention For `$Recyle.bin` only
+         */
+        char         *index_s;
     };
 
-    /*! Item delection time */
-    GDateTime        *deltime;
-    int64_t           winfiletime;     /* for internal sorting */
+    GDateTime        *deltime;  /* Item trashing time */
+    /**
+     * @brief Trashed time stored as Windows datetime integer
+     * @note For internal entry sorting in `$Recycle.bin`
+     */
+    int64_t           winfiletime;
 
-    /*! Can mean cluster size or actual file/folder size */
+    /**
+     * @brief Trashed file size
+     * @note Can mean cluster size or actual file/folder size,
+     * depending on Recycle bin version. Not invertigated
+     * thoroughly yet.
+     */
     uint64_t          filesize;
 
     /* despite var names, all filenames are converted to UTF-8 upon parsing */
-    char             *uni_path;
-    char             *legacy_path;     /* INFO2 only */
 
-    gboolean          emptied;         /* INFO2 only */
-    unsigned char     drive;           /* INFO2 only */
+    /**
+     * @brief Unicode trashed file original path
+     * @note Original path was stored in index file in UTF-16 encoding
+     * since Windows 2000. The path is converted to UTF-8 encoding and stored here .
+     */
+    char             *uni_path;
+    /**
+     * @brief ANSI encoded trash file original path
+     * @note Until Windows 2003, index file preserves trashed file path in
+     * ANSI code page. The path is converted to UTF-8 encoding and stored here.
+     * @attention For `INFO2` only. Can be either full path or using 8.3 format,
+     * depending on Windows version and code page used.
+     */
+    char             *legacy_path;
+    /**
+     * @brief Whether original trashed file is gone
+     * @note Trash file can be detected if it still exists, but via very
+     * different mechanisms on different formats. For `INFO2`, one can
+     * only deduce if it is either permanently removed, or restored on
+     * filesystem. For `$Recycle.bin`, it is guaranteed to be restored
+     * if `$R...` named trashed file doesn't exist in folder.
+     */
+    trash_file_status gone;
+    /**
+     * @brief Drive letter for removed trash entry
+     * @note If `INFO2` entry is marked as gone, first letter of original
+     * path is removed and stored elsewhere, which corresponds to drive letter.
+     * @attention For `INFO2` only
+     */
+    unsigned char     drive;
 } rbin_struct;
 
 /* convenience macro */

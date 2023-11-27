@@ -33,7 +33,33 @@ static DECL_OPT_CALLBACK(_set_opt_delim);
 static DECL_OPT_CALLBACK(_set_opt_noheading);
 static DECL_OPT_CALLBACK(_set_output_xml);
 
-/* WARNING: MUST match order of _os_guess enum */
+
+/**
+ * @brief More detailed OS version guess from artifacts
+ * @note This is different from `detected_os_ver`, which only checks for
+ * first few bytes. It is a more detailed breakdown, and for detection of
+ * exact Windows version from various recycle bin artifacts.
+ * @warning MUST match order of `os_strings` array except
+ *          the `UNKNOWN` entry
+ */
+typedef enum
+{
+    OS_GUESS_UNKNOWN = -1,
+    OS_GUESS_95,
+    OS_GUESS_NT4,
+    OS_GUESS_98,
+    OS_GUESS_ME,
+    OS_GUESS_2K,
+    OS_GUESS_XP_03,
+    OS_GUESS_2K_03,   /* Empty recycle bin, full detection impossible */
+    OS_GUESS_VISTA,   /* includes everything up to 8.1 */
+    OS_GUESS_10
+} _os_guess;
+
+/**
+ * @brief Outputed string for OS detection from artifacts
+ * @warning MUST match order of `_os_guess` enum
+ */
 static char *os_strings[] = {
     N_("Windows 95"),
     N_("Windows NT 4.0"),
@@ -1145,20 +1171,13 @@ _print_csv_header (metarecord meta)
     g_print (_("Recycle bin path: '%s'\n"), rbin_path);
     g_free (rbin_path);
 
-    {
-        char *ver;
-        if (meta.version == VERSION_NOT_FOUND) {
-            /* TRANSLATOR COMMENT: Empty folder, no file avaiable for analysis */
-            ver = g_strdup (_("??? (empty folder)"));
-        } else
-            ver = g_strdup_printf ("%" G_GUINT64_FORMAT, meta.version);
-
-        g_print (_("Version: %s"), ver);
-        g_print ("\n");
-        g_free (ver);
+    if (meta.version == VERSION_NOT_FOUND) {
+        g_print ("%s\n", _("Version: ??? (empty folder)"));
+    } else {
+        g_print (_("Version: %" G_GUINT64_FORMAT "\n"), meta.version);
     }
 
-    if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && ( ! meta.keep_deleted_entry ))
+    if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && meta.total_entry)
     {
         g_print (_("Total entries ever existed: %d"), meta.total_entry);
         g_print ("\n");
@@ -1222,18 +1241,13 @@ _print_csv_header (metarecord meta)
         char     *headerline;
         char     *fields[] = {
             /* TRANSLATOR COMMENT: appears in column header */
-            N_("Index"), N_("Deleted Time"), N_("Size"), N_("Path"), NULL
+            N_("Index"), N_("Deleted Time"), N_("Gone?"), N_("Size"), N_("Path"), NULL
         };
 
         col_array = g_array_sized_new (TRUE, TRUE, sizeof (gpointer), 5);
         for (char **col_ptr = fields; *col_ptr != NULL; col_ptr++) {
             // const char *t = gettext (*col_ptr++);
             g_array_append_val (col_array, *col_ptr);
-        }
-        if (meta.keep_deleted_entry) {
-            /* TRANSLATOR COMMENT: appears in column header, means file is restored or purged */
-            char *t = _("Gone?");
-            g_array_insert_val (col_array, 2, t);
         }
 
         headerline = g_strjoinv (delim, (char **) col_array->data);
@@ -1323,13 +1337,11 @@ print_record_cb (rbin_struct *record,
             else
                 size = g_strdup_printf ("%" G_GUINT64_FORMAT, record->filesize);
 
-            if (record->meta->keep_deleted_entry)
-            {
-                const char *purged = record->emptied ? _("Yes") : _("No");
-                outstr = g_strjoin (delim, index, deltime, purged, size, out_fname, NULL);
-            }
-            else
-                outstr = g_strjoin (delim, index, deltime, size, out_fname, NULL);
+            const char *gone =
+                record->gone == FILESTATUS_EXISTS ? "FALSE" :
+                record->gone == FILESTATUS_GONE   ? "TRUE"  :
+                                                    "???"   ;
+            outstr = g_strjoin (delim, index, deltime, gone, size, out_fname, NULL);
 
             g_print ("%s\n", outstr);
 
@@ -1342,19 +1354,20 @@ print_record_cb (rbin_struct *record,
             deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z" ):
                                       g_date_time_format (dt, "%FT%TZ");
 
-            g_string_printf (s, "  <record index=\"%s\" time=\"%s\"", index, deltime);
-
-            if (record->meta->keep_deleted_entry)
-                g_string_append_printf (s, " emptied=\"%c\"", record->emptied ? 'Y' : 'N');
+            g_string_printf (s,
+                "  <record index=\"%s\" time=\"%s\" gone=\"%s\"",
+                index, deltime,
+                (record->gone == FILESTATUS_GONE  ) ? "true" :
+                (record->gone == FILESTATUS_EXISTS) ? "false":
+                                                      "unknown");
 
             if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                size = g_strdup_printf (" size=\"-1\"");
+                g_string_append_printf (s, " size=\"-1\"");
             else
-                size = g_strdup_printf (" size=\"%" G_GUINT64_FORMAT "\"", record->filesize);
-            s = g_string_append (s, (const gchar*) size);
+                g_string_append_printf (s,
+                    " size=\"%" G_GUINT64_FORMAT "\"", record->filesize);
 
-            g_string_append_printf (s,
-                ">\n"
+            g_string_append_printf (s, ">\n"
                 "    <path><![CDATA[%s]]></path>\n"
                 "  </record>\n", out_fname);
 
