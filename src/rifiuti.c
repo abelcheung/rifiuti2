@@ -353,7 +353,7 @@ main (int    argc,
         goto cleanup;
 
     exit_status = check_file_args (fileargs[0], &filelist,
-        RECYCLE_BIN_TYPE_FILE, &error);
+        RECYCLE_BIN_TYPE_FILE, NULL, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 

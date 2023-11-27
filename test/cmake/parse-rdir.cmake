@@ -39,26 +39,44 @@ createRdirTestSet(DirUNC19 dir-2019-uncpath)
 # Similar to above, but only test single index file
 #
 
-if(WIN32)
-    add_test_using_shell(d_DirOneIdx_PrepareRef
-        "Select-String -Path samples/dir-win10-01.txt -SimpleMatch 'IHO61YT' -Raw > d_DirOneIdx_r.txt")
-else()
-    add_test_using_shell(d_DirOneIdx_PrepareRef
-        "grep 'IHO61YT' samples/dir-win10-01.txt > d_DirOneIdx_r.txt")
-endif()
-
-add_test(NAME d_DirOneIdx_PrepareOut
-    COMMAND rifiuti-vista -n samples/dir-win10-01/$IHO61YT -o d_DirOneIdx_o.txt)
-
-add_test(NAME d_DirOneIdx_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm d_DirOneIdx_r.txt d_DirOneIdx_o.txt)
+add_test(NAME d_DirOneIdx_Prep
+    COMMAND rifiuti-vista samples/dir-win10-01/$IKEGS1G -o ${CMAKE_CURRENT_BINARY_DIR}/d_DirOneIdx.txt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_test(NAME d_DirOneIdx
-    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol d_DirOneIdx_o.txt d_DirOneIdx_r.txt)
+    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol d_DirOneIdx.txt ${CMAKE_CURRENT_SOURCE_DIR}/samples/dir-single-idx.txt)
 
-set_tests_properties(d_DirOneIdx_PrepareRef PROPERTIES FIXTURES_SETUP    D_DIRONEIDX)
-set_tests_properties(d_DirOneIdx_PrepareOut PROPERTIES FIXTURES_SETUP    D_DIRONEIDX)
-set_tests_properties(d_DirOneIdx_Clean      PROPERTIES FIXTURES_CLEANUP  D_DIRONEIDX)
-set_tests_properties(d_DirOneIdx            PROPERTIES FIXTURES_REQUIRED D_DIRONEIDX)
+add_test(NAME d_DirOneIdx_Clean
+    COMMAND ${CMAKE_COMMAND} -E rm d_DirOneIdx.txt)
 
-set_tests_properties(d_DirOneIdx            PROPERTIES LABELS "recycledir;read")
+set_tests_properties(d_DirOneIdx_Prep  PROPERTIES FIXTURES_SETUP    D_DIRONEIDX)
+set_tests_properties(d_DirOneIdx_Clean PROPERTIES FIXTURES_CLEANUP  D_DIRONEIDX)
+set_tests_properties(d_DirOneIdx       PROPERTIES FIXTURES_REQUIRED D_DIRONEIDX)
+
+set_tests_properties(d_DirOneIdx       PROPERTIES LABELS "recycledir;read")
+
+
+#
+# Same as previous test, but copy index file elsewhere
+# to test the isolated file behavior
+#
+
+add_test(NAME d_DirIsolatedIdx_Prep1
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/samples/dir-win10-01/$IKEGS1G .)
+
+add_test(NAME d_DirIsolatedIdx_Prep2
+    COMMAND rifiuti-vista $IKEGS1G -o d_DirIsolatedIdx.txt)
+
+add_test(NAME d_DirIsolatedIdx
+    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol d_DirIsolatedIdx.txt ${CMAKE_CURRENT_SOURCE_DIR}/samples/dir-isolated-idx.txt)
+
+add_test(NAME d_DirIsolatedIdx_Clean
+    COMMAND ${CMAKE_COMMAND} -E rm d_DirIsolatedIdx.txt $IKEGS1G)
+
+set_tests_properties(d_DirIsolatedIdx_Prep1 PROPERTIES FIXTURES_SETUP    D_DIRISOLATEDIDX)
+set_tests_properties(d_DirIsolatedIdx_Prep2 PROPERTIES FIXTURES_SETUP    D_DIRISOLATEDIDX)
+set_tests_properties(d_DirIsolatedIdx_Clean PROPERTIES FIXTURES_CLEANUP  D_DIRISOLATEDIDX)
+set_tests_properties(d_DirIsolatedIdx       PROPERTIES FIXTURES_REQUIRED D_DIRISOLATEDIDX)
+
+set_tests_properties(d_DirIsolatedIdx_Prep2 PROPERTIES DEPENDS d_DirIsolatedIdx_Prep1)
+set_tests_properties(d_DirIsolatedIdx       PROPERTIES LABELS "recycledir;read")

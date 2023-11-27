@@ -21,6 +21,8 @@
 
 static r2status     exit_status = R2_OK;
 static metarecord   meta;
+// Whether input argument is single index file out of `$Recycle.bin`
+gboolean            isolated_index = FALSE;
 
 
 /*!
@@ -239,7 +241,10 @@ parse_record_cb (char    *index_file,
             g_assert_not_reached();
     }
 
-    /* TODO Check corresponding $R.... file existance and set record->gone */
+    /* Check corresponding $R.... file existance and set record->gone */
+    if (isolated_index)
+        record->gone = FILESTATUS_UNKNOWN;
+    else
     {
         char *dirname = g_path_get_dirname (index_file);
         char *trash_basename = g_strdup (basename);
@@ -305,7 +310,8 @@ main (int    argc,
         while (ptr) {
             // Ignore errors, pretty common that *some* folders don't
             // exist or is empty.
-            check_file_args (ptr->data, &filelist, RECYCLE_BIN_TYPE_DIR, NULL);
+            check_file_args (ptr->data, &filelist,
+                RECYCLE_BIN_TYPE_DIR, NULL, NULL);
             ptr = ptr->next;
         }
         ptr = NULL;
@@ -315,7 +321,7 @@ main (int    argc,
 #endif
     {
         exit_status = check_file_args (fileargs[0], &filelist,
-            RECYCLE_BIN_TYPE_DIR, &error);
+            RECYCLE_BIN_TYPE_DIR, &isolated_index, &error);
         if (exit_status != R2_OK)
             goto cleanup;
     }

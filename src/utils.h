@@ -241,6 +241,7 @@ char *        utf16le_to_utf8             (const gunichar2  *str,
 int           check_file_args             (const char       *path,
                                            GSList          **list,
                                            rbin_type         type,
+                                           gboolean         *isolated_index,
                                            GError          **error);
 
 FILE *        prep_tempfile_if_needed     (GError          **error);
