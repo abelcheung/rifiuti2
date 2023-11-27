@@ -4,7 +4,7 @@ OS Guess: Windows XP or 2003
 Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
-1	2019-05-05 17:08:49	No	3153920	\\Vm-2003-r2-tw\Temp\文件\Downloads\HxDSetup.zip
-2	2019-05-05 17:12:32	Yes	16384	\\Vm-2003-r2-tw\Temp\文件\Downloads\README.html
-3	2019-05-05 17:14:38	Yes	24576	\\Vm-2003-r2-tw\Temp\文件\Downloads\____PC__FONTS.bin
-4	2019-05-05 17:14:46	No	708608	\\Vm-2003-r2-tw\Temp\文件\Downloads\ws_ftple.exe
+1	2019-05-05 17:08:49	FALSE	3153920	\\Vm-2003-r2-tw\Temp\文件\Downloads\HxDSetup.zip
+2	2019-05-05 17:12:32	TRUE	16384	\\Vm-2003-r2-tw\Temp\文件\Downloads\README.html
+3	2019-05-05 17:14:38	TRUE	24576	\\Vm-2003-r2-tw\Temp\文件\Downloads\____PC__FONTS.bin
+4	2019-05-05 17:14:46	FALSE	708608	\\Vm-2003-r2-tw\Temp\文件\Downloads\ws_ftple.exe

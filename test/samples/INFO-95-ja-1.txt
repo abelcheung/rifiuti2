@@ -4,15 +4,15 @@ Total entries ever existed: 16
 OS Guess: Windows 95
 Time zone: UTC [+0000]
 
-Index	Deleted Time	Size	Path
-1	2015-05-11 05:59:49	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\The Microsoft Network のｾｯﾄｱｯﾌﾟ.lnk
-2	2015-05-11 06:00:25	950272	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾋﾞｯﾄﾏｯﾌﾟ ｲﾒｰｼﾞ.bmp
-3	2015-05-11 07:19:25	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾃｷｽﾄ文書.txt
-4	2015-05-11 09:48:21	589824	D:\My Documents\DirectX-V8.0a\bda.cab
-5	2015-05-11 09:48:21	589824	D:\My Documents\DirectX-V8.0a\bdant.cab
-6	2015-05-11 09:48:21	65536	D:\My Documents\DirectX-V8.0a\cfgmgr32.dll
-11	2015-05-11 09:48:23	163840	D:\My Documents\DirectX-V8.0a\dxsetup.exe
-12	2015-05-11 09:48:23	360448	D:\My Documents\DirectX-V8.0a\setupapi.dll
-13	2015-05-11 09:59:19	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\Connect to the Internet.LNK
-14	2015-05-11 09:59:22	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\Outlook Express.lnk
-15	2015-05-18 00:45:09	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾃｷｽﾄ文書.txt
+Index	Deleted Time	Gone?	Size	Path
+1	2015-05-11 05:59:49	FALSE	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\The Microsoft Network のｾｯﾄｱｯﾌﾟ.lnk
+2	2015-05-11 06:00:25	FALSE	950272	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾋﾞｯﾄﾏｯﾌﾟ ｲﾒｰｼﾞ.bmp
+3	2015-05-11 07:19:25	FALSE	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾃｷｽﾄ文書.txt
+4	2015-05-11 09:48:21	FALSE	589824	D:\My Documents\DirectX-V8.0a\bda.cab
+5	2015-05-11 09:48:21	FALSE	589824	D:\My Documents\DirectX-V8.0a\bdant.cab
+6	2015-05-11 09:48:21	FALSE	65536	D:\My Documents\DirectX-V8.0a\cfgmgr32.dll
+11	2015-05-11 09:48:23	FALSE	163840	D:\My Documents\DirectX-V8.0a\dxsetup.exe
+12	2015-05-11 09:48:23	FALSE	360448	D:\My Documents\DirectX-V8.0a\setupapi.dll
+13	2015-05-11 09:59:19	FALSE	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\Connect to the Internet.LNK
+14	2015-05-11 09:59:22	FALSE	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\Outlook Express.lnk
+15	2015-05-18 00:45:09	FALSE	32768	D:\WINDOWS\ﾃﾞｽｸﾄｯﾌﾟ\新規ﾃｷｽﾄ文書.txt

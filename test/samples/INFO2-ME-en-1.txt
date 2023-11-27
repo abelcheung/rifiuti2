@@ -4,9 +4,9 @@ OS Guess: Windows ME
 Time zone: UTC [+0000]
 
 Index	Deleted Time	Gone?	Size	Path
-1	2015-05-10 12:43:36	No	4096	C:\WINDOWS\Desktop\Windows Media Player.lnk
-2	2015-05-10 12:45:41	No	0	C:\My Documents\Temp Folder é à ä ç
-3	2015-05-18 22:15:32	Yes	495616	C:\My Documents\Copy of My Music
-3	2015-05-18 23:38:34	Yes	4096	C:\My Documents\bin-me.zip
-4	2015-05-18 23:38:53	Yes	4096	C:\My Documents\bin-me.zip
-5	2015-05-18 23:39:31	No	8192	C:\WINDOWS\Desktop\New WordPad Document.doc
+1	2015-05-10 12:43:36	FALSE	4096	C:\WINDOWS\Desktop\Windows Media Player.lnk
+2	2015-05-10 12:45:41	FALSE	0	C:\My Documents\Temp Folder é à ä ç
+3	2015-05-18 22:15:32	TRUE	495616	C:\My Documents\Copy of My Music
+3	2015-05-18 23:38:34	TRUE	4096	C:\My Documents\bin-me.zip
+4	2015-05-18 23:38:53	TRUE	4096	C:\My Documents\bin-me.zip
+5	2015-05-18 23:39:31	FALSE	8192	C:\WINDOWS\Desktop\New WordPad Document.doc

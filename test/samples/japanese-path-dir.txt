@@ -3,4 +3,4 @@ Version: ??? (empty folder)
 OS detection failed
 Time zone: UTC [+0000]
 
-Index	Deleted Time	Size	Path
+Index	Deleted Time	Gone?	Size	Path
