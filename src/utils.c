@@ -1042,11 +1042,25 @@ _guess_windows_ver (const metarecord meta)
     }
 }
 
-/*! Add potentially valid file(s) to list */
+/**
+ * @brief Add potentially valid file(s) to list
+ * @param path The file or folder to be checked
+ * @param list A `GSList` pointer to store potential index files
+ * to be validated later on
+ * @param type Recycle bin type
+ * @param isolated_index Pointer to `gboolean`, indicating whether
+ * the concerned `path` is a single `$Recycle.bin` type index
+ * taken out of its original folder. Can be `NULL`, which means
+ * this check is not performed.
+ * @param error A `GError` pointer to store potential problems
+ * @return Exit status, which can potentially be used as global
+ * exit status of program.
+ */
 int
 check_file_args (const char  *path,
                  GSList     **list,
                  rbin_type    type,
+                 gboolean    *isolated_index,
                  GError     **error)
 {
     g_debug ("Start checking path '%s'...", path);
@@ -1059,8 +1073,9 @@ check_file_args (const char  *path,
             _("'%s' does not exist."), path);
         return R2_ERR_OPEN_FILE;
     }
-    else if ( (type == RECYCLE_BIN_TYPE_DIR) &&
-        g_file_test (path, G_FILE_TEST_IS_DIR) )
+
+    if ((type == RECYCLE_BIN_TYPE_DIR) &&
+        g_file_test (path, G_FILE_TEST_IS_DIR))
     {
         if ( ! _populate_index_file_list (list, path, error) )
             return R2_ERR_OPEN_FILE;
@@ -1076,8 +1091,15 @@ check_file_args (const char  *path,
             return R2_ERR_OPEN_FILE;
         }
     }
-    else if ( g_file_test (path, G_FILE_TEST_IS_REGULAR) )
+    else if (g_file_test (path, G_FILE_TEST_IS_REGULAR))
+    {
+        if (isolated_index && (type == RECYCLE_BIN_TYPE_DIR)) {
+            char *parent_dir = g_path_get_dirname (path);
+            *isolated_index = ! _found_desktop_ini (parent_dir);
+            g_free (parent_dir);
+        }
         *list = g_slist_prepend ( *list, g_strdup (path) );
+    }
     else
     {
         g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
