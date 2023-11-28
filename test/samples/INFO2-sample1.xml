@@ -1,117 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<recyclebin>
-  <filename>test_case/INFO2</filename>
-  <version>5</version>
-  <record>
-    <index>44</index>
-    <time>2008-10-28 15:53:42Z</time>
-    <emptied>N</emptied>
-    <size>4096</size>
-    <path>C:\Documents and Settings\All Users\Desktop\有道桌面词典.lnk</path>
+<recyclebin format="file" version="5">
+  <filename><![CDATA[INFO2-sample1]]></filename>
+  <record index="44" time="2008-10-28T15:53:42Z" gone="false" size="4096">
+    <path><![CDATA[C:\Documents and Settings\All Users\Desktop\有道桌面词典.lnk]]></path>
   </record>
-  <record>
-    <index>45</index>
-    <time>2008-11-03 15:01:59Z</time>
-    <emptied>N</emptied>
-    <size>4096</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\wongsir_url.txt</path>
+  <record index="45" time="2008-11-03T15:01:59Z" gone="false" size="4096">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\wongsir_url.txt]]></path>
   </record>
-  <record>
-    <index>46</index>
-    <time>2008-11-06 09:20:58Z</time>
-    <emptied>N</emptied>
-    <size>2912256</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\dd-wrt.v24_mini_wrt54g.bin</path>
+  <record index="46" time="2008-11-06T09:20:58Z" gone="false" size="2912256">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\dd-wrt.v24_mini_wrt54g.bin]]></path>
   </record>
-  <record>
-    <index>47</index>
-    <time>2008-11-13 12:08:39Z</time>
-    <emptied>N</emptied>
-    <size>765952</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\theme\.svn</path>
+  <record index="47" time="2008-11-13T12:08:39Z" gone="false" size="765952">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\theme\.svn]]></path>
   </record>
-  <record>
-    <index>48</index>
-    <time>2008-11-13 12:11:33Z</time>
-    <emptied>N</emptied>
-    <size>5812224</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\Config Client</path>
+  <record index="48" time="2008-11-13T12:11:33Z" gone="false" size="5812224">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\Config Client]]></path>
   </record>
-  <record>
-    <index>49</index>
-    <time>2008-11-13 12:11:36Z</time>
-    <emptied>N</emptied>
-    <size>1847296</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\Config Client.7z</path>
+  <record index="49" time="2008-11-13T12:11:36Z" gone="false" size="1847296">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\Config Client.7z]]></path>
   </record>
-  <record>
-    <index>50</index>
-    <time>2008-11-19 04:42:04Z</time>
-    <emptied>N</emptied>
-    <size>4096</size>
-    <path>C:\Documents and Settings\All Users\Desktop\Wireshark.lnk</path>
+  <record index="50" time="2008-11-19T04:42:04Z" gone="false" size="4096">
+    <path><![CDATA[C:\Documents and Settings\All Users\Desktop\Wireshark.lnk]]></path>
   </record>
-  <record>
-    <index>57</index>
-    <time>2008-11-19 05:07:15Z</time>
-    <emptied>N</emptied>
-    <size>2727936</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline.rar</path>
+  <record index="57" time="2008-11-19T05:07:15Z" gone="false" size="2727936">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline.rar]]></path>
   </record>
-  <record>
-    <index>64</index>
-    <time>2008-11-19 05:07:35Z</time>
-    <emptied>Y</emptied>
-    <size>2727936</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline</path>
+  <record index="64" time="2008-11-19T05:07:35Z" gone="true" size="2727936">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline]]></path>
   </record>
-  <record>
-    <index>65</index>
-    <time>2008-11-19 05:17:12Z</time>
-    <emptied>N</emptied>
-    <size>4096</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\360保险箱.lnk</path>
+  <record index="65" time="2008-11-19T05:17:12Z" gone="false" size="4096">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\360保险箱.lnk]]></path>
   </record>
-  <record>
-    <index>66</index>
-    <time>2008-11-19 05:21:37Z</time>
-    <emptied>N</emptied>
-    <size>2732032</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\gdb</path>
+  <record index="66" time="2008-11-19T05:21:37Z" gone="false" size="2732032">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\gdb]]></path>
   </record>
-  <record>
-    <index>67</index>
-    <time>2008-11-19 05:21:37Z</time>
-    <emptied>N</emptied>
-    <size>2723840</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\gdb.zip</path>
+  <record index="67" time="2008-11-19T05:21:37Z" gone="false" size="2723840">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\gdb.zip]]></path>
   </record>
-  <record>
-    <index>68</index>
-    <time>2008-11-19 11:34:23Z</time>
-    <emptied>N</emptied>
-    <size>0</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\recovered files</path>
+  <record index="68" time="2008-11-19T11:34:23Z" gone="false" size="0">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\recovered files]]></path>
   </record>
-  <record>
-    <index>69</index>
-    <time>2008-11-19 18:51:45Z</time>
-    <emptied>N</emptied>
-    <size>2727936</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline</path>
+  <record index="69" time="2008-11-19T18:51:45Z" gone="false" size="2727936">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\GetDataBackforFAT-v3.63_PConline]]></path>
   </record>
-  <record>
-    <index>70</index>
-    <time>2008-11-19 18:51:45Z</time>
-    <emptied>N</emptied>
-    <size>5169152</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup(2).exe</path>
+  <record index="70" time="2008-11-19T18:51:45Z" gone="false" size="5169152">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup(2).exe]]></path>
   </record>
-  <record>
-    <index>71</index>
-    <time>2008-11-19 18:51:45Z</time>
-    <emptied>N</emptied>
-    <size>5169152</size>
-    <path>C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup.exe</path>
+  <record index="71" time="2008-11-19T18:51:45Z" gone="false" size="5169152">
+    <path><![CDATA[C:\Documents and Settings\Administrator\Desktop\Uneraser_Setup.exe]]></path>
   </record>
 </recyclebin>

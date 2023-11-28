@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<recyclebin format="dir" version="0">
-  <filename>test/samples/dir-win10-01</filename>
-  <record index="$I7R52EG.txt" time="2015-04-04T23:24:09Z" gone="false" size="14">
-    <path>C:\Temp\foobat.txt.txt</path>
+<recyclebin format="dir" version="2">
+  <filename><![CDATA[dir-win10-01]]></filename>
+  <record index="$IKEGS1G" time="2015-04-04T17:19:52Z" gone="false" size="0">
+    <path><![CDATA[C:\Users\tester\12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890]]></path>
   </record>
-  <record index="$IBBFODN" time="2015-04-07T23:19:35Z" gone="false" size="7">
-    <path>C:\Temp\𨳊𨶙閪邨鰂</path>
+  <record index="$IQ7LAXT.png" time="2015-04-04T17:20:01Z" gone="false" size="6455">
+    <path><![CDATA[C:\Users\tester\Pictures\web-canvas.png]]></path>
   </record>
-  <record index="$IDNLPD4.exe" time="2015-04-19T10:50:51Z" gone="false" size="872448">
-    <path>C:\Temp\FAU\FAU.x86\dd.exe</path>
+  <record index="$I7R52EG.txt" time="2015-04-04T17:24:09Z" gone="false" size="14">
+    <path><![CDATA[C:\Temp\foobat.txt.txt]]></path>
+  </record>
+  <record index="$IBBFODN" time="2015-04-07T23:19:35Z" gone="true" size="7">
+    <path><![CDATA[C:\Temp\𨳊𨶙閪邨鰂]]></path>
   </record>
   <record index="$IHO61YT" time="2015-04-07T23:32:07Z" gone="true" size="12884901888">
-    <path>C:\Temp\largesparsefile</path>
-  </record>
-  <record index="$IKEGS1G" time="2015-04-04T17:19:52Z" gone="true" size="0">
-    <path>C:\Users\tester\12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</path>
-  </record>
-  <record index="$IQ7LAXT.png" time="2015-04-04T17:20:01Z" gone="true" size="6455">
-    <path>C:\Users\tester\Pictures\web-canvas.png</path>
+    <path><![CDATA[C:\Temp\largesparsefile]]></path>
   </record>
   <record index="$IROMPZ0.exe" time="2015-04-19T10:49:59Z" gone="true" size="1761792">
-    <path>C:\Temp\FAU\FAU.x64\dd.exe</path>
+    <path><![CDATA[C:\Temp\FAU\FAU.x64\dd.exe]]></path>
+  </record>
+  <record index="$IDNLPD4.exe" time="2015-04-19T10:50:51Z" gone="true" size="872448">
+    <path><![CDATA[C:\Temp\FAU\FAU.x86\dd.exe]]></path>
   </record>
 </recyclebin>
