@@ -14,6 +14,8 @@ file(
     SYMBOLIC
 )
 
+find_program(XMLLINT xmllint)
+
 function(add_test_using_shell name command)
     if(WIN32)
         add_test(

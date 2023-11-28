@@ -2,136 +2,68 @@
 # rifiuti2 is released under Revised BSD License.
 # Please see LICENSE file for more info.
 
-# Search xmllint
+set(myDTD ${CMAKE_CURRENT_SOURCE_DIR}/rifiuti.dtd)
+set(sample_dir ${CMAKE_CURRENT_SOURCE_DIR}/samples)
 
-add_test(
-    NAME FindCommand_xmllint
-    COMMAND xmllint --version
-)
+# XML well-formed and DTD validation for INFO2
 
+add_test(NAME f_XmlWellForm_Prep
+    COMMAND rifiuti -o f_XmlWellForm.xml -x ${sample_dir}/INFO2-sample1)
+
+add_test(NAME f_XmlWellForm
+    COMMAND ${XMLLINT} --noout f_XmlWellForm.xml)
+
+add_test(NAME f_XmlDTDValidate
+    COMMAND ${XMLLINT} --noout f_XmlWellForm.xml --dtdvalid ${myDTD})
+
+add_test(NAME f_XmlWellForm_Clean
+    COMMAND ${CMAKE_COMMAND} -E remove f_XmlWellForm.xml)
+
+set_tests_properties(f_XmlWellForm_Prep  PROPERTIES FIXTURES_SETUP    F_XMLWELLFORM)
+set_tests_properties(f_XmlWellForm_Clean PROPERTIES FIXTURES_CLEANUP  F_XMLWELLFORM)
+set_tests_properties(f_XmlWellForm       PROPERTIES FIXTURES_REQUIRED F_XMLWELLFORM)
+set_tests_properties(f_XmlDTDValidate    PROPERTIES FIXTURES_REQUIRED F_XMLWELLFORM)
 set_tests_properties(
-    FindCommand_xmllint
-    PROPERTIES
-        FIXTURES_SETUP XMLLINT
-)
+    f_XmlWellForm f_XmlDTDValidate
+    PROPERTIES LABELS "info2;xml")
 
-# XML well-formed validation for INFO2
+if("${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND")
+    set_tests_properties(
+        f_XmlDTDValidate
+        f_XmlWellForm
+        f_XmlWellForm_Prep
+        f_XmlWellForm_Clean
+        PROPERTIES DISABLED true)
+endif()
 
-add_test(
-    NAME f_CreateXmlOutput
-    COMMAND rifiuti -o f_sample1.xml -x samples/INFO2-sample1
-)
+# XML well-formed and DTD validation for $Recycle.bin
 
-add_test(
-    NAME f_CleanXmlOutput
-    COMMAND ${CMAKE_COMMAND} -E remove f_sample1.xml
-)
+add_test(NAME d_XmlWellForm_Prep
+    COMMAND rifiuti-vista -o d_XmlWellForm.xml -x ${sample_dir}/dir-sample1)
 
-add_test(
-    NAME f_XmlValidate
-    COMMAND xmllint --noout f_sample1.xml
-)
+add_test(NAME d_XmlWellForm
+    COMMAND ${XMLLINT} --noout d_XmlWellForm.xml)
 
+add_test(NAME d_XmlDTDValidate
+    COMMAND ${XMLLINT} --noout d_XmlWellForm.xml --dtdvalid ${myDTD})
+
+add_test(NAME d_XmlWellForm_Clean
+    COMMAND ${CMAKE_COMMAND} -E remove d_XmlWellForm.xml)
+
+set_tests_properties(d_XmlWellForm_Prep  PROPERTIES FIXTURES_SETUP    D_XMLWELLFORM)
+set_tests_properties(d_XmlWellForm_Clean PROPERTIES FIXTURES_CLEANUP  D_XMLWELLFORM)
+set_tests_properties(d_XmlWellForm       PROPERTIES FIXTURES_REQUIRED D_XMLWELLFORM)
+set_tests_properties(d_XmlDTDValidate    PROPERTIES FIXTURES_REQUIRED D_XMLWELLFORM)
 set_tests_properties(
-    f_CreateXmlOutput
-    PROPERTIES
-        FIXTURES_SETUP F_XMLOUTPUT
-)
+    d_XmlWellForm d_XmlDTDValidate
+    PROPERTIES LABELS "recycledir;xml")
 
-set_tests_properties(
-    f_CleanXmlOutput
-    PROPERTIES
-        FIXTURES_CLEANUP F_XMLOUTPUT
-)
+if("${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND")
+    set_tests_properties(
+        d_XmlDTDValidate
+        d_XmlWellForm
+        d_XmlWellForm_Prep
+        d_XmlWellForm_Clean
+        PROPERTIES DISABLED true)
+endif()
 
-set_tests_properties(
-    f_XmlValidate
-    PROPERTIES
-        FIXTURES_REQUIRED "XMLLINT;F_XMLOUTPUT"
-)
-
-# XML well-formed validation for $Recycle.bin
-
-add_test(
-    NAME d_CreateXmlOutput
-    COMMAND rifiuti-vista -o d_sample1.xml -x samples/dir-sample1
-)
-
-add_test(
-    NAME d_CleanXmlOutput
-    COMMAND ${CMAKE_COMMAND} -E remove d_sample1.xml
-)
-
-add_test(
-    NAME d_XmlValidate
-    COMMAND xmllint --noout d_sample1.xml
-)
-
-set_tests_properties(
-    d_CreateXmlOutput
-    PROPERTIES
-        FIXTURES_SETUP D_XMLOUTPUT
-)
-
-set_tests_properties(
-    d_CleanXmlOutput
-    PROPERTIES
-        FIXTURES_CLEANUP D_XMLOUTPUT
-)
-set_tests_properties(
-    d_XmlValidate
-    PROPERTIES
-        FIXTURES_REQUIRED "XMLLINT;D_XMLOUTPUT"
-)
-
-# DTD validation for INFO2
-
-add_test(
-    NAME f_DTDValidate
-    COMMAND xmllint --noout f_sample1.xml --dtdvalid ${CMAKE_CURRENT_SOURCE_DIR}/rifiuti.dtd
-)
-
-set_tests_properties(
-    f_DTDValidate
-    PROPERTIES
-        FIXTURES_REQUIRED "XMLLINT;F_XMLOUTPUT"
-)
-
-# DTD validation for $Recycle.bin
-
-add_test(
-    NAME d_DTDValidate
-    COMMAND xmllint --noout d_sample1.xml --dtdvalid ${CMAKE_CURRENT_SOURCE_DIR}/rifiuti.dtd
-)
-
-set_tests_properties(
-    d_DTDValidate
-    PROPERTIES
-        FIXTURES_REQUIRED "XMLLINT;D_XMLOUTPUT"
-)
-
-# Other properties
-
-set(
-    f_XmlTests
-    f_DTDValidate
-    f_XmlValidate
-)
-
-set(
-    d_XmlTests
-    d_DTDValidate
-    d_XmlValidate
-)
-
-set_tests_properties(
-    ${d_XmlTests}
-    PROPERTIES
-        LABELS "recycledir;xml"
-)
-
-set_tests_properties(
-    ${f_XmlTests}
-    PROPERTIES
-        LABELS "info2;xml"
-)
