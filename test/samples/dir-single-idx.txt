@@ -1,4 +1,4 @@
-Recycle bin path: 'samples/dir-win10-01/$IKEGS1G'
+Recycle bin path: 'dir-win10-01/$IKEGS1G'
 Version: 2
 OS Guess: Windows 10 or above
 Time zone: UTC [+0000]

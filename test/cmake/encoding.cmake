@@ -36,7 +36,7 @@ add_encoding_test(f_EncNotExist -DCHOICES=xxx -DINFO2=dummy)
 set_tests_properties(
     f_EncNotExist
     PROPERTIES
-        LABELS "encoding;info2"
+        LABELS "encoding;info2;xfail"
         PASS_REGULAR_EXPRESSION "'xxx' encoding is not supported"
 )
 
@@ -47,12 +47,12 @@ set_tests_properties(
 add_test(
     NAME f_EncNeeded
     COMMAND rifiuti INFO-95-ja-1
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/samples
+    WORKING_DIRECTORY ${sample_dir}
 )
 set_tests_properties(
     f_EncNeeded
     PROPERTIES
-        LABELS "encoding;info2"
+        LABELS "encoding;info2;xfail"
         PASS_REGULAR_EXPRESSION "produced on a legacy system without Unicode"
 )
 
@@ -69,66 +69,34 @@ endif()
 set_tests_properties(
     f_IncompatEnc
     PROPERTIES
-        LABELS "encoding;info2"
+        LABELS "encoding;info2;xfail"
         PASS_REGULAR_EXPRESSION "possibly be a code page or compatible encoding"
 )
 
 
 #
-# Legacy path encoding - correct (case 1)
+# Legacy path encoding - correct (2 cases)
 #
 
 add_encoding_test_with_cwd(f_LegacyEncOK1_Prep
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples
+    ${sample_dir}
     -DINFO2=INFO2-sample1
     -DCHOICES=CP936|MS936|Windows-936|GBK|csGBK
-    -DOUTFILE=${CMAKE_CURRENT_BINARY_DIR}/f_LegacyEncOK1.txt
+    -DOUTFILE=${bindir}/f_LegacyEncOK1.output
 )
 
-add_test(
-    NAME f_LegacyEncOK1
-    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol f_LegacyEncOK1.txt samples/INFO2-sample1-alt.txt
-)
-
-add_test(
-    NAME f_LegacyEncOK1_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm f_LegacyEncOK1.txt
-)
-
-set_tests_properties(f_LegacyEncOK1_Prep  PROPERTIES FIXTURES_SETUP    F_LEGACYENCOK1)
-set_tests_properties(f_LegacyEncOK1       PROPERTIES FIXTURES_REQUIRED F_LEGACYENCOK1)
-set_tests_properties(f_LegacyEncOK1_Clean PROPERTIES FIXTURES_CLEANUP  F_LEGACYENCOK1)
-
-set_tests_properties(f_LegacyEncOK1       PROPERTIES LABELS "info2;encoding")
-
-
-#
-# Legacy path encoding - correct (case 2)
-#
+generate_simple_comparison_test("LegacyEncOK1" 1
+    "" "INFO2-sample1-alt.txt" "encoding")
 
 add_encoding_test_with_cwd(f_LegacyEncOK2_Prep
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples
+    ${sample_dir}
     -DINFO2=INFO-95-ja-1
     -DCHOICES=CP932|Windows-932|IBM-943|SJIS|JIS_X0208|SHIFT_JIS|SHIFT-JIS
-    -DOUTFILE=${CMAKE_CURRENT_BINARY_DIR}/f_LegacyEncOK2.txt
+    -DOUTFILE=${bindir}/f_LegacyEncOK2.output
 )
 
-add_test(
-    NAME f_LegacyEncOK2
-    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol f_LegacyEncOK2.txt samples/INFO-95-ja-1.txt
-)
-
-add_test(
-    NAME f_LegacyEncOK2_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm f_LegacyEncOK2.txt
-)
-
-set_tests_properties(f_LegacyEncOK2_Prep  PROPERTIES FIXTURES_SETUP    F_LEGACYENCOK2)
-set_tests_properties(f_LegacyEncOK2       PROPERTIES FIXTURES_REQUIRED F_LEGACYENCOK2)
-set_tests_properties(f_LegacyEncOK2_Clean PROPERTIES FIXTURES_CLEANUP  F_LEGACYENCOK2)
-
-set_tests_properties(f_LegacyEncOK2       PROPERTIES LABELS "info2;encoding")
-
+generate_simple_comparison_test("LegacyEncOK2" 1
+    "" "INFO-95-ja-1.txt" "encoding")
 
 #
 # Legacy path encoding - wrong but still managed to get result
@@ -138,59 +106,29 @@ set_tests_properties(f_LegacyEncOK2       PROPERTIES LABELS "info2;encoding")
 #
 
 add_encoding_test_with_cwd(f_LegacyEncWrong_Prep
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples
+    ${sample_dir}
     -DINFO2=INFO2-sample2
     -DCHOICES=CP932|Windows-932|IBM-943|SJIS|JIS_X0208|SHIFT_JIS|SHIFT-JIS
-    -DOUTFILE=${CMAKE_CURRENT_BINARY_DIR}/f_LegacyEncWrong.txt
+    -DOUTFILE=${bindir}/f_LegacyEncWrong.output
 )
-
-add_test(
-    NAME f_LegacyEncWrong
-    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol f_LegacyEncWrong.txt samples/INFO2-sample2-wrong-enc.txt
-)
-
-add_test(
-    NAME f_LegacyEncWrong_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm f_LegacyEncWrong.txt
-)
-
-set_tests_properties(f_LegacyEncWrong_Prep  PROPERTIES FIXTURES_SETUP    F_LEGACYENCWRONG)
-set_tests_properties(f_LegacyEncWrong       PROPERTIES FIXTURES_REQUIRED F_LEGACYENCWRONG)
-set_tests_properties(f_LegacyEncWrong_Clean PROPERTIES FIXTURES_CLEANUP  F_LEGACYENCWRONG)
 
 set_tests_properties(f_LegacyEncWrong_Prep
     PROPERTIES
     PASS_REGULAR_EXPRESSION "does not use specified codepage")
-set_tests_properties(f_LegacyEncWrong
-    PROPERTIES
-        LABELS "info2;encoding")
 
+generate_simple_comparison_test("LegacyEncWrong" 1
+    "" "INFO2-sample2-wrong-enc.txt" "encoding|xfail")
 
 #
 # Legacy UNC entries
 #
 
 add_encoding_test_with_cwd(f_LegacyUNC_Prep
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples
+    ${sample_dir}
     -DINFO2=INFO2-2k-tw-uncpath
     -DCHOICES=CP950|Windows-950|BIG5
-    -DOUTFILE=${CMAKE_CURRENT_BINARY_DIR}/f_LegacyUNC.txt
+    -DOUTFILE=${bindir}/f_LegacyUNC.output
 )
 
-add_test(
-    NAME f_LegacyUNC
-    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol f_LegacyUNC.txt samples/INFO2-2k-tw-uncpath.txt
-)
-
-add_test(
-    NAME f_LegacyUNC_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm f_LegacyUNC.txt
-)
-
-set_tests_properties(f_LegacyUNC_Prep  PROPERTIES FIXTURES_SETUP    F_LEGACYUNC)
-set_tests_properties(f_LegacyUNC       PROPERTIES FIXTURES_REQUIRED F_LEGACYUNC)
-set_tests_properties(f_LegacyUNC_Clean PROPERTIES FIXTURES_CLEANUP  F_LEGACYUNC)
-
-set_tests_properties(f_LegacyUNC
-    PROPERTIES
-        LABELS "info2;encoding")
+generate_simple_comparison_test("LegacyUNC" 1
+    "" "INFO2-2k-tw-uncpath.txt" "encoding")

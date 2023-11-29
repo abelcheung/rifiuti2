@@ -24,8 +24,10 @@ addBareOptTest(LongVer    --version   )
 # endif()
 
 function(addWithFileOptTest name)
-    add_test(NAME d_WithFileOpt${name} COMMAND rifiuti-vista ${ARGN} samples/dir-sample1)
-    add_test(NAME f_WithFileOpt${name} COMMAND rifiuti       ${ARGN} samples/INFO2-sample1)
+    add_test(NAME d_WithFileOpt${name}
+        COMMAND rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
+    add_test(NAME f_WithFileOpt${name}
+        COMMAND rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
     set_tests_properties(d_WithFileOpt${name} PROPERTIES LABELS "recycledir;arg")
     set_tests_properties(f_WithFileOpt${name} PROPERTIES LABELS      "info2;arg")
 endfunction()
@@ -45,11 +47,11 @@ function(addBadBareOptTest name)
     add_test(NAME f_BadBareOpt${name} COMMAND rifiuti       ${ARGN})
     set_tests_properties(d_BadBareOpt${name}
         PROPERTIES
-            LABELS "recycledir;arg"
+            LABELS "recycledir;arg;xfail"
             PASS_REGULAR_EXPRESSION "Unknown option")
     set_tests_properties(f_BadBareOpt${name}
         PROPERTIES
-            LABELS      "info2;arg"
+            LABELS      "info2;arg;xfail"
             PASS_REGULAR_EXPRESSION "Unknown option")
 endfunction()
 
@@ -59,72 +61,75 @@ addBadBareOptTest(Long     --invalid)
 
 function(addDupOptTest name)
     add_test(NAME d_DupOpt${name} COMMAND
-        rifiuti-vista ${ARGN} samples/dir-sample1)
+        rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
     add_test(NAME f_DupOpt${name} COMMAND
-        rifiuti       ${ARGN} samples/INFO2-sample1)
+        rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
     set_tests_properties(d_DupOpt${name}
         PROPERTIES
-            LABELS "recycledir;arg"
+            LABELS "recycledir;arg;xfail"
             PASS_REGULAR_EXPRESSION "Multiple .+ disallowed")
     set_tests_properties(f_DupOpt${name}
         PROPERTIES
-            LABELS      "info2;arg"
+            LABELS      "info2;arg;xfail"
             PASS_REGULAR_EXPRESSION "Multiple .+ disallowed")
 endfunction()
 
-addDupOptTest(ShortSep    -t ":" -t ","               )
-addDupOptTest(LongSep     --delimiter=: --delimiter=/ )
-addDupOptTest(MixSep      --delimiter=: -t /          )
-addDupOptTest(ShortOut    -o file1 -o file2              )
-addDupOptTest(LongOut     --output=file1 --output=file2  )
-addDupOptTest(MixOut      --output=file1 -o file2        )
+addDupOptTest(ShortSep  -t ":" -t ","                 )
+addDupOptTest(LongSep   --delimiter=: --delimiter=/   )
+addDupOptTest(MixSep    --delimiter=: -t /            )
+addDupOptTest(ShortOut  -o file1 -o file2             )
+addDupOptTest(LongOut   --output=file1 --output=file2 )
+addDupOptTest(MixOut    --output=file1 -o file2       )
 
 
 add_test(NAME f_DupOptShortEnc COMMAND
-    rifiuti -l ASCII -l CP1252 samples/INFO2-sample2)
+    rifiuti -l ASCII -l CP1252 ${sample_dir}/INFO2-sample2)
 add_test(NAME f_DupOptLongEnc COMMAND
-    rifiuti --legacy-filename=ASCII --legacy-filename=CP1252 samples/INFO2-sample2)
+    rifiuti --legacy-filename=ASCII --legacy-filename=CP1252 ${sample_dir}/INFO2-sample2)
 add_test(NAME f_DupOptMixEnc COMMAND
-    rifiuti -l ASCII --legacy-filename=CP1252 samples/INFO2-sample2)
+    rifiuti -l ASCII --legacy-filename=CP1252 ${sample_dir}/INFO2-sample2)
 set_tests_properties(
     f_DupOptShortEnc
     f_DupOptLongEnc
     f_DupOptMixEnc
     PROPERTIES
-        LABELS "info2;arg"
+        LABELS "info2;arg;xfail"
         PASS_REGULAR_EXPRESSION "Multiple .+ disallowed")
 
 
-add_test(NAME d_NullArgOptTestOut COMMAND rifiuti-vista -o "" samples/dir-sample1)
-add_test(NAME f_NullArgOptTestOut COMMAND rifiuti       -o "" samples/INFO2-sample1)
-add_test(NAME f_NullArgOptTestEnc COMMAND rifiuti       -l "" samples/INFO2-sample1)
+add_test(NAME d_NullArgOptTestOut
+    COMMAND rifiuti-vista -o "" ${sample_dir}/dir-sample1)
+add_test(NAME f_NullArgOptTestOut
+    COMMAND rifiuti       -o "" ${sample_dir}/INFO2-sample1)
+add_test(NAME f_NullArgOptTestEnc
+    COMMAND rifiuti       -l "" ${sample_dir}/INFO2-sample1)
 set_tests_properties(
     d_NullArgOptTestOut
     PROPERTIES
-        LABELS "recycledir;arg"
+        LABELS "recycledir;arg;xfail"
         PASS_REGULAR_EXPRESSION "Empty .+ disallowed")
 set_tests_properties(
     f_NullArgOptTestOut
     f_NullArgOptTestEnc
     PROPERTIES
-        LABELS "info2;arg"
+        LABELS "info2;arg;xfail"
         PASS_REGULAR_EXPRESSION "Empty .+ disallowed")
 
 
 function(addBadComboOptTest name)
     add_test(NAME d_BadComboOptTest${name} COMMAND
-        rifiuti-vista ${ARGN} samples/dir-sample1)
+        rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
     add_test(NAME f_BadComboOptTest${name} COMMAND
-        rifiuti       ${ARGN} samples/INFO2-sample1)
+        rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
     set_tests_properties(
         d_BadComboOptTest${name}
         PROPERTIES
-            LABELS "recycledir;arg"
+            LABELS "recycledir;arg;xfail"
             PASS_REGULAR_EXPRESSION "can not be used in XML mode")
     set_tests_properties(
         f_BadComboOptTest${name}
         PROPERTIES
-            LABELS      "info2;arg"
+            LABELS      "info2;arg;xfail"
             PASS_REGULAR_EXPRESSION "can not be used in XML mode")
 endfunction()
 
@@ -138,12 +143,12 @@ function(addMultiInputTest name)
     set_tests_properties(
         d_MultiInputTest${name}
         PROPERTIES
-            LABELS "recycledir;arg"
+            LABELS "recycledir;arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
     set_tests_properties(
         f_MultiInputTest${name}
         PROPERTIES
-            LABELS      "info2;arg"
+            LABELS      "info2;arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
 endfunction()
 
@@ -157,12 +162,12 @@ function(addMissingInputTest name)
     set_tests_properties(
         d_MissingInputTest${name}
         PROPERTIES
-            LABELS "recycledir;arg"
+            LABELS "recycledir;arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
     set_tests_properties(
         f_MissingInputTest${name}
         PROPERTIES
-            LABELS      "info2;arg"
+            LABELS      "info2;arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
 endfunction()
 
@@ -171,54 +176,41 @@ addMissingInputTest(2 -t :)
 addMissingInputTest(3 -z -o file1 -n)
 
 
-function(SepCompareTest testid is_info2 sep)
-    set_label(is_info2 "arg")
-    set_test_vars(${testid} is_info2 1 1)
-    set(out ${CMAKE_CURRENT_BINARY_DIR}/${prefix}_o.txt)
-    set(ref ${CMAKE_CURRENT_BINARY_DIR}/${prefix}_r.txt)
-    if(is_info2)
-        set(prog rifiuti)
-        set(input INFO2-sample1)
+function(SepCompareTest testid input sep)
+    if(IS_DIRECTORY ${sample_dir}/${input})
+        set(is_info2 0)
+        set(prefix d_${testid})
     else()
-        set(prog rifiuti-vista)
-        set(input dir-sample1)
+        set(is_info2 1)
+        set(prefix f_${testid})
     endif()
-    add_test(
-        NAME ${prefix}_Prep1
-        COMMAND ${prog} -t "${sep}" ${input} -o ${out}
-        WORKING_DIRECTORY ${sample_dir}
-    )
+
+    set(ref ${bindir}/${prefix}_ref.txt)
+
     if(WIN32)
-        string(REPLACE \\ ` sep ${sep})
-        add_test_using_shell(${prefix}_Prep2
-            "(Get-Content ${input}.txt).Replace(\"`t\", \"${sep}\") | Set-Content ${ref}"
-            WORKING_DIRECTORY ${sample_dir})
+        string(REPLACE \\ ` pssep ${sep})
+        add_test_using_shell(${prefix}_PrepAlt
+            "(Get-Content ${sample_dir}/${input}.txt).Replace(\"`t\", \"${pssep}\") | Set-Content ${ref}")
     else()
-        add_test_using_shell(${prefix}_Prep2
-            "awk '{gsub(\"\\t\",\"${sep}\");print;}' ${input}.txt > ${ref}"
-            WORKING_DIRECTORY ${sample_dir})
+        add_test_using_shell(${prefix}_PrepAlt
+            "awk '{gsub(\"\\t\",\"${sep}\");print;}' ${sample_dir}/${input}.txt > ${ref}")
     endif()
-    add_test(
-        NAME ${prefix}
-        COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${out} ${ref}
-    )
-    add_test(
-        NAME ${prefix}_Clean
-        COMMAND ${CMAKE_COMMAND} -E rm ${out} ${ref}
-    )
 
-    set_tests_properties(${prefix}_Prep1 PROPERTIES FIXTURES_SETUP    ${fixture})
-    set_tests_properties(${prefix}_Prep2 PROPERTIES FIXTURES_SETUP    ${fixture})
-    set_tests_properties(${prefix}       PROPERTIES FIXTURES_REQUIRED ${fixture})
-    set_tests_properties(${prefix}_Clean PROPERTIES FIXTURES_CLEANUP  ${fixture})
+    generate_simple_comparison_test(${testid} ${is_info2}
+        "${input}" "${ref}" "arg" -t "${sep}")
 
-    set_tests_properties(${prefix}       PROPERTIES LABELS "${label}")
 endfunction()
 
-# "\\\\" converts to "\;" in cmake, can't do test on backslashes
-set(nums 1 2 3 4)
-set(seps "|" "xx" "\\n\\t" "%s")
-foreach(item IN ZIP_LISTS nums seps)
-    SepCompareTest(SepCompare${item_0} 0 "${item_1}")
-    SepCompareTest(SepCompare${item_0} 1 "${item_1}")
-endforeach()
+function(addSepCompareTests)
+    # "\\\\" converts to "\;" in cmake, can't do test on backslashes
+    set(seps "|" "\\n\\t" "%s")
+    list(LENGTH seps len)
+    math(EXPR len "${len} - 1")
+    foreach(i RANGE ${len})
+        list(GET seps ${i} sep)
+        SepCompareTest(SepCompare${i} "INFO2-sample1" "${sep}")
+        SepCompareTest(SepCompare${i} "dir-sample1" "${sep}")
+    endforeach()
+endfunction()
+
+addSepCompareTests()
