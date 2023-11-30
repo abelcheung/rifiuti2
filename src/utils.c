@@ -1290,7 +1290,7 @@ _print_xml_header (metarecord meta)
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
     if (meta.total_entry == 0)
-        ever_existed = "";
+        ever_existed = g_strdup("");
     else
         ever_existed = g_strdup_printf (
             " ever_existed=\"%" G_GUINT32_FORMAT "\"", meta.total_entry);
