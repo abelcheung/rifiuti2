@@ -7,31 +7,19 @@ and size of deleted files and whether the trashed files have been
 permanently removed.
 
 For those interested in what it does, and what functionality it
-provides, please [check out official site][1] for more info.
-Latest features and changes can be found in [NEWS file](NEWS.md).
+provides, please [check out official site][site] for more info.
 
-[1]: https://abelcheung.github.io/rifiuti2
+[site]: https://abelcheung.github.io/rifiuti2
 
 ## Special notes
 
+Latest features and changes can be found in [NEWS file](NEWS.md).
+
 ### (Upcoming) 0.8.0
 
-- Windows binaries will be published via MSYS2 GitHub workflow.
+- Windows binaries will be published via [MSYS2 GitHub workflow](https://github.com/msys2/setup-msys2).
 - Package maintainers would need to rewrite their package files,
-  in light of multiple renovation:
-  - document restructuring [#22](https://github.com/abelcheung/rifiuti2/issues/22)
-  - CMake migration, retiring autotools [#21](https://github.com/abelcheung/rifiuti2/issues/21).
-  - Gettext removal [#18](https://github.com/abelcheung/rifiuti2/issues/18)
-
-### 0.7.0
-
-Systems supporting UTF-8 encoding is mandatory, except on Windows
-Command Prompt. File output in Windows is also in UTF-8.
-
-- UTF-8 locale is pretty much standard for Linux and macOS these years.
-- On Windows front, there are already many featureful text editors
-  capable of opening UTF-8 unicode text files.
-- As a result, `-8` option is obsolete and no more affects output in any way.
+  in light of multiple renovations: [CMake migration](https://github.com/abelcheung/rifiuti2/issues/21), [gettext removal](https://github.com/abelcheung/rifiuti2/issues/18), document restructuring etc.
 
 
 ## Usage
@@ -64,31 +52,19 @@ More compatibility fix for other architectures welcome.
 
 ### Windows
 Windows binaries are officially provided
-[on Github release page][rel].
+[on Github release page][rel]. Some info for ancient Windows
+version are [available on wiki][wiki_pkg_win].
 
 [rel]: https://github.com/abelcheung/rifiuti2/releases/
 
-For various technical reasons, users of very ancient Windows
-platforms may not be able to use latest `rifiuti2` on their OS.
-For following versions, get their corresponding `rifiuti2`
-version instead of latest one:
-
-Windows        |  Latest supported version
-:------------------- | :--------------------------
-XP or Server 2003    | [0.6.1][rel_061]
-Vista or Server 2008 | [0.7.0][rel_070]
-7 or above           | [all][rel_latest]
-
-[rel_061]: https://github.com/abelcheung/rifiuti2/releases/tag/0.6.1
-[rel_070]: https://github.com/abelcheung/rifiuti2/releases/tag/0.7.0
-[rel_latest]: https://github.com/abelcheung/rifiuti2/releases/latest
+[wiki_pkg_win]: https://github.com/abelcheung/rifiuti2/wiki/Packages#packages-for-windows
 
 ### Unix packages
 
 Most Linux and FreeBSD users can use pre-packaged software for
-convenience. Check out [the status here][unx_pkg].
+convenience. Check out [the status here][wiki_pkg].
 
-[unx_pkg]: https://github.com/abelcheung/rifiuti2/wiki/Unix-Packages
+[wiki_pkg]: https://github.com/abelcheung/rifiuti2/wiki/Packages#packages-for-linux-and-bsd
 
 ### Others
 For OS where `rifiuti2` is not readily available, it is always

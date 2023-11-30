@@ -1,21 +1,24 @@
-## 0.8.0
-#### Breaking Change
+## (Upcoming) 0.8.0
+
+### Breaking Change
 - As a result of changes below, package maintainers need to rewrite their package files. See [compile instructions](https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source) and [GitHub workflow file](.github/workflows/check.yml) for reference.
-- (#21) Adopts CMake as build system, and drop Autoconf/Automake completely.
-- Gettext support is removed, its m4 macro versioning is placing a burden on maintainers and packagers
-  - Same for the translation. No contribution so far, probably this is unneeded
+- ([#21](https://github.com/abelcheung/rifiuti2/issues/21)) Adopts CMake as build system, and drop Autoconf/Automake completely. Document files have been restructured as well.
+- ([#18](https://github.com/abelcheung/rifiuti2/issues/18)) Gettext support is removed, its m4 macro versioning is placing a burden on maintainers and packagers.
+  - Same for the translation. No contribution so far, probably this is unneeded.
 - 64 bit Windows binary only supports Windows ≥ 8.1
-  - for earlier 64-bit Windows versions, use 32 bit binary
+  - for earlier (7, 8.0) x64 Windows, use 32 bit binary
 
-#### Feature
+### Feature
 
-- (#3) Implement live system inspection on Windows
+- ([#3](https://github.com/abelcheung/rifiuti2/issues/3)) Implement live system inspection on Windows
+- ([#32](https://github.com/abelcheung/rifiuti2/issues/32)) `$Recycle.bin` also shows extra field like old `INFO2` files do, displaying whether some trashed entries have been restored, leaving only the index file present inside `$Recycle.bin`
 
-#### Bug Fix and minor change
+### Bug Fix and minor change
 
-- (#28) Fix crash on big endian platform due to incorrect string length check
-- (#19) Avoid printing garbage for stderr under Windows command prompt
-- (#22) Manpage is retired, referring users to GitHub repository and online docs
+- ([#28](https://github.com/abelcheung/rifiuti2/issues/28)) Fix crash on big endian platform due to incorrect string length check
+- ([#19](https://github.com/abelcheung/rifiuti2/issues/19), [#34](https://github.com/abelcheung/rifiuti2/issues/34)) Avoid printing garbage under Windows command prompt
+- ([#22](https://github.com/abelcheung/rifiuti2/issues/22)) Manpage is retired, referring users to GitHub repository and online docs
+- (Variation of [#17](https://github.com/abelcheung/rifiuti2/issues/17)) Program name shown as `(null)` in Windows GUI help dialog
 
 ## 0.7.0
 #### Feature Addition
