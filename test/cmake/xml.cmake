@@ -2,125 +2,103 @@
 # rifiuti2 is released under Revised BSD License.
 # Please see LICENSE file for more info.
 
-set(myDTD ${CMAKE_CURRENT_SOURCE_DIR}/rifiuti.dtd)
-
-# XML well-formed and DTD validation for INFO2
-
-add_test(NAME f_XmlWellForm_Prep
-    COMMAND rifiuti -o ${bindir}/f_XmlWellForm.xml -x INFO2-sample1
-    WORKING_DIRECTORY ${sample_dir})
-
-add_test(NAME f_XmlWellForm
-    COMMAND ${XMLLINT} --noout f_XmlWellForm.xml)
-
-add_test(NAME f_XmlDTDValidate
-    COMMAND ${XMLLINT} --noout f_XmlWellForm.xml --dtdvalid ${myDTD})
-
-add_test(NAME f_XmlWellForm_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm f_XmlWellForm.xml)
-
-# f_XmlWellForm_Prep/Clean are used in multiple fixtures,
-# properties set further down below
-set_tests_properties(f_XmlWellForm    PROPERTIES FIXTURES_REQUIRED F_XMLWELLFORM)
-set_tests_properties(f_XmlDTDValidate PROPERTIES FIXTURES_REQUIRED F_XMLWELLFORM)
-
-set_tests_properties(
-    f_XmlWellForm f_XmlDTDValidate
-    PROPERTIES LABELS "info2;xml")
-
-
-# XML equality test for INFO2
-
-# xmllint has a long known history that its --output option is broken.
-# Have to use redirection instead.
-# https://unix.stackexchange.com/q/492116
-
-add_test_using_shell(f_XmlEqual_PrepAlt
-    "${XMLLINT} --c14n f_XmlWellForm.xml > ${bindir}/f_XmlEqual.output")
-set_tests_properties(f_XmlEqual_PrepAlt
-    PROPERTIES DEPENDS f_XmlWellForm_Prep)
-
-add_test_using_shell(f_XmlEqual_Prep
-    "${XMLLINT} --c14n INFO2-sample1.xml > ${bindir}/f_XmlEqual_r.xml"
-    WORKING_DIRECTORY ${sample_dir})
-
-generate_simple_comparison_test("XmlEqual" 1
-    "" "${bindir}/f_XmlEqual_r.xml" "xml")
-
-set_fixture_with_dep("f_XmlEqual")
-
-set_tests_properties(f_XmlWellForm_Prep  PROPERTIES FIXTURES_SETUP   "F_XMLWELLFORM;F_XMLEQUAL")
-set_tests_properties(f_XmlWellForm_Clean PROPERTIES FIXTURES_CLEANUP "F_XMLWELLFORM;F_XMLEQUAL")
-
-if("${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND")
-    set_tests_properties(
-        f_XmlDTDValidate
-        f_XmlEqual
-        f_XmlEqual_Clean
-        f_XmlEqual_PrepAlt
-        f_XmlEqual_Prep
-        f_XmlWellForm
-        f_XmlWellForm_Clean
-        f_XmlWellForm_Prep
-        PROPERTIES DISABLED true)
-endif()
-
 #
-# $Recycle.bin counterpart for everything above
+# XML well-formed, DTD validation, normalization checks
 #
 
-add_test(NAME d_XmlWellForm_Prep
-    COMMAND rifiuti-vista -o ${bindir}/d_XmlWellForm.xml -x dir-sample1
-    WORKING_DIRECTORY ${sample_dir})
+function(createXmlTestSet id input)  # $ARGN as extra rifiuti args
 
-add_test(NAME d_XmlWellForm
-    COMMAND ${XMLLINT} --noout d_XmlWellForm.xml)
+    set(dtd ${CMAKE_CURRENT_SOURCE_DIR}/rifiuti.dtd)
 
-add_test(NAME d_XmlDTDValidate
-    COMMAND ${XMLLINT} --noout d_XmlWellForm.xml --dtdvalid ${myDTD})
+    if(NOT IS_ABSOLUTE ${input})
+        set(inputchk ${sample_dir}/${input})
+    else()
+        set(inputchk ${input})
+    endif()
+    if(IS_DIRECTORY ${inputchk})
+        set(is_info2 0)
+        set(add_label "recycledir")
+        set(prog rifiuti-vista)
+        set(prefix "d_Xml${id}")
+    else()
+        set(is_info2 1)
+        set(add_label "info2")
+        set(prog rifiuti)
+        set(prefix "f_Xml${id}")
+    endif()
 
-add_test(NAME d_XmlWellForm_Clean
-    COMMAND ${CMAKE_COMMAND} -E rm d_XmlWellForm.xml)
+    set(wellform_pfx "${prefix}WellForm")
+    set(dtdvalid_pfx "${prefix}DTDValidate")
+    set(xmlequal_pfx "${prefix}Equal")
 
-# d_XmlWellForm_Prep/Clean are used in multiple fixtures,
-# properties set further down below
-set_tests_properties(d_XmlWellForm    PROPERTIES FIXTURES_REQUIRED D_XMLWELLFORM)
-set_tests_properties(d_XmlDTDValidate PROPERTIES FIXTURES_REQUIRED D_XMLWELLFORM)
+    set(wellform_out "${bindir}/${wellform_pfx}.output")
+    set(wellform_fxt $<UPPER_CASE:${wellform_pfx}>)
 
-set_tests_properties(
-    d_XmlWellForm d_XmlDTDValidate
-    PROPERTIES LABELS "recycledir;xml")
+    set(xmlequal_out "${bindir}/${xmlequal_pfx}.output")
+    set(xmlequal_ref "${bindir}/${xmlequal_pfx}.refout")
+    set(xmlequal_fxt $<UPPER_CASE:${xmlequal_pfx}>)
 
+    # XML/DTD validation part
+    add_test(NAME ${wellform_pfx}_Prep
+        COMMAND ${prog} -o ${wellform_out} ${ARGN} -x ${input}
+        WORKING_DIRECTORY ${sample_dir})
 
-# XML equality test for $Recycle.bin
+    add_test(NAME ${wellform_pfx}
+        COMMAND ${XMLLINT} --noout ${wellform_out})
 
-add_test_using_shell(d_XmlEqual_PrepAlt
-    "${XMLLINT} --c14n d_XmlWellForm.xml > ${bindir}/d_XmlEqual.output")
-set_tests_properties(d_XmlEqual_PrepAlt
-    PROPERTIES DEPENDS d_XmlWellForm_Prep)
+    add_test(NAME ${dtdvalid_pfx}
+        COMMAND ${XMLLINT} --noout ${wellform_out} --dtdvalid ${dtd})
 
-add_test_using_shell(d_XmlEqual_Prep
-    "${XMLLINT} --c14n dir-sample1.xml > ${bindir}/d_XmlEqual_r.xml"
-    WORKING_DIRECTORY ${sample_dir})
+    add_test(NAME ${wellform_pfx}_Clean
+        COMMAND ${CMAKE_COMMAND} -E rm ${wellform_out})
 
-generate_simple_comparison_test("XmlEqual" 0
-    "" "${bindir}/d_XmlEqual_r.xml" "xml")
+    # XmlWellForm fixtures are used in multiple fixtures,
+    # properties set further down below, not here
+    set_tests_properties(${wellform_pfx}
+        PROPERTIES FIXTURES_REQUIRED ${wellform_fxt})
+    set_tests_properties(${dtdvalid_pfx}
+        PROPERTIES FIXTURES_REQUIRED ${wellform_fxt})
+    set_tests_properties(${wellform_pfx} ${dtdvalid_pfx}
+        PROPERTIES LABELS "${add_label};xml")
 
-set_fixture_with_dep("d_XmlEqual")
+    # XML normalization and comparison
+    # xmllint has a long known history of broken --output option,
+    # have to use redirection instead.
+    # https://unix.stackexchange.com/q/492116
 
-set_tests_properties(d_XmlWellForm_Prep  PROPERTIES FIXTURES_SETUP   "D_XMLWELLFORM;D_XMLEQUAL")
-set_tests_properties(d_XmlWellForm_Clean PROPERTIES FIXTURES_CLEANUP "D_XMLWELLFORM;D_XMLEQUAL")
+    add_test_using_shell(${xmlequal_pfx}_PrepAlt
+        "${XMLLINT} --c14n ${wellform_out} > ${xmlequal_out}")
+    set_tests_properties(${xmlequal_pfx}_PrepAlt
+        PROPERTIES DEPENDS ${wellform_pfx}_Prep)
 
-if("${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND")
-    set_tests_properties(
-        d_XmlDTDValidate
-        d_XmlEqual
-        d_XmlEqual_Clean
-        d_XmlEqual_PrepAlt
-        d_XmlEqual_Prep
-        d_XmlWellForm
-        d_XmlWellForm_Clean
-        d_XmlWellForm_Prep
-        PROPERTIES DISABLED true)
-endif()
+    add_test_using_shell(${xmlequal_pfx}_Prep
+        "${XMLLINT} --c14n ${input}.xml > ${xmlequal_ref}"
+        WORKING_DIRECTORY ${sample_dir})
 
+    generate_simple_comparison_test("Xml${id}Equal" ${is_info2}
+        "" "${xmlequal_ref}" "xml")
+
+    set_fixture_with_dep("${xmlequal_pfx}")
+
+    set_tests_properties(${wellform_pfx}_Prep
+        PROPERTIES FIXTURES_SETUP "${wellform_fxt};${xmlequal_fxt}")
+    set_tests_properties(${wellform_pfx}_Clean
+        PROPERTIES FIXTURES_CLEANUP "${wellform_fxt};${xmlequal_fxt}")
+
+    if("${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND")
+        set_tests_properties(
+            ${dtdvalid_pfx}
+            ${xmlequal_pfx}
+            ${xmlequal_pfx}_Clean
+            ${xmlequal_pfx}_PrepAlt
+            ${xmlequal_pfx}_Prep
+            ${wellform_pfx}
+            ${wellform_pfx}_Clean
+            ${wellform_pfx}_Prep
+            PROPERTIES DISABLED true)
+    endif()
+endfunction()
+
+createXmlTestSet(1 INFO2-sample1)
+createXmlTestSet(2 dir-sample1)
+createXmlTestSet(3 INFO-95-ja-1 -l CP932)
