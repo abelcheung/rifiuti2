@@ -289,6 +289,8 @@ main (int    argc,
     extern char       **fileargs;
     extern gboolean     live_mode;
 
+    UNUSED (argc);
+
     rifiuti_init ();
 
     /* TRANSLATOR: appears in help text short summary */

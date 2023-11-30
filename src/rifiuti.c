@@ -341,6 +341,8 @@ main (int    argc,
     GError             *error = NULL;
     extern char       **fileargs;
 
+    UNUSED (argc);
+
     rifiuti_init ();
 
     /* TRANSLATOR: appears in help text short summary */

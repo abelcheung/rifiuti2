@@ -192,7 +192,7 @@ enumerate_drive_bins (void)
         goto enumerate_cleanup;
     }
 
-    for (int i = 0; i < sizeof(DWORD) * CHAR_BIT; i++) {
+    for (gsize i = 0; i < sizeof(DWORD) * CHAR_BIT; i++) {
         if (! (drive_bitmap & (1 << i)))
             continue;
         drive_root[0] = 'A' + i;
@@ -243,7 +243,7 @@ windows_product_name (void)
     g_debug ("1st RegGetValueW(ProductName): status = %li, str_size = %lu",
         status, str_size);
 
-    if ((status != ERROR_SUCCESS) || (str_size > G_MAXSIZE))
+    if (status != ERROR_SUCCESS)
         return NULL;
 
     buf = g_malloc ((gsize) str_size);

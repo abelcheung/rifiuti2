@@ -19,7 +19,17 @@ include(GNUInstallDirs)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g -Wall")
+if(DEFINED CMAKE_C_FLAGS_DEBUG)
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -O0 -Wextra")
+else()
+    set(CMAKE_C_FLAGS_DEBUG "-O0 -Wextra")
+endif()
+if(DEFINED CMAKE_C_FLAGS)
+    string(APPEND CMAKE_C_FLAGS " -Wall -Werror")
+else()
+    set(CMAKE_C_FLAGS "-Wall -Werror")
+endif()
+
 set(CMAKE_STATIC_LINKER_FLAGS "-static")
 
 configure_file(src/config.h.in config.h)

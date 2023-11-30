@@ -101,7 +101,7 @@ static const GOptionEntry text_options[] = {
         G_OPTION_ARG_CALLBACK, _option_deprecated,
         N_("(This option is deprecated)"), NULL
     },
-    {NULL}
+    { 0 }
 };
 
 static const GOptionEntry main_options[] = {
@@ -131,7 +131,7 @@ static const GOptionEntry main_options[] = {
         G_OPTION_ARG_FILENAME_ARRAY, &fileargs,
         N_("INFO2 file name"), NULL
     },
-    {NULL}
+    { 0 }
 };
 
 /*! Appended to main option group if program is INFO2 reader */
@@ -142,7 +142,7 @@ static const GOptionEntry rbinfile_options[] = {
         N_("Show legacy (8.3) path if available and specify its CODEPAGE"),
         N_("CODEPAGE")
     },
-    {NULL}
+    { 0 }
 };
 
 /* Append to main option group if program is $Recycle.bin reader */
@@ -152,7 +152,7 @@ static const GOptionEntry live_options[] = {
         G_OPTION_ARG_NONE, &live_mode,
         N_("Inspect live system"), NULL
     },
-    {NULL}
+    { 0 }
 };
 
 /*
@@ -913,7 +913,7 @@ _get_tempfile (GError **error)
         e = errno;
         g_set_error_literal (error, G_FILE_ERROR,
             g_file_error_from_errno(e), g_strerror(e));
-        close (fd);
+        g_close (fd, NULL);
         return NULL;
     }
 
