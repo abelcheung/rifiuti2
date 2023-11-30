@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # cmake -E rm
 
 project(rifiuti2
-    VERSION 0.7.0
+    VERSION 0.8.0
     HOMEPAGE_URL "https://github.com/abelcheung/rifiuti2/"
     DESCRIPTION "Windows recycle bin analysis tool"
     LANGUAGES C)

@@ -15,7 +15,7 @@ provides, please [check out official site][site] for more info.
 
 Latest features and changes can be found in [NEWS file](NEWS.md).
 
-### (Upcoming) 0.8.0
+### 0.8.0
 
 - Windows binaries will be published via [MSYS2 GitHub workflow](https://github.com/msys2/setup-msys2).
 - Package maintainers would need to rewrite their package files,

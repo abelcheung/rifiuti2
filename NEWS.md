@@ -1,7 +1,7 @@
-## (Upcoming) 0.8.0
+## 0.8.0
 
 ### Breaking Change
-- As a result of changes below, package maintainers need to rewrite their package files. See [compile instructions](https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source) and [GitHub workflow file](.github/workflows/check.yml) for reference.
+- As a result of revamps below, package maintainers need to rewrite their package files. See [compile instructions](https://github.com/abelcheung/rifiuti2/wiki/Compile-From-Source) and [GitHub workflow file](.github/workflows/check.yml) for reference.
 - ([#21](https://github.com/abelcheung/rifiuti2/issues/21)) Adopts CMake as build system, and drop Autoconf/Automake completely. Document files have been restructured as well.
 - ([#18](https://github.com/abelcheung/rifiuti2/issues/18)) Gettext support is removed, its m4 macro versioning is placing a burden on maintainers and packagers.
   - Same for the translation. No contribution so far, probably this is unneeded.
@@ -19,6 +19,7 @@
 - ([#19](https://github.com/abelcheung/rifiuti2/issues/19), [#34](https://github.com/abelcheung/rifiuti2/issues/34)) Avoid printing garbage under Windows command prompt
 - ([#22](https://github.com/abelcheung/rifiuti2/issues/22)) Manpage is retired, referring users to GitHub repository and online docs
 - (Variation of [#17](https://github.com/abelcheung/rifiuti2/issues/17)) Program name shown as `(null)` in Windows GUI help dialog
+- ([#37](https://github.com/abelcheung/rifiuti2/issues/37)) XML output for 95/NT `INFO` now contains total entries ever existed field
 
 ## 0.7.0
 #### Feature Addition
