@@ -4,17 +4,15 @@
  * Please see LICENSE file for more info.
  */
 
-#include "config.h"
-#include "utils-win.h"
-
 #include <lmcons.h>
-#include <windows.h>
 #include <aclapi.h>
 #include <authz.h>
 #include <sddl.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
+
+#include "utils-win.h"
 
 
 static HANDLE wincon_fh = NULL;

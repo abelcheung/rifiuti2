@@ -6,16 +6,12 @@
 
 #include "config.h"
 
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <locale.h>
-#include "utils.h"
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
+#include "utils.h"
 #ifdef G_OS_WIN32
-#  include <sys/timeb.h>
 #  include "utils-win.h"
 #endif
 

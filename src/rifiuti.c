@@ -5,20 +5,11 @@
  * Please see LICENSE file for more info.
  */
 
-#include "config.h"
-
-#include <errno.h>
-#include <stdlib.h>
-
-#include "utils.h"
-#ifdef G_OS_WIN32
-#  include "utils-win.h"
-#endif
-
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
 #include "rifiuti.h"
+#include "utils.h"
 
 
 static r2status     exit_status = R2_OK;

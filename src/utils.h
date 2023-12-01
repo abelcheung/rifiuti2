@@ -17,7 +17,6 @@
 #endif
 
 #include <inttypes.h>
-#include <time.h>
 #include <stdio.h>
 #include <glib.h>
 
