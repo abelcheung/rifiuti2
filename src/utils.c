@@ -335,9 +335,6 @@ _check_legacy_encoding (const gchar *opt_name,
     UNUSED(opt_name);
     UNUSED(data);
 
-    char           *s;
-    gint            e;
-    gboolean        ret      = FALSE;
     static gboolean seen     = FALSE;
     GError         *conv_err = NULL;
 
@@ -356,60 +353,51 @@ _check_legacy_encoding (const gchar *opt_name,
         return FALSE;
     }
 
-    s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
-
-    if (conv_err == NULL)
     {
-        if (strcmp ("C:\\", s) != 0) /* e.g. EBCDIC based code pages */
-        {
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                _("'%s' can't possibly be a code page or compatible "
-                "encoding used by localized Windows."), enc);
-        } else {
+        char *s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
+        gboolean equal = ! g_strcmp0 ("C:\\", s);
+        g_free (s);
+
+        if (equal) {
             legacy_encoding = g_strdup (enc);
-            ret = TRUE;
+            return TRUE;
         }
-        goto done_check_encoding;
     }
 
-    e = conv_err->code;
-    g_clear_error (&conv_err);
+    /* everything below is error handling */
 
-    switch (e)
-    {
-        case G_CONVERT_ERROR_NO_CONVERSION:
+    if (conv_err == NULL) {
+        // Encoding is ASCII incompatible (e.g. EBCDIC). Even if trial
+        // convert doesn't fail, it would cause application error
+        // later on. Treat that as conversion error for convenience.
+        g_set_error_literal (&conv_err, G_CONVERT_ERROR,
+            G_CONVERT_ERROR_ILLEGAL_SEQUENCE, "");
+    }
 
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                _("'%s' encoding is not supported by glib library "
-                "on this system.  If iconv program is present on "
-                "system, use 'iconv -l' for a list of possible "
-                "alternatives; otherwise check out following site for "
-                "a list of probable encodings to use:\n\n\t%s"), enc,
+    if (g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_NO_CONVERSION)) {
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+            _("'%s' encoding is not supported by glib library "
+            "on this system.  If iconv program is present on "
+            "system, use 'iconv -l' for a list of possible "
+            "alternatives; otherwise check out following site for "
+            "a list of probable encodings to use:\n\n\t%s"), enc,
 #ifdef G_OS_WIN32
-                "https://github.com/win-iconv/win-iconv/blob/master/win_iconv.c"
+            "https://github.com/win-iconv/win-iconv/blob/master/win_iconv.c"
 #else
-                "https://www.gnu.org/software/libiconv/"
+            "https://www.gnu.org/software/libiconv/"
 #endif
-            );
-            break;
+        );
+    } else if (
+        g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE) ||
+        g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT)
+    ) {
+        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+            _("'%s' is incompatible to any Windows code page."), enc);
+    } else
+        g_assert_not_reached ();
 
-        /* Encodings not ASCII compatible can't possibly be ANSI/OEM code pages */
-        case G_CONVERT_ERROR_ILLEGAL_SEQUENCE:
-        case G_CONVERT_ERROR_PARTIAL_INPUT:
-
-            g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                _("'%s' can't possibly be a code page or compatible "
-                "encoding used by localized Windows."), enc);
-            break;
-
-        default:
-            g_assert_not_reached ();
-    }
-
-done_check_encoding:
-
-    g_free (s);
-    return ret;
+    g_clear_error (&conv_err);
+    return FALSE;
 }
 
 static gboolean

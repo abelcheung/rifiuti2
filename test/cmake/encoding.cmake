@@ -70,7 +70,7 @@ set_tests_properties(
     f_IncompatEnc
     PROPERTIES
         LABELS "encoding;info2;xfail"
-        PASS_REGULAR_EXPRESSION "possibly be a code page or compatible encoding"
+        PASS_REGULAR_EXPRESSION "incompatible to any Windows code page"
 )
 
 
