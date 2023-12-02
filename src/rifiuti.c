@@ -13,8 +13,8 @@
 
 
 static r2status     exit_status = R2_OK;
-static metarecord   meta;
 extern char        *legacy_encoding;
+extern GSList      *filelist;
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char   driveletters[28] =
@@ -33,7 +33,8 @@ unsigned char   driveletters[28] =
  */
 static r2status
 validate_index_file (const char  *filename,
-                     FILE       **infile)
+                     FILE       **infile,
+                     metarecord  *meta)
 {
     void           *buf;
     FILE           *fp = NULL;
@@ -70,21 +71,21 @@ validate_index_file (const char  *filename,
     /* total_entry only meaningful for 95 and NT4, on other versions
      * it's junk memory data, don't bother copying */
     if ( ( ver == VERSION_NT4 ) || ( ver == VERSION_WIN95 ) ) {
-        copy_field (&meta.total_entry, TOTAL_ENTRY_OFFSET, RECORD_SIZE_OFFSET);
-        meta.total_entry = GUINT32_FROM_LE (meta.total_entry);
+        copy_field (&meta->total_entry, TOTAL_ENTRY_OFFSET, RECORD_SIZE_OFFSET);
+        meta->total_entry = GUINT32_FROM_LE (meta->total_entry);
     }
 
-    copy_field (&meta.recordsize, RECORD_SIZE_OFFSET, FILESIZE_SUM_OFFSET);
-    meta.recordsize = GUINT32_FROM_LE (meta.recordsize);
+    copy_field (&meta->recordsize, RECORD_SIZE_OFFSET, FILESIZE_SUM_OFFSET);
+    meta->recordsize = GUINT32_FROM_LE (meta->recordsize);
 
     g_free (buf);
 
     /* Turns out version is not reliable indicator. Use size instead */
-    switch (meta.recordsize)
+    switch (meta->recordsize)
     {
       case LEGACY_RECORD_SIZE:
 
-        meta.has_unicode_path = FALSE;
+        meta->has_unicode_path = FALSE;
 
         if ( ( ver != VERSION_ME_03 ) &&  /* ME still use 280 byte record */
              ( ver != VERSION_WIN98 ) &&
@@ -117,7 +118,7 @@ validate_index_file (const char  *filename,
 
       case UNICODE_RECORD_SIZE:
 
-        meta.has_unicode_path = TRUE;
+        meta->has_unicode_path = TRUE;
         if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
         {
             g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
@@ -134,7 +135,7 @@ validate_index_file (const char  *filename,
 
     rewind (fp);
     *infile = fp;
-    meta.version = (int64_t) ver;
+    meta->version = (uint64_t) ver;
 
     return R2_OK;
 
@@ -146,7 +147,8 @@ validate_index_file (const char  *filename,
 
 
 static rbin_struct *
-populate_record_data (void *buf)
+populate_record_data (void *buf,
+                      metarecord *meta)
 {
     rbin_struct    *record;
     uint32_t        drivenum;
@@ -214,7 +216,7 @@ populate_record_data (void *buf)
 
     g_free (legacy_fname);
 
-    if (! meta.has_unicode_path)
+    if (! meta->has_unicode_path)
         return record;
 
     /*******************************************
@@ -246,7 +248,7 @@ populate_record_data (void *buf)
      * legacy path field, then overwritten in place by a 8.3
      * version of path whenever applicable (which was always shorter).
      */
-    if (! meta.fill_junk)
+    if (! meta->fill_junk)
     {
         void *ptr;
 
@@ -257,7 +259,7 @@ populate_record_data (void *buf)
             {
                 g_debug ("Junk detected at offset 0x%tx of unicode path",
                     ptr - buf - UNICODE_FILENAME_OFFSET);
-                meta.fill_junk = TRUE;
+                meta->fill_junk = TRUE;
                 break;
             }
         }
@@ -268,15 +270,15 @@ populate_record_data (void *buf)
 
 
 static void
-parse_record_cb (char    *index_file,
-                 GSList **recordlist)
+parse_record_cb (char *index_file,
+                 metarecord *meta)
 {
-    rbin_struct *record;
-    FILE        *infile;
-    size_t       size;
-    void        *buf = NULL;
+    rbin_struct   *record;
+    FILE          *infile;
+    gsize          read_sz, record_sz;
+    void          *buf = NULL;
 
-    exit_status = validate_index_file (index_file, &infile);
+    exit_status = validate_index_file (index_file, &infile, meta);
     if ( exit_status != R2_OK )
     {
         g_printerr (_("File '%s' fails validation."), index_file);
@@ -286,24 +288,15 @@ parse_record_cb (char    *index_file,
 
     g_debug ("Start populating record for '%s'...", index_file);
 
-    /*
-     * Add padding bytes as null-termination of unicode file name.
-     * Normally Windows should have done the null termination within
-     * WIN_PATH_MAX limit, but on 98/ME/2000 programmers were sloppy
-     * and use junk memory as padding, so just play safe.
-     */
-    buf = g_malloc0 (meta.recordsize + sizeof(gunichar2));
+    record_sz = meta->recordsize;
+    buf = g_malloc0 (record_sz);
 
     fseek (infile, RECORD_START_OFFSET, SEEK_SET);
 
-    meta.is_empty = TRUE;
-    while (meta.recordsize == (size = fread (buf, 1, meta.recordsize, infile)))
+    while (record_sz == (read_sz = fread (buf, 1, record_sz, infile)))
     {
-        record = populate_record_data (buf);
-        record->meta = &meta;
-        /* INFO2 already sort entries by time */
-        *recordlist = g_slist_append (*recordlist, record);
-        meta.is_empty = FALSE;
+        record = populate_record_data (buf, meta);
+        g_ptr_array_add (meta->records, record);
     }
     g_free (buf);
 
@@ -313,9 +306,9 @@ parse_record_cb (char    *index_file,
                    ftell (infile), strerror (errno));
         exit_status = R2_ERR_OPEN_FILE;
     }
-    if ( feof (infile) && size && ( size < meta.recordsize ) )
+    if ( feof (infile) && read_sz && ( read_sz < record_sz ) )
     {
-        g_warning (_("Premature end of file, last record (%zu bytes) discarded"), size);
+        g_warning (_("Premature end of file, last record (%zu bytes) discarded"), read_sz);
         exit_status = R2_ERR_BROKEN_FILE;
     }
 
@@ -326,46 +319,26 @@ int
 main (int    argc,
       char **argv)
 {
-    GSList             *filelist   = NULL;
-    GSList             *recordlist = NULL;
     GOptionContext     *context;
     GError             *error = NULL;
-    extern char       **fileargs;
+    metarecord         *meta;
 
     UNUSED (argc);
 
-    rifiuti_init ();
+    meta = rifiuti_init ();
 
     /* TRANSLATOR: appears in help text short summary */
     context = g_option_context_new (N_("INFO2"));
     g_option_context_set_summary (context, N_(
         "Parse INFO2 file and dump recycle bin data."));
-    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_FILE);
+    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_FILE, meta);
     exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 
-    exit_status = check_file_args (fileargs[0], &filelist,
-        RECYCLE_BIN_TYPE_FILE, NULL, &error);
-    if (exit_status != R2_OK)
-        goto cleanup;
+    g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
 
-    /*
-     * TODO May be silly for single file, but would be useful in future
-     * when reading multiple files from live system
-     */
-    g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
-
-    meta.type     = RECYCLE_BIN_TYPE_FILE;
-    meta.filename = fileargs[0];
-    /*
-     * Keeping deleted entry is only available since 98
-     * Note: always set this variable after parse_record_cb() because
-     * meta.version is not set beforehand
-     */
-    /* meta.keep_deleted_entry = ( meta.version >= VERSION_WIN98 ); */
-
-    if ( !meta.is_empty && (recordlist == NULL) )
+    if (! meta->records->len && (exit_status != R2_OK))
     {
         g_printerr ("%s", _("Recycle bin file has no valid record.\n"));
         exit_status = R2_ERR_BROKEN_FILE;
@@ -379,9 +352,7 @@ main (int    argc,
             exit_status = R2_ERR_OPEN_FILE;
             goto cleanup;
         }
-        print_header (meta);
-        g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
-        print_footer ();
+        dump_content (meta);
         clean_tempfile_if_needed (fh, &error);
         if (error) {
             exit_status = R2_ERR_WRITE_FILE;
@@ -419,10 +390,9 @@ main (int    argc,
     }
     g_debug ("Cleaning up...");
 
-    g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
-    g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
+    g_slist_free_full (filelist, (GDestroyNotify) g_free);
     g_clear_error (&error);
-    free_vars ();
+    free_vars (meta);
     close_handles ();
 
     return exit_status;

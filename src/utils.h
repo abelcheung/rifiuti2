@@ -38,6 +38,7 @@ typedef enum
 
 typedef enum
 {
+    RECYCLE_BIN_TYPE_UNKNOWN = 0,
     RECYCLE_BIN_TYPE_FILE,
     RECYCLE_BIN_TYPE_DIR,
 } rbin_type;
@@ -86,8 +87,8 @@ typedef enum
  */
 typedef struct _rbin_meta
 {
-    rbin_type       type;  /* `INFO2` or `$Recycle.bin` format */
-    const char     *filename;  /* File or dir name of trash can itself */
+    rbin_type type;  /* `INFO2` or `$Recycle.bin` format */
+    char *filename;  /* File or dir name of trash can itself */
     /**
      * @brief The global recycle bin version
      * @note For `INFO2`, the value is stored in certain bytes of `INFO2` index file.
@@ -107,9 +108,15 @@ typedef struct _rbin_meta
      * of trashed entries. The field is unused afterwards.
      * @attention For `INFO2` only
      */
-    uint32_t        total_entry;
-    gboolean        is_empty;  /* Whether trash can is completely empty */
-    gboolean        has_unicode_path;
+    uint32_t total_entry;
+    /**
+     * @brief Whether recycle bin record contains ANSI encoded path
+     */
+    gboolean has_legacy_path;
+    /**
+     * @brief Whether recycle bin record contains UTF-16 encoded path
+     */
+    gboolean has_unicode_path;
     /**
      * @brief Whether empty spaces in index file was padded with junk data
      * @note For Windows 98, ME and 2000, paths and fields are not padded with
@@ -117,7 +124,11 @@ typedef struct _rbin_meta
      * segments due to sloppy programming practice.
      * @attention For `INFO2` only
      */
-    gboolean        fill_junk;
+    gboolean fill_junk;
+    /**
+     * @brief List of trash file records pointer
+     */
+    GPtrArray *records;
 
 } metarecord;
 
@@ -137,28 +148,22 @@ typedef struct _rbin_struct
     uint64_t          version;
 
     /**
-     * @brief Each record links to metadata for convenient access
+     * @brief Chronological index number for INFO2
+     * @attention For `INFO2` only
      */
-    const metarecord *meta;
+    uint32_t index_n;
 
-    union
-    {
-        /**
-         * @brief Chronological index number for INFO2
-         * @attention For `INFO2` only
-         */
-        uint32_t      index_n;
-        /**
-         * @brief Index file name
-         * @attention For `$Recyle.bin` only
-         */
-        char         *index_s;
-    };
-
-    GDateTime        *deltime;  /* Item trashing time */
     /**
-     * @brief Trashed time stored as Windows datetime integer
-     * @note For internal entry sorting in `$Recycle.bin`
+     * @brief Index file name
+     * @attention For `$Recyle.bin` only
+     */
+    char *index_s;
+
+    GDateTime *deltime;  /* Item trashing time */
+
+    /**
+     * @brief Trashed time (`deltime`) stored as Windows datetime integer
+     * @note For internal entry sorting in `$Recycle.bin`. `INFO2` records sort using `index_n` field.
      */
     int64_t           winfiletime;
 
@@ -220,10 +225,11 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-void          rifiuti_init                (void);
+metarecord   *rifiuti_init            (void);
 
-void          rifiuti_setup_opt_ctx       (GOptionContext    **context,
-                                           rbin_type         type);
+void          rifiuti_setup_opt_ctx       (GOptionContext  **context,
+                                           rbin_type         type,
+                                           metarecord       *meta);
 
 r2status      rifiuti_parse_opt_ctx       (GOptionContext  **context,
                                            char           ***argv,
@@ -249,12 +255,7 @@ void          clean_tempfile_if_needed    (FILE             *fh,
 
 void          close_handles               (void);
 
-void          print_header                (metarecord        meta);
-
-void          print_record_cb             (rbin_struct      *record,
-                                           void             *data);
-
-void          print_footer                (void);
+void          dump_content                (metarecord       *meta);
 
 void          print_version_and_exit      (void) G_GNUC_NORETURN;
 
@@ -266,6 +267,6 @@ char *        conv_path_to_utf8_with_tmpl (const char      *str,
                                            size_t          *read,
                                            r2status        *st);
 
-void          free_vars                   (void);
+void          free_vars                   (metarecord       *meta);
 
 #endif
