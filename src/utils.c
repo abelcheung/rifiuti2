@@ -79,6 +79,8 @@ static char        *tmppath            = NULL; /*!< used iff output_loc is defin
        char       **fileargs           = NULL;
 static FILE        *out_fh             = NULL; /*!< unused for Windows console */
 static FILE        *err_fh             = NULL; /*!< unused for Windows console */
+       GSList      *filelist           = NULL;
+       gboolean     isolated_index     = FALSE;
 
 /*! These options are only effective for tab delimited mode output */
 static const GOptionEntry text_options[] = {
@@ -401,31 +403,56 @@ _check_legacy_encoding (const gchar *opt_name,
 }
 
 static gboolean
-_count_fileargs (GOptionContext *context,
-                 GOptionGroup   *group,
-                 gpointer        data,
-                 GError        **err)
+_fileargs_handler (GOptionContext *context,
+                   GOptionGroup   *group,
+                   metarecord     *meta,
+                   GError        **error)
 {
     UNUSED (context);
     UNUSED (group);
-    UNUSED (data);
 
-    if (live_mode) {
-        if (fileargs && g_strv_length (fileargs)) {
-            g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-                _("Live system probation must not be used together "
-                  "with file arguments."));
-            return FALSE;
-        }
-    }
-    else
+    gsize fileargs_len = fileargs ? g_strv_length (fileargs) : 0;
+
+    if (!live_mode)
     {
-        if (! fileargs || (g_strv_length (fileargs) != 1)) {
-            g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        if (fileargs_len != 1)
+        {
+            g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
                 _("Must specify exactly one file or folder argument."));
             return FALSE;
         }
+        meta->filename = g_strdup (fileargs[0]);
+
+        int sts = check_file_args (meta->filename, &filelist,
+            meta->type, &isolated_index, error);
+
+        return (sts == R2_OK);
     }
+
+    if (fileargs_len)
+    {
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            _("Live system probation must not be used together "
+                "with file arguments."));
+        return FALSE;
+    }
+
+#ifdef G_OS_WIN32
+    {
+        meta->filename = g_strdup ("(current system)");
+        GSList *bindirs = enumerate_drive_bins();
+        GSList *ptr = bindirs;
+        while (ptr) {
+            // Ignore errors, pretty common that some folders don't
+            // exist or is empty.
+            check_file_args (ptr->data, &filelist,
+                meta->type, NULL, NULL);
+            ptr = ptr->next;
+        }
+        ptr = NULL;
+        g_slist_free_full (bindirs, g_free);
+    }
+#endif
 
     return TRUE;
 }
@@ -726,9 +753,11 @@ _local_printerr (const char *str)
     _local_print (FALSE, str);
 }
 
-void
+metarecord *
 rifiuti_init (void)
 {
+    metarecord *meta;
+
     setlocale (LC_ALL, "");
 
 #ifdef G_OS_WIN32
@@ -742,14 +771,33 @@ rifiuti_init (void)
 #endif
         out_fh = stdout;
     g_set_print_handler (_local_printout);
+
+    meta = g_malloc0 (sizeof (metarecord));
+
+    meta->records = g_ptr_array_new ();
+    g_ptr_array_set_free_func (meta->records, (GDestroyNotify) free_record_cb);
+    return meta;
 }
 
 void
 rifiuti_setup_opt_ctx (GOptionContext **context,
-                       rbin_type        type)
+                       rbin_type        type,
+                       metarecord      *meta)
 {
     char         *desc_str;
     GOptionGroup *group, *txt_group;
+
+    /* FIXME Sneaky metadata modification! Think about cleaner way */
+    meta->type = type;
+    switch (type) {
+        case RECYCLE_BIN_TYPE_DIR:
+            meta->has_legacy_path  = FALSE;
+            meta->has_unicode_path = TRUE;
+            break;
+        case RECYCLE_BIN_TYPE_FILE:
+            meta->has_legacy_path  = TRUE;
+        default: break;
+    }
 
     desc_str = g_strdup_printf (
         _("Usage help: %s\nBug report: %s\nMore info : %s"),
@@ -760,7 +808,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
     g_free (desc_str);
 
     /* main group */
-    group = g_option_group_new (NULL, NULL, NULL, NULL, NULL);
+    group = g_option_group_new (NULL, NULL, NULL, meta, NULL);
 
     g_option_group_add_entries (group, main_options);
     switch (type)
@@ -779,7 +827,8 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
         default: break;
     }
 
-    g_option_group_set_parse_hooks (group, NULL, _count_fileargs);
+    g_option_group_set_parse_hooks (group, NULL,
+        (GOptionParseFunc) _fileargs_handler);
     g_option_context_set_main_group (*context, group);
 
     /* text group */
@@ -985,15 +1034,15 @@ _found_desktop_ini (const char *path)
 
 
 static _os_guess
-_guess_windows_ver (const metarecord meta)
+_guess_windows_ver (const metarecord *meta)
 {
-    if (meta.type == RECYCLE_BIN_TYPE_DIR) {
+    if (meta->type == RECYCLE_BIN_TYPE_DIR) {
         /*
         * No attempt is made to distinguish difference for Vista - 8.1.
         * The corrupt filesize artifact on Vista can't be reproduced,
         * therefore must be very rare.
         */
-        switch (meta.version)
+        switch (meta->version)
         {
             case VERSION_VISTA: return OS_GUESS_VISTA;
             case VERSION_WIN10: return OS_GUESS_10;
@@ -1005,20 +1054,20 @@ _guess_windows_ver (const metarecord meta)
      * INFO2 only below
      */
 
-    switch (meta.version)
+    switch (meta->version)
     {
         case VERSION_WIN95: return OS_GUESS_95;
         case VERSION_WIN98: return OS_GUESS_98;
         case VERSION_NT4  : return OS_GUESS_NT4;
         case VERSION_ME_03:
             /* TODO use symbolic name when 2 versions are merged */
-            if (meta.recordsize == 280)
+            if (meta->recordsize == 280)
                 return OS_GUESS_ME;
 
-            if (meta.is_empty)
+            if (meta->records->len == 0)
                 return OS_GUESS_2K_03;
 
-            return meta.fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
+            return meta->fill_junk ? OS_GUESS_2K : OS_GUESS_XP_03;
 
         /* Not using OS_GUESS_UNKNOWN, INFO2 ceased to be used so
            detection logic won't change in future */
@@ -1170,22 +1219,22 @@ close_handles (void)
 
 
 static void
-_print_csv_header (metarecord meta)
+_print_csv_header (metarecord *meta)
 {
-    char *rbin_path = g_filename_display_name (meta.filename);
+    char *rbin_path = g_filename_display_name (meta->filename);
 
     g_print (_("Recycle bin path: '%s'\n"), rbin_path);
     g_free (rbin_path);
 
-    if (meta.version == VERSION_NOT_FOUND) {
+    if (meta->version == VERSION_NOT_FOUND) {
         g_print ("%s\n", _("Version: ??? (empty folder)"));
     } else {
-        g_print (_("Version: %" G_GUINT64_FORMAT "\n"), meta.version);
+        g_print (_("Version: %" G_GUINT64_FORMAT "\n"), meta->version);
     }
 
-    if (( meta.type == RECYCLE_BIN_TYPE_FILE ) && meta.total_entry)
+    if (( meta->type == RECYCLE_BIN_TYPE_FILE ) && meta->total_entry)
     {
-        g_print (_("Total entries ever existed: %d"), meta.total_entry);
+        g_print (_("Total entries ever existed: %d"), meta->total_entry);
         g_print ("\n");
     }
 
@@ -1265,7 +1314,7 @@ _print_csv_header (metarecord meta)
 }
 
 static void
-_print_xml_header (metarecord meta)
+_print_xml_header (metarecord *meta)
 {
     char       *rbin_path, *ever_existed;
     GString    *result;
@@ -1273,21 +1322,22 @@ _print_xml_header (metarecord meta)
     result = g_string_new (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
-    if (meta.total_entry == 0)
+    /* TODO Add meta->type check */
+    if (meta->total_entry == 0)
         ever_existed = g_strdup("");
     else
         ever_existed = g_strdup_printf (
-            " ever_existed=\"%" G_GUINT32_FORMAT "\"", meta.total_entry);
+            " ever_existed=\"%" G_GUINT32_FORMAT "\"", meta->total_entry);
 
     /* No proper way to report wrong version info yet */
     g_string_append_printf (result,
         "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\"%s>\n",
-        ( meta.type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
-        MAX (meta.version, 0),
+        ( meta->type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
+        MAX (meta->version, 0),
         ever_existed);
     g_free (ever_existed);
 
-    rbin_path = g_filename_display_name (meta.filename);
+    rbin_path = g_filename_display_name (meta->filename);
     g_string_append_printf (result,
         "  <filename><![CDATA[%s]]></filename>\n",
         rbin_path);
@@ -1298,8 +1348,8 @@ _print_xml_header (metarecord meta)
 }
 
 
-void
-print_header (metarecord meta)
+static void
+_print_header (metarecord *meta)
 {
     if (no_heading) return;
 
@@ -1322,19 +1372,17 @@ print_header (metarecord meta)
 }
 
 
-void
-print_record_cb (rbin_struct *record,
-                 void        *data)
+static void
+_print_record_cb (rbin_struct *record,
+                  const metarecord *meta)
 {
-    UNUSED(data);
-
     char       *out_fname, *index, *size = NULL;
     char       *outstr = NULL, *deltime = NULL;
     GDateTime  *dt;
 
     g_return_if_fail (record != NULL);
 
-    index = (record->meta->type == RECYCLE_BIN_TYPE_FILE) ?
+    index = (meta->type == RECYCLE_BIN_TYPE_FILE) ?
         g_strdup_printf ("%u", record->index_n) :
         g_strdup (record->index_s);
 
@@ -1412,8 +1460,8 @@ print_record_cb (rbin_struct *record,
 }
 
 
-void
-print_footer (void)
+static void
+_print_footer (void)
 {
     switch (output_mode)
     {
@@ -1428,6 +1476,15 @@ print_footer (void)
         default:
             g_assert_not_reached();
     }
+}
+
+
+void
+dump_content (metarecord *meta)
+{
+    _print_header (meta);
+    g_ptr_array_foreach (meta->records, (GFunc) _print_record_cb, meta);
+    _print_footer ();
 }
 
 
@@ -1449,8 +1506,7 @@ print_version_and_exit (void)
 void
 free_record_cb (rbin_struct *record)
 {
-    if ( record->meta->type == RECYCLE_BIN_TYPE_DIR )
-        g_free (record->index_s);
+    g_free (record->index_s);
     g_date_time_unref (record->deltime);
     g_free (record->uni_path);
     g_free (record->legacy_path);
@@ -1459,8 +1515,12 @@ free_record_cb (rbin_struct *record)
 
 
 void
-free_vars (void)
+free_vars (metarecord *meta)
 {
+    g_ptr_array_unref (meta->records);
+    g_free (meta->filename);
+    g_free (meta);
+
     g_strfreev (fileargs);
     g_free (output_loc);
     g_free (legacy_encoding);

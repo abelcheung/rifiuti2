@@ -14,10 +14,8 @@
 #endif
 
 static r2status     exit_status = R2_OK;
-static metarecord   meta;
 // Whether input argument is single index file out of `$Recycle.bin`
-gboolean            isolated_index = FALSE;
-
+extern GSList      *filelist;
 
 /*!
  * Check if index file has sufficient amount of data for reading.
@@ -192,8 +190,8 @@ populate_record_data (void *buf,
 }
 
 static void
-parse_record_cb (char    *index_file,
-                 GSList **recordlist)
+parse_record_cb (char *index_file,
+                 const metarecord *meta)
 {
     rbin_struct    *record = NULL;
     char           *basename = NULL;
@@ -201,6 +199,8 @@ parse_record_cb (char    *index_file,
     uint32_t        pathlen = 0;
     gsize           bufsize;
     void           *buf = NULL;
+    extern gboolean isolated_index;
+
 
     basename = g_path_get_basename (index_file);
 
@@ -235,6 +235,8 @@ parse_record_cb (char    *index_file,
             g_assert_not_reached();
     }
 
+    g_free (buf);
+
     /* Check corresponding $R.... file existance and set record->gone */
     if (isolated_index)
         record->gone = FILESTATUS_UNKNOWN;
@@ -251,125 +253,99 @@ parse_record_cb (char    *index_file,
         g_free (trash_path);
     }
 
-    g_debug ("Parsing done for '%s'", basename);
     record->index_s = basename;
-    record->meta = &meta;
-    *recordlist = g_slist_prepend (*recordlist, record);
-    g_free (buf);
-    return;
+    g_ptr_array_add (meta->records, record);
 
+    g_debug ("Parsing done for '%s'", basename);
 }
 
 
 static int
-sort_record_by_time (rbin_struct *a,
-                     rbin_struct *b)
+sort_record_by_time (gconstpointer left,
+                     gconstpointer right)
 {
-    /* sort primary key: deletion time; secondary key: index file name */
+    const rbin_struct *a = *((rbin_struct **) left);
+    const rbin_struct *b = *((rbin_struct **) right);
+
+    /* sort by deletion time, then index file name */
     return ((a->winfiletime < b->winfiletime) ? -1 :
             (a->winfiletime > b->winfiletime) ?  1 :
             strcmp (a->index_s, b->index_s));
 }
 
+static void
+_compare_idx_versions (rbin_struct *record,
+                       metarecord *meta)
+{
+    if (meta->version == VERSION_INCONSISTENT)
+        return;
+
+    if (meta->version != (int64_t) record->version) {
+        g_critical ("Bad entry at %s, meta = %lld, rec = %lld",
+            record->index_s, meta->version, (int64_t)record->version);
+        meta->version = VERSION_INCONSISTENT;
+    }
+}
+
+/**
+ * @brief Determine overall version from all `$Recycle.bin` index files
+ * @param meta The metadata for recycle bin
+ * @return `FALSE` if multiple versions are found, otherwise `TRUE`
+ */
+static gboolean
+_set_overall_rbin_version (metarecord *meta)
+{
+    if (! meta->records->len) {
+        meta->version = VERSION_NOT_FOUND;
+        return TRUE;
+    }
+
+    meta->version = ((rbin_struct *)(meta->records->pdata[0]))->version;
+    g_ptr_array_foreach (meta->records, (GFunc) _compare_idx_versions, meta);
+
+    return (meta->version != VERSION_INCONSISTENT);
+}
 
 int
 main (int    argc,
       char **argv)
 {
-    GSList             *filelist   = NULL;
-    GSList             *recordlist = NULL;
     GOptionContext     *context;
     GError             *error = NULL;
-    extern char       **fileargs;
-    extern gboolean     live_mode;
+    metarecord         *meta;
 
     UNUSED (argc);
 
-    rifiuti_init ();
+    meta = rifiuti_init ();
 
     /* TRANSLATOR: appears in help text short summary */
     context = g_option_context_new (N_("DIR_OR_FILE"));
     g_option_context_set_summary (context, N_(
         "Parse index files in C:\\$Recycle.bin style folder "
         "and dump recycle bin data.  Can also dump a single index file."));
-    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR);
+    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR, meta);
     exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
     if (exit_status != R2_OK)
         goto cleanup;
 
-#ifdef G_OS_WIN32
-    extern gboolean live_mode;
+    g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
 
-    if (live_mode) {
-        GSList *bindirs = enumerate_drive_bins();
-        GSList *ptr = bindirs;
-        while (ptr) {
-            // Ignore errors, pretty common that *some* folders don't
-            // exist or is empty.
-            check_file_args (ptr->data, &filelist,
-                RECYCLE_BIN_TYPE_DIR, NULL, NULL);
-            ptr = ptr->next;
-        }
-        ptr = NULL;
-        g_slist_free_full (bindirs, g_free);
-    }
-    else
-#endif
-    {
-        exit_status = check_file_args (fileargs[0], &filelist,
-            RECYCLE_BIN_TYPE_DIR, &isolated_index, &error);
-        if (exit_status != R2_OK)
-            goto cleanup;
-    }
-
-    g_slist_foreach (filelist, (GFunc) parse_record_cb, &recordlist);
-
-    /* Fill in recycle bin metadata */
-    meta.type               = RECYCLE_BIN_TYPE_DIR;
-    meta.is_empty           = (filelist == NULL);
-    meta.has_unicode_path   = TRUE;
-    if (live_mode)
-        meta.filename = "(current system)";
-    else
-        meta.filename = fileargs[0];
-
-    /* NULL filelist at this point means a valid empty $Recycle.bin */
-    if ( !meta.is_empty && (recordlist == NULL) )
+    if (! meta->records->len && (exit_status != R2_OK))
     {
         g_printerr ("%s", _("No valid recycle bin index file found."));
         g_printerr ("\n");
         exit_status = R2_ERR_BROKEN_FILE;
         goto cleanup;
     }
-    recordlist = g_slist_sort (recordlist, (GCompareFunc) sort_record_by_time);
 
-    /* detect global recycle bin version from versions of all files */
+    g_ptr_array_sort (meta->records, sort_record_by_time);
+    if (! _set_overall_rbin_version (meta))
     {
-        GSList  *l = recordlist;
-        if (!l)
-            meta.version = VERSION_NOT_FOUND;
-        else
-        {
-            meta.version = (int64_t) ((rbin_struct *) recordlist->data)->version;
-
-            while (NULL != (l = l->next))
-            {
-                if ((int64_t) ((rbin_struct *) l->data)->version != meta.version)
-                {
-                    meta.version = VERSION_INCONSISTENT;
-                    break;
-                }
-            }
-
-            if (meta.version == VERSION_INCONSISTENT)
-            {
-                g_printerr ("%s", _("Index files come from multiple versions of Windows."
-                    "  Please check each file independently."));
-                g_printerr ("\n");
-                exit_status = R2_ERR_BROKEN_FILE;
-                goto cleanup;
-            }
-        }
+        g_printerr ("%s", _("Index files come from multiple versions of Windows."
+            "  Please check each file independently."));
+        g_printerr ("\n");
+        exit_status = R2_ERR_BROKEN_FILE;
+        goto cleanup;
     }
 
     /* Print everything */
@@ -379,9 +355,7 @@ main (int    argc,
             exit_status = R2_ERR_OPEN_FILE;
             goto cleanup;
         }
-        print_header (meta);
-        g_slist_foreach (recordlist, (GFunc) print_record_cb, NULL);
-        print_footer ();
+        dump_content (meta);
         clean_tempfile_if_needed (fh, &error);
         if (error) {
             exit_status = R2_ERR_WRITE_FILE;
@@ -414,10 +388,9 @@ main (int    argc,
 
     g_debug ("Cleaning up...");
 
-    g_slist_free_full (recordlist, (GDestroyNotify) free_record_cb);
-    g_slist_free_full (filelist  , (GDestroyNotify) g_free        );
+    g_slist_free_full (filelist, (GDestroyNotify) g_free);
     g_clear_error (&error);
-    free_vars ();
+    free_vars (meta);
     close_handles ();
 
     return exit_status;
