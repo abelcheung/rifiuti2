@@ -64,7 +64,15 @@ foreach(bin rifiuti rifiuti-vista)
             src/utils.h
     )
     if(WIN32)
-        target_sources(${bin} PRIVATE src/utils-win.c src/utils-win.h)
+        target_sources(${bin}
+            PRIVATE src/utils-win.c src/utils-win.h)
+    endif()
+    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+        target_sources(${bin}
+            PRIVATE src/utils-linux.c src/utils-linux.h)
+    endif()
+
+    if(WIN32)
         target_include_directories(${bin} PRIVATE
             ${GLIB_STATIC_INCLUDE_DIRS} ${ICONV_STATIC_INCLUDE_DIRS})
         target_compile_options    (${bin} PRIVATE

@@ -281,7 +281,7 @@ _compare_idx_versions (rbin_struct *record,
         return;
 
     if (meta->version != (int64_t) record->version) {
-        g_critical ("Bad entry at %s, meta = %lld, rec = %lld",
+        g_critical ("Bad entry at %s, meta ver = %" G_GINT64_FORMAT ", rec = %" G_GINT64_FORMAT,
             record->index_s, meta->version, (int64_t)record->version);
         meta->version = VERSION_INCONSISTENT;
     }

@@ -14,6 +14,9 @@
 #ifdef G_OS_WIN32
 #  include "utils-win.h"
 #endif
+#ifdef __GLIBC__
+#  include "utils-linux.h"
+#endif
 
 /* These aren't intended for public */
 #define DECL_OPT_CALLBACK(func)          \
@@ -437,7 +440,7 @@ _fileargs_handler (GOptionContext *context,
         return FALSE;
     }
 
-#ifdef G_OS_WIN32
+#if (defined G_OS_WIN32 || defined __GLIBC__)
     {
         meta->filename = g_strdup ("(current system)");
         GSList *bindirs = enumerate_drive_bins();
@@ -817,7 +820,7 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
             g_option_group_add_entries (group, rbinfile_options);
             break;
         case RECYCLE_BIN_TYPE_DIR:
-#ifdef G_OS_WIN32
+#if (defined G_OS_WIN32 || defined __GLIBC__)
             g_option_group_add_entries (group, live_options);
 #else
             // TODO live inspection in WSL
@@ -1238,7 +1241,7 @@ _print_csv_header (metarecord *meta)
         g_print ("\n");
     }
 
-#ifdef G_OS_WIN32
+#if (defined G_OS_WIN32 || defined __GLIBC__)
     if (live_mode)
     {
         char *product_name = windows_product_name();
