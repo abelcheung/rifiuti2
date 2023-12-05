@@ -66,7 +66,7 @@ typedef enum
 
 enum
 {
-    OUTPUT_NONE,
+    OUTPUT_NONE = 0,
     OUTPUT_CSV,
     OUTPUT_XML
 };
@@ -95,13 +95,13 @@ typedef struct _rbin_meta
      * For `$Recycle.bin`, it is determined collectively from all index files within
      * the folder.
      */
-    int64_t         version;
+    int64_t version;
     /**
      * @brief Size of each trash record within index file
      * @note It is either 280 or 800 bytes, depending on Windows version
      * @attention For `INFO2` only. `$Recycle.bin` has only one record per file.
      */
-    uint32_t        recordsize;
+    gsize recordsize;
     /**
      * @brief Total entry ever existed in `INFO2` file
      * @note On Windows 95 and NT 4.x, `INFO2` keeps a field for counting number
@@ -145,7 +145,7 @@ typedef struct _rbin_struct
      * while this one keeps individual version of index file.
      * @attention For `$Recycle.bin` only
      */
-    uint64_t          version;
+    uint64_t version;
 
     /**
      * @brief Chronological index number for INFO2
@@ -165,7 +165,7 @@ typedef struct _rbin_struct
      * @brief Trashed time (`deltime`) stored as Windows datetime integer
      * @note For internal entry sorting in `$Recycle.bin`. `INFO2` records sort using `index_n` field.
      */
-    int64_t           winfiletime;
+    int64_t winfiletime;
 
     /**
      * @brief Trashed file size
@@ -173,7 +173,7 @@ typedef struct _rbin_struct
      * depending on Recycle bin version. Not invertigated
      * thoroughly yet.
      */
-    uint64_t          filesize;
+    uint64_t filesize;
 
     /* despite var names, all filenames are converted to UTF-8 upon parsing */
 
@@ -182,7 +182,7 @@ typedef struct _rbin_struct
      * @note Original path was stored in index file in UTF-16 encoding
      * since Windows 2000. The path is converted to UTF-8 encoding and stored here .
      */
-    char             *uni_path;
+    char *uni_path;
     /**
      * @brief ANSI encoded trash file original path
      * @note Until Windows 2003, index file preserves trashed file path in
@@ -190,7 +190,7 @@ typedef struct _rbin_struct
      * @attention For `INFO2` only. Can be either full path or using 8.3 format,
      * depending on Windows version and code page used.
      */
-    char             *legacy_path;
+    char *legacy_path;
     /**
      * @brief Whether original trashed file is gone
      * @note Trash file can be detected if it still exists, but via very
@@ -206,7 +206,7 @@ typedef struct _rbin_struct
      * path is removed and stored elsewhere, which corresponds to drive letter.
      * @attention For `INFO2` only
      */
-    unsigned char     drive;
+    unsigned char drive;
 } rbin_struct;
 
 /* convenience macro */
@@ -225,7 +225,7 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-metarecord   *rifiuti_init            (void);
+metarecord *  rifiuti_init                (void);
 
 void          rifiuti_setup_opt_ctx       (GOptionContext  **context,
                                            rbin_type         type,
@@ -261,11 +261,11 @@ void          print_version_and_exit      (void) G_GNUC_NORETURN;
 
 void          free_record_cb              (rbin_struct      *record);
 
-char *        conv_path_to_utf8_with_tmpl (const char      *str,
-                                           const char      *from_enc,
-                                           const char      *tmpl,
-                                           size_t          *read,
-                                           r2status        *st);
+char *        conv_path_to_utf8_with_tmpl (const char       *str,
+                                           const char       *from_enc,
+                                           const char       *tmpl,
+                                           size_t           *read,
+                                           r2status         *st);
 
 void          free_vars                   (metarecord       *meta);
 

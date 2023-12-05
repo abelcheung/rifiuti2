@@ -67,7 +67,7 @@ get_win_timezone_name (void)
     WCHAR    *name    = NULL;
     DWORD     id;
     char     *result  = NULL;
-    GError   *err     = NULL;
+    GError   *error   = NULL;
 
     id = GetTimeZoneInformation (&tzinfo);
     g_debug ("%s(): GetTimeZoneInformation() = %lu", __func__, id);
@@ -92,10 +92,10 @@ get_win_timezone_name (void)
 
     if (name) {
         result = g_utf16_to_utf8 ((const gunichar2 *) name,
-            -1, NULL, NULL, &err);
-        if (err) {
-            g_critical ("%s(): %s", __func__, err->message);
-            g_clear_error (&err);
+            -1, NULL, NULL, &error);
+        if (error) {
+            g_critical ("%s(): %s", __func__, error->message);
+            g_clear_error (&error);
         }
     }
 
@@ -120,7 +120,7 @@ _get_user_sid (void)
     gboolean       ok;
     gunichar2      username[UNLEN + 1], *domainname;
     char           *errmsg;
-    DWORD          err = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
+    DWORD          e = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
     PSID           sid;
     SID_NAME_USE   sidtype;
 
@@ -134,10 +134,10 @@ _get_user_sid (void)
     ok = LookupAccountNameW (NULL, username, NULL, &sidsize,
             NULL, &domainsize, &sidtype);
     if (!ok) {
-        err = GetLastError();
-        if ( err != ERROR_INSUFFICIENT_BUFFER )
+        e = GetLastError();
+        if ( e != ERROR_INSUFFICIENT_BUFFER )
         {
-            errmsg = g_win32_error_message (err);
+            errmsg = g_win32_error_message (e);
             g_critical (_("1st LookupAccountName() failed: %s"), errmsg);
             goto getsid_fail;
         }

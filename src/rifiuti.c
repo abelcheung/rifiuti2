@@ -345,7 +345,7 @@ main (int    argc,
         goto cleanup;
     }
 
-    /* Print everything */
+    // TODO use g_file_set_contents_full in glib 2.66
     {
         FILE *fh = prep_tempfile_if_needed(&error);
         if (error) {

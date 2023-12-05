@@ -18,12 +18,12 @@
 #  include "utils-linux.h"
 #endif
 
-/* These aren't intended for public */
+/* Common function signature for option callbacks */
 #define DECL_OPT_CALLBACK(func)          \
 gboolean func (const gchar   *opt_name,  \
                const gchar   *value,     \
                gpointer       data,      \
-               GError       **err)
+               GError       **error)
 
 static DECL_OPT_CALLBACK(_check_legacy_encoding);
 static DECL_OPT_CALLBACK(_set_output_path);
@@ -85,7 +85,7 @@ static FILE        *err_fh             = NULL; /*!< unused for Windows console *
        GSList      *filelist           = NULL;
        gboolean     isolated_index     = FALSE;
 
-/*! These options are only effective for tab delimited mode output */
+/* Options intended for tab delimited mode output only */
 static const GOptionEntry text_options[] = {
     {
         "delimiter", 't', 0,
@@ -105,6 +105,7 @@ static const GOptionEntry text_options[] = {
     { 0 }
 };
 
+/* Global options for program */
 static const GOptionEntry main_options[] = {
     {
         "output", 'o', 0,
@@ -135,7 +136,7 @@ static const GOptionEntry main_options[] = {
     { 0 }
 };
 
-/*! Appended to main option group if program is INFO2 reader */
+/* Options only intended for INFO2 reader */
 static const GOptionEntry rbinfile_options[] = {
     {
         "legacy-filename", 'l', 0,
@@ -146,7 +147,7 @@ static const GOptionEntry rbinfile_options[] = {
     { 0 }
 };
 
-/* Append to main option group if program is $Recycle.bin reader */
+/* Options only intended for live system probation */
 static const GOptionEntry live_options[] = {
     {
         "live", 0, 0,
@@ -156,13 +157,11 @@ static const GOptionEntry live_options[] = {
     { 0 }
 };
 
-/*
- * Option handling related routines
- */
+/* Following routines are command argument handling related */
 
 static gboolean
 _set_output_mode (int       mode,
-                  GError  **err)
+                  GError  **error)
 {
     if (output_mode == mode)
         return TRUE;
@@ -172,29 +171,39 @@ _set_output_mode (int       mode,
         return TRUE;
     }
 
-    g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+    g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
         _("Plain text format options can not be used in XML mode."));
     return FALSE;
 }
 
+
+/**
+ * @brief Option callback for setting output mode to XML
+ * @return `FALSE` if option conflict exists, `TRUE` otherwise
+ */
 static gboolean
 _set_output_xml (const gchar *opt_name,
                  const gchar *value,
                  gpointer     data,
-                 GError     **err)
+                 GError     **error)
 {
     UNUSED(opt_name);
     UNUSED(value);
     UNUSED(data);
 
-    return _set_output_mode (OUTPUT_XML, err);
+    return _set_output_mode (OUTPUT_XML, error);
 }
 
+
+/**
+ * @brief Option callback for setting TSV header visibility
+ * @return `FALSE` if option conflict exists, `TRUE` otherwise
+ */
 static gboolean
 _set_opt_noheading (const gchar *opt_name,
                     const gchar *value,
                     gpointer     data,
-                    GError     **err)
+                    GError     **error)
 {
     UNUSED(opt_name);
     UNUSED(value);
@@ -202,13 +211,16 @@ _set_opt_noheading (const gchar *opt_name,
 
     no_heading = TRUE;
 
-    return _set_output_mode (OUTPUT_CSV, err);
+    return _set_output_mode (OUTPUT_CSV, error);
 }
 
-/*!
- * single/double quotes and backslashes have already been
- * quoted / unquoted when parsing arguments. We need to
- * interpret \\r, \\n etc separately
+
+/**
+ * @brief Extra level of escape for escape sequences in delimiters
+ * @param str The original delimiter string
+ * @return Escaped delimiter string
+ * @note Delimiter needs another escape because it is later used
+ * in `printf` routines. It handles `\\r`, `\\n`, `\\t` and `\\e`.
  */
 static char *
 _filter_escapes (const char *str)
@@ -258,11 +270,16 @@ _filter_escapes (const char *str)
     return g_string_free (result, FALSE);
 }
 
+
+/**
+ * @brief Option callback for setting field delimiter in TSV output
+ * @return `FALSE` if duplicate options are found, `TRUE` otherwise
+ */
 static gboolean
 _set_opt_delim (const gchar *opt_name,
                const gchar *value,
                gpointer     data,
-               GError     **err)
+               GError     **error)
 {
     UNUSED(opt_name);
     UNUSED(data);
@@ -271,7 +288,7 @@ _set_opt_delim (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple delimiter options disallowed."));
         return FALSE;
     }
@@ -279,14 +296,20 @@ _set_opt_delim (const gchar *opt_name,
 
     delim = (*value) ? _filter_escapes (value) : g_strdup ("");
 
-    return _set_output_mode (OUTPUT_CSV, err);
+    return _set_output_mode (OUTPUT_CSV, error);
 }
 
+
+/**
+ * @brief Option callback to set output file location
+ * @return `FALSE` if duplicate options are found, or
+ * output file location already exists. `TRUE` otherwise.
+ */
 static gboolean
 _set_output_path (const gchar *opt_name,
                   const gchar *value,
                   gpointer     data,
-                  GError     **err)
+                  GError     **error)
 {
     UNUSED(opt_name);
     UNUSED(data);
@@ -295,7 +318,7 @@ _set_output_path (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple output destinations disallowed."));
         return FALSE;
     }
@@ -303,13 +326,13 @@ _set_output_path (const gchar *opt_name,
 
     if ( *value == '\0' )
     {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Empty output filename disallowed."));
         return FALSE;
     }
 
     if (g_file_test (value, G_FILE_TEST_EXISTS)) {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Output destinations already exists."));
         return FALSE;
     }
@@ -318,24 +341,35 @@ _set_output_path (const gchar *opt_name,
     return TRUE;
 }
 
+
+/**
+ * @brief Emits warning when an argument is marked as deprecated
+ * @return Always `TRUE`
+ */
 static gboolean
 _option_deprecated (const gchar *opt_name,
                     const gchar *unused,
                     gpointer     data,
-                    GError     **err)
+                    GError     **error)
 {
     UNUSED(unused);
     UNUSED(data);
-    UNUSED(err);
+    UNUSED(error);
     g_warning(_("Option '%s' is deprecated and ignored."), opt_name);
     return TRUE;
 }
 
+
+/**
+ * @brief Check if supplied legacy ANSI code page is valid
+ * @return `TRUE` if supplied code page is usable, `FALSE` otherwise.
+ * @note Code page is not validated against actual recycle bin record.
+ */
 static gboolean
 _check_legacy_encoding (const gchar *opt_name,
                         const gchar *enc,
                         gpointer     data,
-                        GError     **err)
+                        GError     **error)
 {
     UNUSED(opt_name);
     UNUSED(data);
@@ -345,7 +379,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if (seen)
     {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
             _("Multiple encoding options disallowed."));
         return FALSE;
     }
@@ -353,7 +387,7 @@ _check_legacy_encoding (const gchar *opt_name,
 
     if ( *enc == '\0' )
     {
-        g_set_error_literal (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+        g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("Empty encoding option disallowed."));
         return FALSE;
     }
@@ -380,7 +414,7 @@ _check_legacy_encoding (const gchar *opt_name,
     }
 
     if (g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_NO_CONVERSION)) {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+        g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("'%s' encoding is not supported by glib library "
             "on this system.  If iconv program is present on "
             "system, use 'iconv -l' for a list of possible "
@@ -396,7 +430,7 @@ _check_legacy_encoding (const gchar *opt_name,
         g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE) ||
         g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT)
     ) {
-        g_set_error (err, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+        g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
             _("'%s' is incompatible to any Windows code page."), enc);
     } else
         g_assert_not_reached ();
@@ -405,6 +439,12 @@ _check_legacy_encoding (const gchar *opt_name,
     return FALSE;
 }
 
+
+/**
+ * @brief File argument check callback, after handling all arguments
+ * @return `TRUE` if a unique file argument is used under common scenario,
+ * or no file argument is provided in live mode. `FALSE` otherwise.
+ */
 static gboolean
 _fileargs_handler (GOptionContext *context,
                    GOptionGroup   *group,
@@ -460,16 +500,21 @@ _fileargs_handler (GOptionContext *context,
     return TRUE;
 }
 
+
+/**
+ * @brief post-callback after handling all text related arguments
+ * @return Always `TRUE`, denoting success. It never fails.
+ */
 static gboolean
 _text_default_options (GOptionContext *context,
                        GOptionGroup   *group,
                        gpointer        data,
-                       GError        **err)
+                       GError        **error)
 {
     UNUSED (context);
     UNUSED (group);
     UNUSED (data);
-    UNUSED (err);
+    UNUSED (error);
 
     /* Fallback values after successful option parsing */
     if (delim == NULL)
@@ -506,8 +551,20 @@ ucs2_strnlen (const char *str, size_t max_sz)
 #endif
 }
 
+
+/**
+ * @brief Move character pointer for specified bytes
+ * @param sz Must be either 1 or 2, denoting broken byte or broken UCS2 character
+ * @param in_str Reference to input string to be converted
+ * @param read_bytes Reference to already read bytes count to keep track of
+ * @param out_str Reference to output string to be appended
+ * @param write_bytes Reference to writable bytes count to decrement
+ * @param tmpl `printf` template to represent the broken character
+ * @note This is the core of `conv_path_to_utf8_with_tmpl()` doing
+ * error fallback, converting a single broken char to `printf` output.
+ */
 static void
-_advance_char (size_t       sz,
+_advance_octet (size_t       sz,
                gchar      **in_str,
                gsize       *read_bytes,
                gchar      **out_str,
@@ -547,7 +604,16 @@ _advance_char (size_t       sz,
     return;
 }
 
-/*! Last argument is there to avoid recomputing */
+
+/**
+ * @brief Convert non-printable characters to escape sequences
+ * @param str The original string to be converted
+ * @param tmpl `printf` template to represent non-printable chars
+ * @return Converted string, maybe containing escape sequences
+ * @attention Caller is responsible for using correct template, no
+ * error checking is performed. This template should handle a single
+ * Windows unicode path character, which is in UTF-16LE encoding.
+ */
 static char *
 _filter_printable_char (const char *str,
                         const char *tmpl)
@@ -578,20 +644,26 @@ _filter_printable_char (const char *str,
     return g_string_free (s, FALSE);
 }
 
-/*!
- * Converts a Windows path in specified legacy encoding or unicode
- * path into UTF-8 encoded version. When encoding error arises,
- * it attempts to be robust and substitute concerned bytes or
- * unicode codepoints with escaped ones specified by printf-style
- * template. This routine is not for generic charset conversion.
- *
- * 1. Caller is responsible to only supply non-stateful encoding
- * meant to be used as Windows code page, or use NULL to represent
- * UTF-16LE (the Windows unicode path encoding). Never supply
- * any unicode encoding directly.
- *
- * 2. Caller is responsible for using correct printf template
- * for desired data type, no check is done here.
+
+/**
+ * @brief Convert path to UTF-8 encoding with customizable fallback
+ * @param path The path string to be converted
+ * @param from_enc Either a legacy Windows ANSI encoding, or use
+ * `NULL` to represent Windows wide char encoding (UTF-16LE)
+ * @param tmpl `printf`-style string template to represent broken character
+ * @param read Reference to number of successfully read bytes
+ * @param st Reference to exit status integer, modified if error happens
+ * @return UTF-8 encoded path, or `NULL` if conversion error happens
+ * @note This is very similar to `g_convert_with_fallback()`, but the
+ * fallback is a `printf`-style string instead of a fixed string.
+ * @attention 1. This routine is not for generic charset conversion.
+ * Only supply encoding used in Windows ANSI code page, or use `NULL`
+ * for unicode path.
+ * @attention 1. Caller is responsible for using correct template, no
+ * error checking is performed.
+ * This template should handle either single- or double-octet, namely
+ * `%u`, `%o`, `%d`, `%i`, `%x` and `%X`. `%c` is no good since byte
+ * sequence concerned can't be converted to proper UTF-8 character.
  */
 char *
 conv_path_to_utf8_with_tmpl (const char *path,
@@ -642,7 +714,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
     g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
             rbyte, wbyte);
 
-    /* Pass 1: Convert whole string to UTF-8, all illegal seq become escaped hex */
+    /* Pass 1: Convert to UTF-8, all illegal seq become escaped hex */
     while (TRUE)
     {
         int e;
@@ -665,7 +737,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
         switch (e) {
             case EILSEQ:
             case EINVAL:
-                _advance_char (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
+                _advance_octet (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
                 /* reset state, hopefully Windows don't use stateful encoding at all */
                 g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);
                 *st = R2_ERR_USER_ENCODING;
@@ -684,7 +756,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
     if (read != NULL)
         *read = r_total - rbyte;
 
-    /* Pass 2: Convert all ctrl characters (and some more) to hex */
+    /* Pass 2: Convert all non-printable chars to hex */
     if (g_utf8_validate (u8_path, -1, NULL))
         result = _filter_printable_char (u8_path, tmpl);
     else {
@@ -697,10 +769,12 @@ conv_path_to_utf8_with_tmpl (const char *path,
     return result;
 }
 
-/*
- * Date / Time handling routines
- */
 
+/**
+ * @brief Converts Windows FILETIME number to glib counterpart
+ * @param win_filetime The FILETIME integer to be converted
+ * @return `GDateTime` with UTC timezone
+ */
 GDateTime *
 win_filetime_to_gdatetime (int64_t win_filetime)
 {
@@ -732,7 +806,6 @@ _local_print (gboolean    is_stdout,
     fh = is_stdout ? out_fh : err_fh;
 
 #ifdef G_OS_WIN32
-    // See init_wincon_handle() for more info
     if (fh == NULL)
     {
         wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, NULL);
@@ -756,6 +829,11 @@ _local_printerr (const char *str)
     _local_print (FALSE, str);
 }
 
+
+/**
+ * @brief Initialize program setup
+ * @return Pointer to a fresh metadata structure
+ */
 metarecord *
 rifiuti_init (void)
 {
@@ -782,6 +860,13 @@ rifiuti_init (void)
     return meta;
 }
 
+
+/**
+ * @brief Prepare for glib option group setup
+ * @param context Pointer to option context to be modified
+ * @param type Recycle bin type; some options may or may not be available depending on type
+ * @param meta Pointer to metadata structure
+ */
 void
 rifiuti_setup_opt_ctx (GOptionContext **context,
                        rbin_type        type,
@@ -823,7 +908,6 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 #if (defined G_OS_WIN32 || defined __GLIBC__)
             g_option_group_add_entries (group, live_options);
 #else
-            // TODO live inspection in WSL
             UNUSED (live_options);
 #endif
             break;
@@ -920,6 +1004,7 @@ utf16le_to_utf8 (const gunichar2   *str,
 #endif
 }
 
+
 /**
  * @brief Wrapper of `g_mkstemp()` that returns file handle
  * @param error A `GError` pointer to store potential problem
@@ -954,7 +1039,14 @@ _get_tempfile (GError **error)
     return fh;
 }
 
-/*! Scan folder and add all "$Ixxxxxx.xxx" to filelist for parsing */
+
+/**
+ * @brief Scan folder and add all index files for parsing
+ * @param list Pointer to file list to be modified
+ * @param path The folder to scan
+ * @param error Pointer to `GError` for error reporting
+ * @return `TRUE` on success, `FALSE` if folder can't be opened
+ */
 static gboolean
 _populate_index_file_list (GSList     **list,
                            const char  *path,
@@ -965,10 +1057,8 @@ _populate_index_file_list (GSList     **list,
     char           *fname;
     GPatternSpec   *pattern1, *pattern2;
 
-    /*
-     * g_dir_open returns cryptic error message or even succeeds on Windows,
-     * when in fact the directory content is inaccessible.
-     */
+    // g_dir_open() returns cryptic error message or even succeeds on Windows,
+    // when in fact the directory content is inaccessible.
 #ifdef G_OS_WIN32
     if ( !can_list_win32_folder (path, error) ) {
         return FALSE;
@@ -1033,6 +1123,11 @@ _found_desktop_ini (const char *path)
 }
 
 
+/**
+ * @brief Guess Windows version which generated recycle bin index file
+ * @param meta Pointer to metadata structure
+ * @return Enum constant representing approximate Windows version range
+ */
 static _os_guess
 _guess_windows_ver (const metarecord *meta)
 {
@@ -1050,9 +1145,7 @@ _guess_windows_ver (const metarecord *meta)
         }
     }
 
-    /*
-     * INFO2 only below
-     */
+    /* INFO2 only below */
 
     switch (meta->version)
     {
@@ -1203,6 +1296,9 @@ clean_tempfile_if_needed (FILE *fh, GError **error)
 }
 
 
+/**
+ * @brief Close all output / error file handles before exit
+ */
 void
 close_handles (void)
 {
@@ -1218,6 +1314,10 @@ close_handles (void)
 }
 
 
+/**
+ * @brief Print preamble and column header for TSV output
+ * @param meta Pointer to metadata structure
+ */
 static void
 _print_csv_header (metarecord *meta)
 {
@@ -1291,6 +1391,7 @@ _print_csv_header (metarecord *meta)
 
     g_print ("\n");
 
+    /* TODO Not using gettext, GArray usage becomes unnecessary */
     {
         GArray   *col_array;
         char     *headerline;
@@ -1313,14 +1414,18 @@ _print_csv_header (metarecord *meta)
     }
 }
 
+
+/**
+ * @brief Print preamble for XML output
+ * @param meta Pointer to metadata structure
+ */
 static void
 _print_xml_header (metarecord *meta)
 {
     char       *rbin_path, *ever_existed;
     GString    *result;
 
-    result = g_string_new (
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    result = g_string_new ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
     /* TODO Add meta->type check */
     if (meta->total_entry == 0)
@@ -1348,6 +1453,11 @@ _print_xml_header (metarecord *meta)
 }
 
 
+/**
+ * @brief Stub routine for printing header
+ * @param meta Pointer for metadata structure
+ * @note Calls other printing routine depending on output mode
+ */
 static void
 _print_header (metarecord *meta)
 {
@@ -1372,6 +1482,11 @@ _print_header (metarecord *meta)
 }
 
 
+/**
+ * @brief Print content of each recycle bin record
+ * @param record Pointer to each recycle bin record
+ * @param meta Pointer to metadata structure
+ */
 static void
 _print_record_cb (rbin_struct *record,
                   const metarecord *meta)
@@ -1460,6 +1575,9 @@ _print_record_cb (rbin_struct *record,
 }
 
 
+/**
+ * @brief Print footer of recycle bin data
+ */
 static void
 _print_footer (void)
 {
@@ -1479,6 +1597,10 @@ _print_footer (void)
 }
 
 
+/**
+ * @brief Dump all results to screen or designated output file
+ * @param meta Metadata structure containing all records
+ */
 void
 dump_content (metarecord *meta)
 {
@@ -1488,6 +1610,9 @@ dump_content (metarecord *meta)
 }
 
 
+/**
+ * @brief Print program version with some text, then exit
+ */
 void
 print_version_and_exit (void)
 {
@@ -1503,6 +1628,10 @@ print_version_and_exit (void)
 }
 
 
+/**
+ * @brief Free all fields used in a single recycle bin record
+ * @param record Pointer to the record structure
+ */
 void
 free_record_cb (rbin_struct *record)
 {
@@ -1514,6 +1643,10 @@ free_record_cb (rbin_struct *record)
 }
 
 
+/**
+ * @brief Free all variables used in program
+ * @param meta Pointer to metadata structure
+ */
 void
 free_vars (metarecord *meta)
 {

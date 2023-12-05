@@ -1,3 +1,12 @@
+## 0.8.1
+
+### Feature
+
+- `rifiuti2` compiled under [Windows Subsystem for Linux][wsl] can do
+  live probation of Windows host system recycle bins
+
+[wsl]: https://learn.microsoft.com/en-us/windows/wsl/
+
 ## 0.8.0
 
 ### Breaking Change

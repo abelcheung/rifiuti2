@@ -4,7 +4,7 @@
 .\"
 .\" rifiuti2 is released under Revised BSD License.
 
-.TH "@PROJECT_NAME@" "1" "Nov 2023" "@PROJECT_VERSION@" "@PROJECT_DESCRIPTION@"
+.TH "@PROJECT_NAME@" "1" "Dec 2023" "@PROJECT_VERSION@" "@PROJECT_DESCRIPTION@"
 
 .SH NAME
 @PROJECT_NAME@ \[em] @PROJECT_DESCRIPTION@
@@ -19,6 +19,10 @@
 .br
 .B "\fCrifiuti-vista\/\fP [\-x | [\-n] [\-t \fIdelim\/\fP]] [\-z]"
 .B "[\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_or_dir\/\fP"
+.br
+(for Windows and WSL)
+.B "\fCrifiuti-vista\/\fP --live [\-x | [\-n] [\-t \fIdelim\/\fP]]"
+.B "[\-z] [\-o \fIoutfile\/\fP]
 .ad n
 
 .SH DESCRIPTION

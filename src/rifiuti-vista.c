@@ -31,7 +31,7 @@ validate_index_file (const char  *filename,
 {
     gsize           expected;
     int             status;
-    GError         *err = NULL;
+    GError         *error = NULL;
     char           *buf;
 
     g_debug ("Start file validation for '%s'...", filename);
@@ -43,11 +43,11 @@ validate_index_file (const char  *filename,
     g_return_val_if_fail ( (ver      != NULL), R2_ERR_INTERNAL );
     g_return_val_if_fail ( (pathlen  != NULL), R2_ERR_INTERNAL );
 
-    if ( !g_file_get_contents (filename, &buf, bufsize, &err) )
+    if ( !g_file_get_contents (filename, &buf, bufsize, &error) )
     {
         g_critical (_("%s(): failed to retrieve file content for '%s': %s"),
-            __func__, filename, err->message);
-        g_clear_error (&err);
+            __func__, filename, error->message);
+        g_clear_error (&error);
         status = R2_ERR_OPEN_FILE;
         goto validation_error;
     }
@@ -261,8 +261,8 @@ parse_record_cb (char *index_file,
 
 
 static int
-sort_record_by_time (gconstpointer left,
-                     gconstpointer right)
+_sort_record_by_time (gconstpointer left,
+                      gconstpointer right)
 {
     const rbin_struct *a = *((rbin_struct **) left);
     const rbin_struct *b = *((rbin_struct **) right);
@@ -338,7 +338,7 @@ main (int    argc,
         goto cleanup;
     }
 
-    g_ptr_array_sort (meta->records, sort_record_by_time);
+    g_ptr_array_sort (meta->records, _sort_record_by_time);
     if (! _set_overall_rbin_version (meta))
     {
         g_printerr ("%s", _("Index files come from multiple versions of Windows."
@@ -348,7 +348,7 @@ main (int    argc,
         goto cleanup;
     }
 
-    /* Print everything */
+    // TODO use g_file_set_contents_full in glib 2.66
     {
         FILE *fh = prep_tempfile_if_needed(&error);
         if (error) {
