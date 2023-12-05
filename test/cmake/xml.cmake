@@ -102,3 +102,13 @@ endfunction()
 createXmlTestSet(1 INFO2-sample1)
 createXmlTestSet(2 dir-sample1)
 createXmlTestSet(3 INFO-95-ja-1 -l CP932)
+
+
+# Make sure no version is printed if $Recycle.bin
+# is empty because no index can be found; but empty
+# INFO2 still contains version info
+generate_simple_comparison_test (NoVerIfDirEmpty 0
+    dir-empty dir-empty.xml "xml" -x)
+
+generate_simple_comparison_test (HasVerIfInfo2Empty 1
+    INFO2-empty INFO2-empty.xml "xml" -x)

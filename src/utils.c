@@ -1413,31 +1413,33 @@ _print_csv_header (metarecord *meta)
 static void
 _print_xml_header (metarecord *meta)
 {
-    char       *rbin_path, *ever_existed;
-    GString    *result;
+    GString *result;
 
     result = g_string_new ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
-    /* TODO Add meta->type check */
-    if (meta->total_entry == 0)
-        ever_existed = g_strdup("");
-    else
-        ever_existed = g_strdup_printf (
-            " ever_existed=\"%" G_GUINT32_FORMAT "\"", meta->total_entry);
-
-    /* No proper way to report wrong version info yet */
     g_string_append_printf (result,
-        "<recyclebin format=\"%s\" version=\"%" G_GINT64_FORMAT "\"%s>\n",
-        ( meta->type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir",
-        MAX (meta->version, 0),
-        ever_existed);
-    g_free (ever_existed);
+        "<recyclebin format=\"%s\"",
+        ( meta->type == RECYCLE_BIN_TYPE_FILE ) ? "file" : "dir");
 
-    rbin_path = g_filename_display_name (meta->filename);
-    g_string_append_printf (result,
-        "  <filename><![CDATA[%s]]></filename>\n",
-        rbin_path);
-    g_free (rbin_path);
+    if (meta->version >= 0)  /* can be found and not error */
+        g_string_append_printf (result,
+            " version=\"%" G_GINT64_FORMAT "\"",
+            meta->version);
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
+        g_string_append_printf (result,
+            " ever_existed=\"%" G_GUINT32_FORMAT "\"",
+            meta->total_entry);
+
+    result = g_string_append (result, ">\n");
+
+    {
+        char *rbin_path = g_filename_display_name (meta->filename);
+        g_string_append_printf (result,
+            "  <filename><![CDATA[%s]]></filename>\n",
+            rbin_path);
+        g_free (rbin_path);
+    }
 
     g_print ("%s", result->str);
     g_string_free (result, TRUE);
