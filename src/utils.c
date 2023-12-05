@@ -1312,10 +1312,11 @@ close_handles (void)
 static void
 _print_csv_header (metarecord *meta)
 {
-    char *rbin_path = g_filename_display_name (meta->filename);
-
-    g_print (_("Recycle bin path: '%s'\n"), rbin_path);
-    g_free (rbin_path);
+    {
+        char *rbin_path = g_filename_display_name (meta->filename);
+        g_print (_("Recycle bin path: '%s'\n"), rbin_path);
+        g_free (rbin_path);
+    }
 
     if (meta->version == VERSION_NOT_FOUND) {
         g_print ("%s\n", _("Version: ??? (empty folder)"));
@@ -1382,26 +1383,14 @@ _print_csv_header (metarecord *meta)
 
     g_print ("\n");
 
-    /* TODO Not using gettext, GArray usage becomes unnecessary */
     {
-        GArray   *col_array;
-        char     *headerline;
-        char     *fields[] = {
+        char *fields[] = {
             /* TRANSLATOR COMMENT: appears in column header */
             N_("Index"), N_("Deleted Time"), N_("Gone?"), N_("Size"), N_("Path"), NULL
         };
-
-        col_array = g_array_sized_new (TRUE, TRUE, sizeof (gpointer), 5);
-        for (char **col_ptr = fields; *col_ptr != NULL; col_ptr++) {
-            // const char *t = gettext (*col_ptr++);
-            g_array_append_val (col_array, *col_ptr);
-        }
-
-        headerline = g_strjoinv (delim, (char **) col_array->data);
+        char *headerline = g_strjoinv (delim, fields);
         g_print ("%s\n", headerline);
-
         g_free (headerline);
-        g_array_free (col_array, TRUE);
     }
 }
 
