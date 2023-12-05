@@ -860,38 +860,35 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
                        char          ***argv,
                        GError         **error)
 {
-    int       argc;
-    char    **args;
-    GArray   *arg_array;  // TODO GStrvBuilder since 2.68
-
-    argc = g_strv_length (*argv);
+    gsize     argc;
+    char    **argv_u8;
 
 #ifdef G_OS_WIN32
-    args = g_win32_get_command_line ();
+    argv_u8 = g_win32_get_command_line ();
+    UNUSED (argv);
 #else
-    args = g_strdupv (*argv);
+    argv_u8 = g_strdupv (*argv);
 #endif
 
-    arg_array = g_array_new (TRUE, TRUE, sizeof(gpointer));
-    g_array_append_vals (arg_array, args, argc);
+    argc = g_strv_length (argv_u8);
     if (argc == 1) {
-        char *help_opt = g_strdup ("--help-all");
-        g_array_append_val (arg_array, help_opt);
+        argv_u8 = g_realloc_n (argv_u8, argc + 2, sizeof(gpointer));
+        argv_u8[argc++] = "--help-all";
+        argv_u8[argc] = (void *) NULL;
 #ifdef G_OS_WIN32
         g_set_print_handler (gui_message);
 #endif
     }
 
     {
-        char *args_str = g_strjoinv("|", (char **) arg_array->data);
-        g_debug("Calling args: %s", args_str);
+        char *args_str = g_strjoinv("|", argv_u8);
+        g_debug("Calling argv_u8 (%zu): %s", argc, args_str);
         g_free(args_str);
     }
 
-    g_option_context_parse_strv (*context,
-        (char ***) &(arg_array->data), error);
+    g_option_context_parse_strv (*context, &argv_u8, error);
     g_option_context_free (*context);
-    g_array_unref (arg_array);
+    g_strfreev (argv_u8);
 
     return (*error != NULL) ? R2_ERR_ARG : R2_OK;
 }
