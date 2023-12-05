@@ -33,7 +33,6 @@ typedef enum
     R2_ERR_WRITE_FILE,
     R2_ERR_USER_ENCODING,
     R2_ERR_INTERNAL = 64,
-    R2_ERR_GUI_HELP  /* temporary usage in GUI help */
 } r2status;
 
 typedef enum
