@@ -877,15 +877,6 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
 
     /* FIXME Sneaky metadata modification! Think about cleaner way */
     meta->type = type;
-    switch (type) {
-        case RECYCLE_BIN_TYPE_DIR:
-            meta->has_legacy_path  = FALSE;
-            meta->has_unicode_path = TRUE;
-            break;
-        case RECYCLE_BIN_TYPE_FILE:
-            meta->has_legacy_path  = TRUE;
-        default: break;
-    }
 
     desc_str = g_strdup_printf (
         _("Usage help: %s\nBug report: %s\nMore info : %s"),

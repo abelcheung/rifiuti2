@@ -109,14 +109,6 @@ typedef struct _rbin_meta
      */
     uint32_t total_entry;
     /**
-     * @brief Whether recycle bin record contains ANSI encoded path
-     */
-    gboolean has_legacy_path;
-    /**
-     * @brief Whether recycle bin record contains UTF-16 encoded path
-     */
-    gboolean has_unicode_path;
-    /**
      * @brief Whether empty spaces in index file was padded with junk data
      * @note For Windows 98, ME and 2000, paths and fields are not padded with
      * zero filled memory, but with arbitrary random data, presumably memory

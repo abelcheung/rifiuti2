@@ -85,8 +85,6 @@ validate_index_file (const char  *filename,
     {
       case LEGACY_RECORD_SIZE:
 
-        meta->has_unicode_path = FALSE;
-
         if ( ( ver != VERSION_ME_03 ) &&  /* ME still use 280 byte record */
              ( ver != VERSION_WIN98 ) &&
              ( ver != VERSION_WIN95 ) )
@@ -118,7 +116,6 @@ validate_index_file (const char  *filename,
 
       case UNICODE_RECORD_SIZE:
 
-        meta->has_unicode_path = TRUE;
         if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
         {
             g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
@@ -147,8 +144,9 @@ validate_index_file (const char  *filename,
 
 
 static rbin_struct *
-populate_record_data (void *buf,
-                      metarecord *meta)
+populate_record_data (void     *buf,
+                      gsize     bufsize,
+                      gboolean *junk_detected)
 {
     rbin_struct    *record;
     uint32_t        drivenum;
@@ -216,12 +214,10 @@ populate_record_data (void *buf,
 
     g_free (legacy_fname);
 
-    if (! meta->has_unicode_path)
+    if (bufsize == LEGACY_RECORD_SIZE)
         return record;
 
-    /*******************************************
-     * Part below deals with unicode path only *
-     *******************************************/
+    /* Part below deals with unicode path only */
 
     record->uni_path = conv_path_to_utf8_with_tmpl (
         (char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
@@ -248,7 +244,7 @@ populate_record_data (void *buf,
      * legacy path field, then overwritten in place by a 8.3
      * version of path whenever applicable (which was always shorter).
      */
-    if (! meta->fill_junk)
+    if (junk_detected && ! *junk_detected)
     {
         void *ptr;
 
@@ -259,7 +255,7 @@ populate_record_data (void *buf,
             {
                 g_debug ("Junk detected at offset 0x%tx of unicode path",
                     ptr - buf - UNICODE_FILENAME_OFFSET);
-                meta->fill_junk = TRUE;
+                *junk_detected = TRUE;
                 break;
             }
         }
@@ -295,7 +291,7 @@ parse_record_cb (char *index_file,
 
     while (record_sz == (read_sz = fread (buf, 1, record_sz, infile)))
     {
-        record = populate_record_data (buf, meta);
+        record = populate_record_data (buf, record_sz, &meta->fill_junk);
         g_ptr_array_add (meta->records, record);
     }
     g_free (buf);
