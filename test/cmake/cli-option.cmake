@@ -214,3 +214,16 @@ function(addSepCompareTests)
 endfunction()
 
 addSepCompareTests()
+
+# Live option
+# TODO think about possibility to configure recycle bin
+# specifically for GitHub Windows Server runner
+
+add_test(NAME d_LiveProbeOpt
+    COMMAND rifiuti-vista --live)
+set_tests_properties(d_LiveProbeOpt
+    PROPERTIES
+        LABELS "recycledir;arg"
+        SKIP_RETURN_CODE 1
+        PASS_REGULAR_EXPRESSION "\\(current system\\)")
+
