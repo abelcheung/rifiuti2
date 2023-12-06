@@ -522,15 +522,22 @@ _fileargs_handler (GOptionContext *context,
     {
         meta->filename = g_strdup ("(current system)");
         GSList *bindirs = enumerate_drive_bins();
+        if (!bindirs)
+        {
+            g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                _("Live probation unsupported under this system; "
+                "requires running under Windows or WSL distribution."));
+            return FALSE;
+        }
+
         GSList *ptr = bindirs;
         while (ptr) {
             // Ignore errors, pretty common that some folders don't
-            // exist or is empty.
+            // exist or are empty.
             _check_file_args (ptr->data, &filelist,
                 meta->type, NULL, NULL);
             ptr = ptr->next;
         }
-        ptr = NULL;
         g_slist_free_full (bindirs, g_free);
     }
 #endif

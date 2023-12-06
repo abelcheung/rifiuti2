@@ -164,17 +164,17 @@ enumerate_drive_bins (void)
 
     if (! (drive_bitmap = GetLogicalDrives())) {
         errmsg = g_win32_error_message (GetLastError());
-        g_critical (_("Failed to enumerate drives in system: %s"), errmsg);
+        g_debug (_("Failed to enumerate Windows drives: %s"), errmsg);
         goto enumerate_cleanup;
     }
 
     if (NULL == (sid = _get_user_sid())) {
-        g_critical (_("Failed to get SID of current user"));
+        g_debug (_("Failed to get SID of current user"));
         goto enumerate_cleanup;
     }
     if (! ConvertSidToStringSidA(sid, &sid_str)) {
         errmsg = g_win32_error_message (GetLastError());
-        g_critical (_("Failed to convert SID to string: %s"), errmsg);
+        g_debug (_("Failed to convert SID to string: %s"), errmsg);
         goto enumerate_cleanup;
     }
 
@@ -198,7 +198,7 @@ enumerate_drive_bins (void)
 
     enumerate_cleanup:
     // sid_str owned by system
-    g_free (sid);
+    LocalFree (sid);
     g_free (errmsg);
     return result;
 }

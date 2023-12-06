@@ -135,12 +135,15 @@ enumerate_drive_bins (void)
     char *sid = _get_user_sid ();
 
     if (sid == NULL)
+    {
+        g_debug ("%s", "Failed to get SID of current user");
         return NULL;
+    }
 
     result = _probe_mounts ();
     if (result == NULL)
     {
-        g_critical ("%s", "Failed to detect valid Windows drive");
+        g_debug ("%s", "Failed to enumerate Windows drives");
         return NULL;
     }
 
