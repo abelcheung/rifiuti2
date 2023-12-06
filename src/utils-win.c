@@ -23,25 +23,13 @@ static HANDLE winerr_fh = NULL;
 void
 gui_message (const char *message)
 {
-    gunichar2 *title, *body;
-    GError *error = NULL;
+    gunichar2 *title = L"This is a command line application";
+    gunichar2 *body = g_utf8_to_utf16 (message, -1, NULL, NULL, NULL);
 
-    title = g_utf8_to_utf16 (_("This is a command line application"),
-        -1, NULL, NULL, &error);
-    if (error) {
-        g_clear_error (&error);
-        title = g_utf8_to_utf16 ("This is a command line application",
+    if (body == NULL)
+        body = g_utf8_to_utf16 ("(Failure to display help)",
             -1, NULL, NULL, NULL);
-    }
 
-    body = g_utf8_to_utf16 (message, -1, NULL, NULL, &error);
-    if (error) {
-        g_clear_error (&error);
-        body = g_utf8_to_utf16 ("(Original message failed to be displayed in UTF-16)",
-            -1, NULL, NULL, NULL);
-    }
-
-    /* Takes advantage of the fact that LPCWSTR (wchar_t) is actually 16bit on Windows */
     MessageBoxW (NULL, (LPCWSTR) body, (LPCWSTR) title,
         MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
     g_free (title);
