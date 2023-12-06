@@ -20,17 +20,28 @@
 
 /* Common function signature for option callbacks */
 #define DECL_OPT_CALLBACK(func)          \
-gboolean func (const gchar   *opt_name,  \
-               const gchar   *value,     \
-               gpointer       data,      \
-               GError       **error)
+static gboolean func (       \
+    const gchar   *opt_name, \
+    const gchar   *value,    \
+    gpointer       data,     \
+    GError       **error)
 
-static DECL_OPT_CALLBACK(_check_legacy_encoding);
-static DECL_OPT_CALLBACK(_set_output_path);
-static DECL_OPT_CALLBACK(_option_deprecated);
-static DECL_OPT_CALLBACK(_set_opt_delim);
-static DECL_OPT_CALLBACK(_set_opt_noheading);
-static DECL_OPT_CALLBACK(_set_output_xml);
+DECL_OPT_CALLBACK(_check_legacy_encoding);
+DECL_OPT_CALLBACK(_set_output_path);
+DECL_OPT_CALLBACK(_option_deprecated);
+DECL_OPT_CALLBACK(_set_opt_delim);
+DECL_OPT_CALLBACK(_set_opt_noheading);
+DECL_OPT_CALLBACK(_set_output_xml);
+DECL_OPT_CALLBACK(_show_ver_and_exit);
+
+/* pre-declared out of laziness */
+
+static int
+_check_file_args (const char  *path,
+                  GSList     **list,
+                  rbin_type    type,
+                  gboolean    *isolated_index,
+                  GError     **error);
 
 
 /**
@@ -74,16 +85,18 @@ static char *os_strings[] = {
 static int          output_mode        = OUTPUT_NONE;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
-       gboolean     live_mode          = FALSE;
+static gboolean     live_mode          = FALSE;
 static char        *delim              = NULL;
-       char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
 static char        *output_loc         = NULL;
-static char        *tmppath            = NULL; /*!< used iff output_loc is defined */
-       char       **fileargs           = NULL;
+static char       **fileargs           = NULL;
 static FILE        *out_fh             = NULL; /*!< unused for Windows console */
 static FILE        *err_fh             = NULL; /*!< unused for Windows console */
+
        GSList      *filelist           = NULL;
        gboolean     isolated_index     = FALSE;
+       char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
+       metarecord  *meta               = NULL;
+
 
 /* Options intended for tab delimited mode output only */
 static const GOptionEntry text_options[] = {
@@ -125,7 +138,7 @@ static const GOptionEntry main_options[] = {
     },
     {
         "version", 'v', G_OPTION_FLAG_NO_ARG,
-        G_OPTION_ARG_CALLBACK, (GOptionArgFunc) print_version_and_exit,
+        G_OPTION_ARG_CALLBACK, _show_ver_and_exit,
         N_("Print version information and exit"), NULL
     },
     {
@@ -441,6 +454,33 @@ _check_legacy_encoding (const gchar *opt_name,
 
 
 /**
+ * @brief Print program version with some text, then exit
+ */
+static gboolean
+_show_ver_and_exit (const gchar *opt_name,
+                    const gchar *value,
+                    gpointer     data,
+                    GError     **error)
+{
+    UNUSED (opt_name);
+    UNUSED (value);
+    UNUSED (data);
+    UNUSED (error);
+
+    g_print ("%s %s\n", PROJECT_NAME, PROJECT_VERSION);
+    g_print ("%s\n\n", PROJECT_DESCRIPTION);
+    /* TRANSLATOR COMMENT: %s is software name */
+    g_print (_("%s is released under Revised BSD License.\n"), PROJECT_NAME);
+    /* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
+    g_print (_("More information can be found on\n\n\t%s\n"),
+        PROJECT_HOMEPAGE_URL);
+
+    // OK I cheated, it is not returning at all.
+    exit (R2_OK);
+}
+
+
+/**
  * @brief File argument check callback, after handling all arguments
  * @return `TRUE` if a unique file argument is used under common scenario,
  * or no file argument is provided in live mode. `FALSE` otherwise.
@@ -466,7 +506,7 @@ _fileargs_handler (GOptionContext *context,
         }
         meta->filename = g_strdup (fileargs[0]);
 
-        int sts = check_file_args (meta->filename, &filelist,
+        int sts = _check_file_args (meta->filename, &filelist,
             meta->type, &isolated_index, error);
 
         return (sts == R2_OK);
@@ -488,7 +528,7 @@ _fileargs_handler (GOptionContext *context,
         while (ptr) {
             // Ignore errors, pretty common that some folders don't
             // exist or is empty.
-            check_file_args (ptr->data, &filelist,
+            _check_file_args (ptr->data, &filelist,
                 meta->type, NULL, NULL);
             ptr = ptr->next;
         }
@@ -831,46 +871,14 @@ _local_printerr (const char *str)
 
 
 /**
- * @brief Initialize program setup
- * @return Pointer to a fresh metadata structure
- */
-metarecord *
-rifiuti_init (void)
-{
-    metarecord *meta;
-
-    setlocale (LC_ALL, "");
-
-#ifdef G_OS_WIN32
-    if (! init_wincon_handle (FALSE))
-#endif
-        err_fh = stderr;
-    g_set_printerr_handler (_local_printerr);
-
-#ifdef G_OS_WIN32
-    if (! init_wincon_handle (TRUE))
-#endif
-        out_fh = stdout;
-    g_set_print_handler (_local_printout);
-
-    meta = g_malloc0 (sizeof (metarecord));
-
-    meta->records = g_ptr_array_new ();
-    g_ptr_array_set_free_func (meta->records, (GDestroyNotify) free_record_cb);
-    return meta;
-}
-
-
-/**
  * @brief Prepare for glib option group setup
  * @param context Pointer to option context to be modified
  * @param type Recycle bin type; some options may or may not be available depending on type
  * @param meta Pointer to metadata structure
  */
-void
-rifiuti_setup_opt_ctx (GOptionContext **context,
-                       rbin_type        type,
-                       metarecord      *meta)
+static void
+_opt_ctxt_setup (GOptionContext **context,
+                 rbin_type        type)
 {
     char         *desc_str;
     GOptionGroup *group, *txt_group;
@@ -931,9 +939,9 @@ rifiuti_setup_opt_ctx (GOptionContext **context,
  *         `error` is set upon error as well.
  */
 r2status
-rifiuti_parse_opt_ctx (GOptionContext **context,
-                       char          ***argv,
-                       GError         **error)
+_opt_ctxt_parse (GOptionContext **context,
+                 char          ***argv,
+                 GError         **error)
 {
     gsize     argc;
     char    **argv_u8;
@@ -969,6 +977,61 @@ rifiuti_parse_opt_ctx (GOptionContext **context,
 }
 
 
+/**
+ * @brief Free all fields used in a single recycle bin record
+ * @param record Pointer to the record structure
+ */
+static void
+_free_record_cb (rbin_struct *record)
+{
+    g_free (record->index_s);
+    g_date_time_unref (record->deltime);
+    g_free (record->uni_path);
+    g_free (record->legacy_path);
+    g_free (record);
+}
+
+
+/**
+ * @brief Initialize program setup
+ */
+r2status
+rifiuti_init (rbin_type  type,
+              char      *usage_param,
+              char      *usage_summary,
+              char    ***argv,
+              GError   **error)
+{
+    GOptionContext *context;
+
+    setlocale (LC_ALL, "");
+
+#ifdef G_OS_WIN32
+    if (! init_wincon_handle (FALSE))
+#endif
+        err_fh = stderr;
+    g_set_printerr_handler (_local_printerr);
+
+#ifdef G_OS_WIN32
+    if (! init_wincon_handle (TRUE))
+#endif
+        out_fh = stdout;
+    g_set_print_handler (_local_printout);
+
+    /* Initialize metadata struct */
+    meta = g_malloc0 (sizeof (metarecord));
+    meta->records = g_ptr_array_new ();
+    g_ptr_array_set_free_func (meta->records, (GDestroyNotify) _free_record_cb);
+
+    /* Parse command line arguments and generate help */
+    context = g_option_context_new (usage_param);
+    g_option_context_set_summary (context, usage_summary);
+    _opt_ctxt_setup (&context, type);
+
+    return _opt_ctxt_parse (&context, argv, error);
+}
+
+
 /*!
  * Wrapper of g_utf16_to_utf8 for big endian system.
  * Always assume string is nul-terminated. (Unused now?)
@@ -998,15 +1061,21 @@ utf16le_to_utf8 (const gunichar2   *str,
 
 /**
  * @brief Wrapper of `g_mkstemp()` that returns file handle
+ * @param fh Reference to `FILE` pointer to store file handle
+ * @param path Reference to char pointer to store temp file path
  * @param error A `GError` pointer to store potential problem
- * @return File handle of temp file, or `NULL` upon error
+ * @return `TRUE` if successful, `FALSE` otherwise
  */
-static FILE *
-_get_tempfile (GError **error)
+static gboolean
+_get_tempfile (FILE   **fh,
+               char   **path,
+               GError **error)
 {
     int     fd, e = 0;
-    FILE   *fh;
     char   *tmpl;
+
+    g_return_val_if_fail (fh   && ! *fh  , FALSE);
+    g_return_val_if_fail (path && ! *path, FALSE);
 
     /* segfaults if string is pre-allocated in stack */
     tmpl = g_strdup ("rifiuti-XXXXXX");
@@ -1015,19 +1084,19 @@ _get_tempfile (GError **error)
         e = errno;
         g_set_error_literal (error, G_FILE_ERROR,
             g_file_error_from_errno(e), g_strerror(e));
-        return NULL;
+        return FALSE;
     }
 
-    if (NULL == (fh = fdopen (fd, "wb"))) {
+    if (NULL == (*fh = fdopen (fd, "wb"))) {
         e = errno;
         g_set_error_literal (error, G_FILE_ERROR,
             g_file_error_from_errno(e), g_strerror(e));
         g_close (fd, NULL);
-        return NULL;
+        return FALSE;
     }
 
-    tmppath = tmpl;
-    return fh;
+    *path = tmpl;
+    return TRUE;
 }
 
 
@@ -1173,12 +1242,12 @@ _guess_windows_ver (const metarecord *meta)
  * @return Exit status, which can potentially be used as global
  * exit status of program.
  */
-int
-check_file_args (const char  *path,
-                 GSList     **list,
-                 rbin_type    type,
-                 gboolean    *isolated_index,
-                 GError     **error)
+static int
+_check_file_args (const char  *path,
+                  GSList     **list,
+                  rbin_type    type,
+                  gboolean    *isolated_index,
+                  GError     **error)
 {
     g_debug ("Start checking path '%s'...", path);
 
@@ -1230,68 +1299,10 @@ check_file_args (const char  *path,
 
 
 /**
- * @brief  Prepare temp file handle if required
- * @param  error A `GError` pointer to store potential problem
- * @return Previous output file handle if temp file is
- *         created successfully, otherwise `NULL`
- * @note   This func is a noop if `output_loc` is not set via
- *         command line argument
- */
-FILE *
-prep_tempfile_if_needed (GError **error)
-{
-    FILE *new_fh = NULL, *prev_fh = NULL;
-
-    if (!output_loc)
-        return NULL;
-
-    new_fh = _get_tempfile (error);
-    if (*error)
-        return NULL;
-
-    prev_fh = out_fh;
-    out_fh  = new_fh;
-    return prev_fh;
-}
-
-
-/**
- * @brief Perform temp file cleanup actions if necessary
- * @param fh File handle to use, after temp file has been
- *        closed. Usually this should be the file handle
- *        returned by `prep_tempfile_if_needed()`. Can
- *        be `NULL`, which means no further output is
- *        necessary, or Windows console handle is used instead.
- * @param error A `GError` pointer to store potential problem
- */
-void
-clean_tempfile_if_needed (FILE *fh, GError **error)
-{
-    if (!tmppath)
-        return;
-
-    g_assert (output_loc != NULL);
-    g_assert (out_fh != NULL);
-
-    fclose (out_fh);
-    out_fh = fh;
-
-    if (0 == g_rename (tmppath, output_loc))
-        return;
-
-    int e = errno;
-
-    g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
-        _("%s.\nTemp file can't be moved to destination '%s', "),
-        g_strerror(e), output_loc);
-}
-
-
-/**
  * @brief Close all output / error file handles before exit
  */
-void
-close_handles (void)
+static void
+_close_handles (void)
 {
     if (out_fh != NULL)
         fclose (out_fh);
@@ -1437,11 +1448,10 @@ _print_xml_header (metarecord *meta)
 
 /**
  * @brief Stub routine for printing header
- * @param meta Pointer for metadata structure
  * @note Calls other printing routine depending on output mode
  */
 static void
-_print_header (metarecord *meta)
+_print_header (void)
 {
     if (no_heading) return;
 
@@ -1581,64 +1591,73 @@ _print_footer (void)
 
 /**
  * @brief Dump all results to screen or designated output file
- * @param meta Metadata structure containing all records
+ * @param error Reference of `GError` pointer to store potential problem
+ * @return `TRUE` if output writing is successful, `FALSE` otherwise
  */
-void
-dump_content (metarecord *meta)
+gboolean
+dump_content (GError **error)
 {
-    _print_header (meta);
+    FILE *tmp_fh = NULL, *prev_fh = NULL;
+    char *tmp_path = NULL;
+
+    if (output_loc)
+    {
+        // TODO use g_file_set_contents_full in glib 2.66
+        if (_get_tempfile (&tmp_fh, &tmp_path, error))
+        {
+            prev_fh = out_fh;
+            out_fh  = tmp_fh;
+        }
+        else
+            return FALSE;
+    }
+
+    _print_header ();
     g_ptr_array_foreach (meta->records, (GFunc) _print_record_cb, meta);
     _print_footer ();
+
+    if (!tmp_path)
+        return TRUE;
+
+    if (prev_fh)
+    {
+        fclose (out_fh);
+        out_fh = prev_fh;
+    }
+
+    if (0 == g_rename (tmp_path, output_loc))
+    {
+        g_free (tmp_path);
+        return TRUE;
+    }
+
+    g_free (tmp_path);
+    int e = errno;
+    g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
+        _("%s.\nTemp file can't be moved to destination '%s', "),
+        g_strerror(e), output_loc);
+    return FALSE;
 }
 
 
 /**
- * @brief Print program version with some text, then exit
- */
-void
-print_version_and_exit (void)
-{
-    g_print ("%s %s\n", PROJECT_NAME, PROJECT_VERSION);
-    g_print ("%s\n\n", PROJECT_DESCRIPTION);
-    /* TRANSLATOR COMMENT: %s is software name */
-    g_print (_("%s is released under Revised BSD License.\n"), PROJECT_NAME);
-    /* TRANSLATOR COMMENT: 1st argument is software name, 2nd is official URL */
-    g_print (_("More information can be found on\n\n\t%s\n"),
-        PROJECT_HOMEPAGE_URL);
-
-    exit (R2_OK);
-}
-
-
-/**
- * @brief Free all fields used in a single recycle bin record
- * @param record Pointer to the record structure
- */
-void
-free_record_cb (rbin_struct *record)
-{
-    g_free (record->index_s);
-    g_date_time_unref (record->deltime);
-    g_free (record->uni_path);
-    g_free (record->legacy_path);
-    g_free (record);
-}
-
-
-/**
- * @brief Free all variables used in program
+ * @brief Final cleanup before exiting program, e.g. free all variables
  * @param meta Pointer to metadata structure
  */
 void
-free_vars (metarecord *meta)
+rifiuti_cleanup (void)
 {
+    g_debug ("Cleaning up...");
+
     g_ptr_array_unref (meta->records);
     g_free (meta->filename);
     g_free (meta);
 
+    g_slist_free_full (filelist, (GDestroyNotify) g_free);
     g_strfreev (fileargs);
     g_free (output_loc);
     g_free (legacy_encoding);
     g_free (delim);
-    g_free (tmppath);
+
+    _close_handles ();
 }

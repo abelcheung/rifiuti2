@@ -15,6 +15,8 @@
 static r2status     exit_status = R2_OK;
 extern char        *legacy_encoding;
 extern GSList      *filelist;
+extern metarecord  *meta;
+
 
 /* 0-25 => A-Z, 26 => '\', 27 or above is erraneous */
 unsigned char   driveletters[28] =
@@ -315,20 +317,16 @@ int
 main (int    argc,
       char **argv)
 {
-    GOptionContext     *context;
-    GError             *error = NULL;
-    metarecord         *meta;
+    GError *error = NULL;
 
     UNUSED (argc);
 
-    meta = rifiuti_init ();
-
-    /* TRANSLATOR: appears in help text short summary */
-    context = g_option_context_new (N_("INFO2"));
-    g_option_context_set_summary (context, N_(
-        "Parse INFO2 file and dump recycle bin data."));
-    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_FILE, meta);
-    exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
+    exit_status = rifiuti_init (
+        RECYCLE_BIN_TYPE_FILE,
+        N_("INFO2"),
+        N_("Parse INFO2 file and dump recycle bin data."),
+        &argv, &error
+    );
     if (exit_status != R2_OK)
         goto cleanup;
 
@@ -336,25 +334,13 @@ main (int    argc,
 
     if (! meta->records->len && (exit_status != R2_OK))
     {
-        g_printerr ("%s", _("Recycle bin file has no valid record.\n"));
+        g_printerr ("%s", _("No valid recycle bin record found.\n"));
         exit_status = R2_ERR_BROKEN_FILE;
         goto cleanup;
     }
 
-    // TODO use g_file_set_contents_full in glib 2.66
-    {
-        FILE *fh = prep_tempfile_if_needed(&error);
-        if (error) {
-            exit_status = R2_ERR_OPEN_FILE;
-            goto cleanup;
-        }
-        dump_content (meta);
-        clean_tempfile_if_needed (fh, &error);
-        if (error) {
-            exit_status = R2_ERR_WRITE_FILE;
-            goto cleanup;
-        }
-    }
+    if (!dump_content (&error))
+        exit_status = R2_ERR_WRITE_FILE;
 
     cleanup:
 
@@ -380,12 +366,9 @@ main (int    argc,
             }
             break;
     }
-    g_debug ("Cleaning up...");
 
-    g_slist_free_full (filelist, (GDestroyNotify) g_free);
+    rifiuti_cleanup ();
     g_clear_error (&error);
-    free_vars (meta);
-    close_handles ();
 
     return exit_status;
 }

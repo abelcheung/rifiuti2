@@ -14,8 +14,8 @@
 #endif
 
 static r2status     exit_status = R2_OK;
-// Whether input argument is single index file out of `$Recycle.bin`
 extern GSList      *filelist;
+extern metarecord  *meta;
 
 /*!
  * Check if index file has sufficient amount of data for reading.
@@ -310,21 +310,18 @@ int
 main (int    argc,
       char **argv)
 {
-    GOptionContext     *context;
-    GError             *error = NULL;
-    metarecord         *meta;
+    GError *error = NULL;
 
     UNUSED (argc);
 
-    meta = rifiuti_init ();
-
-    /* TRANSLATOR: appears in help text short summary */
-    context = g_option_context_new (N_("DIR_OR_FILE"));
-    g_option_context_set_summary (context, N_(
-        "Parse index files in C:\\$Recycle.bin style folder "
-        "and dump recycle bin data.  Can also dump a single index file."));
-    rifiuti_setup_opt_ctx (&context, RECYCLE_BIN_TYPE_DIR, meta);
-    exit_status = rifiuti_parse_opt_ctx (&context, &argv, &error);
+    exit_status = rifiuti_init (
+        RECYCLE_BIN_TYPE_DIR,
+        N_("DIR_OR_FILE"),
+        N_("Parse index files in C:\\$Recycle.bin style "
+           "folder and dump recycle bin data.  "
+           "Can also dump a single index file."),
+        &argv, &error
+    );
     if (exit_status != R2_OK)
         goto cleanup;
 
@@ -332,8 +329,7 @@ main (int    argc,
 
     if (! meta->records->len && (exit_status != R2_OK))
     {
-        g_printerr ("%s", _("No valid recycle bin index file found."));
-        g_printerr ("\n");
+        g_printerr ("%s", _("No valid recycle bin record found.\n"));
         exit_status = R2_ERR_BROKEN_FILE;
         goto cleanup;
     }
@@ -348,20 +344,8 @@ main (int    argc,
         goto cleanup;
     }
 
-    // TODO use g_file_set_contents_full in glib 2.66
-    {
-        FILE *fh = prep_tempfile_if_needed(&error);
-        if (error) {
-            exit_status = R2_ERR_OPEN_FILE;
-            goto cleanup;
-        }
-        dump_content (meta);
-        clean_tempfile_if_needed (fh, &error);
-        if (error) {
-            exit_status = R2_ERR_WRITE_FILE;
-            goto cleanup;
-        }
-    }
+    if (!dump_content (&error))
+        exit_status = R2_ERR_WRITE_FILE;
 
     cleanup:
 
@@ -382,12 +366,8 @@ main (int    argc,
             break;
     }
 
-    g_debug ("Cleaning up...");
-
-    g_slist_free_full (filelist, (GDestroyNotify) g_free);
+    rifiuti_cleanup ();
     g_clear_error (&error);
-    free_vars (meta);
-    close_handles ();
 
     return exit_status;
 }

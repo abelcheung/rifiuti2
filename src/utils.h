@@ -27,11 +27,11 @@
 typedef enum
 {
     R2_OK = EXIT_SUCCESS,
-    R2_ERR_ARG,
-    R2_ERR_OPEN_FILE,
+    R2_ERR_ARG,  /* Command argument parsing error */
+    R2_ERR_OPEN_FILE,  /* Fail when searching and opening index file */
     R2_ERR_BROKEN_FILE,  /* file format validation failure */
-    R2_ERR_WRITE_FILE,
-    R2_ERR_USER_ENCODING,
+    R2_ERR_WRITE_FILE,  /* Error writing output, includes manipulation of temp file */
+    R2_ERR_USER_ENCODING,  /* User provided bad encoding so some records can't display */
     R2_ERR_INTERNAL = 64,
 } r2status;
 
@@ -216,13 +216,9 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-metarecord *  rifiuti_init                (void);
-
-void          rifiuti_setup_opt_ctx       (GOptionContext  **context,
-                                           rbin_type         type,
-                                           metarecord       *meta);
-
-r2status      rifiuti_parse_opt_ctx       (GOptionContext  **context,
+r2status      rifiuti_init                (rbin_type         type,
+                                           char             *usage_param,
+                                           char             *usage_summary,
                                            char           ***argv,
                                            GError          **error);
 
@@ -234,23 +230,7 @@ char *        utf16le_to_utf8             (const gunichar2  *str,
                                            GError          **error)
                                            G_GNUC_UNUSED;
 
-int           check_file_args             (const char       *path,
-                                           GSList          **list,
-                                           rbin_type         type,
-                                           gboolean         *isolated_index,
-                                           GError          **error);
-
-FILE *        prep_tempfile_if_needed     (GError          **error);
-void          clean_tempfile_if_needed    (FILE             *fh,
-                                           GError          **error);
-
-void          close_handles               (void);
-
-void          dump_content                (metarecord       *meta);
-
-void          print_version_and_exit      (void) G_GNUC_NORETURN;
-
-void          free_record_cb              (rbin_struct      *record);
+gboolean      dump_content                (GError          **error);
 
 char *        conv_path_to_utf8_with_tmpl (const char       *str,
                                            const char       *from_enc,
@@ -258,6 +238,6 @@ char *        conv_path_to_utf8_with_tmpl (const char       *str,
                                            size_t           *read,
                                            r2status         *st);
 
-void          free_vars                   (metarecord       *meta);
+void          rifiuti_cleanup             (void);
 
 #endif
