@@ -216,7 +216,7 @@ typedef struct _rbin_struct
 #define WIN_PATH_MAX 260
 
 /* shared functions */
-r2status      rifiuti_init                (rbin_type         type,
+gboolean      rifiuti_init                (rbin_type         type,
                                            char             *usage_param,
                                            char             *usage_summary,
                                            char           ***argv,

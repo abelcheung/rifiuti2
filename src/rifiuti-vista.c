@@ -314,16 +314,17 @@ main (int    argc,
 
     UNUSED (argc);
 
-    exit_status = rifiuti_init (
+    if (! rifiuti_init (
         RECYCLE_BIN_TYPE_DIR,
         N_("DIR_OR_FILE"),
         N_("Parse index files in C:\\$Recycle.bin style "
            "folder and dump recycle bin data.  "
            "Can also dump a single index file."),
         &argv, &error
-    );
-    if (exit_status != R2_OK)
+    )) {
+        exit_status = R2_ERR_ARG;
         goto cleanup;
+    }
 
     g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
 

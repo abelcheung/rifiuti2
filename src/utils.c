@@ -506,10 +506,8 @@ _fileargs_handler (GOptionContext *context,
         }
         meta->filename = g_strdup (fileargs[0]);
 
-        int sts = _check_file_args (meta->filename, &filelist,
+        return _check_file_args (meta->filename, &filelist,
             meta->type, &isolated_index, error);
-
-        return (sts == R2_OK);
     }
 
     if (fileargs_len)
@@ -932,13 +930,13 @@ _opt_ctxt_setup (GOptionContext **context,
 
 /**
  * @brief Process command line arguments
- * @param context option context pointer
- * @param argv reference to command line `argv`
- * @param error reference of `GError` pointer to store errors
- * @return `R2_OK` upon parse success, `R2_ERR_ARG` on failure.
- *         `error` is set upon error as well.
+ * @param context Reference of option context pointer
+ * @param argv Reference of command line `argv`
+ * @param error Reference of `GError` pointer to store errors
+ * @return `TRUE` if argument parsing succeeds.
+ * `FALSE` on failure, and sets `error` as well.
  */
-r2status
+static gboolean
 _opt_ctxt_parse (GOptionContext **context,
                  char          ***argv,
                  GError         **error)
@@ -973,7 +971,7 @@ _opt_ctxt_parse (GOptionContext **context,
     g_option_context_free (*context);
     g_strfreev (argv_u8);
 
-    return (*error != NULL) ? R2_ERR_ARG : R2_OK;
+    return (*error == NULL);
 }
 
 
@@ -995,7 +993,7 @@ _free_record_cb (rbin_struct *record)
 /**
  * @brief Initialize program setup
  */
-r2status
+gboolean
 rifiuti_init (rbin_type  type,
               char      *usage_param,
               char      *usage_summary,
@@ -1239,10 +1237,11 @@ _guess_windows_ver (const metarecord *meta)
  * taken out of its original folder. Can be `NULL`, which means
  * this check is not performed.
  * @param error A `GError` pointer to store potential problems
- * @return Exit status, which can potentially be used as global
- * exit status of program.
+ * @return `TRUE` if input file/dir is valid, `FALSE` otherwise
+ * @attention Successful result does not imply files are appended
+ * to list, which is the case for empty recycle bin
  */
-static int
+static gboolean
 _check_file_args (const char  *path,
                   GSList     **list,
                   rbin_type    type,
@@ -1257,14 +1256,14 @@ _check_file_args (const char  *path,
     {
         g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
             _("'%s' does not exist."), path);
-        return R2_ERR_OPEN_FILE;
+        return FALSE;
     }
 
     if ((type == RECYCLE_BIN_TYPE_DIR) &&
         g_file_test (path, G_FILE_TEST_IS_DIR))
     {
         if ( ! _populate_index_file_list (list, path, error) )
-            return R2_ERR_OPEN_FILE;
+            return FALSE;
         /*
          * last ditch effort: search for desktop.ini. Just print empty content
          * representing empty recycle bin if found.
@@ -1274,7 +1273,7 @@ _check_file_args (const char  *path,
             g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
                 _("No files with name pattern '%s' "
                 "are found in directory."), "$Ixxxxxx.*");
-            return R2_ERR_OPEN_FILE;
+            return FALSE;
         }
     }
     else if (g_file_test (path, G_FILE_TEST_IS_REGULAR))
@@ -1292,9 +1291,9 @@ _check_file_args (const char  *path,
             (type == RECYCLE_BIN_TYPE_DIR) ?
             _("'%s' is not a normal file or directory.") :
             _("'%s' is not a normal file."), path);
-        return R2_ERR_OPEN_FILE;
+        return FALSE;
     }
-    return R2_OK;
+    return TRUE;
 }
 
 

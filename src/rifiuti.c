@@ -321,14 +321,15 @@ main (int    argc,
 
     UNUSED (argc);
 
-    exit_status = rifiuti_init (
+    if (! rifiuti_init (
         RECYCLE_BIN_TYPE_FILE,
         N_("INFO2"),
         N_("Parse INFO2 file and dump recycle bin data."),
         &argv, &error
-    );
-    if (exit_status != R2_OK)
+    )) {
+        exit_status = R2_ERR_ARG;
         goto cleanup;
+    }
 
     g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
 
