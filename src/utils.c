@@ -18,6 +18,11 @@
 #  include "utils-linux.h"
 #endif
 
+/* Our own error domain */
+
+G_DEFINE_QUARK (rifiuti-misc-error-quark, rifiuti_fatal_error)
+G_DEFINE_QUARK (rifiuti-record-error-quark, rifiuti_record_error)
+
 /* Common function signature for option callbacks */
 #define DECL_OPT_CALLBACK(func)          \
 static gboolean func (       \
