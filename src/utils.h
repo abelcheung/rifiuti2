@@ -80,6 +80,39 @@ typedef enum
     FILESTATUS_GONE
 } trash_file_status;
 
+// our own error domains
+
+#define R2_FATAL_ERROR (rifiuti_fatal_error_quark ())
+GQuark rifiuti_fatal_error_quark (void);
+
+#define R2_REC_ERROR (rifiuti_record_error_quark ())
+GQuark rifiuti_record_error_quark (void);
+
+typedef enum
+{
+    R2_FATAL_ERROR_LIVE_UNSUPPORTED,  /* Can't detect live system env */
+    R2_FATAL_ERROR_NO_VALID_RECORD,  /* all broken, not empty */
+    R2_FATAL_ERROR_VER_UNSUPPORTED,  /* (INFO2) bad version */
+    R2_FATAL_ERROR_TEMPFILE,
+
+} R2FatalError;
+
+/**
+ * @brief Per record non-fatal error
+ * @note Some error may indicate the whole record is invalidated,
+ * but there also exists very minor error that doesn't.
+ */
+typedef enum
+{
+    R2_REC_ERROR_DRIVE_LETTER,
+    R2_REC_ERROR_SUSPICIOUS_TIME,
+    R2_REC_ERROR_CONV_LEGACYPATH,
+    R2_REC_ERROR_CONV_UNIPATH,
+    R2_REC_ERROR_IDX_SIZE_INVALID,
+    R2_REC_ERROR_VER_UNSUPPORTED,  /* ($Recycle.bin) bad version */
+
+} R2RecordError;
+
 /**
  * @brief Metadata for recycle bin
  * @note This is a merge of `INFO2` and `$Recycle.bin` elements.
