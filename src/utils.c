@@ -998,6 +998,7 @@ _free_record_cb (rbin_struct *record)
     g_date_time_unref (record->deltime);
     g_free (record->uni_path);
     g_free (record->legacy_path);
+    g_clear_error (&record->error);
     g_free (record);
 }
 
@@ -1032,6 +1033,12 @@ rifiuti_init (rbin_type  type,
     meta = g_malloc0 (sizeof (metarecord));
     meta->records = g_ptr_array_new ();
     g_ptr_array_set_free_func (meta->records, (GDestroyNotify) _free_record_cb);
+    meta->invalid_records = g_hash_table_new_full (
+        g_str_hash,
+        g_str_equal,
+        (GDestroyNotify) g_free,
+        (GDestroyNotify) g_clear_error
+    );
 
     /* Parse command line arguments and generate help */
     context = g_option_context_new (usage_param);
@@ -1661,6 +1668,7 @@ rifiuti_cleanup (void)
     g_debug ("Cleaning up...");
 
     g_ptr_array_unref (meta->records);
+    g_hash_table_destroy (meta->invalid_records);
     g_free (meta->filename);
     g_free (meta);
 
