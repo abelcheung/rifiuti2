@@ -153,6 +153,10 @@ typedef struct _rbin_meta
      * @brief List of trash file records pointer
      */
     GPtrArray *records;
+    /**
+     * @brief List of invalid records and their errors
+     */
+    GHashTable *invalid_records;
 
 } metarecord;
 
@@ -231,6 +235,11 @@ typedef struct _rbin_struct
      * @attention For `INFO2` only
      */
     unsigned char drive;
+    /**
+     * @brief Error associated with this trash entry
+     */
+    GError *error;
+
 } rbin_struct;
 
 /* convenience macro */
