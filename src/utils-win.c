@@ -131,6 +131,9 @@ _get_user_sid (void)
         }
     }
 
+    // XXX Don't use standard Windows way (AllocateAndInitializeSid).
+    // Random unpredictable test failures would result, even when
+    // tests are not run in parallel.
     sid = g_malloc (sidsize);
     domainname = g_malloc (domainsize * sizeof(gunichar2));
 
@@ -197,8 +200,9 @@ enumerate_drive_bins (void)
     }
 
     enumerate_cleanup:
-    // sid_str owned by system
-    LocalFree (sid);
+    if (sid_str != NULL)
+        LocalFree (sid_str);
+    g_free (sid);
     g_free (errmsg);
     return result;
 }
