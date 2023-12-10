@@ -63,3 +63,30 @@ generate_simple_comparison_test("BadUniEnc" 0
 set_tests_properties(d_BadUniEnc_Prep
     PROPERTIES
         PASS_REGULAR_EXPRESSION "Path contains broken unicode character\\(s\\)")
+
+
+#
+# Truncated file
+#
+
+add_test(NAME f_TruncatedFile
+    COMMAND rifiuti INFO2-trunc
+    WORKING_DIRECTORY ${sample_dir})
+set_tests_properties(f_TruncatedFile
+    PROPERTIES
+        LABELS "info2;crafted"
+        PASS_REGULAR_EXPRESSION "byte range 3220 - 4015: Last segment does not constitute a valid record\.")
+
+
+#
+# Partial bad $Recycle.bin
+#
+
+# TODO different tests for stdout and stderr
+add_test(NAME d_SomeBadIdx
+    COMMAND rifiuti-vista dir-badfiles
+    WORKING_DIRECTORY ${sample_dir})
+set_tests_properties(d_SomeBadIdx
+    PROPERTIES
+        LABELS "recycledir;crafted"
+        PASS_REGULAR_EXPRESSION "\\$IX1JBL3\\.djvu: Might be an index file, but file size is unexpected\.")
