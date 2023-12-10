@@ -12,7 +12,7 @@
 #include "utils.h"
 
 
-static r2status     exit_status = R2_OK;
+static exitcode     exit_status = R2_OK;
 extern char        *legacy_encoding;
 extern GSList      *filelist;
 extern metarecord  *meta;
@@ -33,45 +33,44 @@ unsigned char   driveletters[28] =
  * If success, infile will be set to file pointer and other args
  * will be filled, otherwise file pointer = NULL
  */
-static r2status
-validate_index_file (const char  *filename,
-                     FILE       **infile,
-                     metarecord  *meta)
+static gboolean
+_validate_index_file   (const char   *filename,
+                        FILE        **infile,
+                        GError      **error)
 {
     void           *buf;
     FILE           *fp = NULL;
     uint32_t        ver;
-    int             e, ret;
+    int             e;
 
-    g_debug ("Start file validation...");
+    g_return_val_if_fail (filename && *filename, FALSE);
+    g_return_val_if_fail (infile && ! *infile, FALSE);
 
-    g_return_val_if_fail ( infile != NULL, R2_ERR_INTERNAL );
-    *infile = NULL;
+    g_debug ("Start file validation for '%s'...", filename);
 
-    if ( !(fp = g_fopen (filename, "rb")) )
+    if (! (fp = g_fopen (filename, "rb")))
     {
         e = errno;
-        g_printerr (_("Error opening file '%s' for reading: %s"),
-            filename, g_strerror (e));
-        g_printerr ("\n");
-        return R2_ERR_OPEN_FILE;
+        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
+            _("Can not open file: %s"), g_strerror(e));
+        return FALSE;
     }
 
+    /* empty recycle bin = 20 bytes */
     buf = g_malloc (RECORD_START_OFFSET);
-
-    if ( 1 > fread (buf, RECORD_START_OFFSET, 1, fp) )
+    if (1 > fread (buf, RECORD_START_OFFSET, 1, fp))
     {
-        /* TRANSLATOR COMMENT: file size must be at least 20 bytes */
-        g_critical (_("File size less than minimum allowed (%d bytes)"), RECORD_START_OFFSET);
-        ret = R2_ERR_BROKEN_FILE;
+        g_set_error_literal (error, R2_FATAL_ERROR,
+            R2_FATAL_ERROR_ILLEGAL_DATA,
+            _("File is prematurely truncated, or not an INFO2 index."));
         goto validation_broken;
     }
 
     copy_field (&ver, VERSION_OFFSET, KEPT_ENTRY_OFFSET);
     ver = GUINT32_FROM_LE (ver);
 
-    /* total_entry only meaningful for 95 and NT4, on other versions
-     * it's junk memory data, don't bother copying */
+    // total_entry only meaningful for 95 and NT4, on other versions
+    // it's junk memory data, don't bother copying
     if ( ( ver == VERSION_NT4 ) || ( ver == VERSION_WIN95 ) ) {
         copy_field (&meta->total_entry, TOTAL_ENTRY_OFFSET, RECORD_SIZE_OFFSET);
         meta->total_entry = GUINT32_FROM_LE (meta->total_entry);
@@ -82,73 +81,64 @@ validate_index_file (const char  *filename,
 
     g_free (buf);
 
-    /* Turns out version is not reliable indicator. Use size instead */
     switch (meta->recordsize)
     {
-      case LEGACY_RECORD_SIZE:
+        case LEGACY_RECORD_SIZE:
 
-        if ( ( ver != VERSION_ME_03 ) &&  /* ME still use 280 byte record */
-             ( ver != VERSION_WIN98 ) &&
-             ( ver != VERSION_WIN95 ) )
-        {
-            g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
-            g_printerr ("\n");
-            ret = R2_ERR_BROKEN_FILE;
+            if (( ver != VERSION_ME_03 ) &&  /* ME -> 280 byte record */
+                ( ver != VERSION_WIN98 ) &&
+                ( ver != VERSION_WIN95 ))
+            {
+                g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
+                    "Illegal INFO2 version %" G_GUINT32_FORMAT, ver);
+                goto validation_broken;
+            }
+
+            if (!legacy_encoding)
+            {
+                g_set_error_literal (error, G_OPTION_ERROR,
+                    G_OPTION_ERROR_FAILED,
+                    "This INFO2 file was produced on a legacy system "
+                    "without Unicode file name (Windows ME or earlier). "
+                    "Please specify codepage of concerned system with "
+                    "'-l' option.");
+                goto validation_broken;
+            }
+            break;
+
+        case UNICODE_RECORD_SIZE:
+
+            if (ver != VERSION_ME_03 && ver != VERSION_NT4)
+            {
+                g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
+                    "Illegal INFO2 version %" G_GUINT32_FORMAT, ver);
+                goto validation_broken;
+            }
+            break;
+
+        default:
+            g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
+                _("Illegal INFO2 of record size %" G_GSIZE_FORMAT),
+                meta->recordsize);
             goto validation_broken;
-        }
-
-        if (!legacy_encoding)
-        {
-            g_printerr ("%s", _("This INFO2 file was produced on a legacy system "
-                          "without Unicode file name (Windows ME or earlier). "
-                          "Please specify codepage of concerned system with "
-                          "'-l' or '--legacy-filename' option."));
-            g_printerr ("\n\n");
-            /* TRANSLATOR COMMENT: can choose example from YOUR language & code page */
-            g_printerr ("%s", _("For example, if recycle bin is expected to come from West "
-                          "European versions of Windows, use '-l CP1252' option; "
-                          "or in case of Japanese Windows, use '-l CP932'."));
-            g_printerr ("\n");
-
-            ret = R2_ERR_ARG;
-            goto validation_broken;
-        }
-
-        break;
-
-      case UNICODE_RECORD_SIZE:
-
-        if ( ( ver != VERSION_ME_03 ) && ( ver != VERSION_NT4 ) )
-        {
-            g_printerr ("%s", _("Unsupported file version, or probably not an INFO2 file at all."));
-            g_printerr ("\n");
-            ret = R2_ERR_BROKEN_FILE;
-            goto validation_broken;
-        }
-        break;
-
-      default:
-        ret = R2_ERR_BROKEN_FILE;
-        goto validation_broken;
     }
 
     rewind (fp);
     *infile = fp;
     meta->version = (uint64_t) ver;
+    return TRUE;
 
-    return R2_OK;
-
-  validation_broken:
+    validation_broken:
 
     fclose (fp);
-    return ret;
+    return FALSE;
 }
 
 
 static rbin_struct *
-populate_record_data (void     *buf,
-                      gsize     bufsize,
-                      gboolean *junk_detected)
+_populate_record_data   (void     *buf,
+                         gsize     bufsize,
+                         gboolean *junk_detected)
 {
     rbin_struct    *record;
     uint32_t        drivenum;
@@ -157,9 +147,7 @@ populate_record_data (void     *buf,
 
     record = g_malloc0 (sizeof (rbin_struct));
 
-    /* Guarantees null-termination by allocating extra byte; same goes with
-     * unicode filename */
-    legacy_fname = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET + 1);
+    legacy_fname = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
     copy_field (legacy_fname, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
 
     /* Index number associated with the record */
@@ -167,17 +155,21 @@ populate_record_data (void     *buf,
     record->index_n = GUINT32_FROM_LE (record->index_n);
     g_debug ("index=%u", record->index_n);
 
-    /* Number representing drive letter */
+    /* Number representing drive letter, 'A:' = 0, etc */
     copy_field (&drivenum, DRIVE_LETTER_OFFSET, FILETIME_OFFSET);
     drivenum = GUINT32_FROM_LE (drivenum);
     g_debug ("drive=%u", drivenum);
-    if (drivenum >= sizeof (driveletters) - 1)
-        g_warning (_("Invalid drive number (0x%X) for record %u."),
-                   drivenum, record->index_n);
+    if (drivenum >= sizeof (driveletters) - 1) {
+        g_set_error (&record->error, R2_REC_ERROR,
+            R2_REC_ERROR_DRIVE_LETTER,
+            _("Drive number %" G_GUINT32_FORMAT "does not represent "
+            "a valid drive"), drivenum);
+    }
     record->drive = driveletters[MIN (drivenum, sizeof (driveletters) - 1)];
 
     record->gone = FILESTATUS_EXISTS;
-    /* first byte will be removed from filename if file is not in recycle bin */
+    // If file is not in recycle bin (restored or permanently deleted),
+    // first byte will be removed from filename
     if (!*legacy_fname)
     {
         record->gone = FILESTATUS_GONE;
@@ -205,13 +197,8 @@ populate_record_data (void     *buf,
     if (legacy_encoding)
     {
         record->legacy_path = conv_path_to_utf8_with_tmpl (
-            legacy_fname, legacy_encoding, "<\\%02X>", &read, &exit_status);
-
-        if (record->legacy_path == NULL) {
-            g_warning (_("(Record %u) Error converting legacy path to UTF-8."),
-                record->index_n);
-            record->legacy_path = "";
-        }
+            legacy_fname, legacy_encoding,
+            "<\\%02X>", &read, &record->error);
     }
 
     g_free (legacy_fname);
@@ -223,13 +210,7 @@ populate_record_data (void     *buf,
 
     record->uni_path = conv_path_to_utf8_with_tmpl (
         (char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
-        "<\\u%04X>", &read, &exit_status);
-
-    if (record->uni_path == NULL) {
-        g_warning (_("(Record %u) Error converting unicode path to UTF-8."),
-            record->index_n);
-        record->uni_path = "";
-    }
+        "<\\u%04X>", &read, &record->error);
 
     /*
      * We check for junk memory filling the padding area after
@@ -268,19 +249,20 @@ populate_record_data (void     *buf,
 
 
 static void
-parse_record_cb (char *index_file,
-                 metarecord *meta)
+_parse_record_cb   (char *index_file,
+                    metarecord *meta)
 {
     rbin_struct   *record;
-    FILE          *infile;
+    FILE          *infile = NULL;
     gsize          read_sz, record_sz;
     void          *buf = NULL;
+    GError        *error = NULL;
+    int64_t        prev_pos, curr_pos;
 
-    exit_status = validate_index_file (index_file, &infile, meta);
-    if ( exit_status != R2_OK )
+    if (! _validate_index_file (index_file, &infile, &error))
     {
-        g_printerr (_("File '%s' fails validation."), index_file);
-        g_printerr ("\n");
+        g_hash_table_replace (meta->invalid_records,
+            g_strdup (index_file), error);
         return;
     }
 
@@ -290,26 +272,44 @@ parse_record_cb (char *index_file,
     buf = g_malloc0 (record_sz);
 
     fseek (infile, RECORD_START_OFFSET, SEEK_SET);
+    curr_pos = (int64_t) ftell (infile);
+    prev_pos = curr_pos;
 
-    while (record_sz == (read_sz = fread (buf, 1, record_sz, infile)))
+    while ((read_sz = fread (buf, 1, record_sz, infile)) > 0)
     {
-        record = populate_record_data (buf, record_sz, &meta->fill_junk);
+        prev_pos = curr_pos;
+        curr_pos = (int64_t) ftell (infile);
+        g_debug ("Read %s, byte range %" G_GINT64_FORMAT " - %" G_GINT64_FORMAT,
+            index_file, prev_pos, curr_pos);
+        if (read_sz < record_sz) {
+            g_debug ("read size = %zu, less than needed %zu", read_sz, record_sz);
+            break;
+        }
+        record = _populate_record_data (buf, record_sz, &meta->fill_junk);
         g_ptr_array_add (meta->records, record);
     }
     g_free (buf);
 
-    if ( ferror (infile) )
+    char *segment_id = g_strdup_printf ("|%" G_GINT64_FORMAT "|%" G_GINT64_FORMAT, prev_pos, curr_pos);
+
+    if (feof (infile) && read_sz && (read_sz < record_sz))
     {
-        g_critical (_("Failed to read record at position %li: %s"),
-                   ftell (infile), strerror (errno));
-        exit_status = R2_ERR_OPEN_FILE;
+        g_set_error_literal (&error, R2_REC_ERROR,
+            R2_REC_ERROR_IDX_SIZE_INVALID,
+            _("Last segment does not constitute a valid "
+            "record. Likely a premature end of file."));
     }
-    if ( feof (infile) && read_sz && ( read_sz < record_sz ) )
+    else if (ferror (infile))  // other generic error
     {
-        g_warning (_("Premature end of file, last record (%zu bytes) discarded"), read_sz);
-        exit_status = R2_ERR_BROKEN_FILE;
+        g_set_error (&error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
+            _("Failed to read record at %s"), segment_id);
     }
 
+    if (error) {
+        g_hash_table_replace (meta->invalid_records,
+            g_strdup (segment_id), error);
+    }
+    g_free (segment_id);
     fclose (infile);
 }
 
@@ -326,50 +326,35 @@ main (int    argc,
         N_("INFO2"),
         N_("Parse INFO2 file and dump recycle bin data."),
         &argv, &error
-    )) {
-        exit_status = R2_ERR_ARG;
+    ))
         goto cleanup;
-    }
 
-    g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
+    g_slist_foreach (filelist, (GFunc) _parse_record_cb, meta);
 
-    if (! meta->records->len && (exit_status != R2_OK))
+    if (! meta->records->len && g_hash_table_size (meta->invalid_records))
     {
-        g_printerr ("%s", _("No valid recycle bin record found.\n"));
-        exit_status = R2_ERR_BROKEN_FILE;
+        g_set_error_literal (&error, R2_FATAL_ERROR,
+            R2_FATAL_ERROR_ILLEGAL_DATA,
+            _("No valid recycle bin record found"));
         goto cleanup;
     }
 
-    if (!dump_content (&error))
-        exit_status = R2_ERR_WRITE_FILE;
+    if (! dump_content (&error))
+    {
+        g_assert (error->domain == G_FILE_ERROR);
+        GError *new_err = g_error_new_literal (
+            R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE,
+            g_strdup (error->message));
+        g_error_free (error);
+        error = new_err;
+    }
 
     cleanup:
 
-    switch (exit_status)
-    {
-        case R2_ERR_USER_ENCODING:
-        if (legacy_encoding) {
-            g_printerr (_("Some entries could not be interpreted in %s encoding."
-                "  The concerned characters are displayed in hex value instead."
-                "  Very likely the (localised) Windows generating the recycle bin "
-                "artifact does not use specified codepage."), legacy_encoding);
-        } else {
-            g_printerr ("%s", _("Some entries could not be presented as correct "
-                "unicode path.  The concerned characters are displayed "
-                "in escaped unicode sequences."));
-        }
-            g_printerr ("\n");
-            break;
-
-        default:
-            if (error) {
-                g_printerr ("%s\n", error->message);
-            }
-            break;
-    }
+    exit_status = rifiuti_handle_global_error (error);
+    if (rifiuti_handle_record_error () && exit_status == R2_OK)
+        exit_status = R2_ERR_DUBIOUS_DATA;
 
     rifiuti_cleanup ();
-    g_clear_error (&error);
-
     return exit_status;
 }

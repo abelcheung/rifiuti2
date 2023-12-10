@@ -702,7 +702,7 @@ _filter_printable_char (const char *str,
  * `NULL` to represent Windows wide char encoding (UTF-16LE)
  * @param tmpl `printf`-style string template to represent broken character
  * @param read Reference to number of successfully read bytes
- * @param st Reference to exit status integer, modified if error happens
+ * @param error Location to store error upon problem
  * @return UTF-8 encoded path, or `NULL` if conversion error happens
  * @note This is very similar to `g_convert_with_fallback()`, but the
  * fallback is a `printf`-style string instead of a fixed string.
@@ -720,16 +720,16 @@ conv_path_to_utf8_with_tmpl (const char *path,
                              const char *from_enc,
                              const char *tmpl,
                              size_t     *read,
-                             r2status   *st)
+                             GError    **error)
 {
     char *u8_path, *i_ptr, *o_ptr, *result = NULL;
     gsize len, r_total, rbyte, wbyte, status, in_ch_width, out_ch_width;
     GIConv conv;
+    gboolean will_set_error = FALSE;  // avoid overwriting error
 
-    /* for UTF-16, first byte of str can be null */
-    g_return_val_if_fail (path != NULL, NULL);
-    g_return_val_if_fail ((from_enc == NULL) || (*from_enc != '\0'), NULL);
-    g_return_val_if_fail ((    tmpl != NULL) && (    *tmpl != '\0'), NULL);
+    g_return_val_if_fail (! from_enc || *from_enc, NULL);
+    g_return_val_if_fail (tmpl && *tmpl, NULL);
+    g_return_val_if_fail (! error || ! *error, NULL);
 
     /* try the template */
     {
@@ -781,7 +781,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
 
         g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
             ", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
-            rbyte, wbyte, status, strerror(e), u8_path);
+            rbyte, wbyte, status, g_strerror(e), u8_path);
 
         /* XXX Should I consider the possibility of odd bytes for EINVAL? */
         switch (e) {
@@ -790,12 +790,23 @@ conv_path_to_utf8_with_tmpl (const char *path,
                 _advance_octet (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
                 /* reset state, hopefully Windows don't use stateful encoding at all */
                 g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);
-                *st = R2_ERR_USER_ENCODING;
+                will_set_error = TRUE;
                 break;
             case E2BIG:
                 /* Should have already allocated enough buffer. Let it KABOOM! otherwise. */
                 g_assert_not_reached();
         }
+    }
+
+    if (will_set_error)
+    {
+        if (from_enc)
+            g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains character(s) that could not be "
+                "interpreted in %s encoding"), from_enc);
+        else
+            g_set_error_literal (error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains broken unicode character(s)"));
     }
 
     g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
@@ -807,13 +818,9 @@ conv_path_to_utf8_with_tmpl (const char *path,
         *read = r_total - rbyte;
 
     /* Pass 2: Convert all non-printable chars to hex */
-    if (g_utf8_validate (u8_path, -1, NULL))
-        result = _filter_printable_char (u8_path, tmpl);
-    else {
-        g_critical ("%s", _("Converted path failed UTF-8 validation"));
-        *st = R2_ERR_INTERNAL;
-    }
+    g_return_val_if_fail (g_utf8_validate (u8_path, -1, NULL), NULL);
 
+    result = _filter_printable_char (u8_path, tmpl);
     g_free (u8_path);
 
     return result;
@@ -1037,7 +1044,7 @@ rifiuti_init (rbin_type  type,
         g_str_hash,
         g_str_equal,
         (GDestroyNotify) g_free,
-        (GDestroyNotify) g_clear_error
+        (GDestroyNotify) g_error_free
     );
 
     /* Parse command line arguments and generate help */
@@ -1099,15 +1106,15 @@ _get_tempfile (FILE   **fh,
 
     if (-1 == (fd = g_mkstemp(tmpl))) {
         e = errno;
-        g_set_error_literal (error, G_FILE_ERROR,
-            g_file_error_from_errno(e), g_strerror(e));
+        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
+            _("Can not create temp file: %s"), g_strerror(e));
         return FALSE;
     }
 
     if (NULL == (*fh = fdopen (fd, "wb"))) {
         e = errno;
-        g_set_error_literal (error, G_FILE_ERROR,
-            g_file_error_from_errno(e), g_strerror(e));
+        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
+            _("Can not open temp file: %s"), g_strerror(e));
         g_close (fd, NULL);
         return FALSE;
     }
@@ -1269,7 +1276,8 @@ _check_file_args (const char  *path,
 {
     g_debug ("Start checking path '%s'...", path);
 
-    g_return_val_if_fail ( (path != NULL) && (list != NULL), R2_ERR_INTERNAL );
+    g_return_val_if_fail (path != NULL, FALSE);
+    g_return_val_if_fail (list != NULL, FALSE);
 
     if (!g_file_test (path, G_FILE_TEST_EXISTS))
     {
@@ -1473,8 +1481,6 @@ _print_header (void)
 {
     if (no_heading) return;
 
-    g_debug ("Entering %s()", __func__);
-
     switch (output_mode)
     {
         case OUTPUT_CSV:
@@ -1488,7 +1494,6 @@ _print_header (void)
         default:
             g_assert_not_reached();
     }
-    g_debug ("Leaving %s()", __func__);
 }
 
 
@@ -1514,14 +1519,10 @@ _print_record_cb (rbin_struct *record,
     dt = use_localtime ? g_date_time_to_local (record->deltime):
                          g_date_time_ref      (record->deltime);
 
-    if ( record->legacy_path != NULL )
-        out_fname = g_strdup (record->legacy_path);
-    else
-    {
-        out_fname = record->uni_path ?
-            g_strdup (record->uni_path) :
-            g_strdup (_("(File name not representable in UTF-8 encoding)"));
-    }
+    out_fname = legacy_encoding ?
+        record->legacy_path : record->uni_path;
+    out_fname = out_fname ?
+        g_strdup (out_fname) : g_strdup ("???");
 
     switch (output_mode)
     {
@@ -1643,18 +1644,114 @@ dump_content (GError **error)
         out_fh = prev_fh;
     }
 
-    if (0 == g_rename (tmp_path, output_loc))
+    int result = g_rename (tmp_path, output_loc);
+    if (result != 0)
     {
-        g_free (tmp_path);
-        return TRUE;
+        int e = errno;
+        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
+            _("%s. Temp file '%s' can't be moved to destination."),
+            g_strerror(e), tmp_path);
+    }
+    g_free (tmp_path);
+    return (result == 0);
+}
+
+
+static void
+_dump_rec_error   (rbin_struct  *record,
+                   gboolean     *flag)
+{
+    g_return_if_fail (record);
+
+    if (! record->error)
+        return;
+
+    if (! *flag)
+    {
+        *flag = TRUE;
+        g_printerr ("\n%s\n", _("Error occurred in following record:"));
     }
 
-    g_free (tmp_path);
-    int e = errno;
-    g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
-        _("%s.\nTemp file can't be moved to destination '%s', "),
-        g_strerror(e), output_loc);
-    return FALSE;
+    if (record->index_n)
+        g_printerr ("%2u: %s\n", record->index_n,
+                record->error->message);
+    else
+        g_printerr ("%s: %s\n", record->index_s,
+                record->error->message);
+
+    return;
+}
+
+
+/**
+ * @brief Handle global and record errors before quitting
+ * @param error The global `GError` to process
+ * @return program exit code
+ */
+exitcode
+rifiuti_handle_global_error (GError *error)
+{
+    exitcode code = R2_OK;
+
+    if (error)
+    {
+        g_printerr ("Fatal error: %s\n", error->message);
+        if (error->domain == G_OPTION_ERROR)
+            code = R2_ERR_ARG;
+        else if (error->domain == G_FILE_ERROR)
+            code = R2_ERR_OPEN_FILE;
+        else if (g_error_matches (error,
+            R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA))
+            code = R2_ERR_ILLEGAL_DATA;
+        else if (g_error_matches (error,
+            R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE))
+            code = R2_ERR_WRITE_FILE;
+        else {
+            g_critical ("Error not handled: quark = %s, code = %d",
+                g_quark_to_string (error->domain), error->code);
+            code = R2_ERR_UNHANDLED;
+        }
+        g_error_free (error);
+    }
+
+    if (g_hash_table_size (meta->invalid_records))
+    {
+        GHashTableIter iter;
+        gpointer key, val;
+
+        code = R2_ERR_DUBIOUS_DATA;
+
+        g_hash_table_iter_init (&iter, meta->invalid_records);
+        g_printerr ("%s\n", _("Error occurred in following record:"));
+        while (g_hash_table_iter_next (&iter, &key, &val))
+        {
+            char *record_id = (char *) key;
+
+            if (*record_id == '|') {
+                char **frags = g_strsplit (record_id, "|", 0);
+                record_id = g_strdup_printf ("byte range %s - %s",
+                        frags[1], frags[2]);
+                g_strfreev (frags);
+            } else
+                record_id = g_strdup (record_id);
+            g_printerr ("%s: %s\n", record_id,
+                    ((GError *)val)->message);
+            g_free (record_id);
+        }
+    }
+    return code;
+}
+
+
+gboolean
+rifiuti_handle_record_error (void)
+{
+    gboolean flag = FALSE;
+
+    g_ptr_array_foreach (meta->records,
+            (GFunc) _dump_rec_error, &flag);
+
+    return flag;
 }
 
 

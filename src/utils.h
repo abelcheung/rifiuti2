@@ -29,11 +29,11 @@ typedef enum
     R2_OK = EXIT_SUCCESS,
     R2_ERR_ARG,  /* Command argument parsing error */
     R2_ERR_OPEN_FILE,  /* Fail when searching and opening index file */
-    R2_ERR_BROKEN_FILE,  /* file format validation failure */
     R2_ERR_WRITE_FILE,  /* Error writing output, includes manipulation of temp file */
-    R2_ERR_USER_ENCODING,  /* User provided bad encoding so some records can't display */
-    R2_ERR_INTERNAL = 64,
-} r2status;
+    R2_ERR_ILLEGAL_DATA,  /* serious file format validation failure */
+    R2_ERR_DUBIOUS_DATA,  /* affect some record(s) only */
+    R2_ERR_UNHANDLED = 64,
+} exitcode;
 
 typedef enum
 {
@@ -91,8 +91,7 @@ GQuark rifiuti_record_error_quark (void);
 typedef enum
 {
     R2_FATAL_ERROR_LIVE_UNSUPPORTED,  /* Can't detect live system env */
-    R2_FATAL_ERROR_NO_VALID_RECORD,  /* all broken, not empty */
-    R2_FATAL_ERROR_VER_UNSUPPORTED,  /* (INFO2) bad version */
+    R2_FATAL_ERROR_ILLEGAL_DATA,  /* all data broken, not empty bin */
     R2_FATAL_ERROR_TEMPFILE,
 
 } R2FatalError;
@@ -105,9 +104,9 @@ typedef enum
 typedef enum
 {
     R2_REC_ERROR_DRIVE_LETTER,
-    R2_REC_ERROR_SUSPICIOUS_TIME,
-    R2_REC_ERROR_CONV_LEGACYPATH,
-    R2_REC_ERROR_CONV_UNIPATH,
+    R2_REC_ERROR_DUBIOUS_TIME,
+    R2_REC_ERROR_DUBIOUS_PATH,
+    R2_REC_ERROR_CONV_PATH,
     R2_REC_ERROR_IDX_SIZE_INVALID,
     R2_REC_ERROR_VER_UNSUPPORTED,  /* ($Recycle.bin) bad version */
 
@@ -278,7 +277,10 @@ char *        conv_path_to_utf8_with_tmpl (const char       *str,
                                            const char       *from_enc,
                                            const char       *tmpl,
                                            size_t           *read,
-                                           r2status         *st);
+                                           GError          **error);
+
+exitcode      rifiuti_handle_global_error (GError           *error);
+gboolean      rifiuti_handle_record_error (void);
 
 void          rifiuti_cleanup             (void);
 
