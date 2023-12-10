@@ -79,7 +79,7 @@ _validate_index_file   (const char   *filename,
                 g_debug ("File size = %" G_GSIZE_FORMAT
                     ", expected = %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT, *bufsize, expect_sz, expect_sz - 1);
                 g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
-                    "%s", _("Unexpected file size, likely not a $Recycle.bin index."));
+                    "%s", _("Might be an index file, but file size is unexpected."));
                 return FALSE;
             }
             break;
@@ -99,7 +99,7 @@ _validate_index_file   (const char   *filename,
                     ", expected = %" G_GSIZE_FORMAT,
                     *bufsize, expect_sz);
                 g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
-                    "%s", _("Unexpected file size, likely not a $Recycle.bin index."));
+                    "%s", _("Might be an index file, but file size is unexpected."));
                 return FALSE;
             }
             break;
