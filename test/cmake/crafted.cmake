@@ -15,7 +15,7 @@ set_tests_properties(
     d_CraftedMixVer
     PROPERTIES
         LABELS "recycledir;crafted;xfail"
-        PASS_REGULAR_EXPRESSION "come from multiple versions")
+        PASS_REGULAR_EXPRESSION "Index files from multiple Windows versions")
 
 #
 # Create dir with bad permission
@@ -62,4 +62,4 @@ generate_simple_comparison_test("BadUniEnc" 0
 
 set_tests_properties(d_BadUniEnc_Prep
     PROPERTIES
-        PASS_REGULAR_EXPRESSION "displayed in escaped unicode sequences")
+        PASS_REGULAR_EXPRESSION "Path contains broken unicode character\\(s\\)")
