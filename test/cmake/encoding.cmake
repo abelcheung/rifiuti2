@@ -114,7 +114,7 @@ add_encoding_test_with_cwd(f_LegacyEncWrong_Prep
 
 set_tests_properties(f_LegacyEncWrong_Prep
     PROPERTIES
-    PASS_REGULAR_EXPRESSION "does not use specified codepage")
+    PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
 
 generate_simple_comparison_test("LegacyEncWrong" 1
     "" "INFO2-sample2-wrong-enc.txt" "encoding|xfail")
