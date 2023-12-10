@@ -13,55 +13,55 @@
 #  include "utils-win.h"
 #endif
 
-static r2status     exit_status = R2_OK;
+static exitcode     exit_status = R2_OK;
 extern GSList      *filelist;
 extern metarecord  *meta;
 
-/*!
- * Check if index file has sufficient amount of data for reading.
- * If successful, its file content will be stored in buf.
- * Return 0 if successful, non-zero on error
+
+/**
+ * @brief Basic validation of index file
+ * @param filename Full path of index file
+ * @param filebuf Location of file buffer after reading
+ * @param bufsize Location to store size of buffer
+ * @param ver Location to store index file version
+ * @param error Location to store error upon failure
+ * @return `TRUE` if file is deemed usable, `FALSE` otherwise
+ * @note This only checks if index file has sufficient amount
+ * of data for sensible reading
  */
-static r2status
-validate_index_file (const char  *filename,
-                     void       **filebuf,
-                     gsize       *bufsize,
-                     uint64_t    *ver,
-                     uint32_t    *pathlen)
+static gboolean
+_validate_index_file   (const char   *filename,
+                        void        **filebuf,
+                        gsize        *bufsize,
+                        uint64_t     *ver,
+                        GError      **error)
 {
-    gsize           expected;
-    int             status;
-    GError         *error = NULL;
+    gsize           expect_sz;
     char           *buf;
+    uint32_t        pathlen;
+
+    g_return_val_if_fail (filename &&   *filename, FALSE);
+    g_return_val_if_fail (filebuf  && ! *filebuf , FALSE);
+    g_return_val_if_fail (! error  || ! *error   , FALSE);
+    g_return_val_if_fail (bufsize  , FALSE);
+    g_return_val_if_fail (ver      , FALSE);
 
     g_debug ("Start file validation for '%s'...", filename);
 
-    g_return_val_if_fail ( (filename != NULL) && (*filename != '\0'),
-                           R2_ERR_INTERNAL );
-    g_return_val_if_fail ( (filebuf  != NULL), R2_ERR_INTERNAL );
-    g_return_val_if_fail ( (bufsize  != NULL), R2_ERR_INTERNAL );
-    g_return_val_if_fail ( (ver      != NULL), R2_ERR_INTERNAL );
-    g_return_val_if_fail ( (pathlen  != NULL), R2_ERR_INTERNAL );
+    if (! g_file_get_contents (filename, &buf, bufsize, error))
+        return FALSE;
 
-    if ( !g_file_get_contents (filename, &buf, bufsize, &error) )
-    {
-        g_critical (_("%s(): failed to retrieve file content for '%s': %s"),
-            __func__, filename, error->message);
-        g_clear_error (&error);
-        status = R2_ERR_OPEN_FILE;
-        goto validation_error;
-    }
-
-    g_debug ("Retrieval of '%s' is done, size = %" G_GSIZE_FORMAT, filename, *bufsize);
+    g_debug ("Read '%s' successfully, size = %" G_GSIZE_FORMAT,
+        filename, *bufsize);
 
     if (*bufsize <= VERSION1_FILENAME_OFFSET)
     {
-        g_debug ("File size expected to be more than %" G_GSIZE_FORMAT,
-            (gsize) VERSION1_FILENAME_OFFSET);
-        g_printerr ("%s", _("File is truncated, or probably not a $Recycle.bin index file."));
-        g_printerr ("\n");
-        status = R2_ERR_BROKEN_FILE;
-        goto validation_error;
+        g_debug ("File size = %" G_GSIZE_FORMAT
+            ", expected > %" G_GSIZE_FORMAT,
+            *bufsize, (gsize) VERSION1_FILENAME_OFFSET);
+        g_set_error_literal (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
+            _("File is prematurely truncated, or not a $Recycle.bin index."));
+        return FALSE;
     }
 
     copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
@@ -72,59 +72,60 @@ validate_index_file (const char  *filename,
     {
         case VERSION_VISTA:
 
-            expected = VERSION1_FILE_SIZE;
-            /* see populate_record_data() for reason */
-            if ( (*bufsize != expected) && (*bufsize != expected - 1) )
+            expect_sz = VERSION1_FILE_SIZE;
+            /* see _populate_record_data() for reason */
+            if ((*bufsize != expect_sz) && (*bufsize != expect_sz - 1))
             {
-                g_debug ("File size expected to be %" G_GSIZE_FORMAT
-                    " or %" G_GSIZE_FORMAT, expected, expected - 1);
-                g_printerr ("%s", _("Index file expected size and real size do not match."));
-                g_printerr ("\n");
-                status = R2_ERR_BROKEN_FILE;
-                goto validation_error;
+                g_debug ("File size = %" G_GSIZE_FORMAT
+                    ", expected = %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT, *bufsize, expect_sz, expect_sz - 1);
+                g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
+                    "%s", _("Unexpected file size, likely not a $Recycle.bin index."));
+                return FALSE;
             }
-            *pathlen = WIN_PATH_MAX;
             break;
 
         case VERSION_WIN10:
 
-            copy_field (pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
-            *pathlen = GUINT32_FROM_LE (*pathlen);
+            // Version 2 adds a uint32 file name strlen before file name.
+            // This presumably breaks the 260 char barrier in version 1.
+            copy_field (&pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
+            pathlen = GUINT32_FROM_LE (pathlen);
 
-            /* Header length + file name length in UTF-16 encoding */
-            expected = VERSION2_FILENAME_OFFSET + (*pathlen) * 2;
-            if (*bufsize != expected)
+            /* Header length + strlen in UTF-16 encoding */
+            expect_sz = VERSION2_FILENAME_OFFSET + pathlen * 2;
+            if (*bufsize != expect_sz)
             {
-                g_debug ("File size expected to be %" G_GSIZE_FORMAT, expected);
-                g_printerr ("%s", _("Index file expected size and real size do not match."));
-                g_printerr ("\n");
-                status = R2_ERR_BROKEN_FILE;
-                goto validation_error;
+                g_debug ("File size = %" G_GSIZE_FORMAT
+                    ", expected = %" G_GSIZE_FORMAT,
+                    *bufsize, expect_sz);
+                g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
+                    "%s", _("Unexpected file size, likely not a $Recycle.bin index."));
+                return FALSE;
             }
             break;
 
         default:
-            g_printerr ("%s", _("Unsupported file version, or probably not a $Recycle.bin index file."));
-            g_printerr ("\n");
-            status = R2_ERR_BROKEN_FILE;
-            goto validation_error;
+            if (*ver < 10)
+                g_set_error (error, R2_REC_ERROR,
+                    R2_REC_ERROR_VER_UNSUPPORTED,
+                    _("Index file version %" G_GUINT64_FORMAT " is unsupported"), *ver);
+            else
+                g_set_error (error, R2_REC_ERROR,
+                    R2_REC_ERROR_VER_UNSUPPORTED,
+                    "%s", _("File is not a $Recycle.bin index"));
+            return FALSE;
     }
 
     *filebuf = buf;
-    return R2_OK;
-
-validation_error:
-
-    *filebuf = NULL;
-    return status;
+    g_debug ("Finished file validation for '%s'", filename);
+    return TRUE;
 }
 
 
 static rbin_struct *
-populate_record_data (void *buf,
-                      uint64_t version,
-                      uint32_t pathlen,
-                      gboolean erraneous)
+_populate_record_data  (void      *buf,
+                        uint64_t   version,
+                        gboolean   erraneous)
 {
     rbin_struct  *record;
     size_t        read;
@@ -160,61 +161,53 @@ populate_record_data (void *buf,
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
-    /* One extra char for safety, though path should have already been null terminated */
-    g_debug ("pathlen = %d", pathlen);
     switch (version)
     {
         case VERSION_VISTA:
             record->uni_path = conv_path_to_utf8_with_tmpl (
                 (const char *) (buf - erraneous + VERSION1_FILENAME_OFFSET),
-                NULL, "<\\u%04X>", &read, &exit_status);
+                NULL, "<\\u%04X>", &read, &record->error);
             break;
 
         case VERSION_WIN10:
             record->uni_path = conv_path_to_utf8_with_tmpl (
                 (const char *) (buf + VERSION2_FILENAME_OFFSET),
-                NULL, "<\\u%04X>", &read, &exit_status);
+                NULL, "<\\u%04X>", &read, &record->error);
             break;
 
         default:
             g_assert_not_reached ();
     }
 
-    if (record->uni_path == NULL) {
-        g_warning (_("(Record %s) Error converting unicode path to UTF-8."),
-            record->index_s);
-        record->uni_path = "";
-    }
+    if (! record->uni_path)
+        g_set_error_literal (&record->error, R2_REC_ERROR,
+                R2_REC_ERROR_CONV_PATH,
+                _("Trash file path conversion failed completely"));
 
     return record;
 }
 
 static void
-parse_record_cb (char *index_file,
-                 const metarecord *meta)
+_parse_record_cb   (char *index_file,
+                    const metarecord *meta)
 {
-    rbin_struct    *record = NULL;
-    char           *basename = NULL;
-    uint64_t        version = 0;
-    uint32_t        pathlen = 0;
-    gsize           bufsize;
-    void           *buf = NULL;
-    extern gboolean isolated_index;
-
+    rbin_struct       *record = NULL;
+    char              *basename = NULL;
+    uint64_t           version = 0;
+    gsize              bufsize;
+    void              *buf = NULL;
+    extern gboolean    isolated_index;
+    GError            *error = NULL;
 
     basename = g_path_get_basename (index_file);
 
+    if (! _validate_index_file (index_file,
+        &buf, &bufsize, &version, &error))
     {
-        r2status sts = validate_index_file (
-            index_file, &buf, &bufsize, &version, &pathlen);
-        if ( sts != R2_OK )
-        {
-            g_printerr (_("File '%s' fails validation.\n"), basename);
-            exit_status = sts;
-            g_free (buf);
-            g_free (basename);
-            return;
-        }
+        g_hash_table_replace (meta->invalid_records,
+            g_strdup (basename), error);
+        g_free (basename);
+        return;
     }
 
     g_debug ("Start populating record for '%s'...", basename);
@@ -222,13 +215,12 @@ parse_record_cb (char *index_file,
     switch (version)
     {
         case VERSION_VISTA:
-            /* see populate_record_data() for meaning of last parameter */
-            record = populate_record_data (buf, version, pathlen,
+            record = _populate_record_data (buf, version,
                 (bufsize == VERSION1_FILE_SIZE - 1));
             break;
 
         case VERSION_WIN10:
-            record = populate_record_data (buf, version, pathlen, FALSE);
+            record = _populate_record_data (buf, version, FALSE);
             break;
 
         default:
@@ -281,7 +273,8 @@ _compare_idx_versions (rbin_struct *record,
         return;
 
     if (meta->version != (int64_t) record->version) {
-        g_critical ("Bad entry at %s, meta ver = %" G_GINT64_FORMAT ", rec = %" G_GINT64_FORMAT,
+        g_debug ("Bad entry %s, meta ver = %" G_GINT64_FORMAT
+            ", rec ver = %" G_GINT64_FORMAT,
             record->index_s, meta->version, (int64_t)record->version);
         meta->version = VERSION_INCONSISTENT;
     }
@@ -321,54 +314,45 @@ main (int    argc,
            "folder and dump recycle bin data.  "
            "Can also dump a single index file."),
         &argv, &error
-    )) {
-        exit_status = R2_ERR_ARG;
+    ))
         goto cleanup;
-    }
 
-    g_slist_foreach (filelist, (GFunc) parse_record_cb, meta);
+    g_slist_foreach (filelist, (GFunc) _parse_record_cb, meta);
 
-    if (! meta->records->len && (exit_status != R2_OK))
+    if (! meta->records->len && g_hash_table_size (meta->invalid_records))
     {
-        g_printerr ("%s", _("No valid recycle bin record found.\n"));
-        exit_status = R2_ERR_BROKEN_FILE;
+        g_set_error_literal (&error, R2_FATAL_ERROR,
+            R2_FATAL_ERROR_ILLEGAL_DATA,
+            _("No valid recycle bin record found"));
         goto cleanup;
     }
 
     g_ptr_array_sort (meta->records, _sort_record_by_time);
     if (! _set_overall_rbin_version (meta))
     {
-        g_printerr ("%s", _("Index files come from multiple versions of Windows."
-            "  Please check each file independently."));
-        g_printerr ("\n");
-        exit_status = R2_ERR_BROKEN_FILE;
+        g_set_error_literal (&error, R2_FATAL_ERROR,
+            R2_FATAL_ERROR_ILLEGAL_DATA,
+            _("Index files from multiple Windows versions are mixed together."
+            "  Please check each file individually."));
         goto cleanup;
     }
 
-    if (!dump_content (&error))
-        exit_status = R2_ERR_WRITE_FILE;
+    if (! dump_content (&error))
+    {
+        g_assert (error->domain == G_FILE_ERROR);
+        GError *new_err = g_error_new_literal (
+            R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE,
+            g_strdup (error->message));
+        g_error_free (error);
+        error = new_err;
+    }
 
     cleanup:
 
-    /* Last minute error messages for accumulated non-fatal errors */
-    switch (exit_status)
-    {
-        case R2_ERR_USER_ENCODING:
-            g_printerr ("%s", _("Some entries could not be presented as correct "
-                "unicode path.  The concerned characters are displayed "
-                "in escaped unicode sequences."));
-            g_printerr ("\n");
-            break;
-
-        default:
-            if (error) {
-                g_printerr ("%s\n", error->message);
-            }
-            break;
-    }
+    exit_status = rifiuti_handle_global_error (error);
+    if (rifiuti_handle_record_error () && exit_status == R2_OK)
+        exit_status = R2_ERR_DUBIOUS_DATA;
 
     rifiuti_cleanup ();
-    g_clear_error (&error);
-
     return exit_status;
 }
