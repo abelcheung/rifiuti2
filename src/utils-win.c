@@ -352,7 +352,7 @@ can_list_win32_folder (const char   *path,
                 _("Error listing dir '%s': disallowed under Windows ACL."), path);
         }
 
-        g_debug ("Access Mask hex for '%s': 0x%" PRIX32, path, mask);
+        g_debug ("Access Mask hex for '%s': 0x%lX", path, mask);
     }
 
     AuthzFreeContext (authz_ctxt);
