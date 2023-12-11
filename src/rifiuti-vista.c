@@ -64,7 +64,7 @@ _validate_index_file   (const char   *filename,
         return FALSE;
     }
 
-    copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
+    copy_field (*ver, VERSION_OFFSET, FILESIZE_OFFSET);
     *ver = GUINT64_FROM_LE (*ver);
     g_debug ("version = %" PRIu64, *ver);
 
@@ -88,7 +88,7 @@ _validate_index_file   (const char   *filename,
 
             // Version 2 adds a uint32 file name strlen before file name.
             // This presumably breaks the 260 char barrier in version 1.
-            copy_field (&pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
+            copy_field (pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
             pathlen = GUINT32_FROM_LE (pathlen);
 
             /* Header length + strlen in UTF-16 encoding */
@@ -140,7 +140,8 @@ _populate_record_data  (void      *buf,
      * bug inside Windows. This is observed during deletion of dd.exe from Forensic
      * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
      */
-    memcpy (&record->filesize, buf + FILESIZE_OFFSET,
+    memcpy_s (&record->filesize, sizeof(record->filesize),
+            buf + FILESIZE_OFFSET,
             FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
     if (erraneous)
     {
@@ -156,7 +157,8 @@ _populate_record_data  (void      *buf,
     }
 
     /* File deletion time */
-    memcpy (&record->winfiletime, buf + FILETIME_OFFSET - (int) erraneous,
+    memcpy_s (&record->winfiletime, sizeof(record->winfiletime),
+            buf + FILETIME_OFFSET - (int) erraneous,
             VERSION1_FILENAME_OFFSET - FILETIME_OFFSET);
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
