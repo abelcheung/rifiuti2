@@ -7,6 +7,7 @@
 #ifndef _RIFIUTI_UTILS_WIN_H
 #define _RIFIUTI_UTILS_WIN_H
 
+#include <inttypes.h>
 #include <glib.h>
 
 void       gui_message              (const char     *message );
