@@ -24,11 +24,11 @@ if(DEFINED CMAKE_C_FLAGS_DEBUG)
 else()
     set(CMAKE_C_FLAGS_DEBUG "-O0 -Wextra")
 endif()
-if(DEFINED CMAKE_C_FLAGS)
-    string(APPEND CMAKE_C_FLAGS " -Wall -Werror")
-else()
-    set(CMAKE_C_FLAGS "-Wall -Werror")
+if(NOT DEFINED CMAKE_C_FLAGS)
+    set(CMAKE_C_FLAGS "")
 endif()
+string(APPEND CMAKE_C_FLAGS
+    " -DG_LOG_DOMAIN=\\\"${PROJECT_NAME}\\\" -Wall -Werror")
 
 set(CMAKE_STATIC_LINKER_FLAGS "-static")
 

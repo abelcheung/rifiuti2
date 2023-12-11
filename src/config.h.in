@@ -1,3 +1,6 @@
+#ifndef _RIFIUTI2_CONFIG_H
+#define _RIFIUTI2_CONFIG_H
+
 #cmakedefine PROJECT_NAME               "@PROJECT_NAME@"
 #cmakedefine PROJECT_VERSION            "@PROJECT_VERSION@"
 #cmakedefine PROJECT_DESCRIPTION        "@PROJECT_DESCRIPTION@"
@@ -6,4 +9,4 @@
 #cmakedefine PROJECT_TOOL_USAGE_URL     "@PROJECT_TOOL_USAGE_URL@"
 #cmakedefine PROJECT_GH_PAGE            "@PROJECT_GH_PAGE@"
 
-#define G_LOG_DOMAIN PROJECT_NAME
+#endif
