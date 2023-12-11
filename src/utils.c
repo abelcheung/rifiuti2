@@ -1250,6 +1250,10 @@ _guess_windows_ver (const metarecord *meta)
            detection logic won't change in future */
         default: g_assert_not_reached();
     }
+
+    // Should be impossible to reach here, but for shutting up
+    // diagnostics warning...
+    return OS_GUESS_UNKNOWN;
 }
 
 /**
@@ -1334,11 +1338,6 @@ _close_handles (void)
         fclose (out_fh);
     if (err_fh != NULL)
         fclose (err_fh);
-
-#ifdef G_OS_WIN32
-    close_wincon_handle();
-    close_winerr_handle();
-#endif
 }
 
 
@@ -1776,4 +1775,8 @@ rifiuti_cleanup (void)
     g_free (delim);
 
     _close_handles ();
+
+#ifdef G_OS_WIN32
+    cleanup_windows_res ();
+#endif
 }

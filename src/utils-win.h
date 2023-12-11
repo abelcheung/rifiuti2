@@ -17,9 +17,8 @@ char *     windows_product_name     (void);
 gboolean   can_list_win32_folder    (const char     *path,
                                      GError        **error);
 gboolean   init_wincon_handle       (gboolean        is_stdout);
-void       close_wincon_handle      (void);
-void       close_winerr_handle      (void);
 void       puts_wincon              (gboolean        is_stdout,
                                      const wchar_t  *wstr);
+void       cleanup_windows_res      (void);
 
 #endif

@@ -4,6 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
+#include <stdbool.h>
 #include <lmcons.h>
 #include <aclapi.h>
 #include <authz.h>
@@ -17,6 +18,7 @@
 
 static HANDLE wincon_fh = NULL;
 static HANDLE winerr_fh = NULL;
+static PSID   sid       = NULL;
 
 
 /* GUI message box */
@@ -94,23 +96,30 @@ get_win_timezone_name (void)
 }
 
 
-/*!
- * Retrieve current user name and convert it to SID
- *
- * Following functions originates from [example of `GetEffectiveRightsFromAcl()`][1],
- * which is not about the function itself but a _replacement_ of it (shrug).
- *
- * [1]: https://msdn.microsoft.com/en-us/library/windows/desktop/aa446637(v=vs.85).aspx
+/**
+ * @brief Get SID of current user
+ * @return Pointer to SID structure, or `NULL` upon failure
+ * @note Code is derived from example of
+ * [GetEffectiveRightsFromAcl()](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-geteffectiverightsfromacla),
  */
 static PSID
 _get_user_sid (void)
 {
-    gboolean       ok;
-    gunichar2      username[UNLEN + 1], *domainname;
-    char           *errmsg;
-    DWORD          e = 0, bufsize = UNLEN + 1, sidsize = 0, domainsize = 0;
-    PSID           sid;
-    SID_NAME_USE   sidtype;
+    static bool       tried      = false;
+    gunichar2         username[UNLEN + 1],
+                     *domainname = NULL;
+    char             *errmsg;
+    DWORD             e          = 0,
+                      bufsize    = UNLEN + 1,
+                      sidsize    = 0,
+                      domainsize = 0;
+    SID_NAME_USE      sidtype;
+
+    if (tried)
+        return sid;
+    tried = true;
+
+    g_debug ("Entering %s()", __func__);
 
     if ( !GetUserNameW (username, &bufsize) )
     {
@@ -119,9 +128,9 @@ _get_user_sid (void)
         goto getsid_fail;
     }
 
-    ok = LookupAccountNameW (NULL, username, NULL, &sidsize,
-            NULL, &domainsize, &sidtype);
-    if (!ok) {
+    if (! LookupAccountNameW (NULL, username, NULL, &sidsize,
+            NULL, &domainsize, &sidtype))
+    {
         e = GetLastError();
         if ( e != ERROR_INSUFFICIENT_BUFFER )
         {
@@ -133,19 +142,25 @@ _get_user_sid (void)
 
     // XXX Don't use standard Windows way (AllocateAndInitializeSid).
     // Random unpredictable test failures would result, even when
-    // tests are not run in parallel.
+    // tests are run serially.
     sid = g_malloc (sidsize);
+
+    // Unused but still needed, otherwise LookupAccountName call
+    // would fail
     domainname = g_malloc (domainsize * sizeof(gunichar2));
 
-    ok = LookupAccountNameW (NULL, username, sid, &sidsize,
-            domainname, &domainsize, &sidtype);
-    g_free (domainname);  // unused
-    if (ok)
+    if (LookupAccountNameW (NULL, username, sid, &sidsize,
+            domainname, &domainsize, &sidtype))
+    {
+        g_free (domainname);
         return sid;
+    }
 
     errmsg = g_win32_error_message (GetLastError());
     g_critical (_("2nd LookupAccountName() failed: %s"), errmsg);
     g_free (sid);
+    g_free (domainname);
+    sid = NULL;
 
   getsid_fail:
     g_free (errmsg);
@@ -202,7 +217,6 @@ enumerate_drive_bins (void)
     enumerate_cleanup:
     if (sid_str != NULL)
         LocalFree (sid_str);
-    g_free (sid);
     g_free (errmsg);
     return result;
 }
@@ -348,7 +362,6 @@ can_list_win32_folder (const char   *path,
     AuthzFreeResourceManager (authz_manager);
 
   traverse_fail:
-    g_free (sid);
     g_free (errmsg);
     g_free (wpath);
     return ret;
@@ -400,21 +413,6 @@ init_wincon_handle (gboolean is_stdout)
     }
 }
 
-void
-close_wincon_handle (void)
-{
-    if (wincon_fh != NULL)
-        CloseHandle (wincon_fh);
-    return;
-}
-
-void
-close_winerr_handle (void)
-{
-    if (winerr_fh != NULL)
-        CloseHandle (winerr_fh);
-    return;
-}
 
 void
 puts_wincon (gboolean       is_stdout,
@@ -426,4 +424,23 @@ puts_wincon (gboolean       is_stdout,
     g_return_if_fail (h    != NULL);
 
     WriteConsoleW (h, wstr, wcslen (wstr), NULL, NULL);
+}
+
+
+static void
+_close_wincon_handles (void)
+{
+    if (wincon_fh != NULL)
+        CloseHandle (wincon_fh);
+    if (winerr_fh != NULL)
+        CloseHandle (winerr_fh);
+    return;
+}
+
+
+void
+cleanup_windows_res (void)
+{
+    _close_wincon_handles ();
+    g_free (sid);
 }
