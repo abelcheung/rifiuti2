@@ -90,7 +90,7 @@ _validate_index_file   (const char   *filename,
                 ( ver != VERSION_WIN95 ))
             {
                 g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
-                    "Illegal INFO2 version %" G_GUINT32_FORMAT, ver);
+                    "Illegal INFO2 version %" PRIu32, ver);
                 goto validation_broken;
             }
 
@@ -111,7 +111,7 @@ _validate_index_file   (const char   *filename,
             if (ver != VERSION_ME_03 && ver != VERSION_NT4)
             {
                 g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
-                    "Illegal INFO2 version %" G_GUINT32_FORMAT, ver);
+                    "Illegal INFO2 version %" PRIu32, ver);
                 goto validation_broken;
             }
             break;
@@ -162,7 +162,7 @@ _populate_record_data   (void     *buf,
     if (drivenum >= sizeof (driveletters) - 1) {
         g_set_error (&record->error, R2_REC_ERROR,
             R2_REC_ERROR_DRIVE_LETTER,
-            _("Drive number %" G_GUINT32_FORMAT "does not represent "
+            _("Drive number %" PRIu32 "does not represent "
             "a valid drive"), drivenum);
     }
     record->drive = driveletters[MIN (drivenum, sizeof (driveletters) - 1)];
@@ -185,7 +185,7 @@ _populate_record_data   (void     *buf,
     /* BEWARE! This is 32bit data casted to 64bit struct member */
     copy_field (&record->filesize, FILESIZE_OFFSET, UNICODE_FILENAME_OFFSET);
     record->filesize = GUINT64_FROM_LE (record->filesize);
-    g_debug ("filesize=%" G_GUINT64_FORMAT, record->filesize);
+    g_debug ("filesize=%" PRIu64, record->filesize);
 
     /*
      * 1. Only bother populating legacy path if users need it,
@@ -279,7 +279,7 @@ _parse_record_cb   (char *index_file,
     {
         prev_pos = curr_pos;
         curr_pos = (int64_t) ftell (infile);
-        g_debug ("Read %s, byte range %" G_GINT64_FORMAT " - %" G_GINT64_FORMAT,
+        g_debug ("Read %s, byte range %" PRId64 " - %" PRId64,
             index_file, prev_pos, curr_pos);
         if (read_sz < record_sz) {
             g_debug ("read size = %zu, less than needed %zu", read_sz, record_sz);
@@ -290,7 +290,7 @@ _parse_record_cb   (char *index_file,
     }
     g_free (buf);
 
-    char *segment_id = g_strdup_printf ("|%" G_GINT64_FORMAT "|%" G_GINT64_FORMAT, prev_pos, curr_pos);
+    char *segment_id = g_strdup_printf ("|%" PRId64 "|%" PRId64, prev_pos, curr_pos);
 
     if (feof (infile) && read_sz && (read_sz < record_sz))
     {

@@ -633,7 +633,7 @@ _advance_octet (size_t       sz,
 
         case 2:
         {
-            guint16 c = GUINT16_FROM_LE (*(guint16 *) (*in_str));
+            uint16_t c = GUINT16_FROM_LE (*(uint16_t *) (*in_str));
             repl = g_strdup_printf (tmpl, c);
         }
             break;
@@ -840,8 +840,8 @@ win_filetime_to_gdatetime (int64_t win_filetime)
     /* Let's assume we don't need subsecond time resolution */
     t = (win_filetime - 116444736000000000LL) / 10000000;
 
-    g_debug ("FileTime -> Epoch: %" G_GINT64_FORMAT
-        " -> %" G_GINT64_FORMAT, win_filetime, t);
+    g_debug ("FileTime -> Epoch: %" PRId64
+        " -> %" PRId64, win_filetime, t);
 
     return g_date_time_new_from_unix_utc (t);
 }
@@ -1358,7 +1358,7 @@ _print_csv_header (metarecord *meta)
     if (meta->version == VERSION_NOT_FOUND) {
         g_print ("%s\n", _("Version: ??? (empty folder)"));
     } else {
-        g_print (_("Version: %" G_GUINT64_FORMAT "\n"), meta->version);
+        g_print (_("Version: %" PRIu64 "\n"), meta->version);
     }
 
     if (( meta->type == RECYCLE_BIN_TYPE_FILE ) && meta->total_entry)
@@ -1449,12 +1449,12 @@ _print_xml_header (metarecord *meta)
 
     if (meta->version >= 0)  /* can be found and not error */
         g_string_append_printf (result,
-            " version=\"%" G_GINT64_FORMAT "\"",
+            " version=\"%" PRId64 "\"",
             meta->version);
 
     if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
         g_string_append_printf (result,
-            " ever_existed=\"%" G_GUINT32_FORMAT "\"",
+            " ever_existed=\"%" PRIu32 "\"",
             meta->total_entry);
 
     result = g_string_append (result, ">\n");
@@ -1533,7 +1533,7 @@ _print_record_cb (rbin_struct *record,
             if ( record->filesize == G_MAXUINT64 ) /* faulty */
                 size = g_strdup ("???");
             else
-                size = g_strdup_printf ("%" G_GUINT64_FORMAT, record->filesize);
+                size = g_strdup_printf ("%" PRIu64, record->filesize);
 
             const char *gone =
                 record->gone == FILESTATUS_EXISTS ? "FALSE" :
@@ -1563,7 +1563,7 @@ _print_record_cb (rbin_struct *record,
                 g_string_append_printf (s, " size=\"-1\"");
             else
                 g_string_append_printf (s,
-                    " size=\"%" G_GUINT64_FORMAT "\"", record->filesize);
+                    " size=\"%" PRIu64 "\"", record->filesize);
 
             g_string_append_printf (s, ">\n"
                 "    <path><![CDATA[%s]]></path>\n"

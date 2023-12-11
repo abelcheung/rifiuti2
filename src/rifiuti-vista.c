@@ -66,7 +66,7 @@ _validate_index_file   (const char   *filename,
 
     copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
     *ver = GUINT64_FROM_LE (*ver);
-    g_debug ("version = %" G_GUINT64_FORMAT, *ver);
+    g_debug ("version = %" PRIu64, *ver);
 
     switch (*ver)
     {
@@ -108,7 +108,7 @@ _validate_index_file   (const char   *filename,
             if (*ver < 10)
                 g_set_error (error, R2_REC_ERROR,
                     R2_REC_ERROR_VER_UNSUPPORTED,
-                    _("Index file version %" G_GUINT64_FORMAT " is unsupported"), *ver);
+                    _("Index file version %" PRIu64 " is unsupported"), *ver);
             else
                 g_set_error (error, R2_REC_ERROR,
                     R2_REC_ERROR_VER_UNSUPPORTED,
@@ -144,7 +144,7 @@ _populate_record_data  (void      *buf,
             FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
     if (erraneous)
     {
-        g_debug ("filesize field broken, 56 bit only, val=0x%" G_GINT64_MODIFIER "X",
+        g_debug ("filesize field broken, 56 bit only, val=0x%" PRIX64,
                  record->filesize);
         /* not printing the value because it was wrong and misleading */
         record->filesize = G_MAXUINT64;
@@ -152,7 +152,7 @@ _populate_record_data  (void      *buf,
     else
     {
         record->filesize = GUINT64_FROM_LE (record->filesize);
-        g_debug ("deleted file size = %" G_GUINT64_FORMAT, record->filesize);
+        g_debug ("deleted file size = %" PRIu64, record->filesize);
     }
 
     /* File deletion time */
@@ -273,8 +273,8 @@ _compare_idx_versions (rbin_struct *record,
         return;
 
     if (meta->version != (int64_t) record->version) {
-        g_debug ("Bad entry %s, meta ver = %" G_GINT64_FORMAT
-            ", rec ver = %" G_GINT64_FORMAT,
+        g_debug ("Bad entry %s, meta ver = %" PRId64
+            ", rec ver = %" PRId64,
             record->index_s, meta->version, (int64_t)record->version);
         meta->version = VERSION_INCONSISTENT;
     }
