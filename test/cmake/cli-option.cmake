@@ -5,11 +5,12 @@
 function(addBareOptTest name)
     add_test(NAME d_InvokeOpt${name} COMMAND rifiuti-vista ${ARGV1})
     add_test(NAME f_InvokeOpt${name} COMMAND rifiuti       ${ARGV1})
-    set_tests_properties(d_InvokeOpt${name} PROPERTIES LABELS "recycledir;arg")
-    set_tests_properties(f_InvokeOpt${name} PROPERTIES LABELS      "info2;arg")
+    set_tests_properties(d_InvokeOpt${name} f_InvokeOpt${name}
+        PROPERTIES LABELS "arg")
+    add_bintype_label(d_InvokeOpt${name} f_InvokeOpt${name})
     if(NOT DEFINED ARGV1 AND WIN32)
-        set_tests_properties(d_InvokeOpt${name} PROPERTIES DISABLED True)
-        set_tests_properties(f_InvokeOpt${name} PROPERTIES DISABLED True)
+        set_tests_properties(d_InvokeOpt${name} f_InvokeOpt${name}
+            PROPERTIES DISABLED True)
     endif()
 endfunction()
 
@@ -19,17 +20,16 @@ addBareOptTest(ShortHelp2 -?          )
 addBareOptTest(ShortVer   -v          )
 addBareOptTest(LongHelp   --help-all  )
 addBareOptTest(LongVer    --version   )
-# if(WIN32)
-#     addBareOptTest(Live   --live      )
-# endif()
+
 
 function(addWithFileOptTest name)
     add_test(NAME d_WithFileOpt${name}
         COMMAND rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
     add_test(NAME f_WithFileOpt${name}
         COMMAND rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
-    set_tests_properties(d_WithFileOpt${name} PROPERTIES LABELS "recycledir;arg")
-    set_tests_properties(f_WithFileOpt${name} PROPERTIES LABELS      "info2;arg")
+    set_tests_properties(d_WithFileOpt${name} f_WithFileOpt${name}
+        PROPERTIES LABELS "arg")
+    add_bintype_label(d_WithFileOpt${name} f_WithFileOpt${name})
 endfunction()
 
 addWithFileOptTest(LongHead   --no-heading  )
@@ -45,14 +45,11 @@ addWithFileOptTest(ShortXml   -x            )
 function(addBadBareOptTest name)
     add_test(NAME d_BadBareOpt${name} COMMAND rifiuti-vista ${ARGN})
     add_test(NAME f_BadBareOpt${name} COMMAND rifiuti       ${ARGN})
-    set_tests_properties(d_BadBareOpt${name}
+    set_tests_properties(d_BadBareOpt${name} f_BadBareOpt${name}
         PROPERTIES
-            LABELS "recycledir;arg;xfail"
+            LABELS "arg;xfail"
             PASS_REGULAR_EXPRESSION "Unknown option")
-    set_tests_properties(f_BadBareOpt${name}
-        PROPERTIES
-            LABELS      "info2;arg;xfail"
-            PASS_REGULAR_EXPRESSION "Unknown option")
+    add_bintype_label(d_BadBareOpt${name} f_BadBareOpt${name})
 endfunction()
 
 addBadBareOptTest(Short    -/)
@@ -64,14 +61,11 @@ function(addDupOptTest name)
         rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
     add_test(NAME f_DupOpt${name} COMMAND
         rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
-    set_tests_properties(d_DupOpt${name}
+    set_tests_properties(d_DupOpt${name} f_DupOpt${name}
         PROPERTIES
-            LABELS "recycledir;arg;xfail"
+            LABELS "arg;xfail"
             PASS_REGULAR_EXPRESSION "Multiple .+ disallowed")
-    set_tests_properties(f_DupOpt${name}
-        PROPERTIES
-            LABELS      "info2;arg;xfail"
-            PASS_REGULAR_EXPRESSION "Multiple .+ disallowed")
+    add_bintype_label(d_DupOpt${name} f_DupOpt${name})
 endfunction()
 
 addDupOptTest(ShortSep  -t ":" -t ","                 )
@@ -103,17 +97,11 @@ add_test(NAME f_NullArgOptTestOut
     COMMAND rifiuti       -o "" ${sample_dir}/INFO2-sample1)
 add_test(NAME f_NullArgOptTestEnc
     COMMAND rifiuti       -l "" ${sample_dir}/INFO2-sample1)
-set_tests_properties(
-    d_NullArgOptTestOut
+set_tests_properties(d_NullArgOptTestOut f_NullArgOptTestOut f_NullArgOptTestEnc
     PROPERTIES
-        LABELS "recycledir;arg;xfail"
+        LABELS "arg;xfail"
         PASS_REGULAR_EXPRESSION "Empty .+ disallowed")
-set_tests_properties(
-    f_NullArgOptTestOut
-    f_NullArgOptTestEnc
-    PROPERTIES
-        LABELS "info2;arg;xfail"
-        PASS_REGULAR_EXPRESSION "Empty .+ disallowed")
+add_bintype_label(d_NullArgOptTestOut f_NullArgOptTestOut f_NullArgOptTestEnc)
 
 
 function(addBadComboOptTest name)
@@ -121,16 +109,11 @@ function(addBadComboOptTest name)
         rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
     add_test(NAME f_BadComboOptTest${name} COMMAND
         rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
-    set_tests_properties(
-        d_BadComboOptTest${name}
+    set_tests_properties(d_BadComboOptTest${name} f_BadComboOptTest${name}
         PROPERTIES
-            LABELS "recycledir;arg;xfail"
+            LABELS "arg;xfail"
             PASS_REGULAR_EXPRESSION "can not be used in XML mode")
-    set_tests_properties(
-        f_BadComboOptTest${name}
-        PROPERTIES
-            LABELS      "info2;arg;xfail"
-            PASS_REGULAR_EXPRESSION "can not be used in XML mode")
+    add_bintype_label(d_BadComboOptTest${name} f_BadComboOptTest${name})
 endfunction()
 
 addBadComboOptTest(1 -x -t:)
@@ -140,16 +123,11 @@ addBadComboOptTest(2 -n -x)
 function(addMultiInputTest name)
     add_test(NAME d_MultiInputTest${name} COMMAND rifiuti-vista ${ARGN})
     add_test(NAME f_MultiInputTest${name} COMMAND rifiuti       ${ARGN})
-    set_tests_properties(
-        d_MultiInputTest${name}
+    set_tests_properties(d_MultiInputTest${name} f_MultiInputTest${name}
         PROPERTIES
-            LABELS "recycledir;arg;xfail"
+            LABELS "arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
-    set_tests_properties(
-        f_MultiInputTest${name}
-        PROPERTIES
-            LABELS      "info2;arg;xfail"
-            PASS_REGULAR_EXPRESSION "Must specify exactly one")
+    add_bintype_label(d_MultiInputTest${name} f_MultiInputTest${name})
 endfunction()
 
 addMultiInputTest(1 a a)
@@ -159,16 +137,11 @@ addMultiInputTest(2 foo bar baz)
 function(addMissingInputTest name)
     add_test(NAME d_MissingInputTest${name} COMMAND rifiuti-vista ${ARGN})
     add_test(NAME f_MissingInputTest${name} COMMAND rifiuti       ${ARGN})
-    set_tests_properties(
-        d_MissingInputTest${name}
+    set_tests_properties(d_MissingInputTest${name} f_MissingInputTest${name}
         PROPERTIES
-            LABELS "recycledir;arg;xfail"
+            LABELS "arg;xfail"
             PASS_REGULAR_EXPRESSION "Must specify exactly one")
-    set_tests_properties(
-        f_MissingInputTest${name}
-        PROPERTIES
-            LABELS      "info2;arg;xfail"
-            PASS_REGULAR_EXPRESSION "Must specify exactly one")
+    add_bintype_label(d_MissingInputTest${name} f_MissingInputTest${name})
 endfunction()
 
 addMissingInputTest(1 -x)

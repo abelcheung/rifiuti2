@@ -17,12 +17,10 @@ function(createXmlTestSet id input)  # $ARGN as extra rifiuti args
     endif()
     if(IS_DIRECTORY ${inputchk})
         set(is_info2 0)
-        set(add_label "recycledir")
         set(prog rifiuti-vista)
         set(prefix "d_Xml${id}")
     else()
         set(is_info2 1)
-        set(add_label "info2")
         set(prog rifiuti)
         set(prefix "f_Xml${id}")
     endif()
@@ -59,7 +57,8 @@ function(createXmlTestSet id input)  # $ARGN as extra rifiuti args
     set_tests_properties(${dtdvalid_pfx}
         PROPERTIES FIXTURES_REQUIRED ${wellform_fxt})
     set_tests_properties(${wellform_pfx} ${dtdvalid_pfx}
-        PROPERTIES LABELS "${add_label};xml")
+        PROPERTIES LABELS "xml")
+    add_bintype_label(${wellform_pfx} ${dtdvalid_pfx})
 
     # XML normalization and comparison
     # xmllint has a long known history of broken --output option,

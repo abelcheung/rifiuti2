@@ -9,14 +9,12 @@
 add_test(NAME d_InputNotExist COMMAND rifiuti-vista dUmMy)
 add_test(NAME f_InputNotExist COMMAND rifiuti       dUmMy)
 
-set_tests_properties(d_InputNotExist
+set_tests_properties(d_InputNotExist f_InputNotExist
     PROPERTIES
-        LABELS "recycledir;xfail"
+        LABELS "xfail"
         PASS_REGULAR_EXPRESSION "does not exist")
-set_tests_properties(f_InputNotExist
-    PROPERTIES
-        LABELS      "info2;xfail"
-        PASS_REGULAR_EXPRESSION "does not exist")
+add_bintype_label(d_InputNotExist f_InputNotExist)
+
 
 #
 # Special file
@@ -28,20 +26,19 @@ set_tests_properties(f_InputNotExist
 if(WIN32)
 add_test(NAME d_InputSpecialFile COMMAND rifiuti-vista nul)
 add_test(NAME f_InputSpecialFile COMMAND rifiuti       nul)
-set_tests_properties(d_InputSpecialFile PROPERTIES LABELS "recycledir;xfail")
-set_tests_properties(f_InputSpecialFile PROPERTIES LABELS "info2;xfail")
 set_tests_properties(d_InputSpecialFile f_InputSpecialFile
     PROPERTIES
+        LABELS "xfail"
         PASS_REGULAR_EXPRESSION "File is prematurely truncated, or not .+ index")
 else()
 add_test(NAME d_InputSpecialFile COMMAND rifiuti-vista /dev/null)
 add_test(NAME f_InputSpecialFile COMMAND rifiuti       /dev/null)
-set_tests_properties(d_InputSpecialFile PROPERTIES LABELS "recycledir;xfail")
-set_tests_properties(f_InputSpecialFile PROPERTIES LABELS "info2;xfail")
 set_tests_properties(d_InputSpecialFile f_InputSpecialFile
     PROPERTIES
+        LABELS "xfail"
         PASS_REGULAR_EXPRESSION "not a normal file")
 endif()
+add_bintype_label(d_InputSpecialFile f_InputSpecialFile)
 
 
 #
