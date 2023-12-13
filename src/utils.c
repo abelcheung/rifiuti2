@@ -36,7 +36,7 @@ DECL_OPT_CALLBACK(_set_output_path);
 DECL_OPT_CALLBACK(_option_deprecated);
 DECL_OPT_CALLBACK(_set_opt_delim);
 DECL_OPT_CALLBACK(_set_opt_noheading);
-DECL_OPT_CALLBACK(_set_output_xml);
+DECL_OPT_CALLBACK(_set_opt_format);
 DECL_OPT_CALLBACK(_show_ver_and_exit);
 
 /* pre-declared out of laziness */
@@ -87,7 +87,14 @@ static char *os_strings[] = {
     N_("Windows 10 or above")
 };
 
-static int          output_mode        = OUTPUT_NONE;
+static char *out_format_name[] = {
+    "unknown format",
+    "TSV format",
+    "XML format",
+    "JSON format",
+};
+
+static out_fmt      output_format      = FORMAT_UNKNOWN;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
 static gboolean     live_mode          = FALSE;
@@ -103,22 +110,27 @@ static FILE        *err_fh             = NULL; /*!< unused for Windows console *
        metarecord  *meta               = NULL;
 
 
-/* Options intended for tab delimited mode output only */
-static const GOptionEntry text_options[] = {
+/* Options controlling output format */
+static const GOptionEntry out_options[] = {
     {
         "delimiter", 't', 0,
         G_OPTION_ARG_CALLBACK, _set_opt_delim,
-        N_("String to use as delimiter (TAB by default)"), N_("STRING")
+        N_("Field delimiter for TSV ['\\t' (TAB) if not given]"), N_("STRING")
     },
     {
         "no-heading", 'n', G_OPTION_FLAG_NO_ARG,
         G_OPTION_ARG_CALLBACK, _set_opt_noheading,
-        N_("Don't show column header and metadata"), NULL
+        N_("Don't show TSV column header and metadata"), NULL
     },
     {
-        "always-utf8", '8', G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_NO_ARG,
+        "xml", 'x', G_OPTION_FLAG_NO_ARG,
         G_OPTION_ARG_CALLBACK, _option_deprecated,
-        N_("(This option is deprecated)"), NULL
+        N_("Deprecated, use '-f xml' in future"), NULL
+    },
+    {
+        "format", 'f', 0,
+        G_OPTION_ARG_CALLBACK, _set_opt_format,
+        N_("'text' (default), 'xml' or 'json'"), N_("FORMAT")
     },
     { 0 }
 };
@@ -129,11 +141,6 @@ static const GOptionEntry main_options[] = {
         "output", 'o', 0,
         G_OPTION_ARG_CALLBACK, _set_output_path,
         N_("Write output to FILE"), N_("FILE")
-    },
-    {
-        "xml", 'x', G_OPTION_FLAG_NO_ARG,
-        G_OPTION_ARG_CALLBACK, _set_output_xml,
-        N_("Output in XML format instead of tab-delimited values"), NULL
     },
     {
         "localtime", 'z', 0,
@@ -178,38 +185,50 @@ static const GOptionEntry live_options[] = {
 /* Following routines are command argument handling related */
 
 static gboolean
-_set_output_mode (int       mode,
-                  GError  **error)
+_set_out_format    (out_fmt     desired_format,
+                    GError    **error)
 {
-    if (output_mode == mode)
+    if (output_format == desired_format)
         return TRUE;
 
-    if (output_mode == OUTPUT_NONE) {
-        output_mode = mode;
+    if (output_format == FORMAT_UNKNOWN) {
+        output_format = desired_format;
         return TRUE;
     }
 
-    g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-        _("Plain text format options can not be used in XML mode."));
+    g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        "Output was already set in %s, but later argument "
+        "attempts to change to %s",
+        out_format_name[output_format],
+        out_format_name[desired_format]);
     return FALSE;
 }
 
 
-/**
- * @brief Option callback for setting output mode to XML
- * @return `FALSE` if option conflict exists, `TRUE` otherwise
- */
 static gboolean
-_set_output_xml (const gchar *opt_name,
-                 const gchar *value,
-                 gpointer     data,
-                 GError     **error)
+_set_opt_format   (const gchar *opt_name,
+                   const gchar *format,
+                   gpointer     data,
+                   GError     **error)
 {
     UNUSED(opt_name);
-    UNUSED(value);
     UNUSED(data);
 
-    return _set_output_mode (OUTPUT_XML, error);
+    if (g_strcmp0 (format, "text") == 0)
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "tsv") == 0)  // aliases
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "csv") == 0)
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "xml") == 0)
+        return _set_out_format (FORMAT_XML, error);
+    else if (g_strcmp0 (format, "json") == 0)
+        return _set_out_format (FORMAT_JSON, error);
+    else {
+        g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+            "Illegal output format '%s'", format);
+        return FALSE;
+    }
 }
 
 
@@ -229,16 +248,17 @@ _set_opt_noheading (const gchar *opt_name,
 
     no_heading = TRUE;
 
-    return _set_output_mode (OUTPUT_CSV, error);
+    return _set_out_format (FORMAT_TEXT, error);
 }
 
 
 /**
- * @brief Extra level of escape for escape sequences in delimiters
+ * @brief Convert escape sequences in delimiters
  * @param str The original delimiter string
  * @return Escaped delimiter string
- * @note Delimiter needs another escape because it is later used
- * in `printf` routines. It handles `\\r`, `\\n`, `\\t` and `\\e`.
+ * @note Similar to `g_strcompress()`, but only process a few
+ * characters, unlike glib routine which converts all 8bit chars.
+ * Currently handles `\\r`, `\\n`, `\\t` and `\\e`.
  */
 static char *
 _filter_escapes (const char *str)
@@ -314,7 +334,7 @@ _set_opt_delim (const gchar *opt_name,
 
     delim = (*value) ? _filter_escapes (value) : g_strdup ("");
 
-    return _set_output_mode (OUTPUT_CSV, error);
+    return _set_out_format (FORMAT_TEXT, error);
 }
 
 
@@ -366,14 +386,17 @@ _set_output_path (const gchar *opt_name,
  */
 static gboolean
 _option_deprecated (const gchar *opt_name,
-                    const gchar *unused,
+                    const gchar *value,
                     gpointer     data,
                     GError     **error)
 {
-    UNUSED(unused);
+    UNUSED(value);
     UNUSED(data);
-    UNUSED(error);
-    g_warning(_("Option '%s' is deprecated and ignored."), opt_name);
+    if (strcmp (opt_name, "-x") == 0 || strcmp (opt_name, "--xml") == 0)
+    {
+        g_warning(_("Option '%s' is deprecated. Use '-f xml' in future."), opt_name);
+        return _set_out_format (FORMAT_XML, error);
+    }
     return TRUE;
 }
 
@@ -552,14 +575,14 @@ _fileargs_handler (GOptionContext *context,
 
 
 /**
- * @brief post-callback after handling all text related arguments
+ * @brief post-callback after handling all output related args
  * @return Always `TRUE`, denoting success. It never fails.
  */
 static gboolean
-_text_default_options (GOptionContext *context,
-                       GOptionGroup   *group,
-                       gpointer        data,
-                       GError        **error)
+_set_def_output_opts    (GOptionContext *context,
+                         GOptionGroup   *group,
+                         gpointer        data,
+                         GError        **error)
 {
     UNUSED (context);
     UNUSED (group);
@@ -570,8 +593,8 @@ _text_default_options (GOptionContext *context,
     if (delim == NULL)
         delim = g_strdup ("\t");
 
-    if (output_mode == OUTPUT_NONE)
-        output_mode = OUTPUT_CSV;
+    if (output_format == FORMAT_UNKNOWN)
+        output_format = FORMAT_TEXT;
 
     return TRUE;
 }
@@ -898,7 +921,7 @@ _opt_ctxt_setup (GOptionContext **context,
                  rbin_type        type)
 {
     char         *desc_str;
-    GOptionGroup *group, *txt_group;
+    GOptionGroup *main_group, *output_group;
 
     /* FIXME Sneaky metadata modification! Think about cleaner way */
     meta->type = type;
@@ -912,17 +935,17 @@ _opt_ctxt_setup (GOptionContext **context,
     g_free (desc_str);
 
     /* main group */
-    group = g_option_group_new (NULL, NULL, NULL, meta, NULL);
+    main_group = g_option_group_new (NULL, NULL, NULL, meta, NULL);
 
-    g_option_group_add_entries (group, main_options);
+    g_option_group_add_entries (main_group, main_options);
     switch (type)
     {
         case RECYCLE_BIN_TYPE_FILE:
-            g_option_group_add_entries (group, rbinfile_options);
+            g_option_group_add_entries (main_group, rbinfile_options);
             break;
         case RECYCLE_BIN_TYPE_DIR:
 #if (defined G_OS_WIN32 || defined __GLIBC__)
-            g_option_group_add_entries (group, live_options);
+            g_option_group_add_entries (main_group, live_options);
 #else
             UNUSED (live_options);
 #endif
@@ -930,19 +953,19 @@ _opt_ctxt_setup (GOptionContext **context,
         default: break;
     }
 
-    g_option_group_set_parse_hooks (group, NULL,
+    g_option_group_set_parse_hooks (main_group, NULL,
         (GOptionParseFunc) _fileargs_handler);
-    g_option_context_set_main_group (*context, group);
+    g_option_context_set_main_group (*context, main_group);
 
-    /* text group */
-    txt_group = g_option_group_new ("text",
-        _("Plain text output options:"),
-        N_("Show plain text output options"), NULL, NULL);
+    /* output format arg group */
+    output_group = g_option_group_new ("format",
+        _("Output format options:"),
+        N_("Show output formatting options"), NULL, NULL);
 
-    g_option_group_add_entries (txt_group, text_options);
+    g_option_group_add_entries (output_group, out_options);
     g_option_group_set_parse_hooks (
-        txt_group, NULL, _text_default_options);
-    g_option_context_add_group (*context, txt_group);
+        output_group, NULL, _set_def_output_opts);
+    g_option_context_add_group (*context, output_group);
 
     g_option_context_set_help_enabled (*context, TRUE);
 }
@@ -1341,6 +1364,27 @@ _close_handles (void)
 }
 
 
+static char *
+_json_escape_path (const char *path)
+{
+    // TODO g_string_replace from glib 2.68 does it all
+
+    char *p = (char *) path;
+    gunichar c = 0;
+    GString *s = g_string_new ("");
+
+    while (*p) {
+        c = g_utf8_get_char (p);
+        if (c == 0x5C)
+            s = g_string_append (s, "\\\\");
+        else
+            s = g_string_append_unichar (s, c);
+        p = g_utf8_next_char (p);
+    }
+    return g_string_free (s, FALSE);
+}
+
+
 /**
  * @brief Print preamble and column header for TSV output
  * @param meta Pointer to metadata structure
@@ -1472,6 +1516,39 @@ _print_xml_header (metarecord *meta)
 
 
 /**
+ * @brief Print preamble for JSON output
+ * @param meta Pointer to metadata structure
+ */
+static void
+_print_json_header (metarecord *meta)
+{
+    g_print ("{\n");
+    g_printf ("  \"format\": \"%s\",\n",
+        (meta->type == RECYCLE_BIN_TYPE_FILE) ? "file" : "dir");
+
+
+    if (meta->version >= 0)  /* can be found and not error */
+        g_printf ("  \"version\": %" PRId64 ",\n", meta->version);
+    else
+        g_print ("  \"version\": null,\n");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
+        g_printf ("  \"ever_existed\": %" PRIu32 ",\n", meta->total_entry);
+
+    // TODO need to escape path separator for json
+    {
+        char *s = g_filename_display_name (meta->filename);
+        char *rbin_path = _json_escape_path (s);
+        g_printf ("  \"path\": \"%s\",\n", rbin_path);
+        g_free (s);
+        g_free (rbin_path);
+    }
+
+    g_print ("  \"records\": [\n");
+}
+
+
+/**
  * @brief Stub routine for printing header
  * @note Calls other printing routine depending on output mode
  */
@@ -1480,18 +1557,13 @@ _print_header (void)
 {
     if (no_heading) return;
 
-    switch (output_mode)
+    switch (output_format)
     {
-        case OUTPUT_CSV:
-            _print_csv_header (meta);
-            break;
+        case FORMAT_TEXT: _print_csv_header  (meta); break;
+        case FORMAT_XML:  _print_xml_header  (meta); break;
+        case FORMAT_JSON: _print_json_header (meta); break;
 
-        case OUTPUT_XML:
-            _print_xml_header (meta);
-            break;
-
-        default:
-            g_assert_not_reached();
+        default: g_assert_not_reached();
     }
 }
 
@@ -1523,9 +1595,9 @@ _print_record_cb (rbin_struct *record,
     out_fname = out_fname ?
         g_strdup (out_fname) : g_strdup ("???");
 
-    switch (output_mode)
+    switch (output_format)
     {
-        case OUTPUT_CSV:
+        case FORMAT_TEXT:
 
             deltime = g_date_time_format (dt, "%F %T");
 
@@ -1544,7 +1616,7 @@ _print_record_cb (rbin_struct *record,
 
             break;
 
-        case OUTPUT_XML:
+        case FORMAT_XML:
         {
             GString *s = g_string_new (NULL);
 
@@ -1573,6 +1645,46 @@ _print_record_cb (rbin_struct *record,
         }
             break;
 
+        case FORMAT_JSON:
+        {
+            GString *s = g_string_new ("    {\"index\": ");
+
+            if (meta->type == RECYCLE_BIN_TYPE_FILE) {
+                g_string_append_printf (s, "%" PRIu32, record->index_n);
+            } else {
+                g_string_append_printf (s, "\"%s\"", record->index_s);
+            }
+
+            deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z"):
+                                      g_date_time_format (dt, "%FT%TZ");
+
+            g_string_append_printf (s, ", \"time\": \"%s\"", deltime);
+
+            g_string_append_printf (s, ", \"gone\": %s",
+                (record->gone == FILESTATUS_GONE  ) ? "true" :
+                (record->gone == FILESTATUS_EXISTS) ? "false":
+                                                      "null");
+
+            if ( record->filesize == G_MAXUINT64 ) /* faulty */
+                g_string_append_printf (s, ", \"size\": null");
+            else
+                g_string_append_printf (s,
+                    ", \"size\": %" PRIu64, record->filesize);
+
+            {
+                char *s = _json_escape_path (out_fname);
+                g_free (out_fname);
+                out_fname = s;
+            }
+
+            g_string_append_printf (s,
+                ", \"path\": \"%s\"},\n", out_fname);
+
+            outstr = g_string_free (s, FALSE);
+            g_print ("%s", outstr);
+        }
+            break;
+
         default:
             g_assert_not_reached();
     }
@@ -1591,14 +1703,18 @@ _print_record_cb (rbin_struct *record,
 static void
 _print_footer (void)
 {
-    switch (output_mode)
+    switch (output_format)
     {
-        case OUTPUT_CSV:
+        case FORMAT_TEXT:
             /* do nothing */
             break;
 
-        case OUTPUT_XML:
+        case FORMAT_XML:
             g_print ("%s", "</recyclebin>\n");
+            break;
+
+        case FORMAT_JSON:
+            g_print ("  ]\n}\n");
             break;
 
         default:

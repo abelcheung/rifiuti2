@@ -63,12 +63,13 @@ typedef enum
     VERSION_ME_03,
 } detected_os_ver;
 
-enum
+typedef enum _out_fmt
 {
-    OUTPUT_NONE = 0,
-    OUTPUT_CSV,
-    OUTPUT_XML
-};
+    FORMAT_UNKNOWN,
+    FORMAT_TEXT,
+    FORMAT_XML,
+    FORMAT_JSON,
+} out_fmt;
 
 /**
  * @brief Whether original trashed file still exists
