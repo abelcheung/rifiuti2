@@ -4,10 +4,12 @@
  * Please see LICENSE file for more info.
  */
 
+#include <stdbool.h>
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
 #include "rifiuti-vista.h"
+#include "utils-conv.h"
 #include "utils.h"
 #ifdef G_OS_WIN32
 #  include "utils-win.h"
@@ -124,22 +126,26 @@ _validate_index_file   (const char   *filename,
 
 static rbin_struct *
 _populate_record_data  (void      *buf,
-                        uint64_t   version,
-                        gboolean   erraneous)
+                        gsize      bufsize,
+                        uint64_t   version)
 {
     rbin_struct  *record;
     size_t        read;
+    bool          erraneous = false;
 
     record = g_malloc0 (sizeof (rbin_struct));
     record->version = version;
 
-    /*
-     * In rare cases, the size of index file is 543 bytes versus (normal) 544 bytes.
-     * In such occasion file size only occupies 56 bit, not 64 bit as it ought to be.
-     * Actually this 56-bit file size is very likely wrong after all. Probably some
-     * bug inside Windows. This is observed during deletion of dd.exe from Forensic
-     * Acquisition Utilities (by George M. Garner Jr) in certain localized Vista.
-     */
+    // In rare cases, the size of index file is one byte short of
+    // (fixed) 544 bytes in Vista. Under such occasion, file size
+    // only occupies 56 bit, not 64 bit as it ought to be.
+    // Actually this 56-bit file size is very likely wrong after all.
+    // This is observed during deletion of dd.exe from Forensic
+    // Acquisition Utilities (by George M. Garner Jr)
+    // in certain localized Vista.
+    if (version == VERSION_VISTA && bufsize == VERSION1_FILE_SIZE - 1)
+        erraneous = true;
+
     memcpy (&record->filesize, buf + FILESIZE_OFFSET,
             FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
     if (erraneous)
@@ -156,7 +162,7 @@ _populate_record_data  (void      *buf,
     }
 
     /* File deletion time */
-    memcpy (&record->winfiletime, buf + FILETIME_OFFSET - (int) erraneous,
+    memcpy (&record->winfiletime, buf - (int) erraneous + FILETIME_OFFSET,
             VERSION1_FILENAME_OFFSET - FILETIME_OFFSET);
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
@@ -165,24 +171,37 @@ _populate_record_data  (void      *buf,
     {
         case VERSION_VISTA:
             record->uni_path = conv_path_to_utf8_with_tmpl (
-                (const char *) (buf - erraneous + VERSION1_FILENAME_OFFSET),
-                NULL, "<\\u%04X>", &read, &record->error);
+                (const char *) (buf - (int) erraneous + VERSION1_FILENAME_OFFSET),
+                WIN_PATH_MAX, NULL, "<\\u%04X>", &read, &record->error);
             break;
 
         case VERSION_WIN10:
+        {
             record->uni_path = conv_path_to_utf8_with_tmpl (
                 (const char *) (buf + VERSION2_FILENAME_OFFSET),
+                bufsize - VERSION2_FILENAME_OFFSET,
                 NULL, "<\\u%04X>", &read, &record->error);
+        }
             break;
 
         default:
             g_assert_not_reached ();
     }
 
-    if (! record->uni_path)
-        g_set_error_literal (&record->error, R2_REC_ERROR,
-                R2_REC_ERROR_CONV_PATH,
-                _("Trash file path conversion failed completely"));
+    if (record->uni_path) {
+        if (g_error_matches (record->error, G_CONVERT_ERROR,
+            G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
+        {
+            g_debug ("%s", record->error->message);
+            g_clear_error (&record->error);
+            g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains broken unicode character(s)"));
+        }
+    } else {
+        g_clear_error (&record->error);
+        g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+            _("Trash file path conversion failed completely"));
+    }
 
     return record;
 }
@@ -212,21 +231,7 @@ _parse_record_cb   (char *index_file,
 
     g_debug ("Start populating record for '%s'...", basename);
 
-    switch (version)
-    {
-        case VERSION_VISTA:
-            record = _populate_record_data (buf, version,
-                (bufsize == VERSION1_FILE_SIZE - 1));
-            break;
-
-        case VERSION_WIN10:
-            record = _populate_record_data (buf, version, FALSE);
-            break;
-
-        default:
-            g_assert_not_reached();
-    }
-
+    record = _populate_record_data (buf, bufsize, version);
     g_free (buf);
 
     /* Check corresponding $R.... file existance and set record->gone */

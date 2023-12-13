@@ -9,6 +9,7 @@
 #include <glib/gstdio.h>
 
 #include "rifiuti.h"
+#include "utils-conv.h"
 #include "utils.h"
 
 
@@ -144,10 +145,12 @@ _populate_record_data   (void     *buf,
     uint32_t        drivenum;
     size_t          read;
     char           *legacy_fname;
+    gsize           legacy_bufsize, uni_bufsize;
 
     record = g_malloc0 (sizeof (rbin_struct));
 
-    legacy_fname = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    legacy_bufsize = RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET;
+    legacy_fname = g_malloc0 (legacy_bufsize);
     copy_field (legacy_fname, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
 
     /* Index number associated with the record */
@@ -187,18 +190,28 @@ _populate_record_data   (void     *buf,
     record->filesize = GUINT64_FROM_LE (record->filesize);
     g_debug ("filesize=%" PRIu64, record->filesize);
 
-    /*
-     * 1. Only bother populating legacy path if users need it,
-     *    because otherwise we don't know which encoding to use
-     * 2. Enclose with angle brackets because they are not allowed
-     *    in Windows file name, therefore stands out better that
-     *    the escaped hex sequences are not part of real file name
-     */
+    // Only bother populating legacy path if users need it,
+    // because otherwise we don't know which encoding to use
     if (legacy_encoding)
     {
         record->legacy_path = conv_path_to_utf8_with_tmpl (
-            legacy_fname, legacy_encoding,
+            legacy_fname, legacy_bufsize, legacy_encoding,
             "<\\%02X>", &read, &record->error);
+        if (record->legacy_path) {
+            if (g_error_matches (record->error, G_CONVERT_ERROR,
+                G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
+            {
+                g_debug ("%s", record->error->message);
+                g_clear_error (&record->error);
+                g_set_error (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains character(s) that could not be "
+                "interpreted in %s encoding"), legacy_encoding);
+            }
+        } else {
+            g_clear_error (&record->error);
+            g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Legacy path conversion failed completely"));
+        }
     }
 
     g_free (legacy_fname);
@@ -208,9 +221,27 @@ _populate_record_data   (void     *buf,
 
     /* Part below deals with unicode path only */
 
+    uni_bufsize = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
+
     record->uni_path = conv_path_to_utf8_with_tmpl (
-        (char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
+        (char *) (buf + UNICODE_FILENAME_OFFSET),
+        uni_bufsize / sizeof(gunichar2), NULL,
         "<\\u%04X>", &read, &record->error);
+
+    if (record->uni_path) {
+        if (g_error_matches (record->error, G_CONVERT_ERROR,
+            G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
+        {
+            g_debug ("%s", record->error->message);
+            g_clear_error (&record->error);
+            g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains broken unicode character(s)"));
+        }
+    } else {
+        g_clear_error (&record->error);
+        g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+            _("Unicode path conversion failed completely"));
+    }
 
     /*
      * We check for junk memory filling the padding area after
@@ -226,6 +257,11 @@ _populate_record_data   (void     *buf,
      * Looks like an ANSI codepage full path is filled in
      * legacy path field, then overwritten in place by a 8.3
      * version of path whenever applicable (which was always shorter).
+     *
+     * The 8.3 path generated from non-ascii seems to follow certain
+     * ruleset, but the exact detail is unknown:
+     * - accented latin chars transliterated to pure ASCII
+     * - first DBCS char converted to UCS2 codepoint
      */
     if (junk_detected && ! *junk_detected)
     {

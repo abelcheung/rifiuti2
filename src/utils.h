@@ -266,19 +266,7 @@ gboolean      rifiuti_init                (rbin_type         type,
 
 GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
-char *        utf16le_to_utf8             (const gunichar2  *str,
-                                           glong            *items_read,
-                                           glong            *items_written,
-                                           GError          **error)
-                                           G_GNUC_UNUSED;
-
 gboolean      dump_content                (GError          **error);
-
-char *        conv_path_to_utf8_with_tmpl (const char       *str,
-                                           const char       *from_enc,
-                                           const char       *tmpl,
-                                           size_t           *read,
-                                           GError          **error);
 
 exitcode      rifiuti_handle_global_error (GError           *error);
 gboolean      rifiuti_handle_record_error (void);
