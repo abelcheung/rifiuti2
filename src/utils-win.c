@@ -25,17 +25,22 @@ static PSID   sid       = NULL;
 void
 gui_message (const char *message)
 {
-    gunichar2 *title = L"This is a command line application";
-    gunichar2 *body = g_utf8_to_utf16 (message, -1, NULL, NULL, NULL);
+    wchar_t *title = L"This is a command line application";
+    wchar_t *body = (wchar_t *) g_utf8_to_utf16 (
+        message, -1, NULL, NULL, NULL);
 
-    if (body == NULL)
-        body = g_utf8_to_utf16 ("(Failure to display help)",
-            -1, NULL, NULL, NULL);
+    if (body)
+    {
+        MessageBoxW (NULL, body, title,
+            MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
+        g_free (body);
+        return;
+    }
 
-    MessageBoxW (NULL, (LPCWSTR) body, (LPCWSTR) title,
+    body = L"(Failure to display help)";
+    MessageBoxW (NULL, body, title,
         MB_OK | MB_ICONINFORMATION | MB_TOPMOST);
-    g_free (title);
-    g_free (body);
+    return;
 }
 
 
