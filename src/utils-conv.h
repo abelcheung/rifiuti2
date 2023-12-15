@@ -13,6 +13,9 @@
 bool          enc_is_ascii_compatible     (const char       *enc,
                                            GError          **error);
 
+size_t        ucs2_strnlen                (const char       *str,
+                                           ssize_t           max_sz);
+
 char *        conv_path_to_utf8_with_tmpl (const char       *path,
                                            ssize_t           pathlen,
                                            const char       *from_enc,

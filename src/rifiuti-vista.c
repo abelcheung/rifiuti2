@@ -94,7 +94,7 @@ _validate_index_file   (const char   *filename,
             pathlen = GUINT32_FROM_LE (pathlen);
 
             /* Header length + strlen in UTF-16 encoding */
-            expect_sz = VERSION2_FILENAME_OFFSET + pathlen * 2;
+            expect_sz = VERSION2_FILENAME_OFFSET + pathlen * sizeof(gunichar2);
             if (*bufsize != expect_sz)
             {
                 g_debug ("File size = %" G_GSIZE_FORMAT
@@ -130,21 +130,38 @@ _populate_record_data  (void      *buf,
                         uint64_t   version)
 {
     rbin_struct  *record;
-    size_t        read;
+    size_t        pathbuf_sz = 0;
+    void         *pathbuf_start = NULL;
     bool          erraneous = false;
+
+    switch (version)
+    {
+        case VERSION_VISTA:
+            // In rare cases, the size of index file is one byte short of
+            // (fixed) 544 bytes in Vista. Under such occasion, file size
+            // only occupies 56 bit, not 64 bit as it ought to be.
+            // Actually this 56-bit file size is very likely wrong after all.
+            // This is observed during deletion of dd.exe from Forensic
+            // Acquisition Utilities (by George M. Garner Jr)
+            // in certain localized Vista.
+            if (bufsize == VERSION1_FILE_SIZE - 1)
+                erraneous = true;
+
+            pathbuf_sz = WIN_PATH_MAX * sizeof(gunichar2);
+            pathbuf_start = buf - (int)erraneous + VERSION1_FILENAME_OFFSET;
+            break;
+
+        case VERSION_WIN10:
+            pathbuf_sz = bufsize - VERSION2_FILENAME_OFFSET;
+            pathbuf_start = buf + VERSION2_FILENAME_OFFSET;
+            break;
+
+        default:
+            g_assert_not_reached ();
+    }
 
     record = g_malloc0 (sizeof (rbin_struct));
     record->version = version;
-
-    // In rare cases, the size of index file is one byte short of
-    // (fixed) 544 bytes in Vista. Under such occasion, file size
-    // only occupies 56 bit, not 64 bit as it ought to be.
-    // Actually this 56-bit file size is very likely wrong after all.
-    // This is observed during deletion of dd.exe from Forensic
-    // Acquisition Utilities (by George M. Garner Jr)
-    // in certain localized Vista.
-    if (version == VERSION_VISTA && bufsize == VERSION1_FILE_SIZE - 1)
-        erraneous = true;
 
     memcpy (&record->filesize, buf + FILESIZE_OFFSET,
             FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
@@ -167,40 +184,23 @@ _populate_record_data  (void      *buf,
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
-    switch (version)
+    record->raw_uni_path = g_malloc0 (pathbuf_sz + sizeof(gunichar2));
+    memcpy (record->raw_uni_path, pathbuf_start, pathbuf_sz);
+
     {
-        case VERSION_VISTA:
-            record->uni_path = conv_path_to_utf8_with_tmpl (
-                (const char *) (buf - (int) erraneous + VERSION1_FILENAME_OFFSET),
-                WIN_PATH_MAX, NULL, "<\\u%04X>", &read, &record->error);
-            break;
-
-        case VERSION_WIN10:
+        // Never set len = -1 for UCS2 source string
+        char *s = g_convert (record->raw_uni_path,
+            ucs2_strnlen (record->raw_uni_path, pathbuf_sz) * sizeof (gunichar2),
+            "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+        if (s)
         {
-            record->uni_path = conv_path_to_utf8_with_tmpl (
-                (const char *) (buf + VERSION2_FILENAME_OFFSET),
-                bufsize - VERSION2_FILENAME_OFFSET,
-                NULL, "<\\u%04X>", &read, &record->error);
+            g_free (s);
         }
-            break;
-
-        default:
-            g_assert_not_reached ();
-    }
-
-    if (record->uni_path) {
-        if (g_error_matches (record->error, G_CONVERT_ERROR,
-            G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
+        else
         {
-            g_debug ("%s", record->error->message);
-            g_clear_error (&record->error);
             g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
                 _("Path contains broken unicode character(s)"));
         }
-    } else {
-        g_clear_error (&record->error);
-        g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
-            _("Trash file path conversion failed completely"));
     }
 
     return record;

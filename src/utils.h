@@ -166,7 +166,6 @@ typedef struct _rbin_meta
  */
 typedef struct _rbin_struct
 {
-
     /**
      * @brief version of each index file
      * @note `meta.version` keeps the global status of whole dir,
@@ -174,7 +173,6 @@ typedef struct _rbin_struct
      * @attention For `$Recycle.bin` only
      */
     uint64_t version;
-
     /**
      * @brief Chronological index number for INFO2
      * @attention For `INFO2` only
@@ -210,7 +208,8 @@ typedef struct _rbin_struct
      * @note Original path was stored in index file in UTF-16 encoding
      * since Windows 2000. The path is converted to UTF-8 encoding and stored here .
      */
-    char *uni_path;
+    char *raw_uni_path;
+
     /**
      * @brief ANSI encoded trash file original path
      * @note Until Windows 2003, index file preserves trashed file path in
@@ -218,7 +217,8 @@ typedef struct _rbin_struct
      * @attention For `INFO2` only. Can be either full path or using 8.3 format,
      * depending on Windows version and code page used.
      */
-    char *legacy_path;
+    char *raw_legacy_path;
+
     /**
      * @brief Whether original trashed file is gone
      * @note Trash file can be detected if it still exists, but via very

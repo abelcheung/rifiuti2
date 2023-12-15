@@ -707,8 +707,8 @@ _free_record_cb (rbin_struct *record)
 {
     g_free (record->index_s);
     g_date_time_unref (record->deltime);
-    g_free (record->uni_path);
-    g_free (record->legacy_path);
+    g_free (record->raw_uni_path);
+    g_free (record->raw_legacy_path);
     g_clear_error (&record->error);
     g_free (record);
 }
@@ -1044,7 +1044,7 @@ _json_escape_path (const char *path)
  * @param meta Pointer to metadata structure
  */
 static void
-_print_csv_header (metarecord *meta)
+_print_text_header (const metarecord *meta)
 {
     {
         char *rbin_path = g_filename_display_name (meta->filename);
@@ -1134,7 +1134,7 @@ _print_csv_header (metarecord *meta)
  * @param meta Pointer to metadata structure
  */
 static void
-_print_xml_header (metarecord *meta)
+_print_xml_header (const metarecord *meta)
 {
     GString *result;
 
@@ -1174,7 +1174,7 @@ _print_xml_header (metarecord *meta)
  * @param meta Pointer to metadata structure
  */
 static void
-_print_json_header (metarecord *meta)
+_print_json_header (const metarecord *meta)
 {
     g_print ("{\n");
     g_printf ("  \"format\": \"%s\",\n",
@@ -1202,178 +1202,198 @@ _print_json_header (metarecord *meta)
 }
 
 
-/**
- * @brief Stub routine for printing header
- * @note Calls other printing routine depending on output mode
- */
 static void
-_print_header (void)
+_print_text_record   (rbin_struct        *record,
+                      const metarecord   *meta)
 {
-    if (no_heading) return;
-
-    switch (output_format)
-    {
-        case FORMAT_TEXT: _print_csv_header  (meta); break;
-        case FORMAT_XML:  _print_xml_header  (meta); break;
-        case FORMAT_JSON: _print_json_header (meta); break;
-
-        default: g_assert_not_reached();
-    }
-}
-
-
-/**
- * @brief Print content of each recycle bin record
- * @param record Pointer to each recycle bin record
- * @param meta Pointer to metadata structure
- */
-static void
-_print_record_cb (rbin_struct *record,
-                  const metarecord *meta)
-{
-    char       *out_fname, *index, *size = NULL;
-    char       *outstr = NULL, *deltime = NULL;
-    GDateTime  *dt;
+    char         *outstr;
+    char         **header;
+    GDateTime    *dt;
 
     g_return_if_fail (record != NULL);
 
-    index = (meta->type == RECYCLE_BIN_TYPE_FILE) ?
-        g_strdup_printf ("%u", record->index_n) :
+    header = (char **) g_malloc0_n (6, sizeof(gpointer));
+
+    header[0] = (meta->type == RECYCLE_BIN_TYPE_FILE) ?
+        g_strdup_printf ("%" PRIu32, record->index_n) :
         g_strdup (record->index_s);
 
     dt = use_localtime ? g_date_time_to_local (record->deltime):
                          g_date_time_ref      (record->deltime);
+    header[1] = g_date_time_format (dt, "%F %T");
 
-    out_fname = legacy_encoding ?
-        record->legacy_path : record->uni_path;
-    out_fname = out_fname ?
-        g_strdup (out_fname) : g_strdup ("???");
+    header[2] =
+        (record->gone == FILESTATUS_EXISTS) ? g_strdup("FALSE") :
+        (record->gone == FILESTATUS_GONE  ) ? g_strdup("TRUE")  :
+                                              g_strdup("???")   ;
 
-    switch (output_format)
-    {
-        case FORMAT_TEXT:
+    header[3] = (record->filesize == G_MAXUINT64) ?  // faulty
+        g_strdup ("???") :
+        g_strdup_printf ("%" PRIu64, record->filesize);
 
-            deltime = g_date_time_format (dt, "%F %T");
+    if (legacy_encoding)
+        header[4] = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+    else
+        header[4] = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "<\\u%04X>", NULL, NULL);
+    if (! header[4])
+        header[4] = g_strdup ("???");
 
-            if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                size = g_strdup ("???");
-            else
-                size = g_strdup_printf ("%" PRIu64, record->filesize);
+    outstr = g_strjoinv (delim, header);
+    g_print ("%s\n", outstr);
 
-            const char *gone =
-                record->gone == FILESTATUS_EXISTS ? "FALSE" :
-                record->gone == FILESTATUS_GONE   ? "TRUE"  :
-                                                    "???"   ;
-            outstr = g_strjoin (delim, index, deltime, gone, size, out_fname, NULL);
-
-            g_print ("%s\n", outstr);
-
-            break;
-
-        case FORMAT_XML:
-        {
-            GString *s = g_string_new (NULL);
-
-            deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z" ):
-                                      g_date_time_format (dt, "%FT%TZ");
-
-            g_string_printf (s,
-                "  <record index=\"%s\" time=\"%s\" gone=\"%s\"",
-                index, deltime,
-                (record->gone == FILESTATUS_GONE  ) ? "true" :
-                (record->gone == FILESTATUS_EXISTS) ? "false":
-                                                      "unknown");
-
-            if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                g_string_append_printf (s, " size=\"-1\"");
-            else
-                g_string_append_printf (s,
-                    " size=\"%" PRIu64 "\"", record->filesize);
-
-            g_string_append_printf (s, ">\n"
-                "    <path><![CDATA[%s]]></path>\n"
-                "  </record>\n", out_fname);
-
-            outstr = g_string_free (s, FALSE);
-            g_print ("%s", outstr);
-        }
-            break;
-
-        case FORMAT_JSON:
-        {
-            GString *s = g_string_new ("    {\"index\": ");
-
-            if (meta->type == RECYCLE_BIN_TYPE_FILE) {
-                g_string_append_printf (s, "%" PRIu32, record->index_n);
-            } else {
-                g_string_append_printf (s, "\"%s\"", record->index_s);
-            }
-
-            deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z"):
-                                      g_date_time_format (dt, "%FT%TZ");
-
-            g_string_append_printf (s, ", \"time\": \"%s\"", deltime);
-
-            g_string_append_printf (s, ", \"gone\": %s",
-                (record->gone == FILESTATUS_GONE  ) ? "true" :
-                (record->gone == FILESTATUS_EXISTS) ? "false":
-                                                      "null");
-
-            if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                g_string_append_printf (s, ", \"size\": null");
-            else
-                g_string_append_printf (s,
-                    ", \"size\": %" PRIu64, record->filesize);
-
-            {
-                char *s = _json_escape_path (out_fname);
-                g_free (out_fname);
-                out_fname = s;
-            }
-
-            g_string_append_printf (s,
-                ", \"path\": \"%s\"},\n", out_fname);
-
-            outstr = g_string_free (s, FALSE);
-            g_print ("%s", outstr);
-        }
-            break;
-
-        default:
-            g_assert_not_reached();
-    }
-    g_date_time_unref (dt);
     g_free (outstr);
-    g_free (out_fname);
-    g_free (deltime);
-    g_free (size);
-    g_free (index);
+    g_date_time_unref (dt);
+    g_strfreev (header);
 }
 
 
-/**
- * @brief Print footer of recycle bin data
- */
 static void
-_print_footer (void)
+_print_xml_record   (rbin_struct        *record,
+                     const metarecord   *meta)
 {
-    switch (output_format)
+    char         *path, *dt_str;
+    GDateTime    *dt;
+    GString      *s;
+
+    g_return_if_fail (record != NULL);
+
+    s = g_string_new ("  <record");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE)
+        g_string_append_printf (s, " index=\"%" PRIu32 "\"", record->index_n);
+    else
+        g_string_append_printf (s, " index=\"%s\"", record->index_s);
+
+    if (use_localtime)
     {
-        case FORMAT_TEXT:
-            /* do nothing */
-            break;
-
-        case FORMAT_XML:
-            g_print ("%s", "</recyclebin>\n");
-            break;
-
-        case FORMAT_JSON:
-            g_print ("  ]\n}\n");
-            break;
-
-        default:
-            g_assert_not_reached();
+        dt = g_date_time_to_local (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%T%z");
     }
+    else
+    {
+        dt = g_date_time_ref (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%TZ");
+    }
+    g_string_append_printf (s, " time=\"%s\"", dt_str);
+
+    g_string_append_printf (s, " gone=\"%s\"",
+        (record->gone == FILESTATUS_GONE  ) ? "true"  :
+        (record->gone == FILESTATUS_EXISTS) ? "false" :
+                                              "unknown");
+
+    if (record->filesize == G_MAXUINT64)  // faulty
+        g_string_append_printf (s, " size=\"-1\"");
+    else
+        g_string_append_printf (s,
+            " size=\"%" PRIu64 "\"", record->filesize);
+
+    // Still need to be converted despite using CDATA, otherwise
+    // could be writing garbage on screen or into file
+    if (legacy_encoding)
+        path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "&#x%02X;", NULL, NULL);
+    else
+        path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "&#x%04X;", NULL, NULL);
+
+    if (path)
+        g_string_append_printf (s, ">\n"
+            "    <path><![CDATA[%s]]></path>\n"
+            "  </record>\n", path);
+    else
+        s = g_string_append (s, ">\n    <path/>\n  </record>\n");
+
+    g_print ("%s", s->str);
+    g_string_free (s, TRUE);
+
+    g_date_time_unref (dt);
+    g_free (path);
+    g_free (dt_str);
+}
+
+
+static void
+_print_json_record   (rbin_struct        *record,
+                      const metarecord   *meta)
+{
+    char         *path, *dt_str;
+    GDateTime    *dt;
+    GString      *s;
+
+    g_return_if_fail (record != NULL);
+
+    s = g_string_new ("    {");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE)
+        g_string_append_printf (s, "\"index\": %" PRIu32, record->index_n);
+    else
+        g_string_append_printf (s, "\"index\": \"%s\"", record->index_s);
+
+    if (use_localtime)
+    {
+        dt = g_date_time_to_local (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%T%z");
+    }
+    else
+    {
+        dt = g_date_time_ref (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%TZ");
+    }
+    g_string_append_printf (s, ", \"time\": \"%s\"", dt_str);
+
+    g_string_append_printf (s, ", \"gone\": %s",
+        (record->gone == FILESTATUS_GONE  ) ? "true" :
+        (record->gone == FILESTATUS_EXISTS) ? "false":
+                                              "null");
+
+    if (record->filesize == G_MAXUINT64)  // faulty
+        g_string_append_printf (s, ", \"size\": null");
+    else
+        g_string_append_printf (s,
+            ", \"size\": %" PRIu64, record->filesize);
+
+    // JSON spec doesn't even allow encoding raw byte data,
+    // so transform it like text output format
+    if (legacy_encoding)
+        path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+    else
+        path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "\\u%04X", NULL, NULL);
+    {
+        // FIXME Doesn't work, it does extra level of escape for
+        // unicode escape
+        char *s = _json_escape_path (path);
+        g_free (path);
+        path = s;
+    }
+
+    if (path)
+        g_string_append_printf (s, ", \"path\": \"%s\"},\n", path);
+    else
+        s = g_string_append (s, ", \"path\": null},\n");
+
+    g_print ("%s", s->str);
+
+    g_date_time_unref (dt);
+    g_free (path);
+    g_free (dt_str);
+}
+
+
+static void
+_print_xml_footer (void)
+{
+    g_print ("%s", "</recyclebin>\n");
+}
+
+
+static void
+_print_json_footer (void)
+{
+    g_print ("  ]\n}\n");
 }
 
 
@@ -1387,6 +1407,9 @@ dump_content (GError **error)
 {
     FILE *tmp_fh = NULL, *prev_fh = NULL;
     char *tmp_path = NULL;
+    void (*print_header_func)(const metarecord *);
+    void (*print_record_func)(rbin_struct *, const metarecord *);
+    void (*print_footer_func)();
 
     if (output_loc)
     {
@@ -1400,9 +1423,33 @@ dump_content (GError **error)
             return FALSE;
     }
 
-    _print_header ();
-    g_ptr_array_foreach (meta->records, (GFunc) _print_record_cb, meta);
-    _print_footer ();
+    switch (output_format)
+    {
+        case FORMAT_TEXT:
+            print_header_func = no_heading ?
+                NULL : &_print_text_header;
+            print_record_func = &_print_text_record;
+            print_footer_func = NULL;
+            break;
+        case FORMAT_XML:
+            print_header_func = &_print_xml_header;
+            print_record_func = &_print_xml_record;
+            print_footer_func = &_print_xml_footer;
+            break;
+        case FORMAT_JSON:
+            print_header_func = &_print_json_header;
+            print_record_func = &_print_json_record;
+            print_footer_func = &_print_json_footer;
+            break;
+
+        default: g_assert_not_reached();
+    }
+
+    if (print_header_func != NULL)
+        (*print_header_func) (meta);
+    g_ptr_array_foreach (meta->records, (GFunc) print_record_func, meta);
+    if (print_footer_func != NULL)
+        (*print_footer_func) ();
 
     if (!tmp_path)
         return TRUE;

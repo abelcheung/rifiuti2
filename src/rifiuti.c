@@ -126,7 +126,7 @@ _validate_index_file   (const char   *filename,
 
     rewind (fp);
     *infile = fp;
-    meta->version = (uint64_t) ver;
+    meta->version = ver;
     return TRUE;
 
     validation_broken:
@@ -143,15 +143,12 @@ _populate_record_data   (void     *buf,
 {
     rbin_struct    *record;
     uint32_t        drivenum;
-    size_t          read;
-    char           *legacy_fname;
-    gsize           legacy_bufsize, uni_bufsize;
 
     record = g_malloc0 (sizeof (rbin_struct));
 
-    legacy_bufsize = RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET;
-    legacy_fname = g_malloc0 (legacy_bufsize);
-    copy_field (legacy_fname, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
+    // Verbatim path in ANSI code page
+    record->raw_legacy_path = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    copy_field (record->raw_legacy_path, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
 
     /* Index number associated with the record */
     copy_field (&record->index_n, RECORD_INDEX_OFFSET, DRIVE_LETTER_OFFSET);
@@ -173,10 +170,10 @@ _populate_record_data   (void     *buf,
     record->gone = FILESTATUS_EXISTS;
     // If file is not in recycle bin (restored or permanently deleted),
     // first byte will be removed from filename
-    if (!*legacy_fname)
+    if (! *record->raw_legacy_path)
     {
         record->gone = FILESTATUS_GONE;
-        *legacy_fname = record->drive;
+        *record->raw_legacy_path = record->drive;
     }
 
     /* File deletion time */
@@ -190,57 +187,44 @@ _populate_record_data   (void     *buf,
     record->filesize = GUINT64_FROM_LE (record->filesize);
     g_debug ("filesize=%" PRIu64, record->filesize);
 
-    // Only bother populating legacy path if users need it,
+    // Only bother checking legacy path when requested,
     // because otherwise we don't know which encoding to use
     if (legacy_encoding)
     {
-        record->legacy_path = conv_path_to_utf8_with_tmpl (
-            legacy_fname, legacy_bufsize, legacy_encoding,
-            "<\\%02X>", &read, &record->error);
-        if (record->legacy_path) {
-            if (g_error_matches (record->error, G_CONVERT_ERROR,
-                G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
-            {
-                g_debug ("%s", record->error->message);
-                g_clear_error (&record->error);
-                g_set_error (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+        char *s = g_convert (record->raw_legacy_path, -1,
+            "UTF-8", legacy_encoding, NULL, NULL, NULL);
+        if (s)
+            g_free (s);
+        else
+            g_set_error (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
                 _("Path contains character(s) that could not be "
                 "interpreted in %s encoding"), legacy_encoding);
-            }
-        } else {
-            g_clear_error (&record->error);
-            g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
-                _("Legacy path conversion failed completely"));
-        }
     }
-
-    g_free (legacy_fname);
 
     if (bufsize == LEGACY_RECORD_SIZE)
         return record;
 
     /* Part below deals with unicode path only */
 
-    uni_bufsize = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
+    gsize uni_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
 
-    record->uni_path = conv_path_to_utf8_with_tmpl (
-        (char *) (buf + UNICODE_FILENAME_OFFSET),
-        uni_bufsize / sizeof(gunichar2), NULL,
-        "<\\u%04X>", &read, &record->error);
+    record->raw_uni_path = g_malloc (uni_sz);
+    copy_field (record->raw_uni_path, UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
 
-    if (record->uni_path) {
-        if (g_error_matches (record->error, G_CONVERT_ERROR,
-            G_CONVERT_ERROR_ILLEGAL_SEQUENCE))
+    {
+        // Never set len = -1 for UCS2 source string
+        char *s = g_convert (record->raw_uni_path,
+            ucs2_strnlen (record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2),
+            "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+        if (s)
         {
-            g_debug ("%s", record->error->message);
-            g_clear_error (&record->error);
+            g_free (s);
+        }
+        else
+        {
             g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
                 _("Path contains broken unicode character(s)"));
         }
-    } else {
-        g_clear_error (&record->error);
-        g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
-            _("Unicode path conversion failed completely"));
     }
 
     /*
@@ -265,18 +249,19 @@ _populate_record_data   (void     *buf,
      */
     if (junk_detected && ! *junk_detected)
     {
-        void *ptr;
+        char *p = record->raw_uni_path + ucs2_strnlen (
+            record->raw_uni_path, uni_sz) * sizeof(gunichar2);
 
-        for (ptr = buf + UNICODE_FILENAME_OFFSET + read;
-            ptr < buf + UNICODE_RECORD_SIZE; ptr++)
+        while (p < record->raw_uni_path + uni_sz * sizeof(gunichar2))
         {
-            if ( *(char *) ptr != '\0' )
+            if (*p != '\0')
             {
                 g_debug ("Junk detected at offset 0x%tx of unicode path",
-                    ptr - buf - UNICODE_FILENAME_OFFSET);
+                    p - record->raw_uni_path);
                 *junk_detected = TRUE;
                 break;
             }
+            p++;
         }
     }
 

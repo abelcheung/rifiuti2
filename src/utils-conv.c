@@ -54,9 +54,9 @@ enc_is_ascii_compatible    (const char   *enc,
  * @return Either number of UCS2 char for whole string,
  * or return `max_sz` when `max_sz` param is exceeded
  */
-static size_t
-_ucs2_strnlen   (const char   *str,
-                 ssize_t       max_sz)
+size_t
+ucs2_strnlen   (const char   *str,
+                ssize_t       max_sz)
 {
     // wcsnlen_s should be equivalent except for boundary
     // cases we don't care about
@@ -221,7 +221,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
         len = strnlen (path, (size_t) pathlen);
     } else {
         in_ch_width = sizeof (gunichar2);
-        len = _ucs2_strnlen (path, (size_t) pathlen);
+        len = ucs2_strnlen (path, (size_t) pathlen);
     }
 
     rbyte   = len *  in_ch_width;
@@ -264,7 +264,7 @@ conv_path_to_utf8_with_tmpl (const char *path,
         switch (e) {
             case EILSEQ:
             case EINVAL:  // TODO Handle partial input for EINVAL
-                if (*error == NULL) {
+                if (error && ! *error) {
                     g_set_error (error, G_CONVERT_ERROR,
                         G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
                         _("Illegal sequence or partial input at offset %" G_GSIZE_FORMAT), rbyte);
