@@ -1597,3 +1597,26 @@ rifiuti_cleanup (void)
     cleanup_windows_res ();
 #endif
 }
+
+
+void
+hexdump    (void     *start,
+            size_t    size)
+{
+    GString *s = g_string_new ("");
+    size_t i = 0;
+    do
+    {
+        if (i % 16 == 0)
+        {
+            if (s->len > 0)
+            {
+                g_debug ("%s", s->str);
+                s = g_string_assign (s, "");
+            }
+            g_string_append_printf (s, "%04zX    ", i);
+        }
+        g_string_append_printf (s, "%02" PRIX8 " ", *(uint8_t *) (start+i));
+    }
+    while (i++ < size);
+}

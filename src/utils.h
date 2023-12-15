@@ -273,4 +273,7 @@ gboolean      rifiuti_handle_record_error (void);
 
 void          rifiuti_cleanup             (void);
 
+void          hexdump                     (void             *start,
+                                           size_t            size);
+
 #endif

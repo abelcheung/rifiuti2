@@ -143,6 +143,7 @@ _populate_record_data   (void     *buf,
 {
     rbin_struct    *record;
     uint32_t        drivenum;
+    size_t          uni_buf_sz, null_terminator_offset;
 
     record = g_malloc0 (sizeof (rbin_struct));
 
@@ -206,15 +207,15 @@ _populate_record_data   (void     *buf,
 
     /* Part below deals with unicode path only */
 
-    gsize uni_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
-
-    record->raw_uni_path = g_malloc (uni_sz);
+    uni_buf_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
+    record->raw_uni_path = g_malloc (uni_buf_sz);
     copy_field (record->raw_uni_path, UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
+    null_terminator_offset = ucs2_strnlen (
+        record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2);
 
     {
-        // Never set len = -1 for UCS2 source string
-        char *s = g_convert (record->raw_uni_path,
-            ucs2_strnlen (record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2),
+        // Never set len = -1 for wchar source string
+        char *s = g_convert (record->raw_uni_path, null_terminator_offset,
             "UTF-8", "UTF-16LE", NULL, NULL, NULL);
         if (s)
         {
@@ -249,10 +250,11 @@ _populate_record_data   (void     *buf,
      */
     if (junk_detected && ! *junk_detected)
     {
-        char *p = record->raw_uni_path + ucs2_strnlen (
-            record->raw_uni_path, uni_sz) * sizeof(gunichar2);
+        // Beware: start pos shouldn't be previously read bytes,
+        // as it may contain invalid seq and quit prematurely.
+        char *p = record->raw_uni_path + null_terminator_offset;
 
-        while (p < record->raw_uni_path + uni_sz * sizeof(gunichar2))
+        while (p < record->raw_uni_path + uni_buf_sz)
         {
             if (*p != '\0')
             {
@@ -263,6 +265,9 @@ _populate_record_data   (void     *buf,
             }
             p++;
         }
+
+        if (*junk_detected)
+            hexdump (record->raw_uni_path, uni_buf_sz);
     }
 
     return record;
