@@ -62,6 +62,8 @@ foreach(bin rifiuti rifiuti-vista)
         PRIVATE
             src/utils.c
             src/utils.h
+            src/utils-conv.c
+            src/utils-conv.h
     )
     if(WIN32)
         target_sources(${bin}

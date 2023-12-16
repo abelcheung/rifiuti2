@@ -1,0 +1,14 @@
+{
+  "format": "file",
+  "version": 4,
+  "path": "INFO2-sample2",
+  "records": [
+    {"index": 0, "time": "2015-04-20T00:07:36Z", "gone": false, "size": 32768, "path": "C:\\WINDOWS\\All Users\\Desktop\\Connect to the Internet.LNK"},
+    {"index": 1, "time": "2015-04-20T00:07:42Z", "gone": false, "size": 32768, "path": "C:\\WINDOWS\\Desktop\\Online Services"},
+    {"index": 2, "time": "2015-04-20T00:09:43Z", "gone": true, "size": 524288, "path": "C:\\WINDOWS\\Desktop\\IE9-WindowsVista-x64-enu.exe"},
+    {"index": 3, "time": "2015-04-20T01:04:33Z", "gone": false, "size": 32768, "path": "C:\\My Documents\\Résumé.txt.txt"},
+    {"index": 4, "time": "2015-04-20T01:05:01Z", "gone": false, "size": 6258688, "path": "C:\\WINDOWS\\Desktop\\winzip100.exe"},
+    {"index": 5, "time": "2015-04-20T01:05:41Z", "gone": true, "size": 32768, "path": "C:\\WINDOWS\\Desktop\\111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"},
+    {"index": 6, "time": "2015-04-20T01:06:12Z", "gone": false, "size": 32768, "path": "C:\\WINDOWS\\Desktop\\1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345"},
+  ]
+}

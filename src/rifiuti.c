@@ -9,6 +9,7 @@
 #include <glib/gstdio.h>
 
 #include "rifiuti.h"
+#include "utils-conv.h"
 #include "utils.h"
 
 
@@ -125,7 +126,7 @@ _validate_index_file   (const char   *filename,
 
     rewind (fp);
     *infile = fp;
-    meta->version = (uint64_t) ver;
+    meta->version = ver;
     return TRUE;
 
     validation_broken:
@@ -142,13 +143,13 @@ _populate_record_data   (void     *buf,
 {
     rbin_struct    *record;
     uint32_t        drivenum;
-    size_t          read;
-    char           *legacy_fname;
+    size_t          uni_buf_sz, null_terminator_offset;
 
     record = g_malloc0 (sizeof (rbin_struct));
 
-    legacy_fname = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-    copy_field (legacy_fname, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
+    // Verbatim path in ANSI code page
+    record->raw_legacy_path = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
+    copy_field (record->raw_legacy_path, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
 
     /* Index number associated with the record */
     copy_field (&record->index_n, RECORD_INDEX_OFFSET, DRIVE_LETTER_OFFSET);
@@ -170,10 +171,10 @@ _populate_record_data   (void     *buf,
     record->gone = FILESTATUS_EXISTS;
     // If file is not in recycle bin (restored or permanently deleted),
     // first byte will be removed from filename
-    if (!*legacy_fname)
+    if (! *record->raw_legacy_path)
     {
         record->gone = FILESTATUS_GONE;
-        *legacy_fname = record->drive;
+        *record->raw_legacy_path = record->drive;
     }
 
     /* File deletion time */
@@ -187,30 +188,45 @@ _populate_record_data   (void     *buf,
     record->filesize = GUINT64_FROM_LE (record->filesize);
     g_debug ("filesize=%" PRIu64, record->filesize);
 
-    /*
-     * 1. Only bother populating legacy path if users need it,
-     *    because otherwise we don't know which encoding to use
-     * 2. Enclose with angle brackets because they are not allowed
-     *    in Windows file name, therefore stands out better that
-     *    the escaped hex sequences are not part of real file name
-     */
+    // Only bother checking legacy path when requested,
+    // because otherwise we don't know which encoding to use
     if (legacy_encoding)
     {
-        record->legacy_path = conv_path_to_utf8_with_tmpl (
-            legacy_fname, legacy_encoding,
-            "<\\%02X>", &read, &record->error);
+        char *s = g_convert (record->raw_legacy_path, -1,
+            "UTF-8", legacy_encoding, NULL, NULL, NULL);
+        if (s)
+            g_free (s);
+        else
+            g_set_error (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains character(s) that could not be "
+                "interpreted in %s encoding"), legacy_encoding);
     }
-
-    g_free (legacy_fname);
 
     if (bufsize == LEGACY_RECORD_SIZE)
         return record;
 
     /* Part below deals with unicode path only */
 
-    record->uni_path = conv_path_to_utf8_with_tmpl (
-        (char *) (buf + UNICODE_FILENAME_OFFSET), NULL,
-        "<\\u%04X>", &read, &record->error);
+    uni_buf_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
+    record->raw_uni_path = g_malloc (uni_buf_sz);
+    copy_field (record->raw_uni_path, UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
+    null_terminator_offset = ucs2_strnlen (
+        record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2);
+
+    {
+        // Never set len = -1 for wchar source string
+        char *s = g_convert (record->raw_uni_path, null_terminator_offset,
+            "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+        if (s)
+        {
+            g_free (s);
+        }
+        else
+        {
+            g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
+                _("Path contains broken unicode character(s)"));
+        }
+    }
 
     /*
      * We check for junk memory filling the padding area after
@@ -226,22 +242,32 @@ _populate_record_data   (void     *buf,
      * Looks like an ANSI codepage full path is filled in
      * legacy path field, then overwritten in place by a 8.3
      * version of path whenever applicable (which was always shorter).
+     *
+     * The 8.3 path generated from non-ascii seems to follow certain
+     * ruleset, but the exact detail is unknown:
+     * - accented latin chars transliterated to pure ASCII
+     * - first DBCS char converted to UCS2 codepoint
      */
     if (junk_detected && ! *junk_detected)
     {
-        void *ptr;
+        // Beware: start pos shouldn't be previously read bytes,
+        // as it may contain invalid seq and quit prematurely.
+        char *p = record->raw_uni_path + null_terminator_offset;
 
-        for (ptr = buf + UNICODE_FILENAME_OFFSET + read;
-            ptr < buf + UNICODE_RECORD_SIZE; ptr++)
+        while (p < record->raw_uni_path + uni_buf_sz)
         {
-            if ( *(char *) ptr != '\0' )
+            if (*p != '\0')
             {
                 g_debug ("Junk detected at offset 0x%tx of unicode path",
-                    ptr - buf - UNICODE_FILENAME_OFFSET);
+                    p - record->raw_uni_path);
                 *junk_detected = TRUE;
                 break;
             }
+            p++;
         }
+
+        if (*junk_detected)
+            hexdump (record->raw_uni_path, uni_buf_sz);
     }
 
     return record;

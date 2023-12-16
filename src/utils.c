@@ -10,6 +10,7 @@
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
+#include "utils-conv.h"
 #include "utils.h"
 #ifdef G_OS_WIN32
 #  include "utils-win.h"
@@ -20,7 +21,7 @@
 
 /* Our own error domain */
 
-G_DEFINE_QUARK (rifiuti-misc-error-quark, rifiuti_fatal_error)
+G_DEFINE_QUARK (rifiuti-fatal-error-quark, rifiuti_fatal_error)
 G_DEFINE_QUARK (rifiuti-record-error-quark, rifiuti_record_error)
 
 /* Common function signature for option callbacks */
@@ -36,7 +37,7 @@ DECL_OPT_CALLBACK(_set_output_path);
 DECL_OPT_CALLBACK(_option_deprecated);
 DECL_OPT_CALLBACK(_set_opt_delim);
 DECL_OPT_CALLBACK(_set_opt_noheading);
-DECL_OPT_CALLBACK(_set_output_xml);
+DECL_OPT_CALLBACK(_set_opt_format);
 DECL_OPT_CALLBACK(_show_ver_and_exit);
 
 /* pre-declared out of laziness */
@@ -87,7 +88,14 @@ static char *os_strings[] = {
     N_("Windows 10 or above")
 };
 
-static int          output_mode        = OUTPUT_NONE;
+static char *out_format_name[] = {
+    "unknown format",
+    "TSV format",
+    "XML format",
+    "JSON format",
+};
+
+static out_fmt      output_format      = FORMAT_UNKNOWN;
 static gboolean     no_heading         = FALSE;
 static gboolean     use_localtime      = FALSE;
 static gboolean     live_mode          = FALSE;
@@ -103,22 +111,27 @@ static FILE        *err_fh             = NULL; /*!< unused for Windows console *
        metarecord  *meta               = NULL;
 
 
-/* Options intended for tab delimited mode output only */
-static const GOptionEntry text_options[] = {
+/* Options controlling output format */
+static const GOptionEntry out_options[] = {
     {
         "delimiter", 't', 0,
         G_OPTION_ARG_CALLBACK, _set_opt_delim,
-        N_("String to use as delimiter (TAB by default)"), N_("STRING")
+        N_("Field delimiter for TSV ['\\t' (TAB) if not given]"), N_("STRING")
     },
     {
         "no-heading", 'n', G_OPTION_FLAG_NO_ARG,
         G_OPTION_ARG_CALLBACK, _set_opt_noheading,
-        N_("Don't show column header and metadata"), NULL
+        N_("Don't show TSV column header and metadata"), NULL
     },
     {
-        "always-utf8", '8', G_OPTION_FLAG_HIDDEN | G_OPTION_FLAG_NO_ARG,
+        "xml", 'x', G_OPTION_FLAG_NO_ARG,
         G_OPTION_ARG_CALLBACK, _option_deprecated,
-        N_("(This option is deprecated)"), NULL
+        N_("Deprecated, use '-f xml' in future"), NULL
+    },
+    {
+        "format", 'f', 0,
+        G_OPTION_ARG_CALLBACK, _set_opt_format,
+        N_("'text' (default), 'xml' or 'json'"), N_("FORMAT")
     },
     { 0 }
 };
@@ -129,11 +142,6 @@ static const GOptionEntry main_options[] = {
         "output", 'o', 0,
         G_OPTION_ARG_CALLBACK, _set_output_path,
         N_("Write output to FILE"), N_("FILE")
-    },
-    {
-        "xml", 'x', G_OPTION_FLAG_NO_ARG,
-        G_OPTION_ARG_CALLBACK, _set_output_xml,
-        N_("Output in XML format instead of tab-delimited values"), NULL
     },
     {
         "localtime", 'z', 0,
@@ -178,38 +186,50 @@ static const GOptionEntry live_options[] = {
 /* Following routines are command argument handling related */
 
 static gboolean
-_set_output_mode (int       mode,
-                  GError  **error)
+_set_out_format    (out_fmt     desired_format,
+                    GError    **error)
 {
-    if (output_mode == mode)
+    if (output_format == desired_format)
         return TRUE;
 
-    if (output_mode == OUTPUT_NONE) {
-        output_mode = mode;
+    if (output_format == FORMAT_UNKNOWN) {
+        output_format = desired_format;
         return TRUE;
     }
 
-    g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-        _("Plain text format options can not be used in XML mode."));
+    g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+        "Output was already set in %s, but later argument "
+        "attempts to change to %s",
+        out_format_name[output_format],
+        out_format_name[desired_format]);
     return FALSE;
 }
 
 
-/**
- * @brief Option callback for setting output mode to XML
- * @return `FALSE` if option conflict exists, `TRUE` otherwise
- */
 static gboolean
-_set_output_xml (const gchar *opt_name,
-                 const gchar *value,
-                 gpointer     data,
-                 GError     **error)
+_set_opt_format   (const gchar *opt_name,
+                   const gchar *format,
+                   gpointer     data,
+                   GError     **error)
 {
     UNUSED(opt_name);
-    UNUSED(value);
     UNUSED(data);
 
-    return _set_output_mode (OUTPUT_XML, error);
+    if (g_strcmp0 (format, "text") == 0)
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "tsv") == 0)  // aliases
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "csv") == 0)
+        return _set_out_format (FORMAT_TEXT, error);
+    else if (g_strcmp0 (format, "xml") == 0)
+        return _set_out_format (FORMAT_XML, error);
+    else if (g_strcmp0 (format, "json") == 0)
+        return _set_out_format (FORMAT_JSON, error);
+    else {
+        g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+            "Illegal output format '%s'", format);
+        return FALSE;
+    }
 }
 
 
@@ -229,63 +249,7 @@ _set_opt_noheading (const gchar *opt_name,
 
     no_heading = TRUE;
 
-    return _set_output_mode (OUTPUT_CSV, error);
-}
-
-
-/**
- * @brief Extra level of escape for escape sequences in delimiters
- * @param str The original delimiter string
- * @return Escaped delimiter string
- * @note Delimiter needs another escape because it is later used
- * in `printf` routines. It handles `\\r`, `\\n`, `\\t` and `\\e`.
- */
-static char *
-_filter_escapes (const char *str)
-{
-    GString *result, *debug_str;
-    char *i = (char *) str;
-
-    g_return_val_if_fail ( (str != NULL) && (*str != '\0'), NULL);
-
-    result = g_string_new (NULL);
-    do
-    {
-        if ( *i != '\\' )
-        {
-            result = g_string_append_c (result, *i);
-            continue;
-        }
-
-        switch ( *(++i) )
-        {
-          case 'r':
-            result = g_string_append_c (result, '\r'); break;
-          case 'n':
-            result = g_string_append_c (result, '\n'); break;
-          case 't':
-            result = g_string_append_c (result, '\t'); break;
-          case 'e':
-            result = g_string_append_c (result, '\x1B'); break;
-          default:
-            result = g_string_append_c (result, '\\'); i--;
-        }
-    }
-    while ( *(++i) );
-
-    debug_str = g_string_new ("filtered delimiter = ");
-    i = result->str;
-    do
-    {
-        if ( *i >= 0x20 && *i <= 0x7E )  /* problem during linking with g_ascii_isprint */
-            debug_str = g_string_append_c (debug_str, *i);
-        else
-            g_string_append_printf (debug_str, "\\x%02X", *(unsigned char *) i);
-    }
-    while ( *(++i) );
-    g_debug ("%s", debug_str->str);
-    g_string_free (debug_str, TRUE);
-    return g_string_free (result, FALSE);
+    return _set_out_format (FORMAT_TEXT, error);
 }
 
 
@@ -312,9 +276,9 @@ _set_opt_delim (const gchar *opt_name,
     }
     seen = TRUE;
 
-    delim = (*value) ? _filter_escapes (value) : g_strdup ("");
+    delim = (*value) ? filter_escapes (value) : g_strdup ("");
 
-    return _set_output_mode (OUTPUT_CSV, error);
+    return _set_out_format (FORMAT_TEXT, error);
 }
 
 
@@ -366,14 +330,17 @@ _set_output_path (const gchar *opt_name,
  */
 static gboolean
 _option_deprecated (const gchar *opt_name,
-                    const gchar *unused,
+                    const gchar *value,
                     gpointer     data,
                     GError     **error)
 {
-    UNUSED(unused);
+    UNUSED(value);
     UNUSED(data);
-    UNUSED(error);
-    g_warning(_("Option '%s' is deprecated and ignored."), opt_name);
+    if (strcmp (opt_name, "-x") == 0 || strcmp (opt_name, "--xml") == 0)
+    {
+        g_warning(_("Option '%s' is deprecated. Use '-f xml' in future."), opt_name);
+        return _set_out_format (FORMAT_XML, error);
+    }
     return TRUE;
 }
 
@@ -410,26 +377,13 @@ _check_legacy_encoding (const gchar *opt_name,
         return FALSE;
     }
 
+    if (enc_is_ascii_compatible (enc, &conv_err))
     {
-        char *s = g_convert ("C:\\", -1, "UTF-8", enc, NULL, NULL, &conv_err);
-        gboolean equal = ! g_strcmp0 ("C:\\", s);
-        g_free (s);
-
-        if (equal) {
-            legacy_encoding = g_strdup (enc);
-            return TRUE;
-        }
+        legacy_encoding = g_strdup (enc);
+        return TRUE;
     }
 
     /* everything below is error handling */
-
-    if (conv_err == NULL) {
-        // Encoding is ASCII incompatible (e.g. EBCDIC). Even if trial
-        // convert doesn't fail, it would cause application error
-        // later on. Treat that as conversion error for convenience.
-        g_set_error_literal (&conv_err, G_CONVERT_ERROR,
-            G_CONVERT_ERROR_ILLEGAL_SEQUENCE, "");
-    }
 
     if (g_error_matches (conv_err, G_CONVERT_ERROR, G_CONVERT_ERROR_NO_CONVERSION)) {
         g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
@@ -552,14 +506,14 @@ _fileargs_handler (GOptionContext *context,
 
 
 /**
- * @brief post-callback after handling all text related arguments
+ * @brief post-callback after handling all output related args
  * @return Always `TRUE`, denoting success. It never fails.
  */
 static gboolean
-_text_default_options (GOptionContext *context,
-                       GOptionGroup   *group,
-                       gpointer        data,
-                       GError        **error)
+_set_def_output_opts    (GOptionContext *context,
+                         GOptionGroup   *group,
+                         gpointer        data,
+                         GError        **error)
 {
     UNUSED (context);
     UNUSED (group);
@@ -570,260 +524,10 @@ _text_default_options (GOptionContext *context,
     if (delim == NULL)
         delim = g_strdup ("\t");
 
-    if (output_mode == OUTPUT_NONE)
-        output_mode = OUTPUT_CSV;
+    if (output_format == FORMAT_UNKNOWN)
+        output_format = FORMAT_TEXT;
 
     return TRUE;
-}
-
-/*
- * Charset conversion routines
- */
-
-size_t
-ucs2_strnlen (const char *str, size_t max_sz)
-{
-#ifdef G_OS_WIN32
-
-    return wcsnlen_s ((const wchar_t *) str, max_sz);
-
-#else
-
-    if (str == NULL)
-        return 0;
-
-    for (size_t i = 0; i < max_sz; i++) {
-        if (*(str + i*2) == '\0' && *(str + i*2 + 1) == '\0')
-            return i;
-    }
-    return max_sz;
-
-#endif
-}
-
-
-/**
- * @brief Move character pointer for specified bytes
- * @param sz Must be either 1 or 2, denoting broken byte or broken UCS2 character
- * @param in_str Reference to input string to be converted
- * @param read_bytes Reference to already read bytes count to keep track of
- * @param out_str Reference to output string to be appended
- * @param write_bytes Reference to writable bytes count to decrement
- * @param tmpl `printf` template to represent the broken character
- * @note This is the core of `conv_path_to_utf8_with_tmpl()` doing
- * error fallback, converting a single broken char to `printf` output.
- */
-static void
-_advance_octet (size_t       sz,
-               gchar      **in_str,
-               gsize       *read_bytes,
-               gchar      **out_str,
-               gsize       *write_bytes,
-               const char  *tmpl)
-{
-    gchar *repl;
-
-    switch (sz) {
-        case 1:
-        {
-            unsigned char c = *(unsigned char *) (*in_str);
-            repl = g_strdup_printf (tmpl, c);
-        }
-            break;
-
-        case 2:
-        {
-            uint16_t c = GUINT16_FROM_LE (*(uint16_t *) (*in_str));
-            repl = g_strdup_printf (tmpl, c);
-        }
-            break;
-
-        default:
-            g_assert_not_reached();
-    }
-
-    (*in_str) += sz;
-    if (read_bytes != NULL)
-        (*read_bytes) -= sz;
-
-    *out_str = g_stpcpy (*out_str, (const char *) repl);
-    if (write_bytes != NULL)
-        *write_bytes -= strlen (repl);
-
-    g_free (repl);
-    return;
-}
-
-
-/**
- * @brief Convert non-printable characters to escape sequences
- * @param str The original string to be converted
- * @param tmpl `printf` template to represent non-printable chars
- * @return Converted string, maybe containing escape sequences
- * @attention Caller is responsible for using correct template, no
- * error checking is performed. This template should handle a single
- * Windows unicode path character, which is in UTF-16LE encoding.
- */
-static char *
-_filter_printable_char (const char *str,
-                        const char *tmpl)
-{
-    char     *p, *np;
-    gunichar  c;
-    GString  *s;
-
-    s = g_string_sized_new (strlen (str) * 2);
-    p = (char *) str;
-    while (*p)
-    {
-        c  = g_utf8_get_char  (p);
-        np = g_utf8_next_char (p);
-
-        /*
-         * ASCII space is the norm (e.g. Program Files), but
-         * all other kinds of spaces are rare, so escape them too
-         */
-        if (g_unichar_isgraph (c) || (c == 0x20))
-            s = g_string_append_len (s, p, (gssize) (np - p));
-        else
-            g_string_append_printf (s, tmpl, c);
-
-        p = np;
-    }
-
-    return g_string_free (s, FALSE);
-}
-
-
-/**
- * @brief Convert path to UTF-8 encoding with customizable fallback
- * @param path The path string to be converted
- * @param from_enc Either a legacy Windows ANSI encoding, or use
- * `NULL` to represent Windows wide char encoding (UTF-16LE)
- * @param tmpl `printf`-style string template to represent broken character
- * @param read Reference to number of successfully read bytes
- * @param error Location to store error upon problem
- * @return UTF-8 encoded path, or `NULL` if conversion error happens
- * @note This is very similar to `g_convert_with_fallback()`, but the
- * fallback is a `printf`-style string instead of a fixed string.
- * @attention 1. This routine is not for generic charset conversion.
- * Only supply encoding used in Windows ANSI code page, or use `NULL`
- * for unicode path.
- * @attention 1. Caller is responsible for using correct template, no
- * error checking is performed.
- * This template should handle either single- or double-octet, namely
- * `%u`, `%o`, `%d`, `%i`, `%x` and `%X`. `%c` is no good since byte
- * sequence concerned can't be converted to proper UTF-8 character.
- */
-char *
-conv_path_to_utf8_with_tmpl (const char *path,
-                             const char *from_enc,
-                             const char *tmpl,
-                             size_t     *read,
-                             GError    **error)
-{
-    char *u8_path, *i_ptr, *o_ptr, *result = NULL;
-    gsize len, r_total, rbyte, wbyte, status, in_ch_width, out_ch_width;
-    GIConv conv;
-    gboolean will_set_error = FALSE;  // avoid overwriting error
-
-    g_return_val_if_fail (! from_enc || *from_enc, NULL);
-    g_return_val_if_fail (tmpl && *tmpl, NULL);
-    g_return_val_if_fail (! error || ! *error, NULL);
-
-    /* try the template */
-    {
-        char *s = g_strdup_printf (tmpl, from_enc ? 0xFF : 0xFFFF);
-        /* UTF-8 character occupies at most 6 bytes */
-        out_ch_width = MAX (strlen(s), 6);
-        g_free (s);
-    }
-
-    if (from_enc != NULL) {
-        in_ch_width = sizeof (char);
-        len = strnlen (path, WIN_PATH_MAX);
-    } else {
-        in_ch_width = sizeof (gunichar2);
-        len = ucs2_strnlen (path, WIN_PATH_MAX);
-    }
-
-    if (! len)
-        return NULL;
-
-    rbyte   = len *  in_ch_width;
-    wbyte   = len * out_ch_width;
-    u8_path = g_malloc0 (wbyte);
-
-    r_total = rbyte;
-    i_ptr   = (char *) path;
-    o_ptr   = u8_path;
-
-    /* Shouldn't fail, from_enc already tested upon start of prog */
-    conv = g_iconv_open ("UTF-8", from_enc ? from_enc : "UTF-16LE");
-
-    g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
-            rbyte, wbyte);
-
-    /* Pass 1: Convert to UTF-8, all illegal seq become escaped hex */
-    while (TRUE)
-    {
-        int e;
-
-        if (*i_ptr == '\0') {
-            if (from_enc   != NULL) break;
-            if (*(i_ptr+1) == '\0') break; /* utf-16: check "\0\0" */
-        }
-
-        status = g_iconv (conv, &i_ptr, &rbyte, &o_ptr, &wbyte);
-        e = errno;
-
-        if ( status != (gsize) -1 ) break;
-
-        g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-            ", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
-            rbyte, wbyte, status, g_strerror(e), u8_path);
-
-        /* XXX Should I consider the possibility of odd bytes for EINVAL? */
-        switch (e) {
-            case EILSEQ:
-            case EINVAL:
-                _advance_octet (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
-                /* reset state, hopefully Windows don't use stateful encoding at all */
-                g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);
-                will_set_error = TRUE;
-                break;
-            case E2BIG:
-                /* Should have already allocated enough buffer. Let it KABOOM! otherwise. */
-                g_assert_not_reached();
-        }
-    }
-
-    if (will_set_error)
-    {
-        if (from_enc)
-            g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
-                _("Path contains character(s) that could not be "
-                "interpreted in %s encoding"), from_enc);
-        else
-            g_set_error_literal (error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
-                _("Path contains broken unicode character(s)"));
-    }
-
-    g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-        ", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8_path);
-
-    g_iconv_close (conv);
-
-    if (read != NULL)
-        *read = r_total - rbyte;
-
-    /* Pass 2: Convert all non-printable chars to hex */
-    g_return_val_if_fail (g_utf8_validate (u8_path, -1, NULL), NULL);
-
-    result = _filter_printable_char (u8_path, tmpl);
-    g_free (u8_path);
-
-    return result;
 }
 
 
@@ -898,7 +602,7 @@ _opt_ctxt_setup (GOptionContext **context,
                  rbin_type        type)
 {
     char         *desc_str;
-    GOptionGroup *group, *txt_group;
+    GOptionGroup *main_group, *output_group;
 
     /* FIXME Sneaky metadata modification! Think about cleaner way */
     meta->type = type;
@@ -912,17 +616,17 @@ _opt_ctxt_setup (GOptionContext **context,
     g_free (desc_str);
 
     /* main group */
-    group = g_option_group_new (NULL, NULL, NULL, meta, NULL);
+    main_group = g_option_group_new (NULL, NULL, NULL, meta, NULL);
 
-    g_option_group_add_entries (group, main_options);
+    g_option_group_add_entries (main_group, main_options);
     switch (type)
     {
         case RECYCLE_BIN_TYPE_FILE:
-            g_option_group_add_entries (group, rbinfile_options);
+            g_option_group_add_entries (main_group, rbinfile_options);
             break;
         case RECYCLE_BIN_TYPE_DIR:
 #if (defined G_OS_WIN32 || defined __GLIBC__)
-            g_option_group_add_entries (group, live_options);
+            g_option_group_add_entries (main_group, live_options);
 #else
             UNUSED (live_options);
 #endif
@@ -930,19 +634,19 @@ _opt_ctxt_setup (GOptionContext **context,
         default: break;
     }
 
-    g_option_group_set_parse_hooks (group, NULL,
+    g_option_group_set_parse_hooks (main_group, NULL,
         (GOptionParseFunc) _fileargs_handler);
-    g_option_context_set_main_group (*context, group);
+    g_option_context_set_main_group (*context, main_group);
 
-    /* text group */
-    txt_group = g_option_group_new ("text",
-        _("Plain text output options:"),
-        N_("Show plain text output options"), NULL, NULL);
+    /* output format arg group */
+    output_group = g_option_group_new ("format",
+        _("Output format options:"),
+        N_("Show output formatting options"), NULL, NULL);
 
-    g_option_group_add_entries (txt_group, text_options);
+    g_option_group_add_entries (output_group, out_options);
     g_option_group_set_parse_hooks (
-        txt_group, NULL, _text_default_options);
-    g_option_context_add_group (*context, txt_group);
+        output_group, NULL, _set_def_output_opts);
+    g_option_context_add_group (*context, output_group);
 
     g_option_context_set_help_enabled (*context, TRUE);
 }
@@ -1003,8 +707,8 @@ _free_record_cb (rbin_struct *record)
 {
     g_free (record->index_s);
     g_date_time_unref (record->deltime);
-    g_free (record->uni_path);
-    g_free (record->legacy_path);
+    g_free (record->raw_uni_path);
+    g_free (record->raw_legacy_path);
     g_clear_error (&record->error);
     g_free (record);
 }
@@ -1053,33 +757,6 @@ rifiuti_init (rbin_type  type,
     _opt_ctxt_setup (&context, type);
 
     return _opt_ctxt_parse (&context, argv, error);
-}
-
-
-/*!
- * Wrapper of g_utf16_to_utf8 for big endian system.
- * Always assume string is nul-terminated. (Unused now?)
- */
-char *
-utf16le_to_utf8 (const gunichar2   *str,
-                 glong             *items_read,
-                 glong             *items_written,
-                 GError           **error)
-{
-#if ((G_BYTE_ORDER) == (G_LITTLE_ENDIAN))
-    return g_utf16_to_utf8 (str, -1, items_read, items_written, error);
-#else
-
-    gunichar2 *buf;
-    char *ret;
-
-    /* should be guaranteed to succeed */
-    buf = (gunichar2 *) g_convert ((const char *) str, -1, "UTF-16BE",
-                                   "UTF-16LE", NULL, NULL, NULL);
-    ret = g_utf16_to_utf8 (buf, -1, items_read, items_written, error);
-    g_free (buf);
-    return ret;
-#endif
 }
 
 
@@ -1346,7 +1023,7 @@ _close_handles (void)
  * @param meta Pointer to metadata structure
  */
 static void
-_print_csv_header (metarecord *meta)
+_print_text_header (const metarecord *meta)
 {
     {
         char *rbin_path = g_filename_display_name (meta->filename);
@@ -1436,7 +1113,7 @@ _print_csv_header (metarecord *meta)
  * @param meta Pointer to metadata structure
  */
 static void
-_print_xml_header (metarecord *meta)
+_print_xml_header (const metarecord *meta)
 {
     GString *result;
 
@@ -1472,138 +1149,229 @@ _print_xml_header (metarecord *meta)
 
 
 /**
- * @brief Stub routine for printing header
- * @note Calls other printing routine depending on output mode
- */
-static void
-_print_header (void)
-{
-    if (no_heading) return;
-
-    switch (output_mode)
-    {
-        case OUTPUT_CSV:
-            _print_csv_header (meta);
-            break;
-
-        case OUTPUT_XML:
-            _print_xml_header (meta);
-            break;
-
-        default:
-            g_assert_not_reached();
-    }
-}
-
-
-/**
- * @brief Print content of each recycle bin record
- * @param record Pointer to each recycle bin record
+ * @brief Print preamble for JSON output
  * @param meta Pointer to metadata structure
  */
 static void
-_print_record_cb (rbin_struct *record,
-                  const metarecord *meta)
+_print_json_header (const metarecord *meta)
 {
-    char       *out_fname, *index, *size = NULL;
-    char       *outstr = NULL, *deltime = NULL;
-    GDateTime  *dt;
+    g_print ("{\n  \"format\": \"%s\",\n",
+        (meta->type == RECYCLE_BIN_TYPE_FILE) ? "file" : "dir");
+
+    if (meta->version >= 0)  /* can be found and not error */
+        g_print ("  \"version\": %" PRId64 ",\n", meta->version);
+    else
+        g_print ("  \"version\": null,\n");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
+        g_print ("  \"ever_existed\": %" PRIu32 ",\n", meta->total_entry);
+
+    {
+        char *s = g_filename_display_name (meta->filename);
+        char *rbin_path = json_escape_path (s);
+        g_print ("  \"path\": \"%s\",\n", rbin_path);
+        g_free (s);
+        g_free (rbin_path);
+    }
+
+    g_print ("  \"records\": [\n");
+}
+
+
+static void
+_print_text_record   (rbin_struct        *record,
+                      const metarecord   *meta)
+{
+    char         *outstr;
+    char         **header;
+    GDateTime    *dt;
 
     g_return_if_fail (record != NULL);
 
-    index = (meta->type == RECYCLE_BIN_TYPE_FILE) ?
-        g_strdup_printf ("%u", record->index_n) :
+    header = (char **) g_malloc0_n (6, sizeof(gpointer));
+
+    header[0] = (meta->type == RECYCLE_BIN_TYPE_FILE) ?
+        g_strdup_printf ("%" PRIu32, record->index_n) :
         g_strdup (record->index_s);
 
     dt = use_localtime ? g_date_time_to_local (record->deltime):
                          g_date_time_ref      (record->deltime);
+    header[1] = g_date_time_format (dt, "%F %T");
 
-    out_fname = legacy_encoding ?
-        record->legacy_path : record->uni_path;
-    out_fname = out_fname ?
-        g_strdup (out_fname) : g_strdup ("???");
+    header[2] =
+        (record->gone == FILESTATUS_EXISTS) ? g_strdup("FALSE") :
+        (record->gone == FILESTATUS_GONE  ) ? g_strdup("TRUE")  :
+                                              g_strdup("???")   ;
 
-    switch (output_mode)
-    {
-        case OUTPUT_CSV:
+    header[3] = (record->filesize == G_MAXUINT64) ?  // faulty
+        g_strdup ("???") :
+        g_strdup_printf ("%" PRIu64, record->filesize);
 
-            deltime = g_date_time_format (dt, "%F %T");
+    if (legacy_encoding)
+        header[4] = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+    else
+        header[4] = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "<\\u%04X>", NULL, NULL);
+    if (! header[4])
+        header[4] = g_strdup ("???");
 
-            if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                size = g_strdup ("???");
-            else
-                size = g_strdup_printf ("%" PRIu64, record->filesize);
+    outstr = g_strjoinv (delim, header);
+    g_print ("%s\n", outstr);
 
-            const char *gone =
-                record->gone == FILESTATUS_EXISTS ? "FALSE" :
-                record->gone == FILESTATUS_GONE   ? "TRUE"  :
-                                                    "???"   ;
-            outstr = g_strjoin (delim, index, deltime, gone, size, out_fname, NULL);
-
-            g_print ("%s\n", outstr);
-
-            break;
-
-        case OUTPUT_XML:
-        {
-            GString *s = g_string_new (NULL);
-
-            deltime = use_localtime ? g_date_time_format (dt, "%FT%T%z" ):
-                                      g_date_time_format (dt, "%FT%TZ");
-
-            g_string_printf (s,
-                "  <record index=\"%s\" time=\"%s\" gone=\"%s\"",
-                index, deltime,
-                (record->gone == FILESTATUS_GONE  ) ? "true" :
-                (record->gone == FILESTATUS_EXISTS) ? "false":
-                                                      "unknown");
-
-            if ( record->filesize == G_MAXUINT64 ) /* faulty */
-                g_string_append_printf (s, " size=\"-1\"");
-            else
-                g_string_append_printf (s,
-                    " size=\"%" PRIu64 "\"", record->filesize);
-
-            g_string_append_printf (s, ">\n"
-                "    <path><![CDATA[%s]]></path>\n"
-                "  </record>\n", out_fname);
-
-            outstr = g_string_free (s, FALSE);
-            g_print ("%s", outstr);
-        }
-            break;
-
-        default:
-            g_assert_not_reached();
-    }
-    g_date_time_unref (dt);
     g_free (outstr);
-    g_free (out_fname);
-    g_free (deltime);
-    g_free (size);
-    g_free (index);
+    g_date_time_unref (dt);
+    g_strfreev (header);
 }
 
 
-/**
- * @brief Print footer of recycle bin data
- */
 static void
-_print_footer (void)
+_print_xml_record   (rbin_struct        *record,
+                     const metarecord   *meta)
 {
-    switch (output_mode)
+    char         *path, *dt_str;
+    GDateTime    *dt;
+    GString      *s;
+
+    g_return_if_fail (record != NULL);
+
+    s = g_string_new ("  <record");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE)
+        g_string_append_printf (s, " index=\"%" PRIu32 "\"", record->index_n);
+    else
+        g_string_append_printf (s, " index=\"%s\"", record->index_s);
+
+    if (use_localtime)
     {
-        case OUTPUT_CSV:
-            /* do nothing */
-            break;
-
-        case OUTPUT_XML:
-            g_print ("%s", "</recyclebin>\n");
-            break;
-
-        default:
-            g_assert_not_reached();
+        dt = g_date_time_to_local (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%T%z");
     }
+    else
+    {
+        dt = g_date_time_ref (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%TZ");
+    }
+    g_string_append_printf (s, " time=\"%s\"", dt_str);
+
+    g_string_append_printf (s, " gone=\"%s\"",
+        (record->gone == FILESTATUS_GONE  ) ? "true"  :
+        (record->gone == FILESTATUS_EXISTS) ? "false" :
+                                              "unknown");
+
+    if (record->filesize == G_MAXUINT64)  // faulty
+        g_string_append_printf (s, " size=\"-1\"");
+    else
+        g_string_append_printf (s,
+            " size=\"%" PRIu64 "\"", record->filesize);
+
+    // Still need to be converted despite using CDATA, otherwise
+    // could be writing garbage on screen or into file
+    if (legacy_encoding)
+        path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "&#x%02X;", NULL, NULL);
+    else
+        path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "&#x%04X;", NULL, NULL);
+
+    if (path)
+        g_string_append_printf (s, ">\n"
+            "    <path><![CDATA[%s]]></path>\n"
+            "  </record>\n", path);
+    else
+        s = g_string_append (s, ">\n    <path/>\n  </record>\n");
+
+    g_print ("%s", s->str);
+    g_string_free (s, TRUE);
+
+    g_date_time_unref (dt);
+    g_free (path);
+    g_free (dt_str);
+}
+
+
+static void
+_print_json_record   (rbin_struct        *record,
+                      const metarecord   *meta)
+{
+    char         *tmp, *path, *dt_str;
+    GDateTime    *dt;
+    GString      *s;
+
+    g_return_if_fail (record != NULL);
+
+    s = g_string_new ("    {");
+
+    if (meta->type == RECYCLE_BIN_TYPE_FILE)
+        g_string_append_printf (s, "\"index\": %" PRIu32, record->index_n);
+    else
+        g_string_append_printf (s, "\"index\": \"%s\"", record->index_s);
+
+    if (use_localtime)
+    {
+        dt = g_date_time_to_local (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%T%z");
+    }
+    else
+    {
+        dt = g_date_time_ref (record->deltime);
+        dt_str = g_date_time_format (dt, "%FT%TZ");
+    }
+    g_string_append_printf (s, ", \"time\": \"%s\"", dt_str);
+
+    g_string_append_printf (s, ", \"gone\": %s",
+        (record->gone == FILESTATUS_GONE  ) ? "true" :
+        (record->gone == FILESTATUS_EXISTS) ? "false":
+                                              "null");
+
+    if (record->filesize == G_MAXUINT64)  // faulty
+        g_string_append_printf (s, ", \"size\": null");
+    else
+        g_string_append_printf (s,
+            ", \"size\": %" PRIu64, record->filesize);
+
+    if (legacy_encoding)
+    {
+        // JSON spec doesn't even allow encoding raw byte data,
+        // so transform it like text output format
+        tmp = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+    }
+    else
+    {
+        // HACK \u sequence collides with path separator, which
+        // will be processed in json escaping routine. Use a temp
+        // char to avoid collision and convert it back later
+        tmp = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "*u%04X", NULL, NULL);
+    }
+    path = json_escape_path (tmp);
+
+    if (path)
+        g_string_append_printf (s, ", \"path\": \"%s\"},\n", path);
+    else
+        s = g_string_append (s, ", \"path\": null},\n");
+
+    g_print ("%s", s->str);
+
+    g_date_time_unref (dt);
+    g_free (tmp);
+    g_free (path);
+    g_free (dt_str);
+}
+
+
+static void
+_print_xml_footer (void)
+{
+    g_print ("%s", "</recyclebin>\n");
+}
+
+
+static void
+_print_json_footer (void)
+{
+    g_print ("  ]\n}\n");
 }
 
 
@@ -1617,6 +1385,9 @@ dump_content (GError **error)
 {
     FILE *tmp_fh = NULL, *prev_fh = NULL;
     char *tmp_path = NULL;
+    void (*print_header_func)(const metarecord *);
+    void (*print_record_func)(rbin_struct *, const metarecord *);
+    void (*print_footer_func)();
 
     if (output_loc)
     {
@@ -1630,9 +1401,33 @@ dump_content (GError **error)
             return FALSE;
     }
 
-    _print_header ();
-    g_ptr_array_foreach (meta->records, (GFunc) _print_record_cb, meta);
-    _print_footer ();
+    switch (output_format)
+    {
+        case FORMAT_TEXT:
+            print_header_func = no_heading ?
+                NULL : &_print_text_header;
+            print_record_func = &_print_text_record;
+            print_footer_func = NULL;
+            break;
+        case FORMAT_XML:
+            print_header_func = &_print_xml_header;
+            print_record_func = &_print_xml_record;
+            print_footer_func = &_print_xml_footer;
+            break;
+        case FORMAT_JSON:
+            print_header_func = &_print_json_header;
+            print_record_func = &_print_json_record;
+            print_footer_func = &_print_json_footer;
+            break;
+
+        default: g_assert_not_reached();
+    }
+
+    if (print_header_func != NULL)
+        (*print_header_func) (meta);
+    g_ptr_array_foreach (meta->records, (GFunc) print_record_func, meta);
+    if (print_footer_func != NULL)
+        (*print_footer_func) ();
 
     if (!tmp_path)
         return TRUE;
@@ -1779,4 +1574,27 @@ rifiuti_cleanup (void)
 #ifdef G_OS_WIN32
     cleanup_windows_res ();
 #endif
+}
+
+
+void
+hexdump    (void     *start,
+            size_t    size)
+{
+    GString *s = g_string_new ("");
+    size_t i = 0;
+    do
+    {
+        if (i % 16 == 0)
+        {
+            if (s->len > 0)
+            {
+                g_debug ("%s", s->str);
+                s = g_string_assign (s, "");
+            }
+            g_string_append_printf (s, "%04zX    ", i);
+        }
+        g_string_append_printf (s, "%02" PRIX8 " ", *(uint8_t *) (start+i));
+    }
+    while (i++ < size);
 }

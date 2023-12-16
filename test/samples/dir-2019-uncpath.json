@@ -1,0 +1,10 @@
+{
+  "format": "dir",
+  "version": 2,
+  "path": "dir-2019-uncpath",
+  "records": [
+    {"index": "$IW0RYW0.rtf", "time": "2019-05-07T20:56:04Z", "gone": true, "size": 7, "path": "\\\\WIN-163RLA0PH3N\\somewhere\\hahaha.rtf"},
+    {"index": "$I4OZLXW.bmp", "time": "2019-05-07T21:01:01Z", "gone": true, "size": 1714662, "path": "\\\\WIN-163RLA0PH3N\\somewhere\\পরীক্ষা.bmp"},
+    {"index": "$IYDW1CC.rtf", "time": "2019-05-07T21:08:55Z", "gone": true, "size": 7, "path": "\\\\WIN-163RLA0PH3N\\somewhere\\hahaha.rtf"},
+  ]
+}

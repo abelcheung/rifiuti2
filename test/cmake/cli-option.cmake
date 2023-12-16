@@ -35,11 +35,11 @@ endfunction()
 addWithFileOptTest(LongHead   --no-heading  )
 addWithFileOptTest(LongSep    --delimiter=: )
 addWithFileOptTest(LongTime   --localtime   )
-addWithFileOptTest(LongXml    --xml         )
+addWithFileOptTest(LongXml    --format xml  )
 addWithFileOptTest(ShortHead  -n            )
 addWithFileOptTest(ShortSep   -t :          )
 addWithFileOptTest(ShortTime  -z            )
-addWithFileOptTest(ShortXml   -x            )
+addWithFileOptTest(ShortXml   -f xml        )
 
 
 function(addBadBareOptTest name)
@@ -104,20 +104,24 @@ set_tests_properties(d_NullArgOptTestOut f_NullArgOptTestOut f_NullArgOptTestEnc
 add_bintype_label(d_NullArgOptTestOut f_NullArgOptTestOut f_NullArgOptTestEnc)
 
 
-function(addBadComboOptTest name)
-    add_test(NAME d_BadComboOptTest${name} COMMAND
+function(addBadComboOptTest id)
+    add_test(NAME d_BadComboOptTest${id} COMMAND
         rifiuti-vista ${ARGN} ${sample_dir}/dir-sample1)
-    add_test(NAME f_BadComboOptTest${name} COMMAND
+    add_test(NAME f_BadComboOptTest${id} COMMAND
         rifiuti       ${ARGN} ${sample_dir}/INFO2-sample1)
-    set_tests_properties(d_BadComboOptTest${name} f_BadComboOptTest${name}
+    set_tests_properties(d_BadComboOptTest${id} f_BadComboOptTest${id}
         PROPERTIES
             LABELS "arg;xfail"
-            PASS_REGULAR_EXPRESSION "can not be used in XML mode")
-    add_bintype_label(d_BadComboOptTest${name} f_BadComboOptTest${name})
+            PASS_REGULAR_EXPRESSION "Output was already set in .+ format, but later argument attempts to change to .+ format")
+    add_bintype_label(d_BadComboOptTest${id} f_BadComboOptTest${id})
 endfunction()
 
-addBadComboOptTest(1 -x -t:)
-addBadComboOptTest(2 -n -x)
+# implicit text options
+addBadComboOptTest(1 -f xml -t:)
+addBadComboOptTest(2 -n -f xml)
+# explicit option conflict
+addBadComboOptTest(3 -f tsv -f json)
+addBadComboOptTest(4 -f xml -f text)
 
 
 function(addMultiInputTest name)
@@ -144,7 +148,7 @@ function(addMissingInputTest name)
     add_bintype_label(d_MissingInputTest${name} f_MissingInputTest${name})
 endfunction()
 
-addMissingInputTest(1 -x)
+addMissingInputTest(1 -f xml)
 addMissingInputTest(2 -t :)
 addMissingInputTest(3 -z -o file1 -n)
 

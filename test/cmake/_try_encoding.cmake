@@ -34,6 +34,10 @@ set(args -l ${encoding} ${INFO2})
 if(DEFINED OUTFILE)
     list(APPEND args -o ${OUTFILE})
 endif()
+if(DEFINED EXTRA_ARGS)
+    string(REPLACE "|" ";" EXTRA_ARGS "${EXTRA_ARGS}")
+    list(APPEND args ${EXTRA_ARGS})
+endif()
 execute_process(
     COMMAND ${RIFIUTI} ${args}
     # COMMAND_ECHO STDOUT

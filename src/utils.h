@@ -63,12 +63,13 @@ typedef enum
     VERSION_ME_03,
 } detected_os_ver;
 
-enum
+typedef enum _out_fmt
 {
-    OUTPUT_NONE = 0,
-    OUTPUT_CSV,
-    OUTPUT_XML
-};
+    FORMAT_UNKNOWN,
+    FORMAT_TEXT,
+    FORMAT_XML,
+    FORMAT_JSON,
+} out_fmt;
 
 /**
  * @brief Whether original trashed file still exists
@@ -165,7 +166,6 @@ typedef struct _rbin_meta
  */
 typedef struct _rbin_struct
 {
-
     /**
      * @brief version of each index file
      * @note `meta.version` keeps the global status of whole dir,
@@ -173,7 +173,6 @@ typedef struct _rbin_struct
      * @attention For `$Recycle.bin` only
      */
     uint64_t version;
-
     /**
      * @brief Chronological index number for INFO2
      * @attention For `INFO2` only
@@ -209,7 +208,8 @@ typedef struct _rbin_struct
      * @note Original path was stored in index file in UTF-16 encoding
      * since Windows 2000. The path is converted to UTF-8 encoding and stored here .
      */
-    char *uni_path;
+    char *raw_uni_path;
+
     /**
      * @brief ANSI encoded trash file original path
      * @note Until Windows 2003, index file preserves trashed file path in
@@ -217,7 +217,8 @@ typedef struct _rbin_struct
      * @attention For `INFO2` only. Can be either full path or using 8.3 format,
      * depending on Windows version and code page used.
      */
-    char *legacy_path;
+    char *raw_legacy_path;
+
     /**
      * @brief Whether original trashed file is gone
      * @note Trash file can be detected if it still exists, but via very
@@ -265,23 +266,14 @@ gboolean      rifiuti_init                (rbin_type         type,
 
 GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
-char *        utf16le_to_utf8             (const gunichar2  *str,
-                                           glong            *items_read,
-                                           glong            *items_written,
-                                           GError          **error)
-                                           G_GNUC_UNUSED;
-
 gboolean      dump_content                (GError          **error);
-
-char *        conv_path_to_utf8_with_tmpl (const char       *str,
-                                           const char       *from_enc,
-                                           const char       *tmpl,
-                                           size_t           *read,
-                                           GError          **error);
 
 exitcode      rifiuti_handle_global_error (GError           *error);
 gboolean      rifiuti_handle_record_error (void);
 
 void          rifiuti_cleanup             (void);
+
+void          hexdump                     (void             *start,
+                                           size_t            size);
 
 #endif
