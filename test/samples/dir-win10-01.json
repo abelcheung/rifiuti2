@@ -1,0 +1,14 @@
+{
+  "format": "dir",
+  "version": 2,
+  "path": "dir-win10-01",
+  "records": [
+    {"index": "$IKEGS1G", "time": "2015-04-04T17:19:52Z", "gone": false, "size": 0, "path": "C:\\Users\\tester\\12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"},
+    {"index": "$IQ7LAXT.png", "time": "2015-04-04T17:20:01Z", "gone": false, "size": 6455, "path": "C:\\Users\\tester\\Pictures\\web-canvas.png"},
+    {"index": "$I7R52EG.txt", "time": "2015-04-04T17:24:09Z", "gone": false, "size": 14, "path": "C:\\Temp\\foobat.txt.txt"},
+    {"index": "$IBBFODN", "time": "2015-04-07T23:19:35Z", "gone": true, "size": 7, "path": "C:\\Temp\\𨳊𨶙閪邨鰂"},
+    {"index": "$IHO61YT", "time": "2015-04-07T23:32:07Z", "gone": true, "size": 12884901888, "path": "C:\\Temp\\largesparsefile"},
+    {"index": "$IROMPZ0.exe", "time": "2015-04-19T10:49:59Z", "gone": true, "size": 1761792, "path": "C:\\Temp\\FAU\\FAU.x64\\dd.exe"},
+    {"index": "$IDNLPD4.exe", "time": "2015-04-19T10:50:51Z", "gone": true, "size": 872448, "path": "C:\\Temp\\FAU\\FAU.x86\\dd.exe"},
+  ]
+}

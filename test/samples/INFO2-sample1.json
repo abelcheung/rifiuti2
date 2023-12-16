@@ -1,0 +1,23 @@
+{
+  "format": "file",
+  "version": 5,
+  "path": "INFO2-sample1",
+  "records": [
+    {"index": 44, "time": "2008-10-28T15:53:42Z", "gone": false, "size": 4096, "path": "C:\\Documents and Settings\\All Users\\Desktop\\有道桌面词典.lnk"},
+    {"index": 45, "time": "2008-11-03T15:01:59Z", "gone": false, "size": 4096, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\wongsir_url.txt"},
+    {"index": 46, "time": "2008-11-06T09:20:58Z", "gone": false, "size": 2912256, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\dd-wrt.v24_mini_wrt54g.bin"},
+    {"index": 47, "time": "2008-11-13T12:08:39Z", "gone": false, "size": 765952, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\theme\\.svn"},
+    {"index": 48, "time": "2008-11-13T12:11:33Z", "gone": false, "size": 5812224, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\Config Client"},
+    {"index": 49, "time": "2008-11-13T12:11:36Z", "gone": false, "size": 1847296, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\Config Client.7z"},
+    {"index": 50, "time": "2008-11-19T04:42:04Z", "gone": false, "size": 4096, "path": "C:\\Documents and Settings\\All Users\\Desktop\\Wireshark.lnk"},
+    {"index": 57, "time": "2008-11-19T05:07:15Z", "gone": false, "size": 2727936, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\GetDataBackforFAT-v3.63_PConline.rar"},
+    {"index": 64, "time": "2008-11-19T05:07:35Z", "gone": true, "size": 2727936, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\GetDataBackforFAT-v3.63_PConline"},
+    {"index": 65, "time": "2008-11-19T05:17:12Z", "gone": false, "size": 4096, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\360保险箱.lnk"},
+    {"index": 66, "time": "2008-11-19T05:21:37Z", "gone": false, "size": 2732032, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\gdb"},
+    {"index": 67, "time": "2008-11-19T05:21:37Z", "gone": false, "size": 2723840, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\gdb.zip"},
+    {"index": 68, "time": "2008-11-19T11:34:23Z", "gone": false, "size": 0, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\recovered files"},
+    {"index": 69, "time": "2008-11-19T18:51:45Z", "gone": false, "size": 2727936, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\GetDataBackforFAT-v3.63_PConline"},
+    {"index": 70, "time": "2008-11-19T18:51:45Z", "gone": false, "size": 5169152, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\Uneraser_Setup(2).exe"},
+    {"index": 71, "time": "2008-11-19T18:51:45Z", "gone": false, "size": 5169152, "path": "C:\\Documents and Settings\\Administrator\\Desktop\\Uneraser_Setup.exe"},
+  ]
+}

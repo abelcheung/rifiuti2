@@ -1155,23 +1155,21 @@ _print_xml_header (const metarecord *meta)
 static void
 _print_json_header (const metarecord *meta)
 {
-    g_print ("{\n");
-    g_printf ("  \"format\": \"%s\",\n",
+    g_print ("{\n  \"format\": \"%s\",\n",
         (meta->type == RECYCLE_BIN_TYPE_FILE) ? "file" : "dir");
 
-
     if (meta->version >= 0)  /* can be found and not error */
-        g_printf ("  \"version\": %" PRId64 ",\n", meta->version);
+        g_print ("  \"version\": %" PRId64 ",\n", meta->version);
     else
         g_print ("  \"version\": null,\n");
 
     if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
-        g_printf ("  \"ever_existed\": %" PRIu32 ",\n", meta->total_entry);
+        g_print ("  \"ever_existed\": %" PRIu32 ",\n", meta->total_entry);
 
     {
         char *s = g_filename_display_name (meta->filename);
         char *rbin_path = json_escape_path (s);
-        g_printf ("  \"path\": \"%s\",\n", rbin_path);
+        g_print ("  \"path\": \"%s\",\n", rbin_path);
         g_free (s);
         g_free (rbin_path);
     }

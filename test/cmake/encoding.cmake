@@ -132,3 +132,34 @@ add_encoding_test_with_cwd(f_LegacyUNC_Prep
 
 generate_simple_comparison_test("LegacyUNC" 1
     "" "INFO2-2k-tw-uncpath.txt" "encoding")
+
+#
+# JSON output
+#
+
+add_encoding_test_with_cwd(f_JsonInfo2Win95_Prep
+    ${sample_dir}
+    -DINFO2=INFO-95-ja-1
+    -DCHOICES=CP932|Windows-932|IBM-943|SJIS|JIS_X0208|SHIFT_JIS|SHIFT-JIS
+    -DOUTFILE=${bindir}/f_JsonInfo2Win95.output
+    -DEXTRA_ARGS=-f|json
+)
+
+generate_simple_comparison_test("JsonInfo2Win95" 1
+    "" "INFO-95-ja-1.json" "encoding|json")
+
+
+add_encoding_test_with_cwd(f_JsonWin95WrongEnc_Prep
+    ${sample_dir}
+    -DINFO2=INFO-95-ja-1
+    -DCHOICES=CP1255|MS-HEBR|WINDOWS-1255|HEBREW|ISO-8859-8|ISO-IR-138|ISO8859-8|ISO_8859-8|ISO_8859-8:1988|CSISOLATINHEBREW
+    -DOUTFILE=${bindir}/f_JsonWin95WrongEnc.output
+    -DEXTRA_ARGS=-f|json
+)
+
+set_tests_properties(f_JsonWin95WrongEnc_Prep
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
+
+generate_simple_comparison_test("JsonWin95WrongEnc" 1
+    "" "INFO-95-ja-1-in-cp1255.json" "encoding|xfail|json")

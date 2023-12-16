@@ -1,0 +1,19 @@
+{
+  "format": "file",
+  "version": 0,
+  "ever_existed": 16,
+  "path": "INFO-95-ja-1",
+  "records": [
+    {"index": 1, "time": "2015-05-11T05:59:49Z", "gone": false, "size": 32768, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\The Microsoft Network ‚ּ¾¯ִ±¯ּ<\\DF>.lnk"},
+    {"index": 2, "time": "2015-05-11T06:00:25Z", "gone": false, "size": 950272, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\<\\90>V‹Kֻ<\\DE>¯ִֿ¯ּ<\\DF> ²ׂ°¼<\\DE>.bmp"},
+    {"index": 3, "time": "2015-05-11T07:19:25Z", "gone": false, "size": 32768, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\<\\90>V‹Kֳ·½ִ•¶<\\8F>‘.txt"},
+    {"index": 4, "time": "2015-05-11T09:48:21Z", "gone": false, "size": 589824, "path": "D:\\My Documents\\DirectX-V8.0a\\bda.cab"},
+    {"index": 5, "time": "2015-05-11T09:48:21Z", "gone": false, "size": 589824, "path": "D:\\My Documents\\DirectX-V8.0a\\bdant.cab"},
+    {"index": 6, "time": "2015-05-11T09:48:21Z", "gone": false, "size": 65536, "path": "D:\\My Documents\\DirectX-V8.0a\\cfgmgr32.dll"},
+    {"index": 11, "time": "2015-05-11T09:48:23Z", "gone": false, "size": 163840, "path": "D:\\My Documents\\DirectX-V8.0a\\dxsetup.exe"},
+    {"index": 12, "time": "2015-05-11T09:48:23Z", "gone": false, "size": 360448, "path": "D:\\My Documents\\DirectX-V8.0a\\setupapi.dll"},
+    {"index": 13, "time": "2015-05-11T09:59:19Z", "gone": false, "size": 32768, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\Connect to the Internet.LNK"},
+    {"index": 14, "time": "2015-05-11T09:59:22Z", "gone": false, "size": 32768, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\Outlook Express.lnk"},
+    {"index": 15, "time": "2015-05-18T00:45:09Z", "gone": false, "size": 32768, "path": "D:\\WINDOWS\\ֳ<\\DE>½¸ִ¯ּ<\\DF>\\<\\90>V‹Kֳ·½ִ•¶<\\8F>‘.txt"},
+  ]
+}
