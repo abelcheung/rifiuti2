@@ -9,11 +9,5 @@ indent_style = space
 [*.{c,h,txt,cmake}]
 indent_size = 4
 
-[configure.ac]
-indent_size = 4
-
-[*.{md,yml}]
+[*.{md,yml,json}]
 indent_size = 2
-
-[{Makefile.am,*.mk}]
-indent_style = tab

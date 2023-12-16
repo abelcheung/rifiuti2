@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/abelcheung/rifiuti2/0.8.1/test/rifiuti-schema.json",
+  "title": "rifiuti",
+  "description": "JSON schema for rifiuti json formatted output",
+  "type": "object",
+  "definitions": {
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "properties": {
+    "format": {
+      "description": "Recycle bin format",
+      "type": "string"
+    },
+    "version": {
+      "allOf": [
+        { "$ref": "#/definitions/nonNegativeInteger" },
+        { "description": "Version embedded in index file header" }
+      ]
+    },
+    "ever_existed": {
+      "allOf": [
+        { "$ref": "#/definitions/nonNegativeInteger" },
+        { "description": "Total items ever existed in recycle bin" }
+      ]
+    },
+    "path": {
+      "description": "Location of recycle bin",
+      "type": "string"
+    },
+    "records": {
+      "description": "All recycle bin records",
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "anyOf": [
+              { "$ref": "#/definitions/nonNegativeInteger" },
+              { "type": "string" }
+            ]
+          },
+          "time": {
+            "type": "string"
+          },
+          "gone": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "null" }
+            ]
+          },
+          "size": {
+            "anyOf": [
+              { "$ref": "#/definitions/nonNegativeInteger" },
+              { "type": "null" }
+            ]
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "time",
+          "gone",
+          "size",
+          "path"
+        ]
+      }
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "path",
+    "records"
+  ]
+}
