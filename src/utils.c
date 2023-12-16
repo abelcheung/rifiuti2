@@ -1018,27 +1018,6 @@ _close_handles (void)
 }
 
 
-static char *
-_json_escape_path (const char *path)
-{
-    // TODO g_string_replace from glib 2.68 does it all
-
-    char *p = (char *) path;
-    gunichar c = 0;
-    GString *s = g_string_new ("");
-
-    while (*p) {
-        c = g_utf8_get_char (p);
-        if (c == 0x5C)
-            s = g_string_append (s, "\\\\");
-        else
-            s = g_string_append_unichar (s, c);
-        p = g_utf8_next_char (p);
-    }
-    return g_string_free (s, FALSE);
-}
-
-
 /**
  * @brief Print preamble and column header for TSV output
  * @param meta Pointer to metadata structure
@@ -1189,10 +1168,9 @@ _print_json_header (const metarecord *meta)
     if (meta->type == RECYCLE_BIN_TYPE_FILE && meta->total_entry > 0)
         g_printf ("  \"ever_existed\": %" PRIu32 ",\n", meta->total_entry);
 
-    // TODO need to escape path separator for json
     {
         char *s = g_filename_display_name (meta->filename);
-        char *rbin_path = _json_escape_path (s);
+        char *rbin_path = json_escape_path (s);
         g_printf ("  \"path\": \"%s\",\n", rbin_path);
         g_free (s);
         g_free (rbin_path);
@@ -1318,7 +1296,7 @@ static void
 _print_json_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
-    char         *path, *dt_str;
+    char         *tmp, *path, *dt_str;
     GDateTime    *dt;
     GString      *s;
 
@@ -1354,21 +1332,22 @@ _print_json_record   (rbin_struct        *record,
         g_string_append_printf (s,
             ", \"size\": %" PRIu64, record->filesize);
 
-    // JSON spec doesn't even allow encoding raw byte data,
-    // so transform it like text output format
     if (legacy_encoding)
-        path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
-    else
-        path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            -1, NULL, "\\u%04X", NULL, NULL);
     {
-        // FIXME Doesn't work, it does extra level of escape for
-        // unicode escape
-        char *s = _json_escape_path (path);
-        g_free (path);
-        path = s;
+        // JSON spec doesn't even allow encoding raw byte data,
+        // so transform it like text output format
+        tmp = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
+            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
     }
+    else
+    {
+        // HACK \u sequence collides with path separator, which
+        // will be processed in json escaping routine. Use a temp
+        // char to avoid collision and convert it back later
+        tmp = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
+            -1, NULL, "*u%04X", NULL, NULL);
+    }
+    path = json_escape_path (tmp);
 
     if (path)
         g_string_append_printf (s, ", \"path\": \"%s\"},\n", path);
@@ -1378,6 +1357,7 @@ _print_json_record   (rbin_struct        *record,
     g_print ("%s", s->str);
 
     g_date_time_unref (dt);
+    g_free (tmp);
     g_free (path);
     g_free (dt_str);
 }

@@ -25,4 +25,6 @@ char *        conv_path_to_utf8_with_tmpl (const char       *path,
 
 char *        filter_escapes              (const char       *str);
 
+char *        json_escape_path            (const char       *path);
+
 #endif

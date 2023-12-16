@@ -351,3 +351,26 @@ filter_escapes (const char *str)
     return g_string_free (result, FALSE);
 }
 
+
+char *
+json_escape_path (const char *path)
+{
+    // TODO g_string_replace from glib 2.68 does it all
+
+    char *p = (char *) path;
+    gunichar c = 0;
+    GString *s = g_string_new ("");
+
+    while (*p) {
+        c = g_utf8_get_char (p);
+        if (c == '\\')
+            s = g_string_append (s, "\\\\");
+        else if (c == '*')
+            s = g_string_append_c (s, '\\');
+        else
+            s = g_string_append_unichar (s, c);
+        p = g_utf8_next_char (p);
+    }
+    return g_string_free (s, FALSE);
+}
+
