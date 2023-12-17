@@ -8,14 +8,12 @@
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
-#include "rifiuti-vista.h"
+#include "utils-error.h"
 #include "utils-conv.h"
 #include "utils.h"
-#ifdef G_OS_WIN32
-#  include "utils-win.h"
-#endif
+#include "rifiuti-vista.h"
 
-static exitcode     exit_status = R2_OK;
+static exitcode     exit_status = EXIT_OK;
 extern GSList      *filelist;
 extern metarecord  *meta;
 
@@ -355,8 +353,8 @@ main (int    argc,
     cleanup:
 
     exit_status = rifiuti_handle_global_error (error);
-    if (rifiuti_handle_record_error () && exit_status == R2_OK)
-        exit_status = R2_ERR_DUBIOUS_DATA;
+    if (rifiuti_handle_record_error () && exit_status == EXIT_OK)
+        exit_status = EXIT_ERR_DUBIOUS_DATA;
 
     rifiuti_cleanup ();
     return exit_status;

@@ -11,13 +11,9 @@
 #include <glib/gstdio.h>
 
 #include "utils-conv.h"
+#include "utils-error.h"
 #include "utils.h"
-#ifdef G_OS_WIN32
-#  include "utils-win.h"
-#endif
-#ifdef __GLIBC__
-#  include "utils-linux.h"
-#endif
+#include "utils-platform.h"
 
 /* Our own error domain */
 
@@ -435,7 +431,7 @@ _show_ver_and_exit (const gchar *opt_name,
         PROJECT_HOMEPAGE_URL);
 
     // OK I cheated, it is not returning at all.
-    exit (R2_OK);
+    exit (EXIT_OK);
 }
 
 
@@ -480,12 +476,17 @@ _fileargs_handler (GOptionContext *context,
 #if (defined G_OS_WIN32 || defined __GLIBC__)
     {
         meta->filename = g_strdup ("(current system)");
-        GSList *bindirs = enumerate_drive_bins();
+        GSList *bindirs = enumerate_drive_bins (error);
         if (!bindirs)
         {
-            g_set_error_literal (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+            char *reason = g_strdup ((*error)->message);
+            g_clear_error (error);
+            g_set_error (error, R2_FATAL_ERROR,
+                R2_FATAL_ERROR_LIVE_UNSUPPORTED,
                 _("Live probation unsupported under this system; "
-                "requires running under Windows or WSL distribution."));
+                "requires running under Windows or WSL distribution.\n"
+                "Failure reason: %s"), reason);
+            g_free (reason);
             return FALSE;
         }
 
@@ -1485,25 +1486,28 @@ _dump_rec_error   (rbin_struct  *record,
 exitcode
 rifiuti_handle_global_error (GError *error)
 {
-    exitcode code = R2_OK;
+    exitcode code = EXIT_OK;
 
     if (error)
     {
         g_printerr ("Fatal error: %s\n", error->message);
         if (error->domain == G_OPTION_ERROR)
-            code = R2_ERR_ARG;
+            code = EXIT_ERR_ARG;
         else if (error->domain == G_FILE_ERROR)
-            code = R2_ERR_OPEN_FILE;
+            code = EXIT_ERR_OPEN_FILE;
         else if (g_error_matches (error,
             R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA))
-            code = R2_ERR_ILLEGAL_DATA;
+            code = EXIT_ERR_ILLEGAL_DATA;
         else if (g_error_matches (error,
             R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE))
-            code = R2_ERR_WRITE_FILE;
+            code = EXIT_ERR_WRITE_FILE;
+        else if (g_error_matches (error,
+            R2_FATAL_ERROR, R2_FATAL_ERROR_LIVE_UNSUPPORTED))
+            code = EXIT_ERR_NO_LIVE;
         else {
             g_critical ("Error not handled: quark = %s, code = %d",
                 g_quark_to_string (error->domain), error->code);
-            code = R2_ERR_UNHANDLED;
+            code = EXIT_ERR_UNHANDLED;
         }
         g_error_free (error);
     }
@@ -1513,7 +1517,7 @@ rifiuti_handle_global_error (GError *error)
         GHashTableIter iter;
         gpointer key, val;
 
-        code = R2_ERR_DUBIOUS_DATA;
+        code = EXIT_ERR_DUBIOUS_DATA;
 
         g_hash_table_iter_init (&iter, meta->invalid_records);
         g_printerr ("%s\n", _("Error occurred in following record:"));

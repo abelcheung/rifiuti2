@@ -23,16 +23,17 @@
 // https://stackoverflow.com/a/3599170
 #define UNUSED(x) (void)(x)
 
-/* Error and exit status */
+/* exit status */
 typedef enum
 {
-    R2_OK = EXIT_SUCCESS,
-    R2_ERR_ARG,  /* Command argument parsing error */
-    R2_ERR_OPEN_FILE,  /* Fail when searching and opening index file */
-    R2_ERR_WRITE_FILE,  /* Error writing output, includes manipulation of temp file */
-    R2_ERR_ILLEGAL_DATA,  /* serious file format validation failure */
-    R2_ERR_DUBIOUS_DATA,  /* affect some record(s) only */
-    R2_ERR_UNHANDLED = 64,
+    EXIT_OK = EXIT_SUCCESS,
+    EXIT_ERR_ARG,  /* Command argument parsing error */
+    EXIT_ERR_OPEN_FILE,  /* Fail when searching and opening index file */
+    EXIT_ERR_WRITE_FILE,  /* Error writing output, includes manipulation of temp file */
+    EXIT_ERR_ILLEGAL_DATA,  /* serious file format validation failure */
+    EXIT_ERR_DUBIOUS_DATA,  /* affect some record(s) only */
+    EXIT_ERR_NO_LIVE,  // live mode requested but failed
+    EXIT_ERR_UNHANDLED = 64,
 } exitcode;
 
 typedef enum
@@ -80,38 +81,6 @@ typedef enum
     FILESTATUS_EXISTS,
     FILESTATUS_GONE
 } trash_file_status;
-
-// our own error domains
-
-#define R2_FATAL_ERROR (rifiuti_fatal_error_quark ())
-GQuark rifiuti_fatal_error_quark (void);
-
-#define R2_REC_ERROR (rifiuti_record_error_quark ())
-GQuark rifiuti_record_error_quark (void);
-
-typedef enum
-{
-    R2_FATAL_ERROR_LIVE_UNSUPPORTED,  /* Can't detect live system env */
-    R2_FATAL_ERROR_ILLEGAL_DATA,  /* all data broken, not empty bin */
-    R2_FATAL_ERROR_TEMPFILE,
-
-} R2FatalError;
-
-/**
- * @brief Per record non-fatal error
- * @note Some error may indicate the whole record is invalidated,
- * but there also exists very minor error that doesn't.
- */
-typedef enum
-{
-    R2_REC_ERROR_DRIVE_LETTER,
-    R2_REC_ERROR_DUBIOUS_TIME,
-    R2_REC_ERROR_DUBIOUS_PATH,
-    R2_REC_ERROR_CONV_PATH,
-    R2_REC_ERROR_IDX_SIZE_INVALID,
-    R2_REC_ERROR_VER_UNSUPPORTED,  /* ($Recycle.bin) bad version */
-
-} R2RecordError;
 
 /**
  * @brief Metadata for recycle bin

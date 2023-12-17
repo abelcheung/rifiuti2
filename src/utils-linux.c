@@ -4,9 +4,11 @@
  * Please see LICENSE file for more info.
  */
 
-#include <glib.h>
+#include "utils-conv.h"
+#include "utils-platform.h"
 
-#include "utils-linux.h"
+
+G_DEFINE_QUARK (rifiuti-misc-error-quark, rifiuti_misc_error)
 
 
 /**
@@ -51,24 +53,24 @@ _search_delimited_text (const char *haystack,
  * @return SID string "S-1-...", or `NULL` if failure
  */
 static char *
-_get_user_sid (void)
+_get_user_sid   (GError   **error)
 {
     const char *cmd = "whoami.exe /user /fo csv";
     char *cmd_out = NULL, *cmd_err = NULL, *result = NULL;
     int exit_code;
-    GError *error = NULL;
+    GError *cmd_error = NULL;
 
     if (FALSE == g_spawn_command_line_sync(
-        cmd, &cmd_out, &cmd_err, &exit_code, &error))
+        cmd, &cmd_out, &cmd_err, &exit_code, &cmd_error))
     {
-        g_debug ("Error running whoami.exe: %s", error->message);
+        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+            "Error running whoami: %s", (*cmd_error)->message);
         goto sid_cleanup;
     }
-
-    /* Likely whoami.exe from MSYS2, cygwin, etc */
-    if (exit_code != 0)
+    else if (exit_code != 0)  // e.g. whoami.exe from MSYS2
     {
-        g_debug ("Not expected whoami.exe, error is: %s", cmd_err);
+        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+            "Error running whoami: %s", cmd_err);
         goto sid_cleanup;
     }
 
@@ -86,34 +88,37 @@ _get_user_sid (void)
         g_strfreev (lines);
 
         if (result[0] != 'S') {
-            g_critical ("Incorrect SID format '%s'", result);
+            g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+                "Invalid format '%s'", result);
             g_free (result);
             result = NULL;
         }
     }
 
-  sid_cleanup:
+    sid_cleanup:
+
     g_free (cmd_out);
     g_free (cmd_err);
-    g_clear_error (&error);
+    g_error_free (cmd_error);
     return result;
 }
 
 
 static GSList *
-_probe_mounts (void)
+_probe_mounts   (GError   **error)
 {
     GSList *result = NULL;
-    GError *error = NULL;
+    GError *read_error = NULL;
     gsize len;
     char *mounts_data = NULL;
     const char *fstype = "9p";
+    const char *proc = "/proc/self/mounts";
 
-    if (! g_file_get_contents ("/proc/self/mounts",
-        &mounts_data, &len, &error))
+    if (! g_file_get_contents (proc, &mounts_data, &len, &read_error))
     {
-        g_critical ("Fail reading mount data: %s", error->message);
-        g_clear_error (&error);
+        g_set_error_literal (error, R2_MISC_ERROR,
+            R2_MISC_ERROR_ENUMERATE_MNT, read_error->message);
+        g_error_free (read_error);
         return NULL;
     }
 
@@ -129,30 +134,33 @@ _probe_mounts (void)
  * @return List of possible Windows paths to be checked
  */
 GSList *
-enumerate_drive_bins (void)
+enumerate_drive_bins   (GError   **error)
 {
-    GSList *result = NULL;
-    char *sid = _get_user_sid ();
+    GSList *result = NULL, *mnt_pts;
+    char *sid;
 
-    if (sid == NULL)
-    {
-        g_debug ("%s", "Failed to get SID of current user");
+    if (NULL == (sid = _get_user_sid (error)))
         return NULL;
+
+    if (NULL == (mnt_pts = _probe_mounts (error)))
+        return NULL;
+
+    for (GSList *ptr = mnt_pts; ptr != NULL; ptr = ptr->next)
+    {
+        char *full_rbin_path = g_build_filename (
+            (char *) ptr->data, "$Recycle.bin", sid, NULL);
+        if (g_file_test (full_rbin_path, G_FILE_TEST_EXISTS))
+            result = g_slist_prepend (result, full_rbin_path);
+        else
+            g_free (full_rbin_path);
     }
 
-    result = _probe_mounts ();
     if (result == NULL)
-    {
-        g_debug ("%s", "Failed to enumerate Windows drives");
-        return NULL;
-    }
+        g_set_error_literal (error, R2_MISC_ERROR,
+            R2_MISC_ERROR_ENUMERATE_MNT,
+            _("No recycle bin found on system"));
+    g_slist_free_full (mnt_pts, (GDestroyNotify) g_free);
 
-    for (GSList *ptr = result; ptr != NULL; ptr = ptr->next)
-    {
-        char *old = (char *) ptr->data;
-        ptr->data = g_build_filename (old, "$Recycle.bin", sid, NULL);
-        g_free (old);
-    }
     return result;
 }
 

@@ -13,12 +13,15 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "utils-win.h"
-
+#include "utils-error.h"
+#include "utils-platform.h"
 
 static HANDLE wincon_fh = NULL;
 static HANDLE winerr_fh = NULL;
 static PSID   sid       = NULL;
+
+
+G_DEFINE_QUARK (rifiuti-misc-error-quark, rifiuti_misc_error)
 
 
 /* GUI message box */
@@ -108,29 +111,28 @@ get_win_timezone_name (void)
  * [GetEffectiveRightsFromAcl()](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-geteffectiverightsfromacla),
  */
 static PSID
-_get_user_sid (void)
+_get_user_sid   (GError   **error)
 {
     static bool       tried      = false;
-    gunichar2         username[UNLEN + 1],
+    wchar_t           username[UNLEN + 1],
                      *domainname = NULL;
-    char             *errmsg;
+    char             *errmsg = NULL;
     DWORD             e          = 0,
                       bufsize    = UNLEN + 1,
                       sidsize    = 0,
                       domainsize = 0;
     SID_NAME_USE      sidtype;
 
-    if (tried)
-        return sid;
+    if (tried) return sid;
     tried = true;
 
-    g_debug ("Entering %s()", __func__);
-
-    if ( !GetUserNameW (username, &bufsize) )
+    if (! GetUserNameW (username, &bufsize))
     {
         errmsg = g_win32_error_message (GetLastError());
-        g_critical (_("Failed to get current user name: %s"), errmsg);
-        goto getsid_fail;
+        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+            "GetUserName() failure: %s", errmsg);
+        g_free (errmsg);
+        return NULL;
     }
 
     if (! LookupAccountNameW (NULL, username, NULL, &sidsize,
@@ -140,8 +142,10 @@ _get_user_sid (void)
         if ( e != ERROR_INSUFFICIENT_BUFFER )
         {
             errmsg = g_win32_error_message (e);
-            g_critical (_("1st LookupAccountName() failed: %s"), errmsg);
-            goto getsid_fail;
+            g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+                "LookupAccountName() failure (1): %s", errmsg);
+            g_free (errmsg);
+            return NULL;
         }
     }
 
@@ -152,7 +156,7 @@ _get_user_sid (void)
 
     // Unused but still needed, otherwise LookupAccountName call
     // would fail
-    domainname = g_malloc (domainsize * sizeof(gunichar2));
+    domainname = g_malloc (domainsize * sizeof (wchar_t));
 
     if (LookupAccountNameW (NULL, username, sid, &sidsize,
             domainname, &domainsize, &sidtype))
@@ -162,13 +166,13 @@ _get_user_sid (void)
     }
 
     errmsg = g_win32_error_message (GetLastError());
-    g_critical (_("2nd LookupAccountName() failed: %s"), errmsg);
+    g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+        "LookupAccountName() failure (2): %s", errmsg);
+    g_free (errmsg);
+
     g_free (sid);
     g_free (domainname);
-    sid = NULL;
 
-  getsid_fail:
-    g_free (errmsg);
     return NULL;
 }
 
@@ -177,7 +181,7 @@ _get_user_sid (void)
  * corresponding recycle bin paths for current user
  */
 GSList *
-enumerate_drive_bins (void)
+enumerate_drive_bins   (GError   **error)
 {
     DWORD         drive_bitmap;
     PSID          sid = NULL;
@@ -185,23 +189,25 @@ enumerate_drive_bins (void)
     static char   drive_root[4] = "A:\\";
     GSList       *result = NULL;
 
-    if (! (drive_bitmap = GetLogicalDrives())) {
-        errmsg = g_win32_error_message (GetLastError());
-        g_debug (_("Failed to enumerate Windows drives: %s"), errmsg);
-        goto enumerate_cleanup;
-    }
+    if (NULL == (sid = _get_user_sid (error)))
+        return NULL;
 
-    if (NULL == (sid = _get_user_sid())) {
-        g_debug (_("Failed to get SID of current user"));
-        goto enumerate_cleanup;
-    }
     if (! ConvertSidToStringSidA(sid, &sid_str)) {
         errmsg = g_win32_error_message (GetLastError());
-        g_debug (_("Failed to convert SID to string: %s"), errmsg);
+        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+            "ConvertSidToStringSidA() failure: %s", errmsg);
         goto enumerate_cleanup;
     }
 
-    for (gsize i = 0; i < sizeof(DWORD) * CHAR_BIT; i++) {
+    if (! (drive_bitmap = GetLogicalDrives())) {
+        errmsg = g_win32_error_message (GetLastError());
+        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_ENUMERATE_MNT,
+            "GetLogicalDrives() failure: %s", errmsg);
+        goto enumerate_cleanup;
+    }
+
+    for (gsize i = 0; i < sizeof(DWORD) * CHAR_BIT; i++)
+    {
         if (! (drive_bitmap & (1 << i)))
             continue;
         drive_root[0] = 'A' + i;
@@ -210,16 +216,24 @@ enumerate_drive_bins (void)
             || (type == DRIVE_UNKNOWN    )
             || (type == DRIVE_REMOTE     )
             || (type == DRIVE_CDROM      )) {
-            g_debug ("%s is not a logical drive we want, skipped", drive_root);
+            g_debug ("%s unwanted, type = %u", drive_root, type);
             continue;
         }
-        char *path = g_strdup_printf ("%s$Recycle.Bin\\%s",
-            drive_root, sid_str);
-
-        result = g_slist_append (result, path);
+        char *full_rbin_path = g_build_filename (drive_root,
+            "$Recycle.bin", sid_str, NULL);
+        if (g_file_test (full_rbin_path, G_FILE_TEST_EXISTS))
+            result = g_slist_prepend (result, full_rbin_path);
+        else
+            g_free (full_rbin_path);
     }
 
+    if (result == NULL)
+        g_set_error_literal (error, R2_MISC_ERROR,
+            R2_MISC_ERROR_ENUMERATE_MNT,
+            _("No recycle bin found on system"));
+
     enumerate_cleanup:
+
     if (sid_str != NULL)
         LocalFree (sid_str);
     g_free (errmsg);
@@ -297,7 +311,7 @@ can_list_win32_folder (const char   *path,
     AUTHZ_ACCESS_REQUEST          authz_req = { MAXIMUM_ALLOWED, NULL, NULL, 0, NULL };
     AUTHZ_ACCESS_REPLY            authz_reply;
 
-    if ( NULL == ( sid = _get_user_sid() ) )
+    if (NULL == (sid = _get_user_sid (error)))
         return FALSE;
 
     wpath = g_utf8_to_utf16 (path, -1, NULL, NULL, NULL);
