@@ -70,8 +70,14 @@ _get_user_sid   (GError   **error)
     }
     else if (exit_code != 0)  // e.g. whoami.exe from MSYS2
     {
-        g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
-            "Error running whoami: %s", cmd_err);
+        if (g_utf8_validate (cmd_err, 10, NULL))
+            g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+                "Error running whoami: %s", cmd_err);
+        else
+            // When running under valgrind, the stderr is set to
+            // contain binary data of whoami.exe
+            g_set_error_literal (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
+                "Error running whoami with unknown reason");
         goto sid_cleanup;
     }
 
@@ -100,7 +106,7 @@ _get_user_sid   (GError   **error)
 
     g_free (cmd_out);
     g_free (cmd_err);
-    g_error_free (cmd_error);
+    g_clear_error (&cmd_error);
     return result;
 }
 
@@ -119,7 +125,7 @@ _probe_mounts   (GError   **error)
     {
         g_set_error_literal (error, R2_MISC_ERROR,
             R2_MISC_ERROR_ENUMERATE_MNT, read_error->message);
-        g_error_free (read_error);
+        g_clear_error (&read_error);
         return NULL;
     }
 
