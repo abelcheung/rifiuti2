@@ -14,7 +14,6 @@
 #include "rifiuti-vista.h"
 
 static exitcode     exit_status = EXIT_OK;
-extern GSList      *filelist;
 extern metarecord  *meta;
 
 
@@ -205,8 +204,8 @@ _populate_record_data  (void      *buf,
 }
 
 static void
-_parse_record_cb   (char *index_file,
-                    const metarecord *meta)
+_parse_record_cb   (const char *index_file,
+                    metarecord *meta)
 {
     rbin_struct       *record = NULL;
     char              *basename = NULL;
@@ -320,7 +319,7 @@ main (int    argc,
     ))
         goto cleanup;
 
-    g_slist_foreach (filelist, (GFunc) _parse_record_cb, meta);
+    do_parse_records (&_parse_record_cb);
 
     if (! meta->records->len && g_hash_table_size (meta->invalid_records))
     {

@@ -40,7 +40,7 @@ DECL_OPT_CALLBACK(_show_ver_and_exit);
 
 static int
 _check_file_args (const char  *path,
-                  GSList     **list,
+                  GPtrArray   *list,
                   rbin_type    type,
                   gboolean    *isolated_index,
                   GError     **error);
@@ -101,7 +101,7 @@ static char       **fileargs           = NULL;
 static FILE        *out_fh             = NULL; /*!< unused for Windows console */
 static FILE        *err_fh             = NULL; /*!< unused for Windows console */
 
-       GSList      *filelist           = NULL;
+       GPtrArray   *allidxfiles        = NULL;
        gboolean     isolated_index     = FALSE;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
        metarecord  *meta               = NULL;
@@ -461,7 +461,7 @@ _fileargs_handler (GOptionContext *context,
         }
         meta->filename = g_strdup (fileargs[0]);
 
-        return _check_file_args (meta->filename, &filelist,
+        return _check_file_args (meta->filename, allidxfiles,
             meta->type, &isolated_index, error);
     }
 
@@ -494,7 +494,7 @@ _fileargs_handler (GOptionContext *context,
         while (ptr) {
             // Ignore errors, pretty common that some folders don't
             // exist or are empty.
-            _check_file_args (ptr->data, &filelist,
+            _check_file_args (ptr->data, allidxfiles,
                 meta->type, NULL, NULL);
             ptr = ptr->next;
         }
@@ -752,6 +752,9 @@ rifiuti_init (rbin_type  type,
         (GDestroyNotify) g_error_free
     );
 
+    // Other global structures
+    allidxfiles = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+
     /* Parse command line arguments and generate help */
     context = g_option_context_new (usage_param);
     g_option_context_set_summary (context, usage_summary);
@@ -810,13 +813,12 @@ _get_tempfile (FILE   **fh,
  * @return `TRUE` on success, `FALSE` if folder can't be opened
  */
 static gboolean
-_populate_index_file_list (GSList     **list,
+_populate_index_file_list (GPtrArray   *list,
                            const char  *path,
                            GError     **error)
 {
     GDir           *dir;
     const char     *direntry;
-    char           *fname;
     GPatternSpec   *pattern1, *pattern2;
 
     // g_dir_open() returns cryptic error message or even succeeds on Windows,
@@ -844,8 +846,8 @@ _populate_index_file_list (GSList     **list,
             !g_pattern_match_string (pattern2, direntry))
             continue;
 #endif
-        fname = g_build_filename (path, direntry, NULL);
-        *list = g_slist_prepend (*list, fname);
+        g_ptr_array_add (list,
+            g_build_filename (path, direntry, NULL));
     }
 
     g_dir_close (dir);
@@ -951,7 +953,7 @@ _guess_windows_ver (const metarecord *meta)
  */
 static gboolean
 _check_file_args (const char  *path,
-                  GSList     **list,
+                  GPtrArray   *list,
                   rbin_type    type,
                   gboolean    *isolated_index,
                   GError     **error)
@@ -977,7 +979,7 @@ _check_file_args (const char  *path,
          * last ditch effort: search for desktop.ini. Just print empty content
          * representing empty recycle bin if found.
          */
-        if ( !*list && !_found_desktop_ini (path) )
+        if (list->len == 0 && ! _found_desktop_ini (path))
         {
             g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT,
                 _("No files with name pattern '%s' "
@@ -992,7 +994,7 @@ _check_file_args (const char  *path,
             *isolated_index = ! _found_desktop_ini (parent_dir);
             g_free (parent_dir);
         }
-        *list = g_slist_prepend ( *list, g_strdup (path) );
+        g_ptr_array_add (list, g_strdup (path));
     }
     else
     {
@@ -1005,6 +1007,11 @@ _check_file_args (const char  *path,
     return TRUE;
 }
 
+void
+do_parse_records (ParseIdxFunc func)
+{
+    g_ptr_array_foreach (allidxfiles, (GFunc) func, meta);
+}
 
 /**
  * @brief Close all output / error file handles before exit
@@ -1567,7 +1574,7 @@ rifiuti_cleanup (void)
     g_free (meta->filename);
     g_free (meta);
 
-    g_slist_free_full (filelist, (GDestroyNotify) g_free);
+    g_ptr_array_free (allidxfiles, TRUE);
     g_strfreev (fileargs);
     g_free (output_loc);
     g_free (legacy_encoding);

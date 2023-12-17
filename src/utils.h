@@ -226,6 +226,10 @@ typedef struct _rbin_struct
  */
 #define WIN_PATH_MAX 260
 
+
+typedef void (*ParseIdxFunc)              (const char       *path,
+                                           metarecord       *meta);
+
 /* shared functions */
 gboolean      rifiuti_init                (rbin_type         type,
                                            char             *usage_param,
@@ -244,5 +248,7 @@ void          rifiuti_cleanup             (void);
 
 void          hexdump                     (void             *start,
                                            size_t            size);
+
+void          do_parse_records            (ParseIdxFunc      func);
 
 #endif
