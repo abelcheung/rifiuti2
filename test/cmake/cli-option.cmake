@@ -201,6 +201,6 @@ add_test(NAME d_LiveProbeOpt
 set_tests_properties(d_LiveProbeOpt
     PROPERTIES
         LABELS "recycledir;arg"
-        SKIP_RETURN_CODE 1
+        SKIP_REGULAR_EXPRESSION "No such file or directory;Unknown option --live"
         PASS_REGULAR_EXPRESSION "\\(current system\\)")
 

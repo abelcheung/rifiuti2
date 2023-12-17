@@ -5,6 +5,7 @@
  */
 
 #include "utils-conv.h"
+#include "utils-error.h"
 #include "utils-platform.h"
 
 
@@ -64,7 +65,7 @@ _get_user_sid   (GError   **error)
         cmd, &cmd_out, &cmd_err, &exit_code, &cmd_error))
     {
         g_set_error (error, R2_MISC_ERROR, R2_MISC_ERROR_GET_SID,
-            "Error running whoami: %s", (*cmd_error)->message);
+            "Error running whoami: %s", cmd_error->message);
         goto sid_cleanup;
     }
     else if (exit_code != 0)  // e.g. whoami.exe from MSYS2
@@ -158,7 +159,7 @@ enumerate_drive_bins   (GError   **error)
     if (result == NULL)
         g_set_error_literal (error, R2_MISC_ERROR,
             R2_MISC_ERROR_ENUMERATE_MNT,
-            _("No recycle bin found on system"));
+            "No recycle bin found on system");
     g_slist_free_full (mnt_pts, (GDestroyNotify) g_free);
 
     return result;
