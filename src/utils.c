@@ -1366,6 +1366,7 @@ _print_json_record   (rbin_struct        *record,
     g_free (tmp);
     g_free (path);
     g_free (dt_str);
+    g_string_free (s, TRUE);
 }
 
 
@@ -1594,7 +1595,7 @@ hexdump    (void     *start,
 {
     GString *s = g_string_new ("");
     size_t i = 0;
-    do
+    while (TRUE)
     {
         if (i % 16 == 0)
         {
@@ -1605,7 +1606,11 @@ hexdump    (void     *start,
             }
             g_string_append_printf (s, "%04zX    ", i);
         }
+        if (i >= size)
+            break;
         g_string_append_printf (s, "%02" PRIX8 " ", *(uint8_t *) (start+i));
+        i++;
     }
-    while (i++ < size);
+
+    g_string_free (s, TRUE);
 }

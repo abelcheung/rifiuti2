@@ -36,7 +36,7 @@ _validate_index_file   (const char   *filename,
                         GError      **error)
 {
     gsize           expect_sz;
-    char           *buf;
+    char           *buf = NULL;
     uint32_t        pathlen;
 
     g_return_val_if_fail (filename &&   *filename, FALSE);
@@ -48,7 +48,7 @@ _validate_index_file   (const char   *filename,
     g_debug ("Start file validation for '%s'...", filename);
 
     if (! g_file_get_contents (filename, &buf, bufsize, error))
-        return FALSE;
+        goto validate_fail;
 
     g_debug ("Read '%s' successfully, size = %" G_GSIZE_FORMAT,
         filename, *bufsize);
@@ -60,7 +60,7 @@ _validate_index_file   (const char   *filename,
             *bufsize, (gsize) VERSION1_FILENAME_OFFSET);
         g_set_error_literal (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
             _("File is prematurely truncated, or not a $Recycle.bin index."));
-        return FALSE;
+        goto validate_fail;
     }
 
     copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
@@ -79,7 +79,7 @@ _validate_index_file   (const char   *filename,
                     ", expected = %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT, *bufsize, expect_sz, expect_sz - 1);
                 g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
                     "%s", _("Might be an index file, but file size is unexpected."));
-                return FALSE;
+                goto validate_fail;
             }
             break;
 
@@ -99,7 +99,7 @@ _validate_index_file   (const char   *filename,
                     *bufsize, expect_sz);
                 g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
                     "%s", _("Might be an index file, but file size is unexpected."));
-                return FALSE;
+                goto validate_fail;
             }
             break;
 
@@ -112,12 +112,16 @@ _validate_index_file   (const char   *filename,
                 g_set_error (error, R2_REC_ERROR,
                     R2_REC_ERROR_VER_UNSUPPORTED,
                     "%s", _("File is not a $Recycle.bin index"));
-            return FALSE;
+            goto validate_fail;
     }
 
     *filebuf = buf;
     g_debug ("Finished file validation for '%s'", filename);
     return TRUE;
+
+    validate_fail:
+    g_free (buf);
+    return FALSE;
 }
 
 

@@ -40,7 +40,7 @@ _validate_index_file   (const char   *filename,
                         FILE        **infile,
                         GError      **error)
 {
-    void           *buf;
+    void           *buf = NULL;
     FILE           *fp = NULL;
     uint32_t        ver;
     int             e;
@@ -65,7 +65,7 @@ _validate_index_file   (const char   *filename,
         g_set_error_literal (error, R2_FATAL_ERROR,
             R2_FATAL_ERROR_ILLEGAL_DATA,
             _("File is prematurely truncated, or not an INFO2 index."));
-        goto validation_broken;
+        goto validation_fail;
     }
 
     copy_field (&ver, VERSION_OFFSET, KEPT_ENTRY_OFFSET);
@@ -82,6 +82,7 @@ _validate_index_file   (const char   *filename,
     meta->recordsize = GUINT32_FROM_LE (meta->recordsize);
 
     g_free (buf);
+    buf = NULL;
 
     switch (meta->recordsize)
     {
@@ -93,7 +94,7 @@ _validate_index_file   (const char   *filename,
             {
                 g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
                     "Illegal INFO2 version %" PRIu32, ver);
-                goto validation_broken;
+                goto validation_fail;
             }
 
             if (!legacy_encoding)
@@ -104,7 +105,7 @@ _validate_index_file   (const char   *filename,
                     "without Unicode file name (Windows ME or earlier). "
                     "Please specify codepage of concerned system with "
                     "'-l' option.");
-                goto validation_broken;
+                goto validation_fail;
             }
             break;
 
@@ -114,7 +115,7 @@ _validate_index_file   (const char   *filename,
             {
                 g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
                     "Illegal INFO2 version %" PRIu32, ver);
-                goto validation_broken;
+                goto validation_fail;
             }
             break;
 
@@ -122,7 +123,7 @@ _validate_index_file   (const char   *filename,
             g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
                 _("Illegal INFO2 of record size %" G_GSIZE_FORMAT),
                 meta->recordsize);
-            goto validation_broken;
+            goto validation_fail;
     }
 
     rewind (fp);
@@ -130,8 +131,9 @@ _validate_index_file   (const char   *filename,
     meta->version = ver;
     return TRUE;
 
-    validation_broken:
+    validation_fail:
 
+    g_free (buf);
     fclose (fp);
     return FALSE;
 }
