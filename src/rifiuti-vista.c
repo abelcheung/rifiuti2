@@ -13,7 +13,6 @@
 #include "utils.h"
 #include "rifiuti-vista.h"
 
-static exitcode     exit_status = EXIT_OK;
 extern metarecord  *meta;
 
 
@@ -355,10 +354,5 @@ main (int    argc,
 
     cleanup:
 
-    exit_status = rifiuti_handle_global_error (error);
-    if (rifiuti_handle_record_error () && exit_status == EXIT_OK)
-        exit_status = EXIT_ERR_DUBIOUS_DATA;
-
-    rifiuti_cleanup ();
-    return exit_status;
+    return rifiuti_cleanup (&error);
 }

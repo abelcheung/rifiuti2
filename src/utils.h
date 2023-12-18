@@ -241,10 +241,7 @@ GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
 gboolean      dump_content                (GError          **error);
 
-exitcode      rifiuti_handle_global_error (GError           *error);
-gboolean      rifiuti_handle_record_error (void);
-
-void          rifiuti_cleanup             (void);
+exitcode      rifiuti_cleanup             (GError          **error);
 
 void          hexdump                     (void             *start,
                                            size_t            size);

@@ -6,6 +6,7 @@
 
 #include "config.h"
 
+#include <stdbool.h>
 #include <locale.h>
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
@@ -1461,7 +1462,7 @@ dump_content (GError **error)
 
 static void
 _dump_rec_error   (rbin_struct  *record,
-                   gboolean     *flag)
+                   bool         *flag)
 {
     g_return_if_fail (record);
 
@@ -1470,7 +1471,7 @@ _dump_rec_error   (rbin_struct  *record,
 
     if (! *flag)
     {
-        *flag = TRUE;
+        *flag = true;
         g_printerr ("\n%s\n", _("Error occurred in following record:"));
     }
 
@@ -1491,43 +1492,51 @@ _dump_rec_error   (rbin_struct  *record,
  * @return program exit code
  */
 exitcode
-rifiuti_handle_global_error (GError *error)
+_get_exit_code   (const GError   *error)
 {
     exitcode code = EXIT_OK;
 
-    if (error)
-    {
-        g_printerr ("Fatal error: %s\n", error->message);
-        if (error->domain == G_OPTION_ERROR)
-            code = EXIT_ERR_ARG;
-        else if (error->domain == G_FILE_ERROR)
-            code = EXIT_ERR_OPEN_FILE;
-        else if (g_error_matches (error,
-            R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA))
-            code = EXIT_ERR_ILLEGAL_DATA;
-        else if (g_error_matches (error,
-            R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE))
-            code = EXIT_ERR_WRITE_FILE;
-        else if (g_error_matches (error,
-            R2_FATAL_ERROR, R2_FATAL_ERROR_LIVE_UNSUPPORTED))
-            code = EXIT_ERR_NO_LIVE;
-        else {
-            g_critical ("Error not handled: quark = %s, code = %d",
-                g_quark_to_string (error->domain), error->code);
-            code = EXIT_ERR_UNHANDLED;
-        }
-        g_error_free (error);
+    if (error == NULL)
+        return code;
+
+    g_printerr ("Fatal error: %s\n", error->message);
+
+    if (error->domain == G_OPTION_ERROR)
+        code = EXIT_ERR_ARG;
+    else if (error->domain == G_FILE_ERROR)
+        code = EXIT_ERR_OPEN_FILE;
+    else if (g_error_matches (error,
+        R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA))
+        code = EXIT_ERR_ILLEGAL_DATA;
+    else if (g_error_matches (error,
+        R2_FATAL_ERROR, R2_FATAL_ERROR_TEMPFILE))
+        code = EXIT_ERR_WRITE_FILE;
+    else if (g_error_matches (error,
+        R2_FATAL_ERROR, R2_FATAL_ERROR_LIVE_UNSUPPORTED))
+        code = EXIT_ERR_NO_LIVE;
+    else {
+        g_critical ("Error not handled: quark = %s, code = %d",
+            g_quark_to_string (error->domain), error->code);
+        code = EXIT_ERR_UNHANDLED;
     }
+
+    return code;
+}
+
+
+bool
+_has_record_error   (void)
+{
+    bool flag = false;  // Determine occasion to print headline
+    GHashTableIter iter;
+    gpointer key, val;
 
     if (g_hash_table_size (meta->invalid_records))
     {
-        GHashTableIter iter;
-        gpointer key, val;
-
-        code = EXIT_ERR_DUBIOUS_DATA;
-
+        flag = true;
         g_hash_table_iter_init (&iter, meta->invalid_records);
         g_printerr ("%s\n", _("Error occurred in following record:"));
+
         while (g_hash_table_iter_next (&iter, &key, &val))
         {
             char *record_id = (char *) key;
@@ -1544,14 +1553,6 @@ rifiuti_handle_global_error (GError *error)
             g_free (record_id);
         }
     }
-    return code;
-}
-
-
-gboolean
-rifiuti_handle_record_error (void)
-{
-    gboolean flag = FALSE;
 
     g_ptr_array_foreach (meta->records,
             (GFunc) _dump_rec_error, &flag);
@@ -1561,13 +1562,24 @@ rifiuti_handle_record_error (void)
 
 
 /**
- * @brief Final cleanup before exiting program, e.g. free all variables
- * @param meta Pointer to metadata structure
+ * @brief Dump error and perform final cleanup
+ * @param error The global `GError` to process
+ * @return program exit code
  */
-void
-rifiuti_cleanup (void)
+exitcode
+rifiuti_cleanup   (GError   **error)
 {
-    g_debug ("Cleaning up...");
+    exitcode code = EXIT_OK;
+
+    g_return_val_if_fail (error != NULL, EXIT_ERR_UNHANDLED);
+
+    code = _get_exit_code ((const GError *) (*error));
+    g_clear_error (error);
+
+    if (_has_record_error () && code == EXIT_OK)
+        code = EXIT_ERR_DUBIOUS_DATA;
+
+    g_debug ("Final cleanup...");
 
     g_ptr_array_unref (meta->records);
     g_hash_table_destroy (meta->invalid_records);
@@ -1585,6 +1597,8 @@ rifiuti_cleanup (void)
 #ifdef G_OS_WIN32
     cleanup_windows_res ();
 #endif
+
+    return code;
 }
 
 
