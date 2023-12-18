@@ -19,17 +19,20 @@ G_DEFINE_QUARK (rifiuti-misc-error-quark, rifiuti_misc_error)
  * @param separator Field separator in desired line
  * @param needle_pos Field number where needle is supposed to be
  * @param result_pos Field number of data we want
- * @return GSList of desired data
- * @note This routine does not require all lines to have same separator; result could be extracted as long as the particular matching line has all the right conditions.
+ * @return Desired search result in `GPtrArray`
+ * @note This routine does not require all lines to have same
+ * separator; result could be extracted as long as the
+ * particular matching line has all the right conditions.
  */
-static GSList *
-_search_delimited_text (const char *haystack,
-                        const char *needle,
-                        const char *sep,
-                        gsize needle_pos,
-                        gsize result_pos)
+static GPtrArray *
+_search_delimited_text (const char   *haystack,
+                        const char   *needle,
+                        const char   *sep,
+                        gsize         needle_pos,
+                        gsize         result_pos)
 {
-    GSList *result = NULL;
+    GPtrArray *result = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+
     char **lines = g_strsplit (haystack, "\n", 0);
     for (gsize i = 0; i < g_strv_length (lines); i++)
     {
@@ -38,9 +41,12 @@ _search_delimited_text (const char *haystack,
         g_debug ("Found potential match '%s' in line '%s'", needle, lines[i]);
         char **fields = g_strsplit (g_strchomp (lines[i]), sep, 0);
         gsize nfields = g_strv_length (fields);
-        if (nfields >= needle_pos && nfields > result_pos)
-            if (g_strcmp0 (fields[needle_pos], needle) == 0)
-                result = g_slist_prepend (result, g_strdup (fields[result_pos]));
+        if (nfields > needle_pos &&
+            nfields > result_pos &&
+            g_strcmp0 (fields[needle_pos], needle) == 0)
+        {
+            g_ptr_array_add (result, g_strdup (fields[result_pos]));
+        }
         g_strfreev (fields);
     }
 
@@ -111,10 +117,16 @@ _get_user_sid   (GError   **error)
 }
 
 
-static GSList *
+/**
+ * @brief Check mount points for potential Windows drive
+ * @param error Location to store `GError` upon problem
+ * @return `GPtrArray` containing found mount points,
+ * or `NULL` if problem arises
+ */
+static GPtrArray *
 _probe_mounts   (GError   **error)
 {
-    GSList *result = NULL;
+    GPtrArray *result;
     GError *read_error = NULL;
     gsize len;
     char *mounts_data = NULL;
@@ -130,7 +142,7 @@ _probe_mounts   (GError   **error)
     }
 
     result = _search_delimited_text (
-        (const char *)mounts_data, fstype, " ", 2, 1);
+        (const char *) mounts_data, fstype, " ", 2, 1);
     g_free (mounts_data);
     return result;
 }
@@ -138,36 +150,47 @@ _probe_mounts   (GError   **error)
 
 /**
  * @brief Probe for possible Windows Recycle Bin under WSL Linux
- * @return List of possible Windows paths to be checked
+ * @param error Location to store `GError` when problem arises
+ * @return List of possible Windows paths in `GPtrArray`
  */
-GSList *
+GPtrArray *
 enumerate_drive_bins   (GError   **error)
 {
-    GSList *result = NULL, *mnt_pts;
+    GPtrArray *mnt_pts, *result;
     char *sid;
 
     if (NULL == (sid = _get_user_sid (error)))
         return NULL;
 
-    if (NULL == (mnt_pts = _probe_mounts (error)))
+    mnt_pts = _probe_mounts (error);
+    if (mnt_pts == NULL)
         return NULL;
+    if (mnt_pts->len == 0)
+    {
+        g_ptr_array_free (mnt_pts, TRUE);
+        return NULL;
+    }
 
-    for (GSList *ptr = mnt_pts; ptr != NULL; ptr = ptr->next)
+    result = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+
+    for (gsize i = 0; i < mnt_pts->len; i++)
     {
         char *full_rbin_path = g_build_filename (
-            (char *) ptr->data, "$Recycle.bin", sid, NULL);
+            (char *) (mnt_pts->pdata[i]), "$Recycle.bin", sid, NULL);
         if (g_file_test (full_rbin_path, G_FILE_TEST_EXISTS))
-            result = g_slist_prepend (result, full_rbin_path);
+            g_ptr_array_add (result, full_rbin_path);
         else
             g_free (full_rbin_path);
     }
+    g_ptr_array_free (mnt_pts, TRUE);
 
-    if (result == NULL)
+    if (result->len == 0) {
         g_set_error_literal (error, R2_MISC_ERROR,
             R2_MISC_ERROR_ENUMERATE_MNT,
             "No recycle bin found on system");
-    g_slist_free_full (mnt_pts, (GDestroyNotify) g_free);
-
+        g_ptr_array_free (result, TRUE);
+        result = NULL;
+    }
     return result;
 }
 
@@ -183,6 +206,7 @@ windows_product_name (void)
     char *cmd_out = NULL, *cmd_err = NULL, *result = NULL;
     int exit_code;
     GError *error = NULL;
+    GPtrArray *search_result;
 
     if (FALSE == g_spawn_command_line_sync(
             cmd, &cmd_out, &cmd_err, &exit_code, &error))
@@ -199,13 +223,14 @@ windows_product_name (void)
 
     g_debug ("reg.exe output: %s", cmd_out);
 
-    GSList *searches = _search_delimited_text (
+    search_result = _search_delimited_text (
         (const char *)cmd_out, "ProductName", "    ", 1, 3);
-    g_assert (searches != NULL && searches->next == NULL);
-    result = searches->data;
-    g_slist_free_1 (searches);
+    g_assert (search_result->len == 1);
+    result = g_strdup ((char *) (search_result->pdata[0]));
+    g_ptr_array_free (search_result, TRUE);
 
-  prod_cleanup:
+    prod_cleanup:
+
     g_free (cmd_out);
     g_free (cmd_err);
     g_clear_error (&error);

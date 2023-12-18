@@ -22,7 +22,7 @@ void       cleanup_windows_res      (void);
 #endif
 
 #if (defined G_OS_WIN32 || defined __GLIBC__)
-GSList *   enumerate_drive_bins     (GError        **error);
+GPtrArray *enumerate_drive_bins     (GError        **error);
 char *     windows_product_name     (void);
 #endif
 

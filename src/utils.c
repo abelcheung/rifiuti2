@@ -476,7 +476,8 @@ _fileargs_handler (GOptionContext *context,
 #if (defined G_OS_WIN32 || defined __GLIBC__)
     {
         meta->filename = g_strdup ("(current system)");
-        GSList *bindirs = enumerate_drive_bins (error);
+
+        GPtrArray *bindirs = enumerate_drive_bins (error);
         if (!bindirs)
         {
             char *reason = g_strdup ((*error)->message);
@@ -490,15 +491,14 @@ _fileargs_handler (GOptionContext *context,
             return FALSE;
         }
 
-        GSList *ptr = bindirs;
-        while (ptr) {
+        for (gsize i = 0; i < bindirs->len; i++)
+        {
             // Ignore errors, pretty common that some folders don't
             // exist or are empty.
-            _check_file_args (ptr->data, allidxfiles,
-                meta->type, NULL, NULL);
-            ptr = ptr->next;
+            _check_file_args ((const char *)(bindirs->pdata[i]),
+                allidxfiles, meta->type, NULL, NULL);
         }
-        g_slist_free_full (bindirs, g_free);
+        g_ptr_array_free (bindirs, TRUE);
     }
 #endif
 
@@ -939,8 +939,7 @@ _guess_windows_ver (const metarecord *meta)
 /**
  * @brief Add potentially valid file(s) to list
  * @param path The file or folder to be checked
- * @param list A `GSList` pointer to store potential index files
- * to be validated later on
+ * @param list A `GPtrArray` to store potential index files
  * @param type Recycle bin type
  * @param isolated_index Pointer to `gboolean`, indicating whether
  * the concerned `path` is a single `$Recycle.bin` type index

@@ -16,7 +16,6 @@
 
 static exitcode     exit_status = EXIT_OK;
 extern char        *legacy_encoding;
-extern GSList      *filelist;
 extern metarecord  *meta;
 
 

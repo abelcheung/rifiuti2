@@ -176,18 +176,20 @@ _get_user_sid   (GError   **error)
     return NULL;
 }
 
-/*
- * Probe for logical drives on Windows and return their
- * corresponding recycle bin paths for current user
+
+/**
+ * @brief Probe for possible Windows Recycle Bin paths
+ * @param error Location to store `GError` when problem arises
+ * @return List of possible Windows paths in `GPtrArray`
  */
-GSList *
+GPtrArray *
 enumerate_drive_bins   (GError   **error)
 {
     DWORD         drive_bitmap;
     PSID          sid = NULL;
     char         *errmsg = NULL, *sid_str = NULL;
     static char   drive_root[4] = "A:\\";
-    GSList       *result = NULL;
+    GPtrArray    *result = NULL;
 
     if (NULL == (sid = _get_user_sid (error)))
         return NULL;
@@ -206,6 +208,8 @@ enumerate_drive_bins   (GError   **error)
         goto enumerate_cleanup;
     }
 
+    result = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+
     for (gsize i = 0; i < sizeof(DWORD) * CHAR_BIT; i++)
     {
         if (! (drive_bitmap & (1 << i)))
@@ -222,15 +226,21 @@ enumerate_drive_bins   (GError   **error)
         char *full_rbin_path = g_build_filename (drive_root,
             "$Recycle.bin", sid_str, NULL);
         if (g_file_test (full_rbin_path, G_FILE_TEST_EXISTS))
-            result = g_slist_prepend (result, full_rbin_path);
+            g_ptr_array_add (result, full_rbin_path);
         else
             g_free (full_rbin_path);
     }
 
-    if (result == NULL)
+    // Might be possible that even C:\ is network drive
+    // (e.g. thin client), but still report that as
+    // error for live mode
+    if (result->len == 0) {
         g_set_error_literal (error, R2_MISC_ERROR,
             R2_MISC_ERROR_ENUMERATE_MNT,
             _("No recycle bin found on system"));
+        g_ptr_array_free (result, TRUE);
+        result = NULL;
+    }
 
     enumerate_cleanup:
 
