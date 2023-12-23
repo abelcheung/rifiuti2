@@ -62,7 +62,7 @@ _validate_index_file   (const char   *filename,
         goto validate_fail;
     }
 
-    copy_field (ver, VERSION_OFFSET, FILESIZE_OFFSET);
+    copy_field (*ver, buf, VERSION_OFFSET, FILESIZE_OFFSET);
     *ver = GUINT64_FROM_LE (*ver);
     g_debug ("version = %" PRIu64, *ver);
 
@@ -86,7 +86,7 @@ _validate_index_file   (const char   *filename,
 
             // Version 2 adds a uint32 file name strlen before file name.
             // This presumably breaks the 260 char barrier in version 1.
-            copy_field (&pathlen, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
+            copy_field (pathlen, buf, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
             pathlen = GUINT32_FROM_LE (pathlen);
 
             /* Header length + strlen in UTF-16 encoding */
@@ -163,8 +163,8 @@ _populate_record_data  (void      *buf,
     record = g_malloc0 (sizeof (rbin_struct));
     record->version = version;
 
-    memcpy (&record->filesize, buf + FILESIZE_OFFSET,
-            FILETIME_OFFSET - FILESIZE_OFFSET - (int) erraneous);
+    copy_field (record->filesize, buf, FILESIZE_OFFSET,
+        FILETIME_OFFSET - (int) erraneous);
     if (erraneous)
     {
         g_debug ("filesize field broken, 56 bit only, val=0x%" PRIX64,
@@ -179,8 +179,8 @@ _populate_record_data  (void      *buf,
     }
 
     /* File deletion time */
-    memcpy (&record->winfiletime, buf - (int) erraneous + FILETIME_OFFSET,
-            VERSION1_FILENAME_OFFSET - FILETIME_OFFSET);
+    copy_field (record->winfiletime, buf - (int) erraneous,
+        FILETIME_OFFSET, VERSION1_FILENAME_OFFSET);
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 

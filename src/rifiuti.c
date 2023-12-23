@@ -66,17 +66,17 @@ _validate_index_file   (const char   *filename,
         goto validation_fail;
     }
 
-    copy_field (&ver, VERSION_OFFSET, KEPT_ENTRY_OFFSET);
+    copy_field (ver, buf, VERSION_OFFSET, KEPT_ENTRY_OFFSET);
     ver = GUINT32_FROM_LE (ver);
 
     // total_entry only meaningful for 95 and NT4, on other versions
     // it's junk memory data, don't bother copying
     if ( ( ver == VERSION_NT4 ) || ( ver == VERSION_WIN95 ) ) {
-        copy_field (&meta->total_entry, TOTAL_ENTRY_OFFSET, RECORD_SIZE_OFFSET);
+        copy_field (meta->total_entry, buf, TOTAL_ENTRY_OFFSET, RECORD_SIZE_OFFSET);
         meta->total_entry = GUINT32_FROM_LE (meta->total_entry);
     }
 
-    copy_field (&meta->recordsize, RECORD_SIZE_OFFSET, FILESIZE_SUM_OFFSET);
+    copy_field (meta->recordsize, buf, RECORD_SIZE_OFFSET, FILESIZE_SUM_OFFSET);
     meta->recordsize = GUINT32_FROM_LE (meta->recordsize);
 
     g_free (buf);
@@ -150,15 +150,16 @@ _populate_record_data   (void     *buf,
 
     // Verbatim path in ANSI code page
     record->raw_legacy_path = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-    copy_field (record->raw_legacy_path, LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
+    copy_field (*(record->raw_legacy_path), buf,
+        LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
 
     /* Index number associated with the record */
-    copy_field (&record->index_n, RECORD_INDEX_OFFSET, DRIVE_LETTER_OFFSET);
+    copy_field (record->index_n, buf, RECORD_INDEX_OFFSET, DRIVE_LETTER_OFFSET);
     record->index_n = GUINT32_FROM_LE (record->index_n);
     g_debug ("index=%u", record->index_n);
 
     /* Number representing drive letter, 'A:' = 0, etc */
-    copy_field (&drivenum, DRIVE_LETTER_OFFSET, FILETIME_OFFSET);
+    copy_field (drivenum, buf, DRIVE_LETTER_OFFSET, FILETIME_OFFSET);
     drivenum = GUINT32_FROM_LE (drivenum);
     g_debug ("drive=%u", drivenum);
     if (drivenum >= sizeof (driveletters) - 1) {
@@ -179,13 +180,14 @@ _populate_record_data   (void     *buf,
     }
 
     /* File deletion time */
-    copy_field (&record->winfiletime, FILETIME_OFFSET, FILESIZE_OFFSET);
+    copy_field (record->winfiletime, buf, FILETIME_OFFSET, FILESIZE_OFFSET);
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
     /* File size or occupied cluster size */
     /* BEWARE! This is 32bit data casted to 64bit struct member */
-    copy_field (&record->filesize, FILESIZE_OFFSET, UNICODE_FILENAME_OFFSET);
+    copy_field (record->filesize, buf,
+        FILESIZE_OFFSET, UNICODE_FILENAME_OFFSET);
     record->filesize = GUINT64_FROM_LE (record->filesize);
     g_debug ("filesize=%" PRIu64, record->filesize);
 
@@ -210,7 +212,8 @@ _populate_record_data   (void     *buf,
 
     uni_buf_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
     record->raw_uni_path = g_malloc (uni_buf_sz);
-    copy_field (record->raw_uni_path, UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
+    copy_field (*(record->raw_uni_path), buf,
+        UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
     null_terminator_offset = ucs2_strnlen (
         record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2);
 
