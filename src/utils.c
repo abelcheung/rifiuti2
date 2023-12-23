@@ -1217,10 +1217,10 @@ _print_text_record   (rbin_struct        *record,
 
     if (legacy_encoding)
         header[4] = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+            legacy_encoding, "<\\%02X>", NULL, &record->error);
     else
         header[4] = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            -1, NULL, "<\\u%04X>", NULL, NULL);
+            NULL, "<\\u%04X>", NULL, &record->error);
     if (! header[4])
         header[4] = g_strdup ("???");
 
@@ -1277,10 +1277,10 @@ _print_xml_record   (rbin_struct        *record,
     // could be writing garbage on screen or into file
     if (legacy_encoding)
         path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            -1, legacy_encoding, "&#x%02X;", NULL, NULL);
+            legacy_encoding, "&#x%02X;", NULL, &record->error);
     else
         path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            -1, NULL, "&#x%04X;", NULL, NULL);
+            NULL, "&#x%04X;", NULL, &record->error);
 
     if (path)
         g_string_append_printf (s, ">\n"
@@ -1343,7 +1343,7 @@ _print_json_record   (rbin_struct        *record,
         // JSON spec doesn't even allow encoding raw byte data,
         // so transform it like text output format
         tmp = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            -1, legacy_encoding, "<\\%02X>", NULL, NULL);
+            legacy_encoding, "<\\%02X>", NULL, &record->error);
     }
     else
     {
@@ -1351,7 +1351,7 @@ _print_json_record   (rbin_struct        *record,
         // will be processed in json escaping routine. Use a temp
         // char to avoid collision and convert it back later
         tmp = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            -1, NULL, "*u%04X", NULL, NULL);
+            NULL, "*u%04X", NULL, &record->error);
     }
     path = json_escape_path (tmp);
 

@@ -218,15 +218,6 @@ typedef struct _rbin_struct
 /*! Every Windows use this GUID in recycle bin desktop.ini */
 #define RECYCLE_BIN_CLSID "645FF040-5081-101B-9F08-00AA002F954E"
 
-/*
- * Most versions of recycle bin use full PATH_MAX (260 char) to store file paths,
- * in either ANSI or Unicode variations, except Windows 10 which uses variable size.
- * However we don't want to use PATH_MAX directly since on Linux/Unix it's
- * another thing.
- */
-#define WIN_PATH_MAX 260
-
-
 typedef void (*ParseIdxFunc)              (const char       *path,
                                            metarecord       *meta);
 

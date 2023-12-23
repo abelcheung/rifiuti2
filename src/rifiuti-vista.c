@@ -188,9 +188,9 @@ _populate_record_data  (void      *buf,
     memcpy (record->raw_uni_path, pathbuf_start, pathbuf_sz);
 
     {
-        // Never set len = -1 for UCS2 source string
+        // Never set len = -1 for wchar source string
         char *s = g_convert (record->raw_uni_path,
-            ucs2_strnlen (record->raw_uni_path, pathbuf_sz) * sizeof (gunichar2),
+            ucs2_strnlen (record->raw_uni_path, -1) * sizeof (gunichar2),
             "UTF-8", "UTF-16LE", NULL, NULL, NULL);
         if (s)
         {

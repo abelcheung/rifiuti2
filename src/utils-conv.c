@@ -10,6 +10,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "utils-error.h"
 #include "utils-conv.h"
 
 
@@ -171,6 +172,28 @@ _filter_printable_char (const char *str,
 }
 
 
+static void
+_expand_write_buf    (char     **buf,
+                      char     **ptr,
+                      size_t    *sz,
+                      size_t    *bytes_left)
+{
+    size_t   used     = *ptr - *buf,
+             added    = (*sz);
+
+    *sz += added;
+    *bytes_left += added;
+    *buf = g_realloc (*buf, *sz);
+    *ptr = *buf + used;
+
+    // some OS has more secure memory allocator than others *sigh*
+    memset (*ptr, 0, *sz - used);
+
+    g_debug ("Realloc : w=%02zu/%02zu, str=%s",
+        *sz - used, *sz, (char *) *buf);
+}
+
+
 /**
  * @brief Convert path to UTF-8 encoding with customizable fallback
  * @param path The path string to be converted
@@ -189,101 +212,125 @@ _filter_printable_char (const char *str,
  * @attention 1. This routine is not for generic charset conversion.
  * Extra transformation is intended for path display only.
  * @attention 1. Caller is responsible for using correct template,
- * almost no error checking is performed.
+ * no error checking is performed.
  */
 char *
-conv_path_to_utf8_with_tmpl (const char *path,
-                             ssize_t     pathlen,
-                             const char *from_enc,
-                             const char *tmpl,
-                             size_t     *read,
-                             GError    **error)
+conv_path_to_utf8_with_tmpl (const char   *path,
+                             const char   *from_enc,
+                             const char   *tmpl,
+                             size_t       *read,
+                             GError      **error)
 {
-    char *u8_path, *i_ptr, *o_ptr, *result = NULL;
-    gsize len, r_total, rbyte, wbyte, status, in_ch_width, out_ch_width;
-    GIConv conv;
+    char            *u8_path,
+                    *i_ptr,
+                    *o_ptr,
+                    *result = NULL;
+    size_t           i_size,
+                     o_size,
+                     i_left,
+                     o_left,
+                     char_sz;
+    ssize_t          status;
+    GIConv           conv;
+    GPtrArray       *err_offsets;
 
-    g_return_val_if_fail (path && *path, NULL);
-    g_return_val_if_fail (tmpl && *tmpl, NULL);
+    // For unicode path, the first char must be ASCII drive letter
+    // or slash. And since it is in little endian, first byte is
+    // always non-null
+    g_return_val_if_fail (path       && *path    , NULL);
     g_return_val_if_fail (! from_enc || *from_enc, NULL);
-    g_return_val_if_fail (! error    || ! *error , NULL);
-
-    /* try the template */
-    {
-        char *s = g_strdup_printf (tmpl, from_enc ? 0xFF : 0xFFFF);
-        /* UTF-8 character occupies at most 6 bytes */
-        out_ch_width = MAX (strlen(s), 6);
-        g_free (s);
-    }
 
     if (from_enc != NULL) {
-        in_ch_width = sizeof (char);
-        len = strnlen (path, (size_t) pathlen);
+        char_sz   = sizeof (char);
+        i_size    = char_sz * (strnlen (path, WIN_PATH_MAX) + 1);
     } else {
-        in_ch_width = sizeof (gunichar2);
-        len = ucs2_strnlen (path, (size_t) pathlen);
+        char_sz   = sizeof (gunichar2);
+        i_size    = char_sz * (ucs2_strnlen (path, -1) + 1);
     }
 
-    rbyte   = len *  in_ch_width;
-    wbyte   = len * out_ch_width;
-    u8_path = g_malloc0 (wbyte);
+    // Ballpark figure; likely need to realloc once or twice
+    i_left    = o_left = o_size = i_size;
+    u8_path   = g_malloc0 (o_size);
+    i_ptr     = (char *) path;
+    o_ptr     = u8_path;
 
-    r_total = rbyte;
-    i_ptr   = (char *) path;
-    o_ptr   = u8_path;
-
-    /* Shouldn't fail, from_enc already tested upon start of prog */
+    // Shouldn't fail, encoding already tested upon start of prog
     conv = g_iconv_open ("UTF-8", from_enc ? from_enc : "UTF-16LE");
 
-    g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
-            rbyte, wbyte);
+    g_debug ("Initial : r=%02zu/%02zu, w=%02zu/%02zu",
+        i_left, i_size, o_left, o_size);
+    err_offsets = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 
     /* Pass 1: Convert to UTF-8, all illegal seq become escaped hex */
-    while (TRUE)
+    while (true)
     {
-        int e;
+        int e = 0;
 
         if (*i_ptr == '\0') {
             if (from_enc   != NULL) break;
             if (*(i_ptr+1) == '\0') break; /* utf-16: check "\0\0" */
         }
 
-        // GNU iconv may return number of nonreversible conversions
-        // upon success, but we don't need to worry about it, as
-        // conversion from code page to UTF-8 would not be nonreversible
-        if ((gsize) -1 != (status = g_iconv (
-            conv, &i_ptr, &rbyte, &o_ptr, &wbyte)))
+        // When non-reversible char are converted to \uFFFD, there
+        // is nothing we can do. Just accept the status quo.
+        status = g_iconv (conv, &i_ptr, &i_left, &o_ptr, &o_left);
+        if (status != -1)
             break;
 
         e = errno;
+        g_debug ("Progress: r=%02zu/%02zu, w=%02zu/%02zu, status=%zd (%s), str=%s",
+            i_left, i_size, o_left, o_size, status, g_strerror(e), u8_path);
 
-        g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-            ", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
-            rbyte, wbyte, status, g_strerror(e), u8_path);
-
-        switch (e) {
-            case EILSEQ:
+        switch (e)
+        {
             case EINVAL:  // TODO Handle partial input for EINVAL
-                if (error && ! *error) {
-                    g_set_error (error, G_CONVERT_ERROR,
-                        G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
-                        _("Illegal sequence or partial input at offset %" G_GSIZE_FORMAT), rbyte);
-                }
-                _advance_octet (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
-                g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);  // reset state
+                g_assert_not_reached ();
+            case EILSEQ:
+            {
+                size_t *processed = g_malloc (sizeof (size_t));
+                *processed = i_size - i_left;
+                g_ptr_array_add (err_offsets, processed);
+            }
+                // Only EILSEQ is reported when it happens with E2BIG,
+                // need to handle latter manually
+                if (o_left < MIN_WRITEBUF_SPACE)
+                    _expand_write_buf (&u8_path, &o_ptr, &o_size, &o_left);
+                _advance_octet (char_sz, &i_ptr, &i_left, &o_ptr, &o_left, tmpl);
+                g_iconv (conv, NULL, NULL, &o_ptr, &o_left);  // reset state
                 break;
-            case E2BIG:  // TODO realloc instead of Kaboom!
-                g_assert_not_reached();
+            case E2BIG:
+                _expand_write_buf (&u8_path, &o_ptr, &o_size, &o_left);
+                break;
         }
     }
 
-    g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-        ", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8_path);
+    g_debug ("Finally : r=%02zu/%02zu, w=%02zu/%02zu, status=%zd, str=%s",
+        i_left, i_size, o_left, o_size, status, u8_path);
 
     g_iconv_close (conv);
 
     if (read != NULL)
-        *read = r_total - rbyte;
+        *read = i_size - i_left;
+
+    if (error &&
+        g_error_matches ((const GError *) (*error),
+            R2_REC_ERROR, R2_REC_ERROR_CONV_PATH) &&
+        err_offsets->len > 0)
+    {
+        // More detailed error message showing offsets
+        char *old = (*error)->message;
+        GString *s = g_string_new ((const char *) old);
+        s = g_string_append (s, ", at offset:");
+        for (size_t i = 0; i < err_offsets->len; i++)
+        {
+            g_string_append_printf (s, " %zu",
+                *((size_t *) (err_offsets->pdata[i])));
+        }
+        (*error)->message = g_string_free (s, FALSE);
+        g_free (old);
+    }
+
+    g_ptr_array_free (err_offsets, TRUE);
 
     /* Pass 2: Convert all non-printable chars to hex */
     g_return_val_if_fail (g_utf8_validate (u8_path, -1, NULL), NULL);
