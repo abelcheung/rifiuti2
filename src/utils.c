@@ -85,12 +85,6 @@ static char *os_strings[] = {
     N_("Windows 10 or above")
 };
 
-static char *out_format_name[] = {
-    "unknown format",
-    "TSV format",
-    "XML format",
-    "JSON format",
-};
 
 static out_fmt      output_format      = FORMAT_UNKNOWN;
 static gboolean     no_heading         = FALSE;
@@ -186,6 +180,8 @@ static gboolean
 _set_out_format    (out_fmt     desired_format,
                     GError    **error)
 {
+    extern struct _fmt_data fmt[];
+
     if (output_format == desired_format)
         return TRUE;
 
@@ -197,8 +193,8 @@ _set_out_format    (out_fmt     desired_format,
     g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
         "Output was already set in %s, but later argument "
         "attempts to change to %s",
-        out_format_name[output_format],
-        out_format_name[desired_format]);
+        fmt[output_format].friendly_name,
+        fmt[desired_format].friendly_name);
     return FALSE;
 }
 
@@ -1176,7 +1172,7 @@ _print_json_header (const metarecord *meta)
 
     {
         char *s = g_filename_display_name (meta->filename);
-        char *rbin_path = json_escape_path (s);
+        char *rbin_path = json_escape (s);
         g_print ("  \"path\": \"%s\",\n", rbin_path);
         g_free (s);
         g_free (rbin_path);
@@ -1190,8 +1186,7 @@ static void
 _print_text_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
-    char         *outstr;
-    char         **header;
+    char         *outstr, *src, **header;
     GDateTime    *dt;
 
     g_return_if_fail (record != NULL);
@@ -1215,12 +1210,10 @@ _print_text_record   (rbin_struct        *record,
         g_strdup ("???") :
         g_strdup_printf ("%" PRIu64, record->filesize);
 
-    if (legacy_encoding)
-        header[4] = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            legacy_encoding, "<\\%02X>", NULL, &record->error);
-    else
-        header[4] = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            NULL, "<\\u%04X>", NULL, &record->error);
+    src = legacy_encoding ? record->raw_legacy_path :
+                            record->raw_uni_path    ;
+    header[4] = conv_path_to_utf8_with_tmpl (src,
+        legacy_encoding, FORMAT_TEXT, NULL, &record->error);
     if (! header[4])
         header[4] = g_strdup ("???");
 
@@ -1237,7 +1230,7 @@ static void
 _print_xml_record   (rbin_struct        *record,
                      const metarecord   *meta)
 {
-    char         *path, *dt_str;
+    char         *path, *src, *dt_str;
     GDateTime    *dt;
     GString      *s;
 
@@ -1273,14 +1266,12 @@ _print_xml_record   (rbin_struct        *record,
         g_string_append_printf (s,
             " size=\"%" PRIu64 "\"", record->filesize);
 
-    // Still need to be converted despite using CDATA, otherwise
-    // could be writing garbage on screen or into file
-    if (legacy_encoding)
-        path = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            legacy_encoding, "&#x%02X;", NULL, &record->error);
-    else
-        path = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            NULL, "&#x%04X;", NULL, &record->error);
+    // Still need to be converted despite using CDATA,
+    // otherwise could be writing garbage output
+    src = legacy_encoding ? record->raw_legacy_path :
+                            record->raw_uni_path    ;
+    path = conv_path_to_utf8_with_tmpl (src,
+        legacy_encoding, FORMAT_XML, NULL, &record->error);
 
     if (path)
         g_string_append_printf (s, ">\n"
@@ -1302,7 +1293,7 @@ static void
 _print_json_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
-    char         *tmp, *path, *dt_str;
+    char         *path, *src, *dt_str;
     GDateTime    *dt;
     GString      *s;
 
@@ -1338,22 +1329,10 @@ _print_json_record   (rbin_struct        *record,
         g_string_append_printf (s,
             ", \"size\": %" PRIu64, record->filesize);
 
-    if (legacy_encoding)
-    {
-        // JSON spec doesn't even allow encoding raw byte data,
-        // so transform it like text output format
-        tmp = conv_path_to_utf8_with_tmpl (record->raw_legacy_path,
-            legacy_encoding, "<\\%02X>", NULL, &record->error);
-    }
-    else
-    {
-        // HACK \u sequence collides with path separator, which
-        // will be processed in json escaping routine. Use a temp
-        // char to avoid collision and convert it back later
-        tmp = conv_path_to_utf8_with_tmpl (record->raw_uni_path,
-            NULL, "*u%04X", NULL, &record->error);
-    }
-    path = json_escape_path (tmp);
+    src = legacy_encoding ? record->raw_legacy_path :
+                            record->raw_uni_path    ;
+    path = conv_path_to_utf8_with_tmpl (src, legacy_encoding,
+        FORMAT_JSON, &json_escape, &record->error);
 
     if (path)
         g_string_append_printf (s, ", \"path\": \"%s\"},\n", path);
@@ -1363,7 +1342,6 @@ _print_json_record   (rbin_struct        *record,
     g_print ("%s", s->str);
 
     g_date_time_unref (dt);
-    g_free (tmp);
     g_free (path);
     g_free (dt_str);
     g_string_free (s, TRUE);
