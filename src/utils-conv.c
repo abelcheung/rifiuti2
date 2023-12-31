@@ -10,7 +10,40 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "utils-error.h"
 #include "utils-conv.h"
+
+
+struct _fmt_data fmt[] = {
+    // must match out_fmt enum order
+    {
+        .friendly_name = "unknown format",
+        .fallback_tmpl = {"", "", ""},
+    },
+    {
+        .friendly_name = "TSV format",
+        .fallback_tmpl = {"<\\u%04X>", "<\\%02X>", "<\\u%04X>"},
+    },
+    {
+        .friendly_name = "XML format",
+        // All paths are placed inside CDATA, using entities
+        // can be confusing
+        .fallback_tmpl = {"<\\u%04X>", "<\\%02X>", "<\\u%04X>"},
+    },
+    {
+        .friendly_name = "JSON format",
+        .fallback_tmpl = {
+            "",  // Unused, see json_escape()
+            // JSON doesn't allow encoding raw byte data in strings
+            // (must be proper characters)
+            "<\\%02X>",
+            // HACK \u sequence collides with path separator, which
+            // will be processed in json escaping routine. Use a temp
+            // char to avoid collision and convert it back later
+            "*u%04X"
+        },
+    },
+};
 
 
 /**
@@ -47,86 +80,75 @@ enc_is_ascii_compatible    (const char   *enc,
 
 
 /**
- * @brief Compute UCS2 string length like `wcslen()`
- * @param str The string to check (in `char*` !)
- * @param max_sz Maximum length to check, or use -1 to
- * denote the string is nul-terminated
- * @return Either number of UCS2 char for whole string,
- * or return `max_sz` when `max_sz` param is exceeded
+ * @brief Find null terminator position in UCS2 string
+ * @param str The string to check (in `char *` !)
+ * @param max_sz Maximum byte length to check, or use -1 to
+ * denote the string should be nul-terminated
+ * @return Byte position where null terminator (double \\0)
+ * is found, or `max_sz` otherwise
+ * @note Being different from standard C funcs like `wcsnlen()`
+ * or `strnlen()`, it returns bytes, not chars. And it would
+ * take care of odd bytes when UCS2 strings are expecting
+ * even number of bytes.
  */
 size_t
-ucs2_strnlen   (const char   *str,
+ucs2_bytelen   (const char   *str,
                 ssize_t       max_sz)
 {
-    // wcsnlen_s should be equivalent except for boundary
-    // cases we don't care about
-
-    size_t i = 0;
     char *p = (char *) str;
 
-    if (str == NULL)
+    if (str == NULL || max_sz == 0)
         return 0;
+
+    if (max_sz == 1)
+        return 1;
 
     while (*p || *(p+1))
     {
-        if (max_sz >= 0 && i >= (size_t) max_sz)
-            break;
-        i++;
         p += 2;
+        if (max_sz >= 0 && p - str + 1 >= max_sz)
+            return max_sz;
     }
-    return i;
+    return p - str;
 }
 
 
 /**
  * @brief Move character pointer for specified bytes
  * @param sz Must be either 1 or 2, denoting broken byte or broken UCS2 character
- * @param in_str Reference to input string to be converted
- * @param read_bytes Reference to already read bytes count to keep track of
- * @param out_str Reference to output string to be appended
- * @param write_bytes Reference to writable bytes count to decrement
- * @param tmpl `printf` template to represent the broken character
+ * @param ptr Location of char pointer to string to be converted
+ * @param bytes_left Location to number of remaining bytes to read
+ * @param s Broken byte(s) will be formatted and appended to this `GString`
+ * @param fmt_type Type of output format; see `fmt[]` for detail
  * @note This is the core of `conv_path_to_utf8_with_tmpl()` doing
  * error fallback, converting a single broken char to `printf` output.
  */
 static void
 _advance_octet    (size_t       sz,
-                   char       **in_str,
-                   gsize       *read_bytes,
-                   char       **out_str,
-                   gsize       *write_bytes,
-                   const char  *tmpl)
+                   char       **ptr,
+                   gsize       *bytes_left,
+                   GString     *s,
+                   out_fmt      fmt_type)
 {
-    char *repl;
+    int c = 0;
 
-    switch (sz) {
-        case 1:
-        {
-            unsigned char c = *(unsigned char *) (*in_str);
-            repl = g_strdup_printf (tmpl, c);
-        }
-            break;
+    g_return_if_fail (*bytes_left > 0);
+    g_return_if_fail (sz == 1 || sz == 2);
+    g_return_if_fail (*ptr != NULL);
 
-        case 2:
-        {
-            uint16_t c = GUINT16_FROM_LE (*(uint16_t *) (*in_str));
-            repl = g_strdup_printf (tmpl, c);
-        }
-            break;
+    if (*bytes_left == 1)
+        sz = 1;
 
-        default:
-            g_assert_not_reached();
-    }
+    if (sz == 1)
+        c = *(uint8_t *) (*ptr);
+    else
+        c = GUINT16_FROM_LE (*(uint16_t *) (*ptr));
 
-    (*in_str) += sz;
-    if (read_bytes != NULL)
-        (*read_bytes) -= sz;
+    g_string_append_printf (s,
+        fmt[fmt_type].fallback_tmpl[sz], c);
 
-    *out_str = g_stpcpy (*out_str, (const char *) repl);
-    if (write_bytes != NULL)
-        *write_bytes -= strlen (repl);
-
-    g_free (repl);
+    *ptr += sz;
+    *bytes_left -= sz;
     return;
 }
 
@@ -134,15 +156,15 @@ _advance_octet    (size_t       sz,
 /**
  * @brief Convert non-printable characters to escape sequences
  * @param str The original string to be converted
- * @param tmpl `printf` template to represent non-printable chars
+ * @param fmt_type Type of output format; see `fmt[]` for detail
  * @return Converted string, maybe containing escape sequences
  * @attention Caller is responsible for using correct template, no
  * error checking is performed. This template should handle a single
  * Windows unicode path character, which is in UTF-16LE encoding.
  */
 static char *
-_filter_printable_char (const char *str,
-                        const char *tmpl)
+_filter_printable_char   (const char   *str,
+                          out_fmt       fmt_type)
 {
     char     *p, *np;
     gunichar  c;
@@ -155,14 +177,12 @@ _filter_printable_char (const char *str,
         c  = g_utf8_get_char  (p);
         np = g_utf8_next_char (p);
 
-        /*
-         * ASCII space is the norm (e.g. Program Files), but
-         * all other kinds of spaces are rare, so escape them too
-         */
+        // ASCII space is common (e.g. "Program Files"), but not
+        // for any other kinds of space or invisible char
         if (g_unichar_isgraph (c) || (c == 0x20))
-            s = g_string_append_len (s, p, (gssize) (np - p));
+            s = g_string_append_len (s, p, (size_t) (np - p));
         else
-            g_string_append_printf (s, tmpl, c);
+            g_string_append_printf (s, fmt[fmt_type].fallback_tmpl[0], c);
 
         p = np;
     }
@@ -171,15 +191,33 @@ _filter_printable_char (const char *str,
 }
 
 
+static void
+_sync_pos   (GString   *str,
+             gsize     *bytes_left,
+             char     **chr_ptr,
+             bool       from_gstring)
+{
+    if (from_gstring)
+    {
+        *bytes_left = str->allocated_len - str->len - 1;
+        *chr_ptr = str->str + str->len;
+    }
+    else
+    {
+        str->len = str->allocated_len - *bytes_left - 1;
+        g_assert (*chr_ptr == str->str + str->len);
+        str->str[str->len] = '\0';
+    }
+}
+
 /**
  * @brief Convert path to UTF-8 encoding with customizable fallback
  * @param path The path string to be converted
  * @param from_enc Either a legacy Windows ANSI encoding, or use
  * `NULL` to represent Windows wide char encoding (UTF-16LE)
- * @param tmpl `printf`-style string template to represent broken
- * character. This template should handle either single- or
- * double-octet, namely `%u`, `%o`, `%d`, `%i`, `%x` and `%X`.
- * @param read Reference to number of successfully read bytes
+ * @param fmt_type Type of output format; see `fmt[]` for detail
+ * @param func String transform func for post processing; can be
+ * `NULL`, which still does some internal filtering
  * @param error Location to store error upon problem
  * @return UTF-8 encoded path, or `NULL` if conversion error happens
  * @note This is very similar to `g_convert_with_fallback()`, but the
@@ -189,107 +227,134 @@ _filter_printable_char (const char *str,
  * @attention 1. This routine is not for generic charset conversion.
  * Extra transformation is intended for path display only.
  * @attention 1. Caller is responsible for using correct template,
- * almost no error checking is performed.
+ * no error checking is performed.
  */
 char *
-conv_path_to_utf8_with_tmpl (const char *path,
-                             ssize_t     pathlen,
-                             const char *from_enc,
-                             const char *tmpl,
-                             size_t     *read,
-                             GError    **error)
+conv_path_to_utf8_with_tmpl (const GString   *path,
+                             const char      *from_enc,
+                             out_fmt          fmt_type,
+                             StrTransformFunc func,
+                             GError         **error)
 {
-    char *u8_path, *i_ptr, *o_ptr, *result = NULL;
-    gsize len, r_total, rbyte, wbyte, status, in_ch_width, out_ch_width;
-    GIConv conv;
+    char            *i_ptr,
+                    *o_ptr,
+                    *result;
+    gsize            i_size,
+                     i_left,
+                     o_left,
+                     char_sz,
+                     status;
+    GIConv           conv;
+    GPtrArray       *err_offsets;
+    GString         *s;
 
-    g_return_val_if_fail (path && *path, NULL);
-    g_return_val_if_fail (tmpl && *tmpl, NULL);
+    // For unicode path, the first char must be ASCII drive letter
+    // or slash. And since it is in little endian, first byte is
+    // always non-null
+    g_return_val_if_fail (path != NULL, NULL);
     g_return_val_if_fail (! from_enc || *from_enc, NULL);
-    g_return_val_if_fail (! error    || ! *error , NULL);
 
-    /* try the template */
+    if (from_enc)
     {
-        char *s = g_strdup_printf (tmpl, from_enc ? 0xFF : 0xFFFF);
-        /* UTF-8 character occupies at most 6 bytes */
-        out_ch_width = MAX (strlen(s), 6);
-        g_free (s);
+        char_sz = sizeof (char);
+        i_left = i_size = strnlen (path->str, WIN_PATH_MAX);
     }
-
-    if (from_enc != NULL) {
-        in_ch_width = sizeof (char);
-        len = strnlen (path, (size_t) pathlen);
-    } else {
-        in_ch_width = sizeof (gunichar2);
-        len = ucs2_strnlen (path, (size_t) pathlen);
+    else
+    {
+        char_sz = sizeof (gunichar2);
+        i_left = i_size = ucs2_bytelen (path->str, path->len);
     }
+    i_ptr = path->str;
 
-    rbyte   = len *  in_ch_width;
-    wbyte   = len * out_ch_width;
-    u8_path = g_malloc0 (wbyte);
+    // Ballpark figure, GString decides alloc size on its own
+    s = g_string_sized_new (i_size + 1);
+    _sync_pos (s, &o_left, &o_ptr, true);
 
-    r_total = rbyte;
-    i_ptr   = (char *) path;
-    o_ptr   = u8_path;
-
-    /* Shouldn't fail, from_enc already tested upon start of prog */
+    // Shouldn't fail, encoding already tested upon start of prog
     conv = g_iconv_open ("UTF-8", from_enc ? from_enc : "UTF-16LE");
 
-    g_debug ("Initial: read=%" G_GSIZE_FORMAT ", write=%" G_GSIZE_FORMAT,
-            rbyte, wbyte);
+    g_debug ("Initial : r=%02zu, w=%02zu/%02zu",
+        i_left, o_left, s->allocated_len - 1);
+    err_offsets = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 
-    /* Pass 1: Convert to UTF-8, all illegal seq become escaped hex */
-    while (TRUE)
+    // Pass 1: Convert to UTF-8, all illegal seq become escaped hex
+
+    while (i_left > 0)
     {
-        int e;
-
         if (*i_ptr == '\0') {
             if (from_enc   != NULL) break;
             if (*(i_ptr+1) == '\0') break; /* utf-16: check "\0\0" */
         }
 
-        // GNU iconv may return number of nonreversible conversions
-        // upon success, but we don't need to worry about it, as
-        // conversion from code page to UTF-8 would not be nonreversible
-        if ((gsize) -1 != (status = g_iconv (
-            conv, &i_ptr, &rbyte, &o_ptr, &wbyte)))
+        // When non-reversible char are converted to \uFFFD, there
+        // is nothing we can do. Just accept the status quo.
+        status = g_iconv (conv, &i_ptr, &i_left, &o_ptr, &o_left);
+        _sync_pos (s, &o_left, &o_ptr, false);
+        if (status != (gsize) -1)
             break;
 
-        e = errno;
+        int e = errno;
+        g_debug ("Progress: r=%02zu, w=%02zu/%02zu, status=%zd (%s), str=%s",
+            i_left, o_left, s->allocated_len - 1,
+            status, g_strerror(e), s->str);
 
-        g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-            ", stt=%" G_GSIZE_FORMAT " (%s) str=%s",
-            rbyte, wbyte, status, g_strerror(e), u8_path);
-
-        switch (e) {
-            case EILSEQ:
-            case EINVAL:  // TODO Handle partial input for EINVAL
-                if (error && ! *error) {
-                    g_set_error (error, G_CONVERT_ERROR,
-                        G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
-                        _("Illegal sequence or partial input at offset %" G_GSIZE_FORMAT), rbyte);
-                }
-                _advance_octet (in_ch_width, &i_ptr, &rbyte, &o_ptr, &wbyte, tmpl);
-                g_iconv (conv, NULL, NULL, &o_ptr, &wbyte);  // reset state
-                break;
-            case E2BIG:  // TODO realloc instead of Kaboom!
-                g_assert_not_reached();
+        switch (e)
+        {
+        case EINVAL:
+        case EILSEQ:
+        {
+            size_t *processed = g_malloc (sizeof (size_t));
+            *processed = i_size - i_left;
+            g_ptr_array_add (err_offsets, processed);
+        }
+            _advance_octet (char_sz, &i_ptr, &i_left, s, fmt_type);
+            _sync_pos (s, &o_left, &o_ptr, true);
+            g_debug ("Progress: r=%02zu, w=%02zu/%02zu, str=%s",
+                i_left, o_left, s->allocated_len - 1, s->str);
+            g_iconv (conv, NULL, NULL, &o_ptr, &o_left);  // reset state
+            _sync_pos (s, &o_left, &o_ptr, false);
+            break;
+        case E2BIG:
+            s = g_string_set_size (s, s->allocated_len * 2);
+            _sync_pos (s, &o_left, &o_ptr, true);
+            break;
         }
     }
 
-    g_debug ("r=%02" G_GSIZE_FORMAT ", w=%02" G_GSIZE_FORMAT
-        ", stt=%" G_GSIZE_FORMAT ", str=%s", rbyte, wbyte, status, u8_path);
+    g_debug ("Finally : r=%02zu, w=%02zu/%02zu, status=%zd, str=%s",
+        i_left, o_left, s->allocated_len - 1, status, s->str);
 
     g_iconv_close (conv);
 
-    if (read != NULL)
-        *read = r_total - rbyte;
+    if (error &&
+        g_error_matches ((const GError *) (*error),
+            R2_REC_ERROR, R2_REC_ERROR_CONV_PATH) &&
+        err_offsets->len > 0)
+    {
+        // More detailed error message showing offsets
+        char *old = (*error)->message;
+        GString *dbg_str = g_string_new ((const char *) old);
+        dbg_str = g_string_append (dbg_str, ", at offset:");
+        for (size_t i = 0; i < err_offsets->len; i++)
+        {
+            g_string_append_printf (dbg_str, " %zu",
+                *((size_t *) (err_offsets->pdata[i])));
+        }
+        (*error)->message = g_string_free (dbg_str, FALSE);
+        g_free (old);
+    }
 
-    /* Pass 2: Convert all non-printable chars to hex */
-    g_return_val_if_fail (g_utf8_validate (u8_path, -1, NULL), NULL);
+    g_ptr_array_free (err_offsets, TRUE);
 
-    result = _filter_printable_char (u8_path, tmpl);
-    g_free (u8_path);
+    // Pass 2: Post processing, e.g. convert non-printable chars to hex
+
+    g_return_val_if_fail (g_utf8_validate (s->str, -1, NULL), NULL);
+
+    if (func == NULL)
+        result = _filter_printable_char (s->str, fmt_type);
+    else
+        result = func (s->str);
+    g_string_free (s, TRUE);
 
     return result;
 }
@@ -353,22 +418,49 @@ filter_escapes (const char *str)
 
 
 char *
-json_escape_path (const char *path)
+json_escape (const char *src)
 {
     // TODO g_string_replace from glib 2.68 does it all
 
-    char *p = (char *) path;
-    gunichar c = 0;
-    GString *s = g_string_new ("");
+    char *p = (char *) src;
+    GString *s = g_string_sized_new (strlen (src));
 
     while (*p) {
-        c = g_utf8_get_char (p);
-        if (c == '\\')
-            s = g_string_append (s, "\\\\");
-        else if (c == '*')
+        gunichar c = g_utf8_get_char (p);
+        switch (c)
+        {
+        // JSON does not need to escape asterisk. This is for
+        // workaround in format template
+        case '*' : s = g_string_append_c (s, '\\'); break;
+        case '\\':
+        // For all other chars below, they are actually disallowed
+        // in Windows path. This is for the mischievous who
+        // move data to other OS and rename
+        case 0x22:
+        case 0x27:
             s = g_string_append_c (s, '\\');
-        else
-            s = g_string_append_unichar (s, c);
+            s = g_string_append_c (s, c);
+            break;
+        case 0x08: s = g_string_append (s, "\\b"); break;
+        case 0x09: s = g_string_append (s, "\\t"); break;
+        case 0x0A: s = g_string_append (s, "\\n"); break;
+        case 0x0B: s = g_string_append (s, "\\v"); break;
+        case 0x0C: s = g_string_append (s, "\\f"); break;
+        case 0x0D: s = g_string_append (s, "\\r"); break;
+        default  :
+            if (g_unichar_isgraph (c) || c == 0x20)
+                s = g_string_append_unichar (s, c);
+            else if (c < 0x10000)
+                g_string_append_printf (s, "\\u%04X", c);
+            else  // calculate surrogate
+            {
+                uint16_t high, low;
+                high = 0xD800 + ((c - 0x10000) >> 10  );
+                low  = 0xDC00 + ((c - 0x10000) & 0x3FF);
+                g_string_append_printf (s, "\\u%04X\\u%04X", high, low);
+            }
+            break;
+        }
         p = g_utf8_next_char (p);
     }
     return g_string_free (s, FALSE);

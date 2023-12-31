@@ -7,7 +7,7 @@
 #ifndef _RIFIUTI_VISTA_H
 #define _RIFIUTI_VISTA_H
 
-#include "utils.h"
+#include "utils-conv.h"
 
 #define VERSION_OFFSET               0x0
 #define FILESIZE_OFFSET              0x8

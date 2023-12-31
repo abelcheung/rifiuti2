@@ -8,7 +8,7 @@
 #ifndef _RIFIUTI_H
 #define _RIFIUTI_H
 
-#include "utils.h"
+#include "utils-conv.h"
 
 /* These offsets are relative to file start */
 #define VERSION_OFFSET           0

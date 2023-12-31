@@ -62,7 +62,7 @@ _validate_index_file   (const char   *filename,
     {
         g_set_error_literal (error, R2_FATAL_ERROR,
             R2_FATAL_ERROR_ILLEGAL_DATA,
-            _("File is prematurely truncated, or not an INFO2 index."));
+            _("File is not an INFO2 index."));
         goto validation_fail;
     }
 
@@ -139,19 +139,29 @@ _validate_index_file   (const char   *filename,
 
 static rbin_struct *
 _populate_record_data   (void     *buf,
-                         gsize     bufsize,
-                         gboolean *junk_detected)
+                         size_t    bufsize)
 {
     rbin_struct    *record;
     uint32_t        drivenum;
-    size_t          uni_buf_sz, null_terminator_offset;
+    size_t          null_terminator_offset;
+    GString        *l, *u;  // shorthand for paths
+
+    // Unicode records accept partial path truncation,
+    // but no fault tolerance for Legacy records
+
+    if (meta->recordsize == LEGACY_RECORD_SIZE &&
+        bufsize < LEGACY_RECORD_SIZE)
+        return NULL;
+
+    if (meta->recordsize == UNICODE_RECORD_SIZE &&
+        bufsize <= LEGACY_RECORD_SIZE)
+        return NULL;
 
     record = g_malloc0 (sizeof (rbin_struct));
 
     // Verbatim path in ANSI code page
-    record->raw_legacy_path = g_malloc0 (RECORD_INDEX_OFFSET - LEGACY_FILENAME_OFFSET);
-    copy_field (*(record->raw_legacy_path), buf,
-        LEGACY_FILENAME_OFFSET, RECORD_INDEX_OFFSET);
+    l = g_string_new_len (buf, WIN_PATH_MAX);
+    record->raw_legacy_path = l;
 
     /* Index number associated with the record */
     copy_field (record->index_n, buf, RECORD_INDEX_OFFSET, DRIVE_LETTER_OFFSET);
@@ -173,10 +183,10 @@ _populate_record_data   (void     *buf,
     record->gone = FILESTATUS_EXISTS;
     // If file is not in recycle bin (restored or permanently deleted),
     // first byte will be removed from filename
-    if (! *record->raw_legacy_path)
+    if (l->str[0] == '\0')
     {
         record->gone = FILESTATUS_GONE;
-        *record->raw_legacy_path = record->drive;
+        l->str[0] = record->drive;
     }
 
     /* File deletion time */
@@ -195,7 +205,7 @@ _populate_record_data   (void     *buf,
     // because otherwise we don't know which encoding to use
     if (legacy_encoding)
     {
-        char *s = g_convert (record->raw_legacy_path, -1,
+        char *s = g_convert (l->str, -1,
             "UTF-8", legacy_encoding, NULL, NULL, NULL);
         if (s)
             g_free (s);
@@ -208,28 +218,30 @@ _populate_record_data   (void     *buf,
     if (bufsize == LEGACY_RECORD_SIZE)
         return record;
 
-    /* Part below deals with unicode path only */
+    // Part below deals with unicode path only
 
-    uni_buf_sz = UNICODE_RECORD_SIZE - UNICODE_FILENAME_OFFSET;
-    record->raw_uni_path = g_malloc (uni_buf_sz);
-    copy_field (*(record->raw_uni_path), buf,
-        UNICODE_FILENAME_OFFSET, UNICODE_RECORD_SIZE);
-    null_terminator_offset = ucs2_strnlen (
-        record->raw_uni_path, WIN_PATH_MAX) * sizeof (gunichar2);
-
+    if (bufsize < UNICODE_RECORD_SIZE && record->error == NULL)
     {
-        // Never set len = -1 for wchar source string
-        char *s = g_convert (record->raw_uni_path, null_terminator_offset,
+        g_set_error_literal (&record->error, R2_REC_ERROR,
+            R2_REC_ERROR_DUBIOUS_PATH,
+            _("Record is truncated, thus unicode path might be incomplete"));
+    }
+
+    u = g_string_new_len ((const char *) (buf + UNICODE_FILENAME_OFFSET),
+        bufsize - UNICODE_FILENAME_OFFSET);
+    record->raw_uni_path = u;
+
+    null_terminator_offset = ucs2_bytelen (u->str, u->len);
+
+    if (record->error == NULL)
+    {
+        char *s = g_convert (u->str, null_terminator_offset,
             "UTF-8", "UTF-16LE", NULL, NULL, NULL);
         if (s)
-        {
             g_free (s);
-        }
         else
-        {
             g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
                 _("Path contains broken unicode character(s)"));
-        }
     }
 
     /*
@@ -252,26 +264,23 @@ _populate_record_data   (void     *buf,
      * - accented latin chars transliterated to pure ASCII
      * - first DBCS char converted to UCS2 codepoint
      */
-    if (junk_detected && ! *junk_detected)
+    if (! meta->fill_junk && u->len > null_terminator_offset)
     {
-        // Beware: start pos shouldn't be previously read bytes,
-        // as it may contain invalid seq and quit prematurely.
-        char *p = record->raw_uni_path + null_terminator_offset;
-
-        while (p < record->raw_uni_path + uni_buf_sz)
+        char *p = u->str + null_terminator_offset;
+        while (p < u->str + u->len)
         {
             if (*p != '\0')
             {
                 g_debug ("Junk detected at offset 0x%tx of unicode path",
-                    p - record->raw_uni_path);
-                *junk_detected = TRUE;
+                    p - u->str);
+                meta->fill_junk = true;
                 break;
             }
             p++;
         }
 
-        if (*junk_detected)
-            hexdump (record->raw_uni_path, uni_buf_sz);
+        if (meta->fill_junk)
+            hexdump (u->str, u->len);
     }
 
     return record;
@@ -282,12 +291,14 @@ static void
 _parse_record_cb   (const char *index_file,
                     metarecord *meta)
 {
-    rbin_struct   *record;
+    rbin_struct   *record = NULL;
     FILE          *infile = NULL;
-    gsize          read_sz, record_sz;
+    size_t         read_sz,
+                   prev_pos,
+                   curr_pos;
     void          *buf = NULL;
     GError        *error = NULL;
-    int64_t        prev_pos, curr_pos;
+    char          *segment_id;
 
     if (! _validate_index_file (index_file, &infile, &error))
     {
@@ -295,44 +306,37 @@ _parse_record_cb   (const char *index_file,
             g_strdup (index_file), error);
         return;
     }
-
     g_debug ("Start populating record for '%s'...", index_file);
 
-    record_sz = meta->recordsize;
-    buf = g_malloc0 (record_sz);
-
     fseek (infile, RECORD_START_OFFSET, SEEK_SET);
-    curr_pos = (int64_t) ftell (infile);
-    prev_pos = curr_pos;
+    prev_pos = curr_pos = ftell (infile);
 
-    while ((read_sz = fread (buf, 1, record_sz, infile)) > 0)
+    buf = g_malloc0 (meta->recordsize);
+    while ((read_sz = fread (buf, 1, meta->recordsize, infile)) > 0)
     {
         prev_pos = curr_pos;
-        curr_pos = (int64_t) ftell (infile);
-        g_debug ("Read %s, byte range %" PRId64 " - %" PRId64,
-            index_file, prev_pos, curr_pos);
-        if (read_sz < record_sz) {
-            g_debug ("read size = %zu, less than needed %zu", read_sz, record_sz);
-            break;
-        }
-        record = _populate_record_data (buf, record_sz, &meta->fill_junk);
-        g_ptr_array_add (meta->records, record);
+        curr_pos = ftell (infile);
+        g_debug ("Read byte range %zu-%zu %s", prev_pos, curr_pos,
+            (read_sz < meta->recordsize ? "" : " (!!!)"));
+        if (NULL != (record = _populate_record_data (buf, read_sz)))
+            g_ptr_array_add (meta->records, record);
     }
     g_free (buf);
 
-    char *segment_id = g_strdup_printf ("|%" PRId64 "|%" PRId64, prev_pos, curr_pos);
+    segment_id = g_strdup_printf ("|%zu|%zu", prev_pos, curr_pos);
 
-    if (feof (infile) && read_sz && (read_sz < record_sz))
+    if (feof (infile))
     {
-        g_set_error_literal (&error, R2_REC_ERROR,
-            R2_REC_ERROR_IDX_SIZE_INVALID,
-            _("Last segment does not constitute a valid "
-            "record. Likely a premature end of file."));
+        if (read_sz > 0 && record == NULL)
+            g_set_error_literal (&error, R2_REC_ERROR,
+                R2_REC_ERROR_IDX_SIZE_INVALID,
+                _("Premature end of file encountered, and "
+                "the last segment is not recoverable."));
     }
     else if (ferror (infile))  // other generic error
     {
-        g_set_error (&error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
-            _("Failed to read record at %s"), segment_id);
+        g_set_error_literal (&error, G_FILE_ERROR, G_FILE_ERROR_FAILED,
+            _("Failed to read record for unknown reason"));
     }
 
     if (error) {

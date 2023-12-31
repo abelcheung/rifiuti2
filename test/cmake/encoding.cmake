@@ -149,17 +149,42 @@ generate_simple_comparison_test("JsonInfo2Win95" 1
     "" "INFO-95-ja-1.json" "encoding|json")
 
 
-add_encoding_test_with_cwd(f_JsonWin95WrongEnc_Prep
+add_encoding_test_with_cwd(f_JsonWrongEnc_Prep
     ${sample_dir}
     -DINFO2=INFO-95-ja-1
     -DCHOICES=CP1255|MS-HEBR|WINDOWS-1255|HEBREW|ISO-8859-8|ISO-IR-138|ISO8859-8|ISO_8859-8|ISO_8859-8:1988|CSISOLATINHEBREW
-    -DOUTFILE=${bindir}/f_JsonWin95WrongEnc.output
+    -DOUTFILE=${bindir}/f_JsonWrongEnc.output
     -DEXTRA_ARGS=-f|json
 )
 
-set_tests_properties(f_JsonWin95WrongEnc_Prep
+set_tests_properties(f_JsonWrongEnc_Prep
     PROPERTIES
     PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
 
-generate_simple_comparison_test("JsonWin95WrongEnc" 1
+generate_simple_comparison_test("JsonWrongEnc" 1
     "" "INFO-95-ja-1-in-cp1255.json" "encoding|xfail|json")
+
+# It turns out different iconv implemention may have
+# different behavior even for the same code page. Take this
+# for example, GNU iconv marks 0x90 illegal for CP1255, but
+# winiconv converts that to U+0090.
+if(WIN32)
+    set_tests_properties(f_JsonWrongEnc
+    PROPERTIES WILL_FAIL true)
+endif()
+
+
+add_encoding_test_with_cwd(f_XmlWrongEnc_Prep
+    ${sample_dir}
+    -DINFO2=INFO-95-ja-1
+    -DCHOICES=CP949|UHC|ISO-IR-149|KOREAN|KSC_5601|KS_C_5601-1987|KS_C_5601-1989|CSKSC56011987
+    -DOUTFILE=${bindir}/f_XmlWrongEnc.output
+    -DEXTRA_ARGS=-f|xml
+)
+
+set_tests_properties(f_XmlWrongEnc_Prep
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
+
+generate_simple_comparison_test("XmlWrongEnc" 1
+    "" "INFO-95-ja-1-in-cp949.xml" "encoding|xfail|xml")

@@ -75,18 +75,20 @@ add_test(NAME f_TruncatedFile
 set_tests_properties(f_TruncatedFile
     PROPERTIES
         LABELS "info2;crafted"
-        PASS_REGULAR_EXPRESSION "byte range 3220 - 4015: Last segment does not constitute a valid record\.")
+        PASS_REGULAR_EXPRESSION "5: Record is truncated")
 
 
 #
-# Partial bad $Recycle.bin
+# Ditto for $Recycle.bin
 #
 
 # TODO different tests for stdout and stderr
-add_test(NAME d_SomeBadIdx
+add_test(NAME d_TruncatedFile
     COMMAND rifiuti-vista dir-badfiles
     WORKING_DIRECTORY ${sample_dir})
-set_tests_properties(d_SomeBadIdx
+set_tests_properties(d_TruncatedFile
     PROPERTIES
         LABELS "recycledir;crafted"
-        PASS_REGULAR_EXPRESSION "\\$IX1JBL3\\.djvu: Might be an index file, but file size is unexpected\.")
+        PASS_REGULAR_EXPRESSION [=[
+\$IF47Q09: File is not a \$Recycle\.bin index
+\$IX1JBL3\.djvu: Record is truncated]=])
