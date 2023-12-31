@@ -114,50 +114,32 @@ ucs2_strnlen   (const char   *str,
 /**
  * @brief Move character pointer for specified bytes
  * @param sz Must be either 1 or 2, denoting broken byte or broken UCS2 character
- * @param in_str Reference to input string to be converted
- * @param read_bytes Reference to already read bytes count to keep track of
- * @param out_str Reference to output string to be appended
- * @param write_bytes Reference to writable bytes count to decrement
+ * @param ptr Location of char pointer to string to be converted
+ * @param bytes_left Location to number of remaining bytes to read
+ * @param s Broken byte(s) will be formatted and appended to this `GString`
  * @param fmt_type Type of output format; see `fmt[]` for detail
  * @note This is the core of `conv_path_to_utf8_with_tmpl()` doing
  * error fallback, converting a single broken char to `printf` output.
  */
 static void
 _advance_octet    (size_t       sz,
-                   char       **in_str,
-                   size_t      *read_bytes,
-                   char       **out_str,
-                   size_t      *write_bytes,
+                   char       **ptr,
+                   size_t      *bytes_left,
+                   GString     *s,
                    out_fmt      fmt_type)
 {
-    char *repl;
+    int c;
 
     switch (sz) {
-        case 1:
-        {
-            unsigned char c = *(unsigned char *) (*in_str);
-            repl = g_strdup_printf (fmt[fmt_type].fallback_tmpl[sz], c);
-        }
-            break;
-
-        case 2:
-        {
-            uint16_t c = GUINT16_FROM_LE (*(uint16_t *) (*in_str));
-            repl = g_strdup_printf (fmt[fmt_type].fallback_tmpl[sz], c);
-        }
-            break;
-
-        default:
-            g_assert_not_reached();
+        case 1: c = *(uint8_t *) (*ptr); break;
+        case 2: c = GUINT16_FROM_LE (*(uint16_t *) (*ptr)); break;
+        default: g_assert_not_reached();
     }
+    g_string_append_printf (s, 
+        fmt[fmt_type].fallback_tmpl[sz], c);
 
-    *in_str += sz;
-    *read_bytes -= sz;
-
-    *out_str = g_stpcpy (*out_str, (const char *) repl);
-    *write_bytes -= strlen (repl);
-
-    g_free (repl);
+    *ptr += sz;
+    *bytes_left -= sz;
     return;
 }
 
@@ -201,26 +183,23 @@ _filter_printable_char   (const char   *str,
 
 
 static void
-_expand_write_buf    (char     **buf,
-                      char     **ptr,
-                      size_t    *sz,
-                      size_t    *bytes_left)
+_sync_pos   (GString   *str,
+            size_t    *bytes_left,
+            char     **chr_ptr,
+            bool       from_gstring)
 {
-    size_t   used     = *ptr - *buf,
-             added    = (*sz);
-
-    *sz += added;
-    *bytes_left += added;
-    *buf = g_realloc (*buf, *sz);
-    *ptr = *buf + used;
-
-    // some OS has more secure memory allocator than others *sigh*
-    memset (*ptr, 0, *sz - used);
-
-    g_debug ("Realloc : w=%02zu/%02zu, str=%s",
-        *sz - used, *sz, (char *) *buf);
+    if (from_gstring)
+    {
+        *bytes_left = str->allocated_len - str->len - 1;
+        *chr_ptr = str->str + str->len;
+    }
+    else
+    {
+        str->len = str->allocated_len - *bytes_left - 1;
+        g_assert (*chr_ptr == str->str + str->len);
+        str->str[str->len] = '\0';
+    }
 }
-
 
 /**
  * @brief Convert path to UTF-8 encoding with customizable fallback
@@ -248,18 +227,17 @@ conv_path_to_utf8_with_tmpl (const char      *path,
                              StrTransformFunc func,
                              GError         **error)
 {
-    char            *u8_path,
-                    *i_ptr,
+    char            *i_ptr,
                     *o_ptr,
-                    *result = NULL;
+                    *result;
     size_t           i_size,
-                     o_size,
                      i_left,
                      o_left,
                      char_sz;
     ssize_t          status;
     GIConv           conv;
     GPtrArray       *err_offsets;
+    GString         *s;
 
     // For unicode path, the first char must be ASCII drive letter
     // or slash. And since it is in little endian, first byte is
@@ -274,26 +252,23 @@ conv_path_to_utf8_with_tmpl (const char      *path,
         char_sz   = sizeof (gunichar2);
         i_size    = char_sz * (ucs2_strnlen (path, -1) + 1);
     }
-
-    // Ballpark figure; likely need to realloc once or twice
-    i_left    = o_left = o_size = i_size;
-    u8_path   = g_malloc0 (o_size);
-    i_ptr     = (char *) path;
-    o_ptr     = u8_path;
+    // Ballpark figure, GString decides alloc size on its own
+    s = g_string_sized_new (i_size + 1);
+    i_left = i_size;
+    i_ptr = (char *) path;
+    _sync_pos (s, &o_left, &o_ptr, true);
 
     // Shouldn't fail, encoding already tested upon start of prog
     conv = g_iconv_open ("UTF-8", from_enc ? from_enc : "UTF-16LE");
 
-    g_debug ("Initial : r=%02zu/%02zu, w=%02zu/%02zu",
-        i_left, i_size, o_left, o_size);
+    g_debug ("Initial : r=%02zu, w=%02zu/%02zu",
+        i_left, o_left, s->allocated_len - 1);
     err_offsets = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 
     // Pass 1: Convert to UTF-8, all illegal seq become escaped hex
 
-    while (true)
+    while (i_left > 0)
     {
-        int e = 0;
-
         if (*i_ptr == '\0') {
             if (from_enc   != NULL) break;
             if (*(i_ptr+1) == '\0') break; /* utf-16: check "\0\0" */
@@ -302,38 +277,39 @@ conv_path_to_utf8_with_tmpl (const char      *path,
         // When non-reversible char are converted to \uFFFD, there
         // is nothing we can do. Just accept the status quo.
         status = g_iconv (conv, &i_ptr, &i_left, &o_ptr, &o_left);
+        _sync_pos (s, &o_left, &o_ptr, false);
         if (status != -1)
             break;
 
-        e = errno;
-        g_debug ("Progress: r=%02zu/%02zu, w=%02zu/%02zu, status=%zd (%s), str=%s",
-            i_left, i_size, o_left, o_size, status, g_strerror(e), u8_path);
+        int e = errno;
+        g_debug ("Progress: r=%02zu, w=%02zu/%02zu, status=%zd (%s), str=%s",
+            i_left, o_left, s->allocated_len - 1,
+            status, g_strerror(e), s->str);
 
         switch (e)
         {
-            case EINVAL:  // TODO Handle partial input for EINVAL
-                g_assert_not_reached ();
-            case EILSEQ:
-            {
-                size_t *processed = g_malloc (sizeof (size_t));
-                *processed = i_size - i_left;
-                g_ptr_array_add (err_offsets, processed);
-            }
-                // Only EILSEQ is reported when it happens with E2BIG,
-                // need to handle latter manually
-                if (o_left < MIN_WRITEBUF_SPACE)
-                    _expand_write_buf (&u8_path, &o_ptr, &o_size, &o_left);
-                _advance_octet (char_sz, &i_ptr, &i_left, &o_ptr, &o_left, fmt_type);
-                g_iconv (conv, NULL, NULL, &o_ptr, &o_left);  // reset state
-                break;
-            case E2BIG:
-                _expand_write_buf (&u8_path, &o_ptr, &o_size, &o_left);
-                break;
+        case EINVAL:  // TODO Handle partial input for EINVAL
+            g_assert_not_reached ();
+        case EILSEQ:
+        {
+            size_t *processed = g_malloc (sizeof (size_t));
+            *processed = i_size - i_left;
+            g_ptr_array_add (err_offsets, processed);
+        }
+            _advance_octet (char_sz, &i_ptr, &i_left, s, fmt_type);
+            _sync_pos (s, &o_left, &o_ptr, true);
+            g_iconv (conv, NULL, NULL, &o_ptr, &o_left);  // reset state
+            _sync_pos (s, &o_left, &o_ptr, false);
+            break;
+        case E2BIG:
+            s = g_string_set_size (s, s->allocated_len * 2);
+            _sync_pos (s, &o_left, &o_ptr, true);
+            break;
         }
     }
 
-    g_debug ("Finally : r=%02zu/%02zu, w=%02zu/%02zu, status=%zd, str=%s",
-        i_left, i_size, o_left, o_size, status, u8_path);
+    g_debug ("Finally : r=%02zu, w=%02zu/%02zu, status=%zd, str=%s",
+        i_left, o_left, s->allocated_len - 1, status, s->str);
 
     g_iconv_close (conv);
 
@@ -344,14 +320,14 @@ conv_path_to_utf8_with_tmpl (const char      *path,
     {
         // More detailed error message showing offsets
         char *old = (*error)->message;
-        GString *s = g_string_new ((const char *) old);
-        s = g_string_append (s, ", at offset:");
+        GString *dbg_str = g_string_new ((const char *) old);
+        dbg_str = g_string_append (dbg_str, ", at offset:");
         for (size_t i = 0; i < err_offsets->len; i++)
         {
-            g_string_append_printf (s, " %zu",
+            g_string_append_printf (dbg_str, " %zu",
                 *((size_t *) (err_offsets->pdata[i])));
         }
-        (*error)->message = g_string_free (s, FALSE);
+        (*error)->message = g_string_free (dbg_str, FALSE);
         g_free (old);
     }
 
@@ -359,13 +335,13 @@ conv_path_to_utf8_with_tmpl (const char      *path,
 
     // Pass 2: Post processing, e.g. convert non-printable chars to hex
 
-    g_return_val_if_fail (g_utf8_validate (u8_path, -1, NULL), NULL);
+    g_return_val_if_fail (g_utf8_validate (s->str, -1, NULL), NULL);
 
     if (func == NULL)
-        result = _filter_printable_char (u8_path, fmt_type);
+        result = _filter_printable_char (s->str, fmt_type);
     else
-        result = func (u8_path);
-    g_free (u8_path);
+        result = func (s->str);
+    g_string_free (s, TRUE);
 
     return result;
 }
