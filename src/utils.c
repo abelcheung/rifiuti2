@@ -705,8 +705,10 @@ _free_record_cb (rbin_struct *record)
 {
     g_free (record->index_s);
     g_date_time_unref (record->deltime);
-    g_free (record->raw_uni_path);
-    g_free (record->raw_legacy_path);
+    if (record->raw_uni_path)
+        g_string_free (record->raw_uni_path, TRUE);
+    if (record->raw_legacy_path)
+        g_string_free (record->raw_legacy_path, TRUE);
     g_clear_error (&record->error);
     g_free (record);
 }
@@ -1186,7 +1188,8 @@ static void
 _print_text_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
-    char         *outstr, *src, **header;
+    char         *output, **header;
+    GString      *src;
     GDateTime    *dt;
 
     g_return_if_fail (record != NULL);
@@ -1217,10 +1220,10 @@ _print_text_record   (rbin_struct        *record,
     if (! header[4])
         header[4] = g_strdup ("???");
 
-    outstr = g_strjoinv (delim, header);
-    g_print ("%s\n", outstr);
+    output = g_strjoinv (delim, header);
+    g_print ("%s\n", output);
 
-    g_free (outstr);
+    g_free (output);
     g_date_time_unref (dt);
     g_strfreev (header);
 }
@@ -1230,9 +1233,9 @@ static void
 _print_xml_record   (rbin_struct        *record,
                      const metarecord   *meta)
 {
-    char         *path, *src, *dt_str;
+    char         *path, *dt_str;
     GDateTime    *dt;
-    GString      *s;
+    GString      *s, *src;
 
     g_return_if_fail (record != NULL);
 
@@ -1293,9 +1296,9 @@ static void
 _print_json_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
-    char         *path, *src, *dt_str;
+    char         *path, *dt_str;
     GDateTime    *dt;
-    GString      *s;
+    GString      *src, *s;
 
     g_return_if_fail (record != NULL);
 

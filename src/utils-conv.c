@@ -80,34 +80,36 @@ enc_is_ascii_compatible    (const char   *enc,
 
 
 /**
- * @brief Compute UCS2 string length like `wcslen()`
- * @param str The string to check (in `char*` !)
- * @param max_sz Maximum length to check, or use -1 to
- * denote the string is nul-terminated
- * @return Either number of UCS2 char for whole string,
- * or return `max_sz` when `max_sz` param is exceeded
+ * @brief Find null terminator position in UCS2 string
+ * @param str The string to check (in `char *` !)
+ * @param max_sz Maximum byte length to check, or use -1 to
+ * denote the string should be nul-terminated
+ * @return Byte position where null terminator (double \\0)
+ * is found, or `max_sz` otherwise
+ * @note Being different from standard C funcs like `wcsnlen()`
+ * or `strnlen()`, it returns bytes, not chars. And it would
+ * take care of odd bytes when UCS2 strings are expecting
+ * even number of bytes.
  */
 size_t
-ucs2_strnlen   (const char   *str,
+ucs2_bytelen   (const char   *str,
                 ssize_t       max_sz)
 {
-    // wcsnlen_s should be equivalent except for boundary
-    // cases we don't care about
-
-    size_t i = 0;
     char *p = (char *) str;
 
-    if (str == NULL)
+    if (str == NULL || max_sz == 0)
         return 0;
+
+    if (max_sz == 1)
+        return 1;
 
     while (*p || *(p+1))
     {
-        if (max_sz >= 0 && i >= (size_t) max_sz)
-            break;
-        i++;
         p += 2;
+        if (max_sz >= 0 && p - str + 1 >= max_sz)
+            return max_sz;
     }
-    return i;
+    return p - str;
 }
 
 
@@ -124,18 +126,25 @@ ucs2_strnlen   (const char   *str,
 static void
 _advance_octet    (size_t       sz,
                    char       **ptr,
-                   size_t      *bytes_left,
+                   gsize       *bytes_left,
                    GString     *s,
                    out_fmt      fmt_type)
 {
-    int c;
+    int c = 0;
 
-    switch (sz) {
-        case 1: c = *(uint8_t *) (*ptr); break;
-        case 2: c = GUINT16_FROM_LE (*(uint16_t *) (*ptr)); break;
-        default: g_assert_not_reached();
-    }
-    g_string_append_printf (s, 
+    g_return_if_fail (*bytes_left > 0);
+    g_return_if_fail (sz == 1 || sz == 2);
+    g_return_if_fail (*ptr != NULL);
+
+    if (*bytes_left == 1)
+        sz = 1;
+
+    if (sz == 1)
+        c = *(uint8_t *) (*ptr);
+    else
+        c = GUINT16_FROM_LE (*(uint16_t *) (*ptr));
+
+    g_string_append_printf (s,
         fmt[fmt_type].fallback_tmpl[sz], c);
 
     *ptr += sz;
@@ -184,9 +193,9 @@ _filter_printable_char   (const char   *str,
 
 static void
 _sync_pos   (GString   *str,
-            size_t    *bytes_left,
-            char     **chr_ptr,
-            bool       from_gstring)
+             gsize     *bytes_left,
+             char     **chr_ptr,
+             bool       from_gstring)
 {
     if (from_gstring)
     {
@@ -221,7 +230,7 @@ _sync_pos   (GString   *str,
  * no error checking is performed.
  */
 char *
-conv_path_to_utf8_with_tmpl (const char      *path,
+conv_path_to_utf8_with_tmpl (const GString   *path,
                              const char      *from_enc,
                              out_fmt          fmt_type,
                              StrTransformFunc func,
@@ -230,11 +239,11 @@ conv_path_to_utf8_with_tmpl (const char      *path,
     char            *i_ptr,
                     *o_ptr,
                     *result;
-    size_t           i_size,
+    gsize            i_size,
                      i_left,
                      o_left,
-                     char_sz;
-    ssize_t          status;
+                     char_sz,
+                     status;
     GIConv           conv;
     GPtrArray       *err_offsets;
     GString         *s;
@@ -242,20 +251,23 @@ conv_path_to_utf8_with_tmpl (const char      *path,
     // For unicode path, the first char must be ASCII drive letter
     // or slash. And since it is in little endian, first byte is
     // always non-null
-    g_return_val_if_fail (path       && *path    , NULL);
+    g_return_val_if_fail (path != NULL, NULL);
     g_return_val_if_fail (! from_enc || *from_enc, NULL);
 
-    if (from_enc != NULL) {
-        char_sz   = sizeof (char);
-        i_size    = char_sz * (strnlen (path, WIN_PATH_MAX) + 1);
-    } else {
-        char_sz   = sizeof (gunichar2);
-        i_size    = char_sz * (ucs2_strnlen (path, -1) + 1);
+    if (from_enc)
+    {
+        char_sz = sizeof (char);
+        i_left = i_size = strnlen (path->str, WIN_PATH_MAX);
     }
+    else
+    {
+        char_sz = sizeof (gunichar2);
+        i_left = i_size = ucs2_bytelen (path->str, path->len);
+    }
+    i_ptr = path->str;
+
     // Ballpark figure, GString decides alloc size on its own
     s = g_string_sized_new (i_size + 1);
-    i_left = i_size;
-    i_ptr = (char *) path;
     _sync_pos (s, &o_left, &o_ptr, true);
 
     // Shouldn't fail, encoding already tested upon start of prog
@@ -278,7 +290,7 @@ conv_path_to_utf8_with_tmpl (const char      *path,
         // is nothing we can do. Just accept the status quo.
         status = g_iconv (conv, &i_ptr, &i_left, &o_ptr, &o_left);
         _sync_pos (s, &o_left, &o_ptr, false);
-        if (status != -1)
+        if (status != (gsize) -1)
             break;
 
         int e = errno;
@@ -288,8 +300,7 @@ conv_path_to_utf8_with_tmpl (const char      *path,
 
         switch (e)
         {
-        case EINVAL:  // TODO Handle partial input for EINVAL
-            g_assert_not_reached ();
+        case EINVAL:
         case EILSEQ:
         {
             size_t *processed = g_malloc (sizeof (size_t));
@@ -298,6 +309,8 @@ conv_path_to_utf8_with_tmpl (const char      *path,
         }
             _advance_octet (char_sz, &i_ptr, &i_left, s, fmt_type);
             _sync_pos (s, &o_left, &o_ptr, true);
+            g_debug ("Progress: r=%02zu, w=%02zu/%02zu, str=%s",
+                i_left, o_left, s->allocated_len - 1, s->str);
             g_iconv (conv, NULL, NULL, &o_ptr, &o_left);  // reset state
             _sync_pos (s, &o_left, &o_ptr, false);
             break;

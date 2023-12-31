@@ -16,6 +16,7 @@
 #define _POSIX_C_SOURCE 199309L
 #endif
 
+#include <stdbool.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <glib.h>
@@ -110,7 +111,7 @@ typedef struct _rbin_meta
      * segments due to sloppy programming practice.
      * @attention For `INFO2` only
      */
-    gboolean fill_junk;
+    bool fill_junk;
     /**
      * @brief List of trash file records pointer
      */
@@ -163,23 +164,25 @@ typedef struct _rbin_struct
      */
     uint64_t filesize;
 
-    /* despite var names, all filenames are converted to UTF-8 upon parsing */
+    /**
+     * @brief Original path of trashed file, in unicode
+     * @note Original path was stored in index file in UTF-16
+     * encoding since Windows 2000. The raw UTF-16 data is
+     * stored here. `GString` structure is chosen for
+     * convenience in storing buffer length, which can't be
+     * easily determined from null termination when path data
+     * is truncated (due to broken file)
+     */
+    GString *raw_uni_path;
 
     /**
-     * @brief Unicode trashed file original path
-     * @note Original path was stored in index file in UTF-16 encoding
-     * since Windows 2000. The path is converted to UTF-8 encoding and stored here .
+     * @brief Original path of trashed file, in ANSI code page
+     * @note Until Windows 2003, index file preserves trashed file
+     * path in ANSI code page. The raw path is stored here.
+     * @attention For `INFO2` only. Can be either full path or
+     * 8.3 format, depending on Windows version and code page used.
      */
-    char *raw_uni_path;
-
-    /**
-     * @brief ANSI encoded trash file original path
-     * @note Until Windows 2003, index file preserves trashed file path in
-     * ANSI code page. The path is converted to UTF-8 encoding and stored here.
-     * @attention For `INFO2` only. Can be either full path or using 8.3 format,
-     * depending on Windows version and code page used.
-     */
-    char *raw_legacy_path;
+    GString *raw_legacy_path;
 
     /**
      * @brief Whether original trashed file is gone

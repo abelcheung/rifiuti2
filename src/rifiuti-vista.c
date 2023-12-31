@@ -27,38 +27,31 @@ extern metarecord  *meta;
  * @note This only checks if index file has sufficient amount
  * of data for sensible reading
  */
-static gboolean
+static bool
 _validate_index_file   (const char   *filename,
-                        void        **filebuf,
+                        void        **outbuf,
                         gsize        *bufsize,
                         uint64_t     *ver,
                         GError      **error)
 {
-    gsize           expect_sz;
     char           *buf = NULL;
-    uint32_t        pathlen;
 
-    g_return_val_if_fail (filename &&   *filename, FALSE);
-    g_return_val_if_fail (filebuf  && ! *filebuf , FALSE);
-    g_return_val_if_fail (! error  || ! *error   , FALSE);
-    g_return_val_if_fail (bufsize  , FALSE);
-    g_return_val_if_fail (ver      , FALSE);
+    g_return_val_if_fail (filename && *filename, false);
+    g_return_val_if_fail (outbuf   && ! *outbuf, false);
+    g_return_val_if_fail (! error  || ! *error , false);
+    g_return_val_if_fail (bufsize  , false);
+    g_return_val_if_fail (ver      , false);
 
     g_debug ("Start file validation for '%s'...", filename);
 
     if (! g_file_get_contents (filename, &buf, bufsize, error))
         goto validate_fail;
 
-    g_debug ("Read '%s' successfully, size = %" G_GSIZE_FORMAT,
-        filename, *bufsize);
-
     if (*bufsize <= VERSION1_FILENAME_OFFSET)
     {
-        g_debug ("File size = %" G_GSIZE_FORMAT
-            ", expected > %" G_GSIZE_FORMAT,
-            *bufsize, (gsize) VERSION1_FILENAME_OFFSET);
-        g_set_error_literal (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
-            _("File is prematurely truncated, or not a $Recycle.bin index."));
+        g_set_error_literal (error, R2_REC_ERROR,
+        R2_REC_ERROR_IDX_SIZE_INVALID,
+            _("File is not a $Recycle.bin index"));
         goto validate_fail;
     }
 
@@ -68,59 +61,39 @@ _validate_index_file   (const char   *filename,
 
     switch (*ver)
     {
-        case VERSION_VISTA:
+    case VERSION_VISTA: break;  // already handled above
 
-            expect_sz = VERSION1_FILE_SIZE;
-            /* see _populate_record_data() for reason */
-            if ((*bufsize != expect_sz) && (*bufsize != expect_sz - 1))
-            {
-                g_debug ("File size = %" G_GSIZE_FORMAT
-                    ", expected = %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT, *bufsize, expect_sz, expect_sz - 1);
-                g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
-                    "%s", _("Might be an index file, but file size is unexpected."));
-                goto validate_fail;
-            }
-            break;
-
-        case VERSION_WIN10:
-
-            // Version 2 adds a uint32 file name strlen before file name.
-            // This presumably breaks the 260 char barrier in version 1.
-            copy_field (pathlen, buf, VERSION1_FILENAME_OFFSET, VERSION2_FILENAME_OFFSET);
-            pathlen = GUINT32_FROM_LE (pathlen);
-
-            /* Header length + strlen in UTF-16 encoding */
-            expect_sz = VERSION2_FILENAME_OFFSET + pathlen * sizeof(gunichar2);
-            if (*bufsize != expect_sz)
-            {
-                g_debug ("File size = %" G_GSIZE_FORMAT
-                    ", expected = %" G_GSIZE_FORMAT,
-                    *bufsize, expect_sz);
-                g_set_error (error, R2_REC_ERROR, R2_REC_ERROR_IDX_SIZE_INVALID,
-                    "%s", _("Might be an index file, but file size is unexpected."));
-                goto validate_fail;
-            }
-            break;
-
-        default:
-            if (*ver < 10)
-                g_set_error (error, R2_REC_ERROR,
-                    R2_REC_ERROR_VER_UNSUPPORTED,
-                    _("Index file version %" PRIu64 " is unsupported"), *ver);
-            else
-                g_set_error (error, R2_REC_ERROR,
-                    R2_REC_ERROR_VER_UNSUPPORTED,
-                    "%s", _("File is not a $Recycle.bin index"));
+    case VERSION_WIN10:
+        // Version 2 adds a uint32 file name strlen before file name.
+        // This presumably breaks the 260 char barrier in version 1.
+        if (*bufsize <= VERSION2_FILENAME_OFFSET)
+        {
+            g_set_error_literal (error, R2_REC_ERROR,
+            R2_REC_ERROR_IDX_SIZE_INVALID,
+                _("File is not a $Recycle.bin index"));
             goto validate_fail;
+        }
+        break;
+
+    default:
+        if (*ver < 10)
+            g_set_error (error, R2_REC_ERROR,
+                R2_REC_ERROR_VER_UNSUPPORTED,
+                _("Index file version %" PRIu64 " is unsupported"), *ver);
+        else
+            g_set_error (error, R2_REC_ERROR,
+                R2_REC_ERROR_VER_UNSUPPORTED,
+                "%s", _("File is not a $Recycle.bin index"));
+        goto validate_fail;
     }
 
-    *filebuf = buf;
+    *outbuf = buf;
     g_debug ("Finished file validation for '%s'", filename);
-    return TRUE;
+    return true;
 
     validate_fail:
     g_free (buf);
-    return FALSE;
+    return false;
 }
 
 
@@ -130,34 +103,41 @@ _populate_record_data  (void      *buf,
                         uint64_t   version)
 {
     rbin_struct  *record;
-    size_t        pathbuf_sz = 0;
+    uint32_t      path_sz_expected, path_sz_actual;
+    size_t        null_terminator_offset;
     void         *pathbuf_start = NULL;
     bool          erraneous = false;
+    GString      *u;  // shorthand
 
     switch (version)
     {
-        case VERSION_VISTA:
-            // In rare cases, the size of index file is one byte short of
-            // (fixed) 544 bytes in Vista. Under such occasion, file size
-            // only occupies 56 bit, not 64 bit as it ought to be.
-            // Actually this 56-bit file size is very likely wrong after all.
-            // This is observed during deletion of dd.exe from Forensic
-            // Acquisition Utilities (by George M. Garner Jr)
-            // in certain localized Vista.
-            if (bufsize == VERSION1_FILE_SIZE - 1)
-                erraneous = true;
+    case VERSION_VISTA:
+        // In rare cases, the size of index file is one byte short of
+        // (fixed) 544 bytes in Vista. Under such occasion, file size
+        // only occupies 56 bit, not 64 bit as it ought to be.
+        // Actually this 56-bit file size is very likely wrong after all.
+        // This is observed during deletion of dd.exe from Forensic
+        // Acquisition Utilities (by George M. Garner Jr)
+        // in certain localized Vista.
+        if (bufsize == VERSION1_FILE_SIZE - 1)
+            erraneous = true;
 
-            pathbuf_sz = WIN_PATH_MAX * sizeof(gunichar2);
-            pathbuf_start = buf - (int)erraneous + VERSION1_FILENAME_OFFSET;
-            break;
+        path_sz_expected = WIN_PATH_MAX * sizeof(gunichar2);
+        path_sz_actual = bufsize + (int)erraneous - VERSION1_FILENAME_OFFSET;
+        pathbuf_start = buf - (int)erraneous + VERSION1_FILENAME_OFFSET;
+        break;
 
-        case VERSION_WIN10:
-            pathbuf_sz = bufsize - VERSION2_FILENAME_OFFSET;
-            pathbuf_start = buf + VERSION2_FILENAME_OFFSET;
-            break;
+    case VERSION_WIN10:
+        copy_field (path_sz_expected, buf, VERSION1_FILENAME_OFFSET,
+            VERSION2_FILENAME_OFFSET);
+        path_sz_expected = GUINT32_FROM_LE (path_sz_expected) *
+            sizeof(gunichar2);
+        path_sz_actual = bufsize - VERSION2_FILENAME_OFFSET;
+        pathbuf_start = buf + VERSION2_FILENAME_OFFSET;
+        break;
 
-        default:
-            g_assert_not_reached ();
+    default:
+        g_assert_not_reached ();
     }
 
     record = g_malloc0 (sizeof (rbin_struct));
@@ -184,23 +164,36 @@ _populate_record_data  (void      *buf,
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
 
-    record->raw_uni_path = g_malloc0 (pathbuf_sz + sizeof(gunichar2));
-    memcpy (record->raw_uni_path, pathbuf_start, pathbuf_sz);
+    // Unicode path
 
+    if (path_sz_actual > path_sz_expected)
     {
-        // Never set len = -1 for wchar source string
-        char *s = g_convert (record->raw_uni_path,
-            ucs2_strnlen (record->raw_uni_path, -1) * sizeof (gunichar2),
+        g_set_error_literal (&record->error, R2_REC_ERROR,
+            R2_REC_ERROR_DUBIOUS_PATH,
+            _("Ignored dangling extraneous data after record"));
+    }
+    else if (path_sz_actual < path_sz_expected && ! erraneous)
+    {
+        g_set_error_literal (&record->error, R2_REC_ERROR,
+            R2_REC_ERROR_DUBIOUS_PATH,
+            _("Record is truncated, thus unicode path might be incomplete"));
+    }
+
+    u = g_string_new_len ((const char *) pathbuf_start,
+        MIN(path_sz_actual, path_sz_expected));
+    record->raw_uni_path = u;
+
+    null_terminator_offset = ucs2_bytelen (u->str, u->len);
+
+    if (record->error == NULL)
+    {
+        char *s = g_convert (u->str, null_terminator_offset,
             "UTF-8", "UTF-16LE", NULL, NULL, NULL);
         if (s)
-        {
             g_free (s);
-        }
         else
-        {
             g_set_error_literal (&record->error, R2_REC_ERROR, R2_REC_ERROR_CONV_PATH,
                 _("Path contains broken unicode character(s)"));
-        }
     }
 
     return record;

@@ -48,10 +48,10 @@ char *      (*StrTransformFunc)           (const char       *src);
 bool          enc_is_ascii_compatible     (const char       *enc,
                                            GError          **error);
 
-size_t        ucs2_strnlen                (const char       *str,
+size_t        ucs2_bytelen                (const char       *str,
                                            ssize_t           max_sz);
 
-char *        conv_path_to_utf8_with_tmpl (const char       *path,
+char *        conv_path_to_utf8_with_tmpl (const GString    *path,
                                            const char       *from_enc,
                                            out_fmt           fmt_type,
                                            StrTransformFunc  func,

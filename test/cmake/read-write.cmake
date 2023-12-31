@@ -29,7 +29,7 @@ add_test(NAME f_InputSpecialFile COMMAND rifiuti       nul)
 set_tests_properties(d_InputSpecialFile f_InputSpecialFile
     PROPERTIES
         LABELS "xfail"
-        PASS_REGULAR_EXPRESSION "File is prematurely truncated, or not .+ index")
+        PASS_REGULAR_EXPRESSION "File is not .+ index")
 else()
 add_test(NAME d_InputSpecialFile COMMAND rifiuti-vista /dev/null)
 add_test(NAME f_InputSpecialFile COMMAND rifiuti       /dev/null)
