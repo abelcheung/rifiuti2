@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_UTILS_CONV_H
-#define _RIFIUTI_UTILS_CONV_H
+#pragma once
 
 #include <stdbool.h>
 #include <glib.h>
@@ -61,4 +60,3 @@ char *        filter_escapes              (const char       *str);
 
 char *        json_escape                 (const char       *src);
 
-#endif

@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_VISTA_H
-#define _RIFIUTI_VISTA_H
+#pragma once
 
 #include "utils-conv.h"
 
@@ -17,4 +16,3 @@
 
 #define VERSION1_FILE_SIZE           ((VERSION1_FILENAME_OFFSET) + (WIN_PATH_MAX) * 2)
 
-#endif

@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_UTILS_PLATFORM_H
-#define _RIFIUTI_UTILS_PLATFORM_H
+#pragma once
 
 #include <inttypes.h>
 #include <glib.h>
@@ -26,5 +25,3 @@ GPtrArray *enumerate_drive_bins     (GError        **error);
 char *     windows_product_name     (void);
 #endif
 
-
-#endif

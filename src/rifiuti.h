@@ -5,8 +5,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_H
-#define _RIFIUTI_H
+#pragma once
 
 #include "utils-conv.h"
 
@@ -29,4 +28,3 @@
 #define LEGACY_RECORD_SIZE      ((WIN_PATH_MAX) + 20)        /* 280 bytes */
 #define UNICODE_RECORD_SIZE     ((WIN_PATH_MAX) * 3 + 20)    /* 800 bytes */
 
-#endif

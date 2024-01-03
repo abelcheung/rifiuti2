@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_UTILS_ERROR_H
-#define _RIFIUTI_UTILS_ERROR_H
+#pragma once
 
 #include <glib.h>
 
@@ -50,4 +49,3 @@ GQuark rifiuti_record_error_quark (void);
 #define R2_MISC_ERROR (rifiuti_misc_error_quark ())
 GQuark rifiuti_misc_error_quark (void);
 
-#endif

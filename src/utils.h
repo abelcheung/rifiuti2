@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_UTILS_H
-#define _RIFIUTI_UTILS_H
+#pragma once
 
 /*
  * Rifiuti itself only need _POSIX_C_SOURCE == 1 for usage of
@@ -235,4 +234,3 @@ void          hexdump                     (void             *start,
 
 void          do_parse_records            (ParseIdxFunc      func);
 
-#endif

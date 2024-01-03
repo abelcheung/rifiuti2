@@ -4,8 +4,7 @@
  * Please see LICENSE file for more info.
  */
 
-#ifndef _RIFIUTI_UTILS_IO_H
-#define _RIFIUTI_UTILS_IO_H
+#pragma once
 
 #include <glib.h>
 
@@ -14,5 +13,3 @@ void              close_handles              (void);
 bool              get_tempfile               (GError   **error);
 bool              clean_tempfile             (char      *dest,
                                               GError   **error);
-
-#endif
