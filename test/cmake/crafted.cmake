@@ -66,16 +66,18 @@ set_tests_properties(d_BadUniEnc_Prep
 
 
 #
-# Truncated file
+# Bad record, including bad time / path and truncated file
 #
 
-add_test(NAME f_TruncatedFile
+add_test(NAME f_BadRecords
     COMMAND rifiuti INFO2-trunc
     WORKING_DIRECTORY ${sample_dir})
-set_tests_properties(f_TruncatedFile
+set_tests_properties(f_BadRecords
     PROPERTIES
         LABELS "info2;crafted"
-        PASS_REGULAR_EXPRESSION "5: Record is truncated")
+        PASS_REGULAR_EXPRESSION [=[
+ 4: File deletion time is suspicious or broken
+ 5: Record is truncated]=])
 
 
 #
@@ -83,12 +85,13 @@ set_tests_properties(f_TruncatedFile
 #
 
 # TODO different tests for stdout and stderr
-add_test(NAME d_TruncatedFile
+add_test(NAME d_BadRecords
     COMMAND rifiuti-vista dir-badfiles
     WORKING_DIRECTORY ${sample_dir})
-set_tests_properties(d_TruncatedFile
+set_tests_properties(d_BadRecords
     PROPERTIES
         LABELS "recycledir;crafted"
         PASS_REGULAR_EXPRESSION [=[
 \$IF47Q09: File is not a \$Recycle\.bin index
+\$IW0RYW0\.rtf: File deletion time is suspicious or broken
 \$IX1JBL3\.djvu: Record is truncated]=])

@@ -193,6 +193,17 @@ _populate_record_data   (void     *buf,
     copy_field (record->winfiletime, buf, FILETIME_OFFSET, FILESIZE_OFFSET);
     record->winfiletime = GINT64_FROM_LE (record->winfiletime);
     record->deltime = win_filetime_to_gdatetime (record->winfiletime);
+    if (record->error == NULL)
+    {
+        GDateTime *now = g_date_time_new_now_utc ();
+
+        if (g_date_time_difference (record->deltime, now) > 525600000LL ||  // 1y
+            g_date_time_get_year (record->deltime) < 1995)
+            g_set_error_literal (&record->error, R2_REC_ERROR,
+                R2_REC_ERROR_DUBIOUS_TIME,
+                _("File deletion time is suspicious or broken"));
+        g_date_time_unref (now);
+    }
 
     /* File size or occupied cluster size */
     /* BEWARE! This is 32bit data casted to 64bit struct member */
