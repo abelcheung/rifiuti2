@@ -22,7 +22,7 @@
 
 typedef enum
 {
-    FORMAT_UNKNOWN,
+    FORMAT_UNKNOWN = -1,
     FORMAT_TEXT,
     FORMAT_XML,
     FORMAT_JSON,
@@ -31,12 +31,16 @@ typedef enum
 
 typedef struct _fmt_data {
     const char *friendly_name;
+
     // tmpl[0]=utf8 (max 32bit), 1=char (8bit), 2=ucs2 (16bit)
     // templates should use numeric printf format since
     // they are not proper characters, or non-printable
     // chars in case of UTF-8
     // namely `%u`, `%o`, `%d`, `%i`, `%x` and `%X`
     const char *fallback_tmpl[3];
+
+    // The output for file deletion status
+    const char *gone_outtext[3];
 } _fmt_data;
 
 

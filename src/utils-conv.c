@@ -16,18 +16,16 @@
 struct _fmt_data fmt[] = {
     // must match out_fmt enum order
     {
-        .friendly_name = "unknown format",
-        .fallback_tmpl = {"", "", ""},
-    },
-    {
         .friendly_name = "TSV format",
         .fallback_tmpl = {"<\\u%04X>", "<\\%02X>", "<\\u%04X>"},
+        .gone_outtext  = {"???", "FALSE", "TRUE"},
     },
     {
         .friendly_name = "XML format",
         // All paths are placed inside CDATA, using entities
         // can be confusing
         .fallback_tmpl = {"<\\u%04X>", "<\\%02X>", "<\\u%04X>"},
+        .gone_outtext  = {"unknown", "false", "true"},
     },
     {
         .friendly_name = "JSON format",
@@ -41,6 +39,7 @@ struct _fmt_data fmt[] = {
             // char to avoid collision and convert it back later
             "*u%04X"
         },
+        .gone_outtext  = {"null", "false", "true"},
     },
 };
 

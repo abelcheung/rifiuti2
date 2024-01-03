@@ -1083,6 +1083,7 @@ _print_text_record   (rbin_struct        *record,
     char         *output, **header;
     GString      *src;
     GDateTime    *dt;
+    extern struct _fmt_data fmt[];
 
     g_return_if_fail (record != NULL);
 
@@ -1096,10 +1097,7 @@ _print_text_record   (rbin_struct        *record,
                          g_date_time_ref      (record->deltime);
     header[1] = g_date_time_format (dt, "%F %T");
 
-    header[2] =
-        (record->gone == FILESTATUS_EXISTS) ? g_strdup("FALSE") :
-        (record->gone == FILESTATUS_GONE  ) ? g_strdup("TRUE")  :
-                                              g_strdup("???")   ;
+    header[2] = g_strdup(fmt[FORMAT_TEXT].gone_outtext[record->gone]);
 
     header[3] = (record->filesize == G_MAXUINT64) ?  // faulty
         g_strdup ("???") :
@@ -1125,6 +1123,7 @@ static void
 _print_xml_record   (rbin_struct        *record,
                      const metarecord   *meta)
 {
+    extern struct _fmt_data fmt[];
     char         *path, *dt_str;
     GDateTime    *dt;
     GString      *s, *src;
@@ -1151,9 +1150,7 @@ _print_xml_record   (rbin_struct        *record,
     g_string_append_printf (s, " time=\"%s\"", dt_str);
 
     g_string_append_printf (s, " gone=\"%s\"",
-        (record->gone == FILESTATUS_GONE  ) ? "true"  :
-        (record->gone == FILESTATUS_EXISTS) ? "false" :
-                                              "unknown");
+        fmt[FORMAT_XML].gone_outtext[record->gone]);
 
     if (record->filesize == G_MAXUINT64)  // faulty
         g_string_append_printf (s, " size=\"-1\"");
@@ -1188,6 +1185,7 @@ static void
 _print_json_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
+    extern struct _fmt_data fmt[];
     char         *path, *dt_str;
     GDateTime    *dt;
     GString      *src, *s;
@@ -1214,9 +1212,7 @@ _print_json_record   (rbin_struct        *record,
     g_string_append_printf (s, ", \"time\": \"%s\"", dt_str);
 
     g_string_append_printf (s, ", \"gone\": %s",
-        (record->gone == FILESTATUS_GONE  ) ? "true" :
-        (record->gone == FILESTATUS_EXISTS) ? "false":
-                                              "null");
+        fmt[FORMAT_JSON].gone_outtext[record->gone]);
 
     if (record->filesize == G_MAXUINT64)  // faulty
         g_string_append_printf (s, ", \"size\": null");
