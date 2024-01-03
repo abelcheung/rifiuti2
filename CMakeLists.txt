@@ -65,6 +65,8 @@ foreach(bin rifiuti rifiuti-vista)
             src/utils-conv.c
             src/utils-conv.h
             src/utils-error.h
+            src/utils-io.c
+            src/utils-io.h
             src/utils-platform.h
     )
     if(WIN32)

@@ -226,7 +226,7 @@ gboolean      rifiuti_init                (rbin_type         type,
 
 GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
 
-gboolean      dump_content                (GError          **error);
+bool          dump_content                (GError          **error);
 
 exitcode      rifiuti_cleanup             (GError          **error);
 

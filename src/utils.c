@@ -6,13 +6,12 @@
 
 #include "config.h"
 
-#include <stdbool.h>
 #include <locale.h>
 #include <glib/gi18n.h>
-#include <glib/gstdio.h>
 
 #include "utils-conv.h"
 #include "utils-error.h"
+#include "utils-io.h"
 #include "utils.h"
 #include "utils-platform.h"
 
@@ -93,9 +92,6 @@ static gboolean     live_mode          = FALSE;
 static char        *delim              = NULL;
 static char        *output_loc         = NULL;
 static char       **fileargs           = NULL;
-static FILE        *out_fh             = NULL; /*!< unused for Windows console */
-static FILE        *err_fh             = NULL; /*!< unused for Windows console */
-
        GPtrArray   *allidxfiles        = NULL;
        gboolean     isolated_index     = FALSE;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
@@ -548,46 +544,6 @@ win_filetime_to_gdatetime (int64_t win_filetime)
     return g_date_time_new_from_unix_utc (t);
 }
 
-// stdout / stderr handling, with special care
-// on Windows command prompt.
-
-static void
-_local_print (gboolean    is_stdout,
-              const char *str)
-{
-    FILE  *fh;
-
-    if (!g_utf8_validate (str, -1, NULL)) {
-        g_critical (_("String not in UTF-8 encoding: %s"), str);
-        return;
-    }
-
-    fh = is_stdout ? out_fh : err_fh;
-
-#ifdef G_OS_WIN32
-    if (fh == NULL)
-    {
-        wchar_t *wstr = g_utf8_to_utf16 (str, -1, NULL, NULL, NULL);
-        puts_wincon (is_stdout, wstr);
-        g_free (wstr);
-    }
-    else
-#endif
-        fputs (str, fh);
-}
-
-static void
-_local_printout (const char *str)
-{
-    _local_print (TRUE, str);
-}
-
-static void
-_local_printerr (const char *str)
-{
-    _local_print (FALSE, str);
-}
-
 
 /**
  * @brief Prepare for glib option group setup
@@ -727,18 +683,7 @@ rifiuti_init (rbin_type  type,
     GOptionContext *context;
 
     setlocale (LC_ALL, "");
-
-#ifdef G_OS_WIN32
-    if (! init_wincon_handle (FALSE))
-#endif
-        err_fh = stderr;
-    g_set_printerr_handler (_local_printerr);
-
-#ifdef G_OS_WIN32
-    if (! init_wincon_handle (TRUE))
-#endif
-        out_fh = stdout;
-    g_set_print_handler (_local_printout);
+    init_handles ();
 
     /* Initialize metadata struct */
     meta = g_malloc0 (sizeof (metarecord));
@@ -760,47 +705,6 @@ rifiuti_init (rbin_type  type,
     _opt_ctxt_setup (&context, type);
 
     return _opt_ctxt_parse (&context, argv, error);
-}
-
-
-/**
- * @brief Wrapper of `g_mkstemp()` that returns file handle
- * @param fh Reference to `FILE` pointer to store file handle
- * @param path Reference to char pointer to store temp file path
- * @param error A `GError` pointer to store potential problem
- * @return `TRUE` if successful, `FALSE` otherwise
- */
-static gboolean
-_get_tempfile (FILE   **fh,
-               char   **path,
-               GError **error)
-{
-    int     fd, e = 0;
-    char   *tmpl;
-
-    g_return_val_if_fail (fh   && ! *fh  , FALSE);
-    g_return_val_if_fail (path && ! *path, FALSE);
-
-    /* segfaults if string is pre-allocated in stack */
-    tmpl = g_strdup ("rifiuti-XXXXXX");
-
-    if (-1 == (fd = g_mkstemp(tmpl))) {
-        e = errno;
-        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
-            _("Can not create temp file: %s"), g_strerror(e));
-        return FALSE;
-    }
-
-    if (NULL == (*fh = fdopen (fd, "wb"))) {
-        e = errno;
-        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
-            _("Can not open temp file: %s"), g_strerror(e));
-        g_close (fd, NULL);
-        return FALSE;
-    }
-
-    *path = tmpl;
-    return TRUE;
 }
 
 
@@ -1009,18 +913,6 @@ void
 do_parse_records (ParseIdxFunc func)
 {
     g_ptr_array_foreach (allidxfiles, (GFunc) func, meta);
-}
-
-/**
- * @brief Close all output / error file handles before exit
- */
-static void
-_close_handles (void)
-{
-    if (out_fh != NULL)
-        fclose (out_fh);
-    if (err_fh != NULL)
-        fclose (err_fh);
 }
 
 
@@ -1370,26 +1262,16 @@ _print_json_footer (void)
  * @param error Reference of `GError` pointer to store potential problem
  * @return `TRUE` if output writing is successful, `FALSE` otherwise
  */
-gboolean
+bool
 dump_content (GError **error)
 {
-    FILE *tmp_fh = NULL, *prev_fh = NULL;
-    char *tmp_path = NULL;
     void (*print_header_func)(const metarecord *);
     void (*print_record_func)(rbin_struct *, const metarecord *);
     void (*print_footer_func)();
 
-    if (output_loc)
-    {
-        // TODO use g_file_set_contents_full in glib 2.66
-        if (_get_tempfile (&tmp_fh, &tmp_path, error))
-        {
-            prev_fh = out_fh;
-            out_fh  = tmp_fh;
-        }
-        else
-            return FALSE;
-    }
+    // TODO use g_file_set_contents_full in glib 2.66
+    if (output_loc && ! get_tempfile (error))
+            return false;
 
     switch (output_format)
     {
@@ -1419,25 +1301,10 @@ dump_content (GError **error)
     if (print_footer_func != NULL)
         (*print_footer_func) ();
 
-    if (!tmp_path)
-        return TRUE;
-
-    if (prev_fh)
-    {
-        fclose (out_fh);
-        out_fh = prev_fh;
-    }
-
-    int result = g_rename (tmp_path, output_loc);
-    if (result != 0)
-    {
-        int e = errno;
-        g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
-            _("%s. Temp file '%s' can't be moved to destination."),
-            g_strerror(e), tmp_path);
-    }
-    g_free (tmp_path);
-    return (result == 0);
+    if (output_loc)
+        return clean_tempfile (output_loc, error);
+    else
+        return true;
 }
 
 
@@ -1573,7 +1440,7 @@ rifiuti_cleanup   (GError   **error)
     g_free (legacy_encoding);
     g_free (delim);
 
-    _close_handles ();
+    close_handles ();
 
 #ifdef G_OS_WIN32
     cleanup_windows_res ();
