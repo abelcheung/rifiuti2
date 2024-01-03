@@ -33,7 +33,7 @@ unsigned char   driveletters[28] =
  * If success, infile will be set to file pointer and other args
  * will be filled, otherwise file pointer = NULL
  */
-static gboolean
+static bool
 _validate_index_file   (const char   *filename,
                         FILE        **infile,
                         GError      **error)
@@ -43,8 +43,8 @@ _validate_index_file   (const char   *filename,
     uint32_t        ver;
     int             e;
 
-    g_return_val_if_fail (filename && *filename, FALSE);
-    g_return_val_if_fail (infile && ! *infile, FALSE);
+    g_return_val_if_fail (filename && *filename, false);
+    g_return_val_if_fail (infile && ! *infile, false);
 
     g_debug ("Start file validation for '%s'...", filename);
 
@@ -53,7 +53,7 @@ _validate_index_file   (const char   *filename,
         e = errno;
         g_set_error (error, G_FILE_ERROR, g_file_error_from_errno(e),
             _("Can not open file: %s"), g_strerror(e));
-        return FALSE;
+        return false;
     }
 
     /* empty recycle bin = 20 bytes */
@@ -127,13 +127,13 @@ _validate_index_file   (const char   *filename,
     rewind (fp);
     *infile = fp;
     meta->version = ver;
-    return TRUE;
+    return true;
 
     validation_fail:
 
     g_free (buf);
     fclose (fp);
-    return FALSE;
+    return false;
 }
 
 

@@ -217,7 +217,7 @@ typedef void (*ParseIdxFunc)              (const char       *path,
                                            metarecord       *meta);
 
 /* shared functions */
-gboolean      rifiuti_init                (rbin_type         type,
+bool          rifiuti_init                (rbin_type         type,
                                            char             *usage_param,
                                            char             *usage_summary,
                                            char           ***argv,

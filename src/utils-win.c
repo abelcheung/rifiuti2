@@ -4,7 +4,6 @@
  * Please see LICENSE file for more info.
  */
 
-#include <stdbool.h>
 #include <lmcons.h>
 #include <aclapi.h>
 #include <authz.h>
@@ -305,13 +304,13 @@ windows_product_name (void)
 /*!
  * Fetch ACL access mask using Authz API
  */
-gboolean
+bool
 can_list_win32_folder (const char   *path,
                        GError      **error)
 {
     char                  *errmsg = NULL;
     gunichar2             *wpath;
-    gboolean               ret = FALSE;
+    bool                   ret = false;
     PSID                   sid;
     DWORD                  dw, dw2;
     PSECURITY_DESCRIPTOR   sec_desc;
@@ -322,11 +321,11 @@ can_list_win32_folder (const char   *path,
     AUTHZ_ACCESS_REPLY            authz_reply;
 
     if (NULL == (sid = _get_user_sid (error)))
-        return FALSE;
+        return false;
 
     wpath = g_utf8_to_utf16 (path, -1, NULL, NULL, NULL);
     if (wpath == NULL)
-        return FALSE;
+        return false;
 
     if ( !AuthzInitializeResourceManager (AUTHZ_RM_FLAG_NO_AUDIT,
                 NULL, NULL, NULL, NULL, &authz_manager) )
@@ -375,7 +374,7 @@ can_list_win32_folder (const char   *path,
          */
         if ( (mask & FILE_LIST_DIRECTORY) == FILE_LIST_DIRECTORY &&
                 (mask & FILE_READ_EA) == FILE_READ_EA )
-            ret = TRUE;
+            ret = true;
         else {
             g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
                 _("Error listing dir '%s': disallowed under Windows ACL."), path);
@@ -402,8 +401,8 @@ can_list_win32_folder (const char   *path,
  * Used only when output is Windows native console. For all other cases
  * unix-style file stream is used.
  */
-gboolean
-init_wincon_handle (gboolean is_stdout)
+bool
+init_wincon_handle (bool is_stdout)
 {
     HANDLE h;
     DWORD console_type;
@@ -432,19 +431,19 @@ init_wincon_handle (gboolean is_stdout)
                 wincon_fh = h;
             else
                 winerr_fh = h;
-            return TRUE;
+            return true;
         case FILE_TYPE_PIPE:
             g_debug ("GetFileType() = %s", "FILE_TYPE_PIPE");
-            return FALSE;
+            return false;
         default:
             g_debug ("GetFileType() = %lu", console_type);
-            return FALSE;
+            return false;
     }
 }
 
 
 void
-puts_wincon (gboolean       is_stdout,
+puts_wincon (bool           is_stdout,
              const wchar_t *wstr)
 {
     HANDLE h = is_stdout ? wincon_fh : winerr_fh;

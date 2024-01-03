@@ -6,16 +6,17 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <inttypes.h>
 #include <glib.h>
 
 #ifdef G_OS_WIN32
 void       gui_message              (const char     *message);
 char *     get_win_timezone_name    (void);
-gboolean   can_list_win32_folder    (const char     *path,
+bool       can_list_win32_folder    (const char     *path,
                                      GError        **error);
-gboolean   init_wincon_handle       (gboolean        is_stdout);
-void       puts_wincon              (gboolean        is_stdout,
+bool       init_wincon_handle       (bool            is_stdout);
+void       puts_wincon              (bool            is_stdout,
                                      const wchar_t  *wstr);
 void       cleanup_windows_res      (void);
 #endif

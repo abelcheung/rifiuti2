@@ -4,7 +4,6 @@
  * Please see LICENSE file for more info.
  */
 
-#include <stdbool.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>

@@ -4,7 +4,6 @@
  * Please see LICENSE file for more info.
  */
 
-#include <stdbool.h>
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 
@@ -208,7 +207,7 @@ _parse_record_cb   (const char *index_file,
     uint64_t           version = 0;
     gsize              bufsize;
     void              *buf = NULL;
-    extern gboolean    isolated_index;
+    extern bool        isolated_index;
     GError            *error = NULL;
 
     basename = g_path_get_basename (index_file);
@@ -283,12 +282,12 @@ _compare_idx_versions (rbin_struct *record,
  * @param meta The metadata for recycle bin
  * @return `FALSE` if multiple versions are found, otherwise `TRUE`
  */
-static gboolean
+static bool
 _set_overall_rbin_version (metarecord *meta)
 {
     if (! meta->records->len) {
         meta->version = VERSION_NOT_FOUND;
-        return TRUE;
+        return true;
     }
 
     meta->version = ((rbin_struct *)(meta->records->pdata[0]))->version;

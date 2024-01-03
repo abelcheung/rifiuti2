@@ -42,7 +42,7 @@ static int
 _check_file_args (const char  *path,
                   GPtrArray   *list,
                   rbin_type    type,
-                  gboolean    *isolated_index,
+                  bool        *isolated_index,
                   GError     **error);
 
 
@@ -86,14 +86,14 @@ static char *os_strings[] = {
 
 
 static out_fmt      output_format      = FORMAT_UNKNOWN;
-static gboolean     no_heading         = FALSE;
+static bool         no_heading         = false;
 static gboolean     use_localtime      = FALSE;
 static gboolean     live_mode          = FALSE;
 static char        *delim              = NULL;
 static char        *output_loc         = NULL;
 static char       **fileargs           = NULL;
        GPtrArray   *allidxfiles        = NULL;
-       gboolean     isolated_index     = FALSE;
+       bool         isolated_index     = false;
        char        *legacy_encoding    = NULL; /*!< INFO2 only, or upon request */
        metarecord  *meta               = NULL;
 
@@ -236,7 +236,7 @@ _set_opt_noheading (const gchar *opt_name,
     UNUSED(value);
     UNUSED(data);
 
-    no_heading = TRUE;
+    no_heading = true;
 
     return _set_out_format (FORMAT_TEXT, error);
 }
@@ -255,7 +255,7 @@ _set_opt_delim (const gchar *opt_name,
     UNUSED(opt_name);
     UNUSED(data);
 
-    static gboolean seen = FALSE;
+    static bool seen = false;
 
     if (seen)
     {
@@ -263,7 +263,7 @@ _set_opt_delim (const gchar *opt_name,
             _("Multiple delimiter options disallowed."));
         return FALSE;
     }
-    seen = TRUE;
+    seen = true;
 
     delim = (*value) ? filter_escapes (value) : g_strdup ("");
 
@@ -285,7 +285,7 @@ _set_output_path (const gchar *opt_name,
     UNUSED(opt_name);
     UNUSED(data);
 
-    static gboolean seen     = FALSE;
+    static bool seen = false;
 
     if (seen)
     {
@@ -293,7 +293,7 @@ _set_output_path (const gchar *opt_name,
             _("Multiple output destinations disallowed."));
         return FALSE;
     }
-    seen = TRUE;
+    seen = true;
 
     if ( *value == '\0' )
     {
@@ -348,8 +348,8 @@ _check_legacy_encoding (const gchar *opt_name,
     UNUSED(opt_name);
     UNUSED(data);
 
-    static gboolean seen     = FALSE;
-    GError         *conv_err = NULL;
+    static bool seen     = false;
+    GError     *conv_err = NULL;
 
     if (seen)
     {
@@ -357,7 +357,7 @@ _check_legacy_encoding (const gchar *opt_name,
             _("Multiple encoding options disallowed."));
         return FALSE;
     }
-    seen = TRUE;
+    seen = true;
 
     if ( *enc == '\0' )
     {
@@ -613,7 +613,7 @@ _opt_ctxt_setup (GOptionContext **context,
  * @return `TRUE` if argument parsing succeeds.
  * `FALSE` on failure, and sets `error` as well.
  */
-static gboolean
+static bool
 _opt_ctxt_parse (GOptionContext **context,
                  char          ***argv,
                  GError         **error)
@@ -673,7 +673,7 @@ _free_record_cb (rbin_struct *record)
 /**
  * @brief Initialize program setup
  */
-gboolean
+bool
 rifiuti_init (rbin_type  type,
               char      *usage_param,
               char      *usage_summary,
@@ -715,7 +715,7 @@ rifiuti_init (rbin_type  type,
  * @param error Pointer to `GError` for error reporting
  * @return `TRUE` on success, `FALSE` if folder can't be opened
  */
-static gboolean
+static bool
 _populate_index_file_list (GPtrArray   *list,
                            const char  *path,
                            GError     **error)
@@ -728,12 +728,12 @@ _populate_index_file_list (GPtrArray   *list,
     // when in fact the directory content is inaccessible.
 #ifdef G_OS_WIN32
     if ( !can_list_win32_folder (path, error) ) {
-        return FALSE;
+        return false;
     }
 #endif
 
     if (NULL == (dir = g_dir_open (path, 0, error)))
-        return FALSE;
+        return false;
 
     pattern1 = g_pattern_spec_new ("$I??????.*");
     pattern2 = g_pattern_spec_new ("$I??????");
@@ -758,7 +758,7 @@ _populate_index_file_list (GPtrArray   *list,
     g_pattern_spec_free (pattern1);
     g_pattern_spec_free (pattern2);
 
-    return TRUE;
+    return true;
 }
 
 
@@ -768,7 +768,7 @@ _populate_index_file_list (GPtrArray   *list,
  * @return `TRUE` if `desktop.ini` found to contain recycle bin
  *         identifier, `FALSE` otherwise
  */
-static gboolean
+static bool
 _found_desktop_ini (const char *path)
 {
     char *filename = NULL, *content = NULL, *found = NULL;
@@ -777,7 +777,7 @@ _found_desktop_ini (const char *path)
     if (!g_file_test (filename, G_FILE_TEST_IS_REGULAR))
     {
         g_free (filename);
-        return FALSE;
+        return false;
     }
 
     if (g_file_get_contents (filename, &content, NULL, NULL))
@@ -857,7 +857,7 @@ static gboolean
 _check_file_args (const char  *path,
                   GPtrArray   *list,
                   rbin_type    type,
-                  gboolean    *isolated_index,
+                  bool        *isolated_index,
                   GError     **error)
 {
     g_debug ("Start checking path '%s'...", path);
@@ -1456,7 +1456,7 @@ hexdump    (void     *start,
 {
     GString *s = g_string_new ("");
     size_t i = 0;
-    while (TRUE)
+    while (true)
     {
         if (i % 16 == 0)
         {

@@ -4,7 +4,6 @@
  * Please see LICENSE file for more info.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <glib.h>
