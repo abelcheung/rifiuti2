@@ -1,10 +1,10 @@
 .\"-
 .\" Copyright (c) 2008 Anthony Wong <ypwong@debian.org>
-.\" Copyrgith (c) 2015-2023 Abel Cheung <abelcheung@gmail.com>
+.\" Copyrgith (c) 2015-2024 Abel Cheung <abelcheung@gmail.com>
 .\"
 .\" rifiuti2 is released under Revised BSD License.
 
-.TH "@PROJECT_NAME@" "1" "Dec 2023" "@PROJECT_VERSION@" "@PROJECT_DESCRIPTION@"
+.TH "@PROJECT_NAME@" "1" "Jan 2024" "@PROJECT_VERSION@" "@PROJECT_DESCRIPTION@"
 
 .SH NAME
 @PROJECT_NAME@ \[em] @PROJECT_DESCRIPTION@
@@ -14,27 +14,26 @@
 .B "\fCrifiuti\/\fP \fRor\/\fP \fCrifiuti-vista\/\fP"
 .B "[\-h | \-v | \-\-help | \-\-version]"
 .br
-.B "\fCrifiuti\/\fP [\-x | [\-n] [\-t \fIdelim\/\fP]] [\-z]"
-.B "[\-l \fIcodepage\/\fP] [\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_file\/\fP"
+.B "\fCrifiuti\/\fP [\-l \fIcodepage\/\fP]"
+.B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
+.B "[\-z] [\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_file\/\fP"
 .br
-.B "\fCrifiuti-vista\/\fP [\-x | [\-n] [\-t \fIdelim\/\fP]] [\-z]"
-.B "[\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_or_dir\/\fP"
+.B "\fCrifiuti-vista\/\fP"
+.B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
+.B "[\-z] [\-o \fIoutfile\/\fP] [\-\-] \fIrecycle_dir_or_file\/\fP"
 .br
 (for Windows and WSL)
-.B "\fCrifiuti-vista\/\fP --live [\-x | [\-n] [\-t \fIdelim\/\fP]]"
+.B "\fCrifiuti-vista\/\fP --live"
+.B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
 .B "[\-z] [\-o \fIoutfile\/\fP]
 .ad n
 
 .SH DESCRIPTION
 .nr PI 2n
-This manpage is now obsolete. Please read REAMDE and Wiki
-from online repository for more information.
+This manpage is now obsolete. Please read corresponding
+usage help from GitHub Wiki instead.
 .IP \[bu]
-@PROJECT_HOMEPAGE_URL@
-.IP \[bu]
-@PROJECT_HOMEPAGE_URL@wiki/
-.IP \[bu]
-@PROJECT_GH_PAGE@
+@PROJECT_TOOL_USAGE_URL@
 
 .SH COPYRIGHT
 @PROJECT_NAME@ is released under Revised BSD license.

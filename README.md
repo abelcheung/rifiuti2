@@ -15,6 +15,11 @@ provides, please [check out official site][site] for more info.
 
 Latest features and changes can be found in [NEWS file](NEWS.md).
 
+### 0.8.1
+
+JSON output format, WSL v2 support, and improve robustness
+when reading broken data.
+
 ### 0.8.0
 
 - Windows binaries will be published via [MSYS2 GitHub workflow](https://github.com/msys2/setup-msys2).

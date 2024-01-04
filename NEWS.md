@@ -2,10 +2,22 @@
 
 ### Feature
 
-- `rifiuti2` compiled under [Windows Subsystem for Linux][wsl] can do
-  live probation of Windows host system recycle bins
+- ([#35](https://github.com/abelcheung/rifiuti2/issues/35))
+  `rifiuti2` under [Windows Subsystem for Linux][wsl] v2
+  can do live probation of Windows host recycle bins
+- ([#39](https://github.com/abelcheung/rifiuti2/issues/39))
+  JSON output format
 
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/
+
+### Bug Fix and minor change
+
+- All trash records can display its own error, instead of having
+  a collective, generic error on termination of program
+- ([#42](https://github.com/abelcheung/rifiuti2/issues/42))
+  Display partial path if index file truncation happens but
+  doesn't affect integrity of other data fields
+- Perform basic validation on trash file deletion time
 
 ## 0.8.0
 
@@ -14,8 +26,10 @@
 - ([#21](https://github.com/abelcheung/rifiuti2/issues/21)) Adopts CMake as build system, and drop Autoconf/Automake completely. Document files have been restructured as well.
 - ([#18](https://github.com/abelcheung/rifiuti2/issues/18)) Gettext support is removed, its m4 macro versioning is placing a burden on maintainers and packagers.
   - Same for the translation. No contribution so far, probably this is unneeded.
-- 64 bit Windows binary only supports Windows ≥ 8.1
-  - for earlier (7, 8.0) x64 Windows, use 32 bit binary
+- 64 bit Windows binary requires [Universal C runtime][ucrt], which
+  needs extra download for Windows 8.1 or below.
+
+[ucrt]: https://support.microsoft.com/en-us/topic/update-for-universal-c-runtime-in-windows-c0514201-7fe6-95a3-b0a5-287930f3560c
 
 ### Feature
 
