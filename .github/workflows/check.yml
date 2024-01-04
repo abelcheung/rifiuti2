@@ -4,17 +4,19 @@ on:
   push:
     paths-ignore:
       - '**.md'
-      - '**.txt'
       - 'docs/**'
+      - 'LICENSE*'
       - '.*'
+      - '!.github/**'
     branches:
       - master
   pull_request:
     paths-ignore:
       - '**.md'
-      - '**.txt'
       - 'docs/**'
+      - 'LICENSE*'
       - '.*'
+      - '!.github/**'
 
 jobs:
   check:
