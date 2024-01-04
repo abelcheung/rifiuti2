@@ -111,7 +111,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: '*.*'
+          artifacts: 'rifiuti2-*'
           artifactErrorsFailBuild: true
           draft: true
           bodyFile: 'notes.md'
