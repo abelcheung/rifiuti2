@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2003, Keith J. Jones.
- * Copyright (C) 2007-2023, Abel Cheung.
+ * Copyright (C) 2007-2024, Abel Cheung.
  * rifiuti2 is released under Revised BSD License.
  * Please see LICENSE file for more info.
  */

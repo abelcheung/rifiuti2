@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023, Abel Cheung
+ * Copyright (C) 2019-2024, Abel Cheung
  * rifiuti2 is released under Revised BSD License.
  * Please see LICENSE file for more info.
  */
