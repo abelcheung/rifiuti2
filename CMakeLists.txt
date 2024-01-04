@@ -124,6 +124,7 @@ install(
 include(CTest)
 add_subdirectory(test)
 
+set(CPACK_SOURCE_PACKAGE_FILE_NAME ${PROJECT_NAME}-${PROJECT_VERSION})
 if(WIN32)
     set(CPACK_GENERATOR "ZIP")
     set(CPACK_SOURCE_GENERATOR "ZIP")
