@@ -1,10 +1,12 @@
 ---
-title:  "Reason for abandoning MSYS 1.0"
-date:   2015-05-15T11:26:02+0800
-last_modified_at: 2019-05-31T14:02:48+0800
+title: "Reason for abandoning MSYS 1.0"
+date: 2015-05-15T11:26:02+0800
+last_modified_at: 2024-05-01T02:14:00Z
 category: development
 redirect_from: /development/2015/05/15/reason-abandon-msys1.html
 tags: [mingw,windows]
+excerpt: >
+  MSYS 1.0 was completely ditched, and later proven a correct choice.
 ---
 
 There are multiple reasons for abandoning MSYS 1.0 as supported compile
@@ -29,6 +31,22 @@ platform, in favor of [MSYS2][1].
 again (e.g. 64-bit support) since 2018, but it's too little too late now.
 {: .callout .callout-info}
 
+**Yet another 5 years later:** Indeed the effort was temporary and fruitless.
+The last updated package happened in 2020, long before the site's
+[acqusition by Chinese company][4] which rendered it almost unreachable ever since.
+{: .callout .callout-info}
+
+<hr class="short" />
+
+<div class="table-responsive small" markdown="1">
+
+| Date | ChangeLog |
+| --- | --- |
+| `2019-05-31` | Update on MSYS revival |
+| `2024-05-01` | Replace links, another update of death status for MSYS |
+{: .table .table-condensed}
+
 [1]: https://www.msys2.org/
-[2]: https://developer.gnome.org/glib/stable/glib-Windows-Compatibility-Functions.html#g-win32-get-command-line
+[2]: https://developer-old.gnome.org/glib/unstable/glib-Windows-Compatibility-Functions.html#g-win32-get-command-line
 [3]: https://osdn.net/projects/mingw/
+[4]: https://web.archive.org/web/20240207212816/https://tsukurimashou.org/osdn.php.en
