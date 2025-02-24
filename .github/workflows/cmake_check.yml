@@ -50,6 +50,11 @@ jobs:
         cmakeVersion: ${{ matrix.cmake_ver }}
         ninjaVersion: latest
 
+    - name: Install prerequisites
+      run: |
+        sudo apt-get -qy update
+        sudo -E DEBIAN_FRONTEND=noninteractive apt-get -qy install libglib2.0-dev
+
     - name: Check cmake invocation
       run: |
         mkdir build
