@@ -97,14 +97,6 @@ jobs:
         with:
           name: binary
 
-      # BUG: No arg with space can be passed into 'args' below,
-      # quotes would mess up the command line passed into docker
-      - uses: thomasdesr/minisign-action@v1
-        with:
-          args: -S -m *.xz *.zip
-          minisign_key: ${{ secrets.MINISIGN_SECKEY }}
-          password: ${{ secrets.MINISIGN_PASS }}
-
       - name: Create release notes fragment
         run: |
           echo ${{ vars.RELEASE_NOTES }} | base64 -d - > notes.md
