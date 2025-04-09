@@ -26,7 +26,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             shell: bash
-          - os: macos-14
+          - os: macos-13
             shell: bash
           - os: windows-2022
             msystem: 'MINGW32'
@@ -66,7 +66,7 @@ jobs:
         libxml2-utils
 
     - name: Install dependencies (MacOS)
-      if: matrix.os == 'macos-14'
+      if: matrix.os == 'macos-13'
       run: |
         brew install cmake ninja
 
