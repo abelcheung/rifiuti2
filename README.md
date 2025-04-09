@@ -15,6 +15,11 @@ provides, please [check out official site][site] for more info.
 
 Latest features and changes can be found in [NEWS file](NEWS.md).
 
+### 0.8.2
+
+- Bug fix release for a few less common architectures.
+- Enable GitHub artifact attestation.
+
 ### 0.8.1
 
 JSON output format, WSL v2 support, and improve robustness

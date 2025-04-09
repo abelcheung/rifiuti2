@@ -1,3 +1,18 @@
+## 0.8.2
+
+### Bug Fix
+
+- ([#47](https://github.com/abelcheung/rifiuti2/issues/47),
+  thanks to @polkornyipt) Fix certain INFO2 field size for
+  some 64bit architectures, so INFO2 files won't be
+  misidentified
+- Fix build on GNU/Hurd
+
+### Other changes
+
+- Drop all `minisign` usage
+- Enable GitHub artifact attestation
+
 ## 0.8.1
 
 ### Feature
