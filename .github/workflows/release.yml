@@ -44,9 +44,9 @@ jobs:
       run: |
         cmake --build build -v --target package
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: binary
+        name: binary-${{ matrix.msystem }}
         path: 'build/rifiuti2-*.zip'
         if-no-files-found: error
 
@@ -72,7 +72,7 @@ jobs:
       run: |
         cmake --build build -v --target package_source
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: source
         path: 'build/rifiuti2-*.xz'
@@ -90,14 +90,15 @@ jobs:
     environment: release
     steps:
       - name: Get source artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: source
 
       - name: Get binary artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: binary
+          pattern: binary-*
+          merge-multiple: true
 
       - uses: actions/attest-build-provenance@v2
         with:
