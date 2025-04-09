@@ -54,6 +54,7 @@ jobs:
           toolchain:p
           glib2:p
           cmake:p
+          libxml2:p
 
     - name: Install dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-24.04'
