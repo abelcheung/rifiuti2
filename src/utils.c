@@ -466,7 +466,7 @@ _fileargs_handler (GOptionContext *context,
         return FALSE;
     }
 
-#if (defined G_OS_WIN32 || defined __GLIBC__)
+#if (defined G_OS_WIN32 || defined __linux__)
     {
         meta->filename = g_strdup ("(current system)");
 
@@ -579,7 +579,7 @@ _opt_ctxt_setup (GOptionContext **context,
             g_option_group_add_entries (main_group, rbinfile_options);
             break;
         case RECYCLE_BIN_TYPE_DIR:
-#if (defined G_OS_WIN32 || defined __GLIBC__)
+#if (defined G_OS_WIN32 || defined __linux__)
             g_option_group_add_entries (main_group, live_options);
 #else
             UNUSED (live_options);
@@ -941,7 +941,7 @@ _print_text_header (const metarecord *meta)
         g_print ("\n");
     }
 
-#if (defined G_OS_WIN32 || defined __GLIBC__)
+#if (defined G_OS_WIN32 || defined __linux__)
     if (live_mode)
     {
         char *product_name = windows_product_name();

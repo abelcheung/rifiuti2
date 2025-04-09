@@ -21,7 +21,7 @@ void       puts_wincon              (bool            is_stdout,
 void       cleanup_windows_res      (void);
 #endif
 
-#if (defined G_OS_WIN32 || defined __GLIBC__)
+#if (defined G_OS_WIN32 || defined __linux__)
 GPtrArray *enumerate_drive_bins     (GError        **error);
 char *     windows_product_name     (void);
 #endif
