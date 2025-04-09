@@ -95,7 +95,7 @@ typedef struct _rbin_meta
      * @note It is either 280 or 800 bytes, depending on Windows version
      * @attention For `INFO2` only. `$Recycle.bin` has only one record per file.
      */
-    gsize recordsize;
+    uint32_t recordsize;
     /**
      * @brief Total entry ever existed in `INFO2` file
      * @note On Windows 95 and NT 4.x, `INFO2` keeps a field for counting number

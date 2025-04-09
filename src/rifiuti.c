@@ -119,7 +119,7 @@ _validate_index_file   (const char   *filename,
 
         default:
             g_set_error (error, R2_FATAL_ERROR, R2_FATAL_ERROR_ILLEGAL_DATA,
-                _("Illegal INFO2 of record size %" G_GSIZE_FORMAT),
+                "Illegal INFO2 of record size %" PRIu32,
                 meta->recordsize);
             goto validation_fail;
     }
