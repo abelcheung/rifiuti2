@@ -38,7 +38,7 @@ function(createXmlTestSet id input)  # $ARGN as extra rifiuti args
 
     # XML/DTD validation part
     add_test(NAME ${wellform_pfx}_Prep
-        COMMAND ${prog} -o ${wellform_out} ${ARGN} -x ${input}
+        COMMAND ${prog} -o ${wellform_out} ${ARGN} -f xml ${input}
         WORKING_DIRECTORY ${sample_dir})
 
     add_test(NAME ${wellform_pfx}
@@ -107,7 +107,7 @@ createXmlTestSet(3 INFO-95-ja-1 -l CP932)
 # is empty because no index can be found; but empty
 # INFO2 still contains version info
 generate_simple_comparison_test (NoVerIfDirEmpty 0
-    dir-empty dir-empty.xml "xml" -x)
+    dir-empty dir-empty.xml "xml" -f xml)
 
 generate_simple_comparison_test (HasVerIfInfo2Empty 1
-    INFO2-empty INFO2-empty.xml "xml" -x)
+    INFO2-empty INFO2-empty.xml "xml" -f xml)
