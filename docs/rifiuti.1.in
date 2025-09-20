@@ -11,19 +11,19 @@
 
 .SH SYNOPSIS
 .na
-.B "\fCrifiuti\/\fP \fRor\/\fP \fCrifiuti-vista\/\fP"
+.B "\fBrifiuti\/\fP \fRor\/\fP \fBrifiuti-vista\/\fP"
 .B "[\-h | \-v | \-\-help | \-\-version]"
 .br
-.B "\fCrifiuti\/\fP [\-l \fIcodepage\/\fP]"
+.B "\fBrifiuti\/\fP [\-l \fIcodepage\/\fP]"
 .B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
 .B "[\-z] [\-o \fIoutfile\/\fP] [\-\-] \fIinfo2_file\/\fP"
 .br
-.B "\fCrifiuti-vista\/\fP"
+.B "\fBrifiuti-vista\/\fP"
 .B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
 .B "[\-z] [\-o \fIoutfile\/\fP] [\-\-] \fIrecycle_dir_or_file\/\fP"
 .br
 (for Windows and WSL)
-.B "\fCrifiuti-vista\/\fP --live"
+.B "\fBrifiuti-vista\/\fP --live"
 .B "[\-f xml | \-f json | [\-n] [\-t \fIdelim\/\fP]]"
 .B "[\-z] [\-o \fIoutfile\/\fP]
 .ad n
@@ -41,16 +41,16 @@ usage help from GitHub Wiki instead.
 .SH AUTHOR
 The main author is Abel Cheung
 .nh
-\fC<abelcheung@gmail.com>\fP
+\fB<abelcheung@gmail.com>\fP
 .hy
 .PP
 The original author of rifiuti is Keith J. Jones
 .nh
-\fC<keith.jones@foundstone.com>\fP
+\fB<keith.jones@foundstone.com>\fP
 .hy
 .PP
 Anthony Wong
 .nh
-\fC<ypwong@debian.org>\fP
+\fB<ypwong@debian.org>\fP
 .hy
 helped in Debian packaging and was author of the original manpage.
