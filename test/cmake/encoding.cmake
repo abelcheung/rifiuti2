@@ -104,6 +104,10 @@ generate_simple_comparison_test("LegacyEncOK2" 1
 # Original file is in Windows ANSI (CP1252), but intentionally
 # treat it as Shift-JIS, and got hex escapes
 #
+# Skip LegacyEncWrong tests for macos (#48)
+# Apple's libiconv implementation always do transliteration,
+# behavior is different from GNU libiconv
+
 
 add_encoding_test_with_cwd(f_LegacyEncWrong_Prep
     ${sample_dir}
@@ -112,12 +116,24 @@ add_encoding_test_with_cwd(f_LegacyEncWrong_Prep
     -DOUTFILE=${bindir}/f_LegacyEncWrong.output
 )
 
-set_tests_properties(f_LegacyEncWrong_Prep
-    PROPERTIES
-    PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
+if(APPLE)
+    set_tests_properties(
+        f_LegacyEncWrong_Prep
+        PROPERTIES DISABLED TRUE)
+else()
+    set_tests_properties(f_LegacyEncWrong_Prep
+        PROPERTIES
+        PASS_REGULAR_EXPRESSION "could not be interpreted in .+ encoding")
+endif()
 
 generate_simple_comparison_test("LegacyEncWrong" 1
     "" "INFO2-sample2-wrong-enc.txt" "encoding|xfail")
+
+if(APPLE)
+    set_tests_properties(
+        f_LegacyEncWrong
+        PROPERTIES DISABLED TRUE)
+endif()
 
 #
 # Legacy UNC entries
