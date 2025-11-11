@@ -48,7 +48,7 @@ function(createXmlTestSet id input)  # $ARGN as extra rifiuti args
         COMMAND ${XMLLINT} --noout ${wellform_out} --dtdvalid ${dtd})
 
     add_test(NAME ${wellform_pfx}_Clean
-        COMMAND ${CMAKE_COMMAND} -E rm ${wellform_out})
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${wellform_out})
 
     # XmlWellForm fixtures are used in multiple fixtures,
     # properties set further down below, not here

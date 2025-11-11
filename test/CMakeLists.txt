@@ -183,7 +183,7 @@ function(generate_simple_comparison_test
         COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol ${out} ${ref})
 
     add_test(NAME ${prefix}_Clean
-        COMMAND ${CMAKE_COMMAND} -E rm ${remnant}
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${remnant}
         COMMAND_EXPAND_LISTS)
 
     set_fixture_with_dep(${prefix})
