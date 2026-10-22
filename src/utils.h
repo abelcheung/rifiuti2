@@ -153,7 +153,7 @@ typedef struct _rbin_struct
      * @brief Trashed time (`deltime`) stored as Windows datetime integer
      * @note For internal entry sorting in `$Recycle.bin`. `INFO2` records sort using `index_n` field.
      */
-    int64_t winfiletime;
+    uint64_t winfiletime;
 
     /**
      * @brief Trashed file size
@@ -223,7 +223,7 @@ bool          rifiuti_init                (rbin_type         type,
                                            char           ***argv,
                                            GError          **error);
 
-GDateTime *   win_filetime_to_gdatetime   (int64_t           win_filetime);
+GDateTime *   win_filetime_to_gdatetime   (uint64_t          win_filetime);
 
 bool          dump_content                (GError          **error);
 

@@ -528,17 +528,21 @@ _set_def_output_opts    (GOptionContext *context,
 /**
  * @brief Converts Windows FILETIME number to glib counterpart
  * @param win_filetime The FILETIME integer to be converted
- * @return `GDateTime` with UTC timezone
+ * @return `GDateTime` with UTC timezone, or `NULL` if outside its supported range
  */
 GDateTime *
-win_filetime_to_gdatetime (int64_t win_filetime)
+win_filetime_to_gdatetime (uint64_t win_filetime)
 {
+    const uint64_t unix_epoch_offset = 116444736000000000ULL;
     int64_t t;
 
     /* Let's assume we don't need subsecond time resolution */
-    t = (win_filetime - 116444736000000000LL) / 10000000;
+    if (win_filetime >= unix_epoch_offset)
+        t = (int64_t) ((win_filetime - unix_epoch_offset) / 10000000ULL);
+    else
+        t = -(int64_t) ((unix_epoch_offset - win_filetime) / 10000000ULL);
 
-    g_debug ("FileTime -> Epoch: %" PRId64
+    g_debug ("FileTime -> Epoch: %" PRIu64
         " -> %" PRId64, win_filetime, t);
 
     return g_date_time_new_from_unix_utc (t);
@@ -660,7 +664,8 @@ static void
 _free_record_cb (rbin_struct *record)
 {
     g_free (record->index_s);
-    g_date_time_unref (record->deltime);
+    if (record->deltime != NULL)
+        g_date_time_unref (record->deltime);
     if (record->raw_uni_path)
         g_string_free (record->raw_uni_path, TRUE);
     if (record->raw_legacy_path)
@@ -1076,13 +1081,33 @@ _print_json_header (const metarecord *meta)
 }
 
 
+static char *
+_format_deletion_time (GDateTime  *deltime,
+                       const char *local_format,
+                       const char *utc_format)
+{
+    GDateTime *dt;
+    char      *formatted;
+
+    if (deltime == NULL)
+        return g_strdup ("???");
+
+    dt = use_localtime ? g_date_time_to_local (deltime) :
+                         g_date_time_ref      (deltime);
+    formatted = g_date_time_format (dt,
+        use_localtime ? local_format : utc_format);
+    g_date_time_unref (dt);
+
+    return formatted;
+}
+
+
 static void
 _print_text_record   (rbin_struct        *record,
                       const metarecord   *meta)
 {
     char         *output, **header;
     GString      *src;
-    GDateTime    *dt;
     extern struct _fmt_data fmt[];
 
     g_return_if_fail (record != NULL);
@@ -1093,9 +1118,8 @@ _print_text_record   (rbin_struct        *record,
         g_strdup_printf ("%" PRIu32, record->index_n) :
         g_strdup (record->index_s);
 
-    dt = use_localtime ? g_date_time_to_local (record->deltime):
-                         g_date_time_ref      (record->deltime);
-    header[1] = g_date_time_format (dt, "%F %T");
+    header[1] = _format_deletion_time (record->deltime,
+        "%F %T", "%F %T");
 
     header[2] = g_strdup(fmt[FORMAT_TEXT].gone_outtext[record->gone]);
 
@@ -1114,7 +1138,6 @@ _print_text_record   (rbin_struct        *record,
     g_print ("%s\n", output);
 
     g_free (output);
-    g_date_time_unref (dt);
     g_strfreev (header);
 }
 
@@ -1125,7 +1148,6 @@ _print_xml_record   (rbin_struct        *record,
 {
     extern struct _fmt_data fmt[];
     char         *path, *dt_str;
-    GDateTime    *dt;
     GString      *s, *src;
 
     g_return_if_fail (record != NULL);
@@ -1137,16 +1159,8 @@ _print_xml_record   (rbin_struct        *record,
     else
         g_string_append_printf (s, " index=\"%s\"", record->index_s);
 
-    if (use_localtime)
-    {
-        dt = g_date_time_to_local (record->deltime);
-        dt_str = g_date_time_format (dt, "%FT%T%z");
-    }
-    else
-    {
-        dt = g_date_time_ref (record->deltime);
-        dt_str = g_date_time_format (dt, "%FT%TZ");
-    }
+    dt_str = _format_deletion_time (record->deltime,
+        "%FT%T%z", "%FT%TZ");
     g_string_append_printf (s, " time=\"%s\"", dt_str);
 
     g_string_append_printf (s, " gone=\"%s\"",
@@ -1175,7 +1189,6 @@ _print_xml_record   (rbin_struct        *record,
     g_print ("%s", s->str);
     g_string_free (s, TRUE);
 
-    g_date_time_unref (dt);
     g_free (path);
     g_free (dt_str);
 }
@@ -1187,7 +1200,6 @@ _print_json_record   (rbin_struct        *record,
 {
     extern struct _fmt_data fmt[];
     char         *path, *dt_str;
-    GDateTime    *dt;
     GString      *src, *s;
 
     g_return_if_fail (record != NULL);
@@ -1199,16 +1211,8 @@ _print_json_record   (rbin_struct        *record,
     else
         g_string_append_printf (s, "\"index\": \"%s\"", record->index_s);
 
-    if (use_localtime)
-    {
-        dt = g_date_time_to_local (record->deltime);
-        dt_str = g_date_time_format (dt, "%FT%T%z");
-    }
-    else
-    {
-        dt = g_date_time_ref (record->deltime);
-        dt_str = g_date_time_format (dt, "%FT%TZ");
-    }
+    dt_str = _format_deletion_time (record->deltime,
+        "%FT%T%z", "%FT%TZ");
     g_string_append_printf (s, ", \"time\": \"%s\"", dt_str);
 
     g_string_append_printf (s, ", \"gone\": %s",
@@ -1232,7 +1236,6 @@ _print_json_record   (rbin_struct        *record,
 
     g_print ("%s", s->str);
 
-    g_date_time_unref (dt);
     g_free (path);
     g_free (dt_str);
     g_string_free (s, TRUE);

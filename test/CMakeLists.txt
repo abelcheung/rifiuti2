@@ -226,3 +226,37 @@ include(parse-info2)
 include(parse-rdir)
 include(read-write)
 include(xml)
+
+function(add_invalid_filetime_test name target input format index)
+    add_test(
+        NAME ${name}
+        COMMAND ${CMAKE_COMMAND}
+            "-DPROGRAM=$<TARGET_FILE:${target}>"
+            "-DINPUT=${sample_dir}/${input}"
+            "-DFORMAT=${format}"
+            "-DINDEX=${index}"
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-invalid-filetime.cmake
+    )
+endfunction()
+
+add_invalid_filetime_test(d_InvalidFiletimeText rifiuti-vista
+    synthetic-vista-invalid-time.idx text synthetic-vista-invalid-time.idx)
+add_invalid_filetime_test(d_InvalidFiletimeXml rifiuti-vista
+    synthetic-vista-invalid-time.idx xml synthetic-vista-invalid-time.idx)
+add_invalid_filetime_test(d_InvalidFiletimeJson rifiuti-vista
+    synthetic-vista-invalid-time.idx json synthetic-vista-invalid-time.idx)
+add_invalid_filetime_test(f_InvalidFiletimeText rifiuti
+    synthetic-info2-invalid-time.idx text 1)
+add_invalid_filetime_test(f_InvalidFiletimeXml rifiuti
+    synthetic-info2-invalid-time.idx xml 1)
+add_invalid_filetime_test(f_InvalidFiletimeJson rifiuti
+    synthetic-info2-invalid-time.idx json 1)
+
+set_tests_properties(
+    d_InvalidFiletimeText d_InvalidFiletimeXml d_InvalidFiletimeJson
+    PROPERTIES LABELS "crafted;recycledir"
+)
+set_tests_properties(
+    f_InvalidFiletimeText f_InvalidFiletimeXml f_InvalidFiletimeJson
+    PROPERTIES LABELS "crafted;info2"
+)
